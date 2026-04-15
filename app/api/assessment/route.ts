@@ -18,19 +18,19 @@ CRITICAL RULES:
 
 ANSWER INTERPRETATION GUIDE — use this to map answers to deficiencies:
 
-METABOLIC RHYTHM:
+ENERGY LEVEL (energyLevel):
 - fully_alert → No B-vitamin or iron concern from this signal
 - slight_dip → Mild B-vitamin complex gap, possibly low magnesium
 - major_crash → Strong indicator of Iron deficiency or B1/B3 depletion, cortisol dysregulation
 - unpredictable → Adrenal fatigue signal, likely B5 + magnesium + adaptogen need
 
-SLEEP ARCHITECTURE:
+SLEEP QUALITY (sleepQuality):
 - refreshed → No magnesium or cortisol concern
 - slow_start → Mild magnesium deficiency, possible low melatonin precursor (B6)
 - exhausted → Strong magnesium + iron deficiency signal, possible thyroid involvement
 - wired_tired → Cortisol imbalance, B5 depletion, magnesium deficiency
 
-DERMAL MARKERS (symptoms array):
+PHYSICAL SYMPTOMS (physicalSymptoms array):
 - hair_loss → Ferritin, Biotin, Zinc deficiency
 - brittle_nails → Biotin, Calcium, Silica deficiency
 - dry_skin → Omega-3, Vitamin A, Vitamin E deficiency
@@ -40,19 +40,19 @@ DERMAL MARKERS (symptoms array):
 - none → No dermal deficiency signals
 - unsure → Note uncertainty in report
 
-COGNITIVE CLARITY:
+MENTAL CLARITY (mentalClarity):
 - sharp → No D3 or B12 concern from this signal
 - occasional_fog → Mild Vitamin D3 or Omega-3 gap
 - frequent_fog → Significant B12, D3, or Omega-3 deficiency
 - severe → Critical B12 depletion or severe D3 deficiency, possibly iron anemia affecting brain
 
-MUSCLE RECOVERY:
+MUSCLE RECOVERY (muscleRecovery):
 - none → Good amino acid and electrolyte status
 - mild → Slightly low magnesium or electrolytes
 - moderate → Magnesium, electrolyte, and possible protein/amino acid gap
 - severe → Significant magnesium deficiency, possible Vitamin D3 + calcium imbalance
 
-IMMUNE RESILIENCE:
+IMMUNE HEALTH (immuneHealth):
 - zero → Good Vitamin C and D status
 - one_two → Mild Vitamin C or D gap
 - three_four → Notable Vitamin C, D, and Zinc deficiency
@@ -106,6 +106,7 @@ Respond ONLY in this exact JSON — no extra text, no markdown:
   "urgencyMessage": "1 honest sentence — if they are healthy, say so; if not, create real urgency"
 }`
 
+  // FIX: field names now match what the frontend sends
   const userMessage = `Analyze this person and generate their deficiency report:
 
 Name: ${name}
@@ -114,12 +115,12 @@ Diet type: ${diet}
 Primary health goal: ${goal}
 
 THEIR EXACT ANSWERS:
-- Energy at 2:30 PM: ${answers.metabolicRhythm}
-- Sleep quality on waking: ${answers.sleepArchitecture}
-- Physical/dermal symptoms they selected: ${Array.isArray(answers.dermalMarkers) ? answers.dermalMarkers.join(', ') : answers.dermalMarkers}
-- Cognitive clarity during focus: ${answers.cognitiveClarity}
+- Energy at 2:30 PM: ${answers.energyLevel}
+- Sleep quality on waking: ${answers.sleepQuality}
+- Physical/dermal symptoms they selected: ${Array.isArray(answers.physicalSymptoms) ? answers.physicalSymptoms.join(', ') : answers.physicalSymptoms}
+- Cognitive clarity during focus: ${answers.mentalClarity}
 - Muscle soreness after light activity: ${answers.muscleRecovery}
-- Sick (colds/flu) in last 6 months: ${answers.immuneResilience}
+- Sick (colds/flu) in last 6 months: ${answers.immuneHealth}
 
 Use the scoring formula and answer interpretation guide to generate a precise, honest, personalized report for ${name}. Reference their exact answers in your reasoning. If their answers suggest they are healthy, say so clearly with a low score.`
 

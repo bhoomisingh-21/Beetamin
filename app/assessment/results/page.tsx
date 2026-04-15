@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import {
   AlertTriangle,
   CheckCircle,
-  Sparkles,
   ArrowDown,
   ArrowRight,
   ShieldCheck,
@@ -144,7 +143,7 @@ export default function ResultsPage() {
 
       {/* ===== SECTION 1 ===== */}
       <div
-        className="relative px-6 pt-20 pb-20"
+        className="relative px-4 md:px-6 pt-10 md:pt-20 pb-10 md:pb-20"
         style={{
           backgroundImage: `radial-gradient(circle at 50% 0%, rgba(16,185,129,0.06), transparent 60%), url("${HEX_URL}")`,
           backgroundSize: '100% 100%, 60px 70px',
@@ -152,9 +151,9 @@ export default function ResultsPage() {
       >
         <div className="max-w-7xl mx-auto">
 
-          {/* PERSONALIZED HEADING */}
+          {/* HEADING */}
           <motion.div {...fadeUp(0)} className="text-center">
-            <h1 className="text-4xl md:text-6xl font-black leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-black leading-tight">
               <span className="text-white/90">{headline.main}</span>
               <br />
               <span className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-transparent bg-clip-text">
@@ -162,36 +161,63 @@ export default function ResultsPage() {
               </span>
             </h1>
 
-            <div className="mt-6 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full px-5 py-2">
-              <ShieldCheck size={14} />
+            <div className="mt-4 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-semibold rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+              <ShieldCheck size={12} />
               {isHealthy ? 'NUTRITIONIST-REVIEWED ANALYSIS' : 'DOCTOR-APPROVED RECOVERY PLAN AVAILABLE'}
             </div>
           </motion.div>
 
-          {/* PERSONALIZED SUBTEXT */}
-          <motion.p {...fadeUp(0.1)} className="mt-8 text-gray-400 text-lg text-center max-w-3xl mx-auto leading-relaxed">
+          {/* SUBTEXT */}
+          <motion.p {...fadeUp(0.1)} className="mt-4 md:mt-8 text-gray-400 text-sm sm:text-base md:text-lg text-center max-w-3xl mx-auto leading-relaxed px-1">
             {headline.subtext}
           </motion.p>
 
-          {/* DIET SUMMARY if exists */}
+          {/* DIET SUMMARY */}
           {result.dietSummary && (
-            <motion.div {...fadeUp(0.15)} className="mt-6 max-w-2xl mx-auto bg-[#121821] border border-white/5 rounded-2xl px-6 py-4 text-center">
-              <p className="text-gray-400 text-sm leading-relaxed">
+            <motion.div {...fadeUp(0.15)} className="mt-4 md:mt-6 max-w-2xl mx-auto bg-[#121821] border border-white/5 rounded-xl sm:rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
+              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed text-center">
                 <span className="text-emerald-400 font-semibold">Diet analysis: </span>
                 {result.dietSummary}
               </p>
             </motion.div>
           )}
 
+          {/* ── MOBILE ONLY: Score card ── */}
+          <motion.div {...fadeUp(0.18)} className="mt-5 md:hidden">
+            <div className="bg-[#121821] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+              <div className="flex-shrink-0">
+                <div className="flex items-end gap-1">
+                  <span className="text-6xl font-black leading-none" style={{ color: scoreInfo.color }}>
+                    {scoreAnimated}
+                  </span>
+                  <span className="text-gray-500 text-base mb-1">/100</span>
+                </div>
+                <div className={`mt-2 text-[10px] font-bold px-2.5 py-1 rounded-full inline-block ${scoreInfo.bg}`}>
+                  {scoreInfo.label}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-gray-500 text-[10px] uppercase tracking-widest leading-tight mb-2">
+                  {meta.name || 'Your'}'s deficiency risk score
+                </p>
+                {result.urgencyMessage && (
+                  <p className={`text-xs font-medium leading-snug ${isHealthy ? 'text-emerald-300' : 'text-red-300'}`}>
+                    {result.urgencyMessage}
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
           {/* MAIN GRID */}
-          <div className="grid lg:grid-cols-[1.3fr_1fr] gap-12 mt-16">
+          <div className="grid lg:grid-cols-[1.3fr_1fr] gap-5 md:gap-12 mt-5 md:mt-16">
 
-            {/* LEFT SIDE — SCORE + DEFICIENCIES */}
-            <motion.div {...fadeUp(0.2)} className="bg-[#121821] border border-white/5 p-8 md:p-10 rounded-3xl">
+            {/* LEFT — SCORE + DEFICIENCIES */}
+            <motion.div {...fadeUp(0.2)} className="bg-[#121821] border border-white/5 p-5 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl">
 
-              {/* SCORE ROW */}
-              <div className="flex items-end gap-3 mb-3">
-                <span className="text-8xl md:text-9xl font-black leading-none" style={{ color: scoreInfo.color }}>
+              {/* Score — desktop only */}
+              <div className="hidden md:flex items-end gap-3 mb-3">
+                <span className="text-8xl lg:text-9xl font-black leading-none" style={{ color: scoreInfo.color }}>
                   {scoreAnimated}
                 </span>
                 <div className="mb-3">
@@ -202,21 +228,24 @@ export default function ResultsPage() {
                 </div>
               </div>
 
-              <p className="text-gray-500 text-xs uppercase tracking-widest mb-6">
+              <p className="hidden md:block text-gray-500 text-xs uppercase tracking-widest mb-6">
                 {isHealthy
                   ? `${meta.name || 'Your'}'s overall deficiency risk score`
                   : `${meta.name || 'Your'}'s nutrient deficiency risk score`}
               </p>
 
-              {/* URGENCY MESSAGE */}
               {result.urgencyMessage && (
-                <div className={`mb-6 px-4 py-3 rounded-xl text-sm font-medium ${isHealthy ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-red-500/10 border border-red-500/20 text-red-300'}`}>
+                <div className={`hidden md:block mb-6 px-4 py-3 rounded-xl text-sm font-medium ${isHealthy ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-red-500/10 border border-red-500/20 text-red-300'}`}>
                   {result.urgencyMessage}
                 </div>
               )}
 
+              <p className="md:hidden text-[10px] font-bold tracking-widest uppercase text-emerald-400 mb-3">
+                Your Deficiency Report
+              </p>
+
               {/* DEFICIENCY CARDS */}
-              <div className="space-y-4">
+              <div className="space-y-2.5 md:space-y-4">
                 {result.primaryDeficiencies?.length > 0 ? (
                   result.primaryDeficiencies.map((def: any, i: number) => (
                     <motion.div
@@ -225,19 +254,19 @@ export default function ResultsPage() {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.4, delay: i * 0.1 }}
-                      className="bg-[#0F141A] p-5 rounded-2xl border border-white/5"
+                      className="bg-[#0F141A] p-3.5 sm:p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/5"
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <p className="font-bold text-base text-white">{def.nutrient}</p>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${getSeverityBadge(def.severity)}`}>
+                        <p className="font-bold text-sm md:text-base text-white leading-snug">{def.nutrient}</p>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${getSeverityBadge(def.severity)}`}>
                           {def.severity} risk
                         </span>
                       </div>
-                      <p className="text-gray-400 mt-2 text-sm leading-relaxed">{def.reason}</p>
+                      <p className="text-gray-400 mt-1.5 text-xs sm:text-sm leading-relaxed">{def.reason}</p>
                       {def.symptoms?.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
+                        <div className="mt-2 flex flex-wrap gap-1">
                           {def.symptoms.map((s: string, j: number) => (
-                            <span key={j} className="bg-white/5 text-gray-500 text-xs px-2 py-0.5 rounded-full">
+                            <span key={j} className="bg-white/5 text-gray-500 text-[10px] px-2 py-0.5 rounded-full">
                               {s}
                             </span>
                           ))}
@@ -246,16 +275,16 @@ export default function ResultsPage() {
                     </motion.div>
                   ))
                 ) : (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5 text-emerald-300 text-sm">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-emerald-300 text-sm">
                     ✅ No significant deficiencies detected based on your answers.
                   </div>
                 )}
               </div>
             </motion.div>
 
-            {/* RIGHT SIDE — INSIGHTS */}
-            <motion.div {...fadeUp(0.25)} className="flex flex-col justify-center gap-4">
-              <p className={`text-xs font-bold tracking-widest uppercase ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
+            {/* RIGHT — INSIGHTS */}
+            <motion.div {...fadeUp(0.25)} className="flex flex-col gap-2.5 md:gap-4 md:justify-center">
+              <p className={`text-[10px] sm:text-xs font-bold tracking-widest uppercase ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
                 {isHealthy ? `What's Working For ${meta.name || 'You'}` : `What This Is Doing To ${meta.name || 'You'}`}
               </p>
 
@@ -268,10 +297,10 @@ export default function ResultsPage() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: i * 0.08 }}
-                    className="flex gap-4 bg-[#121821] p-5 rounded-2xl border border-white/5"
+                    className="flex gap-3 bg-[#121821] p-3.5 sm:p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/5"
                   >
-                    <Icon className={`${insightIconColor} flex-shrink-0 mt-0.5`} size={16} />
-                    <p className="text-gray-300 text-sm leading-relaxed">{item}</p>
+                    <Icon className={`${insightIconColor} flex-shrink-0 mt-0.5`} size={14} />
+                    <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">{item}</p>
                   </motion.div>
                 )
               })}
@@ -280,29 +309,29 @@ export default function ResultsPage() {
           </div>
 
           {/* TRANSITION */}
-          <motion.div {...fadeUp(0.3)} className="text-center mt-20">
-            <p className="text-emerald-400 font-black tracking-widest text-sm">
+          <motion.div {...fadeUp(0.3)} className="text-center mt-10 md:mt-20">
+            <p className="text-emerald-400 font-black tracking-widest text-[10px] sm:text-xs md:text-sm">
               {headline.transition}
             </p>
-            <div className="mt-6 flex justify-center">
-              <div className="animate-bounce bg-emerald-500/10 p-4 rounded-full">
-                <ArrowDown className="text-emerald-400" />
+            <div className="mt-4 flex justify-center">
+              <div className="animate-bounce bg-emerald-500/10 p-3 rounded-full">
+                <ArrowDown className="text-emerald-400" size={16} />
               </div>
             </div>
           </motion.div>
 
-          {/* QUICK WINS STEPS */}
-          <motion.div {...fadeUp(0.35)} className="mt-16 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2rem] p-8 md:p-12 max-w-5xl mx-auto">
-            <p className="text-center text-xs tracking-widest text-emerald-400 mb-2 font-bold uppercase">
+          {/* QUICK WINS */}
+          <motion.div {...fadeUp(0.35)} className="mt-8 md:mt-16 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-2xl md:rounded-[2rem] p-5 sm:p-6 md:p-8 lg:p-12 max-w-5xl mx-auto">
+            <p className="text-center text-[10px] sm:text-xs tracking-widest text-emerald-400 mb-1 font-bold uppercase">
               {isHealthy ? 'Optimize & Maintain' : 'Immediate Corrective Actions'}
             </p>
-            <p className="text-center text-gray-500 text-sm mb-10">
+            <p className="text-center text-gray-500 text-xs sm:text-sm mb-6 md:mb-10">
               {isHealthy
                 ? `Specific to ${meta.name || 'your'}'s current profile`
                 : `Personalized for ${meta.name || 'your'}'s deficiency pattern`}
             </p>
 
-            <div className="space-y-8">
+            <div className="space-y-4 md:space-y-8">
               {result.quickWins?.map((win: string, i: number) => (
                 <motion.div
                   key={i}
@@ -310,40 +339,38 @@ export default function ResultsPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className="flex items-center gap-6 group"
+                  className="flex items-start sm:items-center gap-3 sm:gap-4 md:gap-6 group"
                 >
-                  <div className="w-14 h-14 bg-emerald-500 text-black rounded-xl flex items-center justify-center font-black text-lg flex-shrink-0">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 md:w-14 md:h-14 bg-emerald-500 text-black rounded-lg sm:rounded-xl flex items-center justify-center font-black text-sm sm:text-base md:text-lg flex-shrink-0 mt-0.5 sm:mt-0">
                     {i + 1}
                   </div>
-                  <p className="text-base md:text-lg font-semibold flex-1 group-hover:text-emerald-300 transition leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold flex-1 group-hover:text-emerald-300 transition leading-snug">
                     {win}
                   </p>
-                  <ArrowRight className="text-emerald-400 opacity-40 group-hover:opacity-100 flex-shrink-0" />
+                  <ArrowRight className="text-emerald-400 opacity-40 group-hover:opacity-100 flex-shrink-0 hidden sm:block" size={16} />
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
           {/* BRIDGE */}
-          <motion.div {...fadeUp(0.4)} className="text-center mt-14 max-w-2xl mx-auto">
-            <p className="text-lg text-gray-300">
-              {isHealthy
-                ? `These habits help — `
-                : `These steps will help — `}
+          <motion.div {...fadeUp(0.4)} className="text-center mt-8 md:mt-14 max-w-2xl mx-auto px-2">
+            <p className="text-sm sm:text-base md:text-lg text-gray-300 leading-relaxed">
+              {isHealthy ? `These habits help — ` : `These steps will help — `}
               <span className="text-white font-semibold">
                 {isHealthy
                   ? `but a full personalized protocol takes ${meta.name || 'you'} from good to optimal.`
                   : `but they won't fully fix ${meta.name || 'your'}'s root deficiencies.`}
               </span>
             </p>
-            <p className="mt-4 text-emerald-400 font-bold text-sm">
+            <p className="mt-3 text-emerald-400 font-bold text-xs sm:text-sm">
               {isHealthy
                 ? `Want a complete optimization plan built for your profile?`
                 : `Want a complete recovery plan built around your exact deficiencies?`}
             </p>
-            <div className="mt-6 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <div className="animate-bounce bg-emerald-500/10 p-3 rounded-full">
-                <ArrowDown className="text-emerald-400" />
+                <ArrowDown className="text-emerald-400" size={16} />
               </div>
             </div>
           </motion.div>
@@ -352,42 +379,42 @@ export default function ResultsPage() {
       </div>
 
       {/* ===== SECTION 2 — OFFER ===== */}
-      <div className="bg-white text-black px-6 py-24 rounded-t-[3rem]">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16">
+      <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-16">
 
           {/* LEFT */}
           <motion.div {...fadeUp(0)}>
-            <h2 className="text-4xl md:text-5xl font-black leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
               {offerHeadline.h2}
-              <span className="block text-emerald-600 mt-2">
+              <span className="block text-emerald-600 mt-1 md:mt-2">
                 {offerHeadline.h2sub}
               </span>
             </h2>
 
-            <p className="mt-6 text-gray-600 text-lg leading-relaxed">
+            <p className="mt-4 md:mt-6 text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
               {offerHeadline.desc}
             </p>
 
-            <div className="grid grid-cols-3 mt-12 gap-6 md:gap-10">
+            <div className="grid grid-cols-3 mt-6 md:mt-12 gap-2 md:gap-10">
               <div>
-                <p className="text-2xl md:text-3xl font-black">50,000+</p>
-                <p className="text-sm text-gray-500">Indians helped</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">50,000+</p>
+                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Indians helped</p>
               </div>
               <div>
-                <p className="text-2xl md:text-3xl font-black">94%</p>
-                <p className="text-sm text-gray-500">Success rate</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">94%</p>
+                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Success rate</p>
               </div>
               <div>
-                <p className="text-2xl md:text-3xl font-black text-emerald-600">₹29</p>
-                <p className="text-sm text-gray-500">One time</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹29</p>
+                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">One time</p>
               </div>
             </div>
 
-            <div className="mt-12 bg-gray-50 p-8 md:p-10 rounded-2xl">
-              <p className="text-xs font-bold mb-6 text-gray-400 uppercase">
+            <div className="mt-6 md:mt-12 bg-gray-50 p-4 sm:p-5 md:p-8 lg:p-10 rounded-xl sm:rounded-2xl">
+              <p className="text-[10px] sm:text-xs font-bold mb-3 md:mb-6 text-gray-400 uppercase">
                 {`${meta.name || 'Your'}'s 90-Day Protocol Includes`}
               </p>
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
                 {[
                   result.primaryDeficiencies?.[0]?.nutrient
                     ? `${result.primaryDeficiencies[0].nutrient} recovery meal plan`
@@ -399,8 +426,8 @@ export default function ResultsPage() {
                   'Doctor-reviewed & signed off',
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-700">{item}</span>
+                    <CheckCircle size={13} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs sm:text-sm text-gray-700 leading-snug">{item}</span>
                   </div>
                 ))}
               </div>
@@ -408,53 +435,53 @@ export default function ResultsPage() {
           </motion.div>
 
           {/* RIGHT — PRICING CARD */}
-          <motion.div {...fadeUp(0.1)} className="bg-white border rounded-3xl p-8 md:p-12 shadow-2xl text-center relative overflow-hidden">
+          <motion.div {...fadeUp(0.1)} className="bg-white border rounded-2xl md:rounded-3xl p-5 sm:p-6 md:p-8 lg:p-12 shadow-xl md:shadow-2xl text-center relative overflow-hidden">
 
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-72 h-72 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
 
             <div className="relative z-10">
-              <p className="text-red-500 text-xs font-bold tracking-widest uppercase mb-4">
+              <p className="text-red-500 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-3">
                 🔥 New User Offer — Expires Soon
               </p>
 
-              <p className="line-through text-gray-400 text-lg">₹299</p>
-              <p className="text-7xl font-black mt-1">₹29</p>
-              <p className="text-emerald-600 text-sm font-semibold mt-2">
+              <p className="line-through text-gray-400 text-sm md:text-lg">₹299</p>
+              <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹29</p>
+              <p className="text-emerald-600 text-xs sm:text-sm font-semibold mt-1.5">
                 {isHealthy
                   ? `Optimization plan for ${meta.name || 'you'}`
                   : `Recovery plan for ${meta.name || 'you'}'s ${result.primaryDeficiencies?.[0]?.nutrient || 'deficiencies'}`}
               </p>
 
-              <div className="mt-6">
-                <p className="text-sm text-gray-500 font-medium">Secure Payment via Razorpay</p>
-                <div className="flex justify-center items-center gap-4 mt-4 flex-wrap">
-                  <img src="https://cdn.simpleicons.org/googlepay" className="h-6" alt="Google Pay" />
-                  <img src="https://cdn.simpleicons.org/phonepe" className="h-6" alt="PhonePe" />
-                  <img src="https://cdn.simpleicons.org/paytm" className="h-6" alt="Paytm" />
-                  <img src="https://cdn.simpleicons.org/visa" className="h-6" alt="Visa" />
-                  <img src="https://cdn.simpleicons.org/mastercard" className="h-6" alt="Mastercard" />
+              <div className="mt-4 md:mt-6">
+                <p className="text-xs text-gray-500 font-medium">Secure Payment via Razorpay</p>
+                <div className="flex justify-center items-center gap-2.5 mt-2.5 flex-wrap">
+                  <img src="https://cdn.simpleicons.org/googlepay" className="h-4 sm:h-5 md:h-6" alt="Google Pay" />
+                  <img src="https://cdn.simpleicons.org/phonepe" className="h-4 sm:h-5 md:h-6" alt="PhonePe" />
+                  <img src="https://cdn.simpleicons.org/paytm" className="h-4 sm:h-5 md:h-6" alt="Paytm" />
+                  <img src="https://cdn.simpleicons.org/visa" className="h-4 sm:h-5 md:h-6" alt="Visa" />
+                  <img src="https://cdn.simpleicons.org/mastercard" className="h-4 sm:h-5 md:h-6" alt="Mastercard" />
                 </div>
               </div>
 
-              <p className="mt-6 text-xs text-gray-500">
+              <p className="mt-3 text-xs text-gray-500">
                 Trusted by <span className="font-bold text-black">50,000+ Indians</span>
               </p>
 
-              <button className="mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-5 rounded-xl font-black text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all">
+              <button className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all">
                 🔒 GET MY PERSONALIZED PLAN
               </button>
 
-              <p className="mt-4 text-xs text-gray-400">
+              <p className="mt-3 text-[10px] sm:text-xs text-gray-400">
                 🔐 100% Secure • No hidden charges • Instant access
               </p>
 
-              <div className="mt-4 flex justify-center gap-4 text-[10px] text-gray-400">
+              <div className="mt-2 flex justify-center gap-2.5 text-[10px] text-gray-400 flex-wrap">
                 <span>✔ Safe Checkout</span>
                 <span>✔ Instant Delivery</span>
                 <span>✔ Verified Plan</span>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-gray-100">
                 <p className="text-gray-400 text-xs">Not sure?</p>
                 <a href="tel:+919022234475" className="text-emerald-600 font-medium text-sm mt-1 block hover:text-emerald-500 transition">
                   Talk to a nutritionist free →
