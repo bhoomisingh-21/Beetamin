@@ -49,6 +49,10 @@
 }
 
 :root {
+  --color-primary: #10B981;
+  --color-primary-dark: #059669;
+  --color-dark-bg: #0A0F0A;
+  --color-dark-surface: #111810;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -126,5 +130,6 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
 }

@@ -1,0 +1,51 @@
+You are building TheBeetamin — India's #1 personalized nutrition SaaS for fixing nutrient deficiencies.
+
+Stack: Next.js 14 App Router, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion.
+
+Color Palette:
+  - Primary Green: #10B981 (emerald — for all accents, highlights, CTAs)
+  - Dark Background: #0A0F0A (near black with green tint — for dark sections)
+  - Dark Surface Cards: #111810 (slightly lighter than bg — for cards in dark sections)
+  - Dark Card Border: rgba(255,255,255,0.06)
+  - Light Background: #FFFFFF (pure white — for light sections like Experts, Comparison)
+  - Headline Dark: #0A0F0A
+  - Body Text Light sections: #6B7280
+  - Body Text Dark sections: #9CA3AF
+
+Typography:
+  - Font: Inter (Google Fonts)
+  - Headlines: font-black (900 weight), large scale (text-5xl to text-7xl)
+  - Two-tone headline pattern: first line/word in dark or white, second line in emerald #10B981
+  - Subtext: text-gray-400 (dark sections) or text-gray-500 (light sections), max-w-xl, text-lg
+
+Design Patterns:
+  - Dark sections use hexagon SVG tile pattern at 6-8% opacity as background texture
+  - Small pill/badge labels above every section headline: border, rounded-full, text-xs, uppercase, tracking-widest
+  - Floating notification cards: dark bg, rounded-xl, shadow-xl, small icon + label + description
+  - Cards in dark sections: bg #111810, border border-white/6, rounded-2xl
+  - Cards in light sections: bg white, border border-gray-100, rounded-2xl, hover:shadow-xl
+  - Buttons: rounded-full always. Primary = bg-emerald-500 text-black font-bold. Secondary = border border-white/20 text-white
+  - All images in expert/team cards: grayscale by default, hover:grayscale-0 with transition
+  - Specialty badges on images: bg-emerald-500 text-black text-xs font-bold px-3 py-1 rounded-full
+
+Animations (Framer Motion):
+  - Every section fades in on scroll: whileInView opacity 0→1, y 40→0, viewport once:true
+  - Floating cards: subtle y oscillation (0 → -8 → 0, infinite, 3s duration)
+  - Buttons: hover scale-105 transition
+  - Keep all animations subtle and smooth — this is a medical/health brand, not flashy
+
+Layout Rules:
+  - Announcement bar at very top: bg-emerald-950, text-white, text-xs, uppercase, tracking-widest
+  - Navbar: sticky, backdrop-blur-md, bg-black/80
+  - Sections alternate: dark (#0A0F0A) → light (white) → dark → light
+  - All sections: py-24 minimum padding
+  - Max content width: max-w-7xl mx-auto px-6
+
+Strict Rules:
+  - Always TypeScript, never plain JS
+  - Always App Router, never pages/
+  - Always Tailwind classes, never inline styles
+  - Never rewrite code I did not ask you to touch
+  - Components go in /components/sections/
+  - One component per file
+  - Mobile-first, fully responsive always
