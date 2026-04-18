@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -9,6 +10,7 @@ import {
   ArrowDown,
   ArrowRight,
   ShieldCheck,
+  ChevronLeft,
 } from 'lucide-react'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
@@ -93,6 +95,16 @@ export default function ResultsPage() {
   const [meta, setMeta] = useState<any>({})
   const [scoreAnimated, setScoreAnimated] = useState(0)
   const router = useRouter()
+  const { isSignedIn } = useUser()
+
+  function handle29Plan() {
+    if (!isSignedIn) {
+      sessionStorage.setItem('postLoginDest', '29-plan')
+      router.push('/sign-in')
+      return
+    }
+    router.push('/assessment/purchase')
+  }
 
   useEffect(() => {
     const stored = localStorage.getItem('assessmentResult')
@@ -140,6 +152,16 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0F14] text-white">
+
+      {/* Back nav */}
+      <div className="sticky top-0 z-10 bg-[#0B0F14]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center gap-3">
+        <a href="/assessment" className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition">
+          <ChevronLeft size={16} />
+          Retake Assessment
+        </a>
+        <span className="flex-1" />
+        <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition">← Home</a>
+      </div>
 
       {/* ===== SECTION 1 ===== */}
       <div
@@ -467,8 +489,11 @@ export default function ResultsPage() {
                 Trusted by <span className="font-bold text-black">50,000+ Indians</span>
               </p>
 
-              <button className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all">
-                🔒 GET MY PERSONALIZED PLAN
+              <button
+                onClick={handle29Plan}
+                className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                🔒 GET MY PERSONALIZED PLAN — ₹29
               </button>
 
               <p className="mt-3 text-[10px] sm:text-xs text-gray-400">
@@ -482,13 +507,15 @@ export default function ResultsPage() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-gray-400 text-xs">Not sure?</p>
-                <a href="tel:+919022234475" className="text-emerald-600 font-medium text-sm mt-1 block hover:text-emerald-500 transition">
-                  Talk to a nutritionist free →
-                </a>
+                <button
+                  onClick={() => router.push('/booking')}
+                  className="w-full bg-black text-white font-bold rounded-xl py-3 text-sm hover:bg-gray-900 transition"
+                >
+                  📅 Book the Complete ₹3999 Plan →
+                </button>
                 <button
                   onClick={() => { localStorage.clear(); router.push('/assessment') }}
-                  className="text-gray-300 text-xs mt-3 underline cursor-pointer hover:text-gray-400 transition block mx-auto"
+                  className="text-gray-400 text-xs mt-3 underline cursor-pointer hover:text-gray-500 transition block mx-auto"
                 >
                   Retake assessment
                 </button>

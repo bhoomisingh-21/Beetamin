@@ -1,7 +1,10 @@
 "use client";
 
-import { CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CheckCircle, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
+import { getClientByClerkId } from "@/lib/booking-actions";
 
 const CORE_FEATURES = [
   "6 Expert Nutrition Sessions",
@@ -18,6 +21,29 @@ const BOOSTER_FEATURES = [
 ];
 
 export default function PricingSection() {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const [hasBooking, setHasBooking] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+    getClientByClerkId(user.id).then((client) => {
+      setHasBooking(!!client);
+    }).catch(() => setHasBooking(false));
+  }, [isLoaded, isSignedIn, user]);
+
+  // Core Transformation button
+  let coreButtonHref = "/booking";
+  let coreButtonLabel = "Get Started Now";
+  if (isSignedIn) {
+    if (hasBooking) {
+      coreButtonHref = "/booking/profile";
+      coreButtonLabel = "Manage My Booking";
+    } else {
+      coreButtonHref = "/booking";
+      coreButtonLabel = "Complete Your Booking";
+    }
+  }
+
   return (
     <section className="bg-[#050B0D] py-16 sm:py-24 px-4 sm:px-6 overflow-x-hidden" id="pricing">
 
@@ -69,9 +95,13 @@ export default function PricingSection() {
             ))}
           </ul>
 
-          <button className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base">
-            Get Started Now
-          </button>
+          <a
+            href={coreButtonHref}
+            className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
+          >
+            {isSignedIn && hasBooking && <LayoutDashboard size={16} />}
+            {coreButtonLabel}
+          </a>
         </motion.div>
 
         {/* Booster Plan */}
@@ -104,16 +134,28 @@ export default function PricingSection() {
             ))}
           </ul>
 
-          <button
-            disabled
-            className="w-full bg-gray-100 text-gray-400 font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl cursor-not-allowed text-sm sm:text-base"
-          >
-            Unlock After Main Plan
-          </button>
-
-          <p className="text-center text-[10px] text-gray-400 mt-3 sm:mt-4 uppercase tracking-wider">
-            Purchase the Core Plan to unlock this booster.
-          </p>
+          {/* Logged-in with active booking: show Track Progress */}
+          {isSignedIn && hasBooking ? (
+            <a
+              href="/booking/dashboard"
+              className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
+            >
+              <LayoutDashboard size={16} />
+              Track Your Progress
+            </a>
+          ) : (
+            <>
+              <button
+                disabled
+                className="w-full bg-gray-100 text-gray-400 font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl cursor-not-allowed text-sm sm:text-base"
+              >
+                Unlock After Main Plan
+              </button>
+              <p className="text-center text-[10px] text-gray-400 mt-3 sm:mt-4 uppercase tracking-wider">
+                Purchase the Core Plan to unlock this booster.
+              </p>
+            </>
+          )}
         </motion.div>
       </div>
     </section>

@@ -2,6 +2,7 @@
 
 import { X, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
 
 const ROWS = [
   {
@@ -42,6 +43,8 @@ const ROWS = [
 ];
 
 export default function Comparison() {
+  const { isSignedIn } = useUser()
+
   return (
     <section className="relative bg-white py-14 sm:py-24 overflow-x-hidden">
 
@@ -197,9 +200,12 @@ export default function Comparison() {
 
         {/* CTA */}
         <div className="text-center">
-          <button className="bg-[#050B0D] text-white px-8 py-4 rounded-full font-bold w-full sm:w-auto">
-            Start 90-Day Transformation →
-          </button>
+          <a
+            href={isSignedIn ? "/booking/dashboard" : "/booking"}
+            className="inline-block bg-[#050B0D] text-white px-8 py-4 rounded-full font-bold w-full sm:w-auto hover:bg-[#1a2a1a] transition"
+          >
+            {isSignedIn ? "Manage My Sessions →" : "Start 90-Day Transformation →"}
+          </a>
 
           {/* BADGES */}
           <div className="mt-5 flex flex-wrap justify-center gap-3 text-sm text-slate-400">

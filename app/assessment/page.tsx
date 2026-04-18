@@ -10,21 +10,25 @@ const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' 
 </svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG)}`
 
+const TOTAL_STEPS = 7
+
 export default function AssessmentPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [direction, setDirection] = useState<'next' | 'back'>('next')
   const [isLoading, setIsLoading] = useState(false)
   const [answers, setAnswers] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    age: '',
+    diet: '',
+    goal: '',
     metabolicRhythm: '',
     sleepArchitecture: '',
     dermalMarkers: [] as string[],
     cognitiveClarity: '',
     muscleRecovery: '',
     immuneResilience: '',
-    name: '',
-    age: '',
-    diet: '',
-    goal: '',
   })
   const router = useRouter()
 
@@ -40,7 +44,6 @@ export default function AssessmentPage() {
           diet: answers.diet,
           goal: answers.goal,
           answers: {
-            // FIX: send ALL answers with correct keys so Groq gets full picture
             energyLevel: answers.metabolicRhythm,
             sleepQuality: answers.sleepArchitecture,
             physicalSymptoms: answers.dermalMarkers,
@@ -52,7 +55,14 @@ export default function AssessmentPage() {
       })
       const result = await res.json()
       localStorage.setItem('assessmentResult', JSON.stringify(result))
-      localStorage.setItem('assessmentMeta', JSON.stringify({ name: answers.name, goal: answers.goal }))
+      localStorage.setItem('assessmentMeta', JSON.stringify({ name: answers.name, email: answers.email, phone: answers.phone, goal: answers.goal }))
+      if (answers.email) {
+        fetch('/api/save-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: answers.name, email: answers.email, phone: answers.phone, source: 'assessment' }),
+        }).catch(() => {})
+      }
       router.push('/assessment/results')
     } catch (e) {
       console.error(e)
@@ -61,12 +71,13 @@ export default function AssessmentPage() {
   }
 
   const isStepValid = () => {
-    if (currentStep === 1) return answers.metabolicRhythm !== ''
-    if (currentStep === 2) return answers.sleepArchitecture !== ''
-    if (currentStep === 3) return answers.dermalMarkers.length > 0
-    if (currentStep === 4) return answers.cognitiveClarity !== ''
-    if (currentStep === 5) return answers.muscleRecovery !== '' && answers.immuneResilience !== ''
-    if (currentStep === 6) return answers.name !== '' && answers.age !== '' && answers.diet !== '' && answers.goal !== ''
+    if (currentStep === 1) return answers.name !== '' && answers.email !== '' && answers.phone !== '' && answers.age !== ''
+    if (currentStep === 2) return answers.diet !== '' && answers.goal !== ''
+    if (currentStep === 3) return answers.metabolicRhythm !== ''
+    if (currentStep === 4) return answers.sleepArchitecture !== ''
+    if (currentStep === 5) return answers.dermalMarkers.length > 0
+    if (currentStep === 6) return answers.cognitiveClarity !== ''
+    if (currentStep === 7) return answers.muscleRecovery !== '' && answers.immuneResilience !== ''
     return false
   }
 
@@ -158,6 +169,12 @@ export default function AssessmentPage() {
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/15 via-[#0A0F14]/70 to-[#0A0F14] pointer-events-none" />
           <div className="relative z-10 max-w-md w-full">
+            {/* Back to home */}
+            <a href="/" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-sm mb-6 transition">
+              <ChevronLeft size={14} />
+              Back to home
+            </a>
+
             <span className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs tracking-widest uppercase rounded-full px-3 py-1 inline-flex items-center gap-2">
               <FlaskConical size={12} />
               CLINICAL DEFICIENCY ASSESSMENT
@@ -168,7 +185,7 @@ export default function AssessmentPage() {
               <span className="text-[#00E676] block">Nutrient Deficiencies</span>
             </h1>
             <p className="mt-4 text-gray-400 text-sm md:text-base lg:text-lg max-w-xl mx-auto">
-              6 clinically-derived questions. AI-powered analysis. Personalized deficiency report in under 2 minutes.
+              7 clinically-derived questions. AI-powered analysis. Personalized deficiency report in under 2 minutes.
             </p>
 
             <div className="mt-6 flex flex-wrap justify-center gap-3 md:gap-8">
@@ -215,15 +232,15 @@ export default function AssessmentPage() {
                   {/* Progress Header */}
                   <div className="bg-gray-50 border-b border-gray-100 px-5 md:px-8 py-3 md:py-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500 text-xs md:text-sm font-medium">Step {currentStep} of 6</span>
+                      <span className="text-gray-500 text-xs md:text-sm font-medium">Step {currentStep} of {TOTAL_STEPS}</span>
                       <span className="text-emerald-600 text-xs md:text-sm font-semibold">
-                        {Math.round((currentStep / 6) * 100)}% Complete
+                        {Math.round((currentStep / TOTAL_STEPS) * 100)}% Complete
                       </span>
                     </div>
                     <div className="bg-gray-200 rounded-full h-1.5 w-full mt-2 md:mt-3">
                       <div
                         className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-                        style={{ width: `${(currentStep / 6) * 100}%` }}
+                        style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
                       />
                     </div>
                   </div>
@@ -241,8 +258,131 @@ export default function AssessmentPage() {
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                       >
 
-                        {/* Step 1 */}
+                        {/* Step 1 — Personal info (with required email + phone) */}
                         {currentStep === 1 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 PERSONALIZING YOUR ANALYSIS
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-2">
+                              Tell us a little about yourself
+                            </h2>
+                            <p className="text-gray-400 text-xs md:text-sm mb-5">
+                              This personalizes your deficiency report to your biology
+                            </p>
+                            <div className="flex flex-col gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Your first name *</label>
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. Priya"
+                                    value={answers.name}
+                                    onChange={e => setAnswers(prev => ({ ...prev, name: e.target.value }))}
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Your age *</label>
+                                  <input
+                                    type="number"
+                                    placeholder="e.g. 28"
+                                    min={10}
+                                    max={90}
+                                    value={answers.age}
+                                    onChange={e => setAnswers(prev => ({ ...prev, age: e.target.value }))}
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Email address *</label>
+                                <input
+                                  type="email"
+                                  placeholder="priya@example.com"
+                                  value={answers.email}
+                                  onChange={e => setAnswers(prev => ({ ...prev, email: e.target.value }))}
+                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Phone number *</label>
+                                <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition bg-white">
+                                  <select
+                                    className="bg-transparent pl-3 pr-2 py-2.5 text-sm text-gray-600 border-r border-gray-200 focus:outline-none shrink-0"
+                                    onChange={e => setAnswers(prev => ({ ...prev, phone: e.target.value + ' ' + prev.phone.split(' ').slice(1).join(' ') }))}
+                                    defaultValue="+91"
+                                  >
+                                    <option value="+91">🇮🇳 +91</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+44">🇬🇧 +44</option>
+                                    <option value="+971">🇦🇪 +971</option>
+                                    <option value="+65">🇸🇬 +65</option>
+                                    <option value="+61">🇦🇺 +61</option>
+                                  </select>
+                                  <input
+                                    type="tel"
+                                    placeholder="98765 43210"
+                                    className="flex-1 bg-transparent px-3 py-2.5 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none min-w-0"
+                                    onChange={e => setAnswers(prev => ({
+                                      ...prev,
+                                      phone: (prev.phone.split(' ')[0] || '+91') + ' ' + e.target.value
+                                    }))}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 2 — Diet & Health Goal */}
+                        {currentStep === 2 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 DIETARY PATTERN ANALYSIS
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5">
+                              Your diet &amp; health goal
+                            </h2>
+                            <div className="flex flex-col gap-4">
+                              <div>
+                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Diet type *</label>
+                                <select
+                                  value={answers.diet}
+                                  onChange={e => setAnswers(prev => ({ ...prev, diet: e.target.value }))}
+                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                >
+                                  <option value="" disabled>Select your diet...</option>
+                                  <option value="vegetarian">🥗 Vegetarian</option>
+                                  <option value="vegan">🌱 Vegan</option>
+                                  <option value="mixed">🍱 Mixed (veg + non-veg)</option>
+                                  <option value="non_veg">🍖 Non-vegetarian</option>
+                                  <option value="irregular">⏰ Irregular / skip meals often</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Primary health goal *</label>
+                                <select
+                                  value={answers.goal}
+                                  onChange={e => setAnswers(prev => ({ ...prev, goal: e.target.value }))}
+                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                >
+                                  <option value="" disabled>Select your goal...</option>
+                                  <option value="energy">⚡ Fix fatigue &amp; get more energy</option>
+                                  <option value="focus">🧠 Improve focus &amp; mental clarity</option>
+                                  <option value="skin_hair">💇 Better skin, hair &amp; nails</option>
+                                  <option value="recovery">💪 Faster recovery &amp; performance</option>
+                                  <option value="immunity">🛡️ Strengthen immunity</option>
+                                  <option value="hormones">⚖️ Hormonal balance &amp; mood</option>
+                                  <option value="wellness">🌿 Overall wellness</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 3 — Energy */}
+                        {currentStep === 3 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: B-VITAMINS · IRON · ADRENAL FUNCTION
@@ -271,8 +411,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 2 */}
-                        {currentStep === 2 && (
+                        {/* Step 4 — Sleep */}
+                        {currentStep === 4 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: MAGNESIUM · CORTISOL BALANCE · MELATONIN
@@ -301,8 +441,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 3 */}
-                        {currentStep === 3 && (
+                        {/* Step 5 — Physical symptoms */}
+                        {currentStep === 5 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: ZINC · BIOTIN · OMEGA-3 · COLLAGEN · VITAMIN C
@@ -337,8 +477,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 4 */}
-                        {currentStep === 4 && (
+                        {/* Step 6 — Mental clarity */}
+                        {currentStep === 6 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: VITAMIN D3 · B12 · OMEGA-3 FATTY ACIDS
@@ -367,8 +507,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 5 */}
-                        {currentStep === 5 && (
+                        {/* Step 7 — Recovery & immunity */}
+                        {currentStep === 7 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: VITAMIN C · D · AMINO ACIDS · ELECTROLYTES
@@ -421,81 +561,6 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 6 */}
-                        {currentStep === 6 && (
-                          <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
-                              🔬 PERSONALIZING YOUR ANALYSIS
-                            </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-2">
-                              Almost done — tell us about yourself
-                            </h2>
-                            <p className="text-gray-400 text-xs md:text-sm mb-5 md:mb-6">
-                              This personalizes your deficiency report to your biology and lifestyle
-                            </p>
-
-                            <div className="flex flex-col gap-3 md:gap-4">
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Your first name</label>
-                                <input
-                                  type="text"
-                                  placeholder="e.g. Priya"
-                                  value={answers.name}
-                                  onChange={e => setAnswers(prev => ({ ...prev, name: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Your age</label>
-                                <input
-                                  type="number"
-                                  placeholder="e.g. 28"
-                                  min={10}
-                                  max={90}
-                                  value={answers.age}
-                                  onChange={e => setAnswers(prev => ({ ...prev, age: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Diet type</label>
-                                <select
-                                  value={answers.diet}
-                                  onChange={e => setAnswers(prev => ({ ...prev, diet: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                >
-                                  <option value="" disabled>Select your diet...</option>
-                                  <option value="vegetarian">🥗 Vegetarian</option>
-                                  <option value="vegan">🌱 Vegan</option>
-                                  <option value="mixed">🍱 Mixed (veg + non-veg)</option>
-                                  <option value="non_veg">🍖 Non-vegetarian</option>
-                                  <option value="irregular">⏰ Irregular / skip meals often</option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Primary health goal</label>
-                                <select
-                                  value={answers.goal}
-                                  onChange={e => setAnswers(prev => ({ ...prev, goal: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                >
-                                  <option value="" disabled>Select your goal...</option>
-                                  <option value="energy">⚡ Fix fatigue &amp; get more energy</option>
-                                  <option value="focus">🧠 Improve focus &amp; mental clarity</option>
-                                  <option value="skin_hair">💇 Better skin, hair &amp; nails</option>
-                                  <option value="recovery">💪 Faster recovery &amp; performance</option>
-                                  <option value="immunity">🛡️ Strengthen immunity</option>
-                                  <option value="hormones">⚖️ Hormonal balance &amp; mood</option>
-                                  <option value="wellness">🌿 Overall wellness</option>
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
                       </motion.div>
                     </AnimatePresence>
                   </div>
@@ -510,7 +575,7 @@ export default function AssessmentPage() {
                       Back
                     </button>
 
-                    {currentStep < 6 ? (
+                    {currentStep < TOTAL_STEPS ? (
                       <button
                         onClick={() => { setDirection('next'); setCurrentStep(p => p + 1) }}
                         disabled={!isStepValid()}

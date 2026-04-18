@@ -1,7 +1,9 @@
 "use client";
 
-import { ArrowRight, Beaker } from "lucide-react";
+import { ArrowRight, Beaker, ClipboardCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
 
 const TAGS = [
   { emoji: "⏱️", label: "Takes 2 minutes" },
@@ -10,6 +12,15 @@ const TAGS = [
 ];
 
 export default function AssessmentHero() {
+  const { isSignedIn } = useUser();
+  const [hasResults, setHasResults] = useState(false);
+
+  useEffect(() => {
+    try {
+      setHasResults(!!localStorage.getItem("assessmentResult"));
+    } catch { /* ignore SSR */ }
+  }, []);
+
   return (
     <section className="relative bg-white py-14 sm:py-20 overflow-x-hidden" id="assessment">
 
@@ -104,34 +115,38 @@ export default function AssessmentHero() {
 
               <div className="relative z-10 flex flex-col items-center">
                 <div className="w-12 h-12 bg-[#00E676]/10 border border-[#00E676]/20 rounded-full flex items-center justify-center mb-4">
-                  <Beaker size={20} className="text-[#00E676]" />
+                  {hasResults ? <ClipboardCheck size={20} className="text-[#00E676]" /> : <Beaker size={20} className="text-[#00E676]" />}
                 </div>
 
                 <h2 className="text-xl font-bold mb-2">
-                  Free Nutrition Assessment
+                  {hasResults ? 'View Your Assessment Results' : 'Free Nutrition Assessment'}
                 </h2>
 
                 <p className="text-gray-400 text-sm mb-5">
-                  4 quick questions to identify your likely nutrient deficiencies.
+                  {hasResults
+                    ? 'Check your personalized deficiency report and recommendations.'
+                    : '4 quick questions to identify your likely nutrient deficiencies.'}
                 </p>
 
-                <div className="flex flex-wrap justify-center gap-2 mb-6">
-                  {TAGS.map(({ emoji, label }) => (
-                    <div
-                      key={label}
-                      className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs"
-                    >
-                      <span>{emoji}</span>
-                      {label}
-                    </div>
-                  ))}
-                </div>
+                {!hasResults && (
+                  <div className="flex flex-wrap justify-center gap-2 mb-6">
+                    {TAGS.map(({ emoji, label }) => (
+                      <div
+                        key={label}
+                        className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs"
+                      >
+                        <span>{emoji}</span>
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <a
-                  href="/assessment"
+                  href={hasResults ? "/assessment/results" : "/assessment"}
                   className="inline-flex items-center justify-center w-full gap-2 bg-[#00E676] text-black font-semibold px-6 py-3 rounded-full text-sm"
                 >
-                  Start Free Assessment
+                  {hasResults ? 'See My Test Results' : 'Start Free Assessment'}
                   <ArrowRight size={16} />
                 </a>
               </div>
@@ -157,35 +172,38 @@ export default function AssessmentHero() {
 
               <div className="relative z-10">
                 <div className="w-12 h-12 bg-[#00E676]/10 border border-[#00E676]/20 rounded-full flex items-center justify-center mb-5">
-                  <Beaker size={20} className="text-[#00E676]" />
+                  {hasResults ? <ClipboardCheck size={20} className="text-[#00E676]" /> : <Beaker size={20} className="text-[#00E676]" />}
                 </div>
 
                 <h2 className="text-2xl font-bold mb-3">
-                  Free Nutrition Assessment
+                  {hasResults ? 'View Your Assessment Results' : 'Free Nutrition Assessment'}
                 </h2>
 
                 <p className="text-gray-400 text-sm mb-6">
-                  4 quick questions to identify your likely nutrient deficiencies and get
-                  personalized vitamin suggestions.
+                  {hasResults
+                    ? 'Check your personalized deficiency report and recommendations.'
+                    : '4 quick questions to identify your likely nutrient deficiencies and get personalized vitamin suggestions.'}
                 </p>
 
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {TAGS.map(({ emoji, label }) => (
-                    <div
-                      key={label}
-                      className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs"
-                    >
-                      <span>{emoji}</span>
-                      {label}
-                    </div>
-                  ))}
-                </div>
+                {!hasResults && (
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {TAGS.map(({ emoji, label }) => (
+                      <div
+                        key={label}
+                        className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs"
+                      >
+                        <span>{emoji}</span>
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <a
-                  href="/assessment"
+                  href={hasResults ? "/assessment/results" : "/assessment"}
                   className="inline-flex items-center justify-center w-full gap-2 bg-[#00E676] text-black font-semibold px-6 py-3 rounded-full"
                 >
-                  Start Free Assessment
+                  {hasResults ? 'See My Test Results' : 'Start Free Assessment'}
                   <ArrowRight size={16} />
                 </a>
               </div>

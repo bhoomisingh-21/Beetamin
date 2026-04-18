@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Sparkles, ClipboardList, ArrowRight, Activity, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
   <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.27'/>
@@ -15,6 +16,7 @@ const HEADLINE_LINES = [
 ];
 
 export default function Hero() {
+  const { isSignedIn, user } = useUser();
   let wordIndex = 0;
 
   return (
@@ -42,7 +44,9 @@ export default function Hero() {
               className="inline-flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 text-[10px] font-bold tracking-[0.2em] uppercase rounded-full px-4 py-1.5 mb-6"
             >
               <Sparkles size={10} className="fill-emerald-400" />
-              INDIA&apos;S #1 PERSONALIZED NUTRITION SYSTEM
+              {isSignedIn && user?.firstName
+                ? `👋 WELCOME BACK, ${user.firstName.toUpperCase()}!`
+                : "INDIA'S #1 PERSONALIZED NUTRITION SYSTEM"}
             </motion.span>
 
             <h1 className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl">
@@ -104,10 +108,10 @@ export default function Hero() {
               </a>
 
               <a
-                href="/assessment"
+                href={isSignedIn ? "/booking/dashboard" : "/booking"}
                 className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-white/10 transition-all w-full sm:w-auto text-sm sm:text-base"
               >
-                Book a Nutritionist
+                {isSignedIn ? "My Sessions" : "Book a Nutritionist"}
                 <ArrowRight size={17} />
               </a>
             </motion.div>
@@ -167,10 +171,10 @@ export default function Hero() {
               </a>
 
               <a
-                href="/assessment"
+                href={isSignedIn ? "/booking/dashboard" : "/booking"}
                 className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 py-4 text-sm"
               >
-                Book a Nutritionist
+                {isSignedIn ? "My Sessions" : "Book a Nutritionist"}
                 <ArrowRight size={16} />
               </a>
             </div>
