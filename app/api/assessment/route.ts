@@ -1,11 +1,46 @@
 import Groq from 'groq-sdk'
 import { NextRequest, NextResponse } from 'next/server'
+import { validateAssessmentInput } from '@/lib/utils'
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
+const rateMap = new Map<string, { count: number; reset: number }>()
+
+function checkRateLimit(ip: string, limit: number, windowMs: number): boolean {
+  const now = Date.now()
+  const entry = rateMap.get(ip)
+
+  if (!entry || now > entry.reset) {
+    rateMap.set(ip, { count: 1, reset: now + windowMs })
+    return true
+  }
+
+  if (entry.count >= limit) return false
+
+  entry.count++
+  return true
+}
+
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { answers, name, age, diet, goal } = body
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+  const allowed = checkRateLimit(ip, 3, 60_000)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please wait.' }, { status: 429 })
+  }
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
+  }
+
+  const validation = validateAssessmentInput(body)
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error }, { status: 400 })
+  }
+
+  const { answers, name, age, diet, goal } = validation.data
 
   const systemPrompt = `You are Dr. Meera Krishnan, Senior Clinical Nutritionist at TheBeetamin. You are brutally honest, highly specific, and never give generic advice. Your reports read like they came from a real doctor who studied this exact person's answers.
 
@@ -115,12 +150,12 @@ Diet type: ${diet}
 Primary health goal: ${goal}
 
 THEIR EXACT ANSWERS:
-- Energy at 2:30 PM: ${answers.energyLevel}
-- Sleep quality on waking: ${answers.sleepQuality}
-- Physical/dermal symptoms they selected: ${Array.isArray(answers.physicalSymptoms) ? answers.physicalSymptoms.join(', ') : answers.physicalSymptoms}
-- Cognitive clarity during focus: ${answers.mentalClarity}
-- Muscle soreness after light activity: ${answers.muscleRecovery}
-- Sick (colds/flu) in last 6 months: ${answers.immuneHealth}
+- Energy at 2:30 PM: ${String(answers.energyLevel ?? '')}
+- Sleep quality on waking: ${String(answers.sleepQuality ?? '')}
+- Physical/dermal symptoms they selected: ${Array.isArray(answers.physicalSymptoms) ? answers.physicalSymptoms.join(', ') : String(answers.physicalSymptoms ?? '')}
+- Cognitive clarity during focus: ${String(answers.mentalClarity ?? '')}
+- Muscle soreness after light activity: ${String(answers.muscleRecovery ?? '')}
+- Sick (colds/flu) in last 6 months: ${String(answers.immuneHealth ?? '')}
 
 Use the scoring formula and answer interpretation guide to generate a precise, honest, personalized report for ${name}. Reference their exact answers in your reasoning. If their answers suggest they are healthy, say so clearly with a low score.`
 

@@ -179,8 +179,9 @@ export default function NutritionistDashboard() {
       if (!isNutritionistEmail(email)) {
         supabase.auth.signOut().then(() => {
           if (cancelled) return
-          document.cookie = 'nut-email=; path=/; max-age=0'
-          router.replace('/sign-in')
+          void fetch('/api/auth/nutritionist-session', { method: 'DELETE' }).finally(() => {
+            router.replace('/sign-in')
+          })
         })
         return
       }
@@ -211,7 +212,7 @@ export default function NutritionistDashboard() {
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    document.cookie = 'nut-email=; path=/; max-age=0'
+    await fetch('/api/auth/nutritionist-session', { method: 'DELETE' })
     router.push('/sign-in')
   }
 
@@ -448,7 +449,9 @@ export default function NutritionistDashboard() {
             appt={selectedAppt}
             nutEmail={nutEmail}
             onClose={() => setSelectedAppt(null)}
-            onDone={() => load(nutEmail)}
+            onDone={() => {
+              void getNutritionistDashboardByEmail(nutEmail).then(setDashboard)
+            }}
           />
         )}
       </AnimatePresence>

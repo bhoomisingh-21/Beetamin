@@ -59,7 +59,7 @@ function NutritionistLogin({ onSwitchToUser }: { onSwitchToUser: () => void }) {
     if (!password) { setError('Please enter your password.'); return }
     setLoading(true)
     setError('')
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     })
@@ -72,9 +72,24 @@ function NutritionistLogin({ onSwitchToUser }: { onSwitchToUser: () => void }) {
       }
       return
     }
-    // Set a cookie so the middleware can detect the Supabase session.
-    // (Supabase browser client uses localStorage, not cookies, by default.)
-    document.cookie = `nut-email=${encodeURIComponent(email.trim().toLowerCase())}; path=/; SameSite=Lax; max-age=86400`
+    const accessToken = signInData.session?.access_token
+    if (!accessToken) {
+      setError('Could not establish a session. Try again.')
+      return
+    }
+    const sessionRes = await fetch('/api/auth/nutritionist-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        access_token: accessToken,
+      }),
+    })
+    if (!sessionRes.ok) {
+      const errJson = (await sessionRes.json().catch(() => ({}))) as { error?: string }
+      setError(errJson.error || 'Could not complete sign-in. Try again.')
+      return
+    }
     router.push('/nutritionist-dashboard')
   }
 
@@ -388,8 +403,7 @@ export default function SignInPage() {
             <button
               onClick={() => {
                 setIsNutritionist(false)
-                // Clear any stale nutritionist cookie so patients aren't misrouted
-                document.cookie = 'nut-email=; path=/; max-age=0'
+                void fetch('/api/auth/nutritionist-session', { method: 'DELETE' })
               }}
               className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${!isNutritionist ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >

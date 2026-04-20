@@ -20,6 +20,8 @@ export type ClientRow = {
   sessions_remaining: number
   status: 'active' | 'expired' | 'completed'
   assessment_goal?: string
+  assessment_result?: unknown
+  assessment_meta?: unknown
 }
 
 export type AppointmentRow = {
@@ -73,6 +75,48 @@ export async function checkClientEligibility(clerkUserId: string) {
     return { eligible: false, reason: 'no_sessions', client }
   }
   return { eligible: true, reason: 'ok', client }
+}
+
+export async function saveAssessmentToProfile(input: {
+  clerkUserId: string
+  assessmentResult: unknown
+  assessmentMeta: unknown | null
+}) {
+  const { userId } = await auth()
+  if (!userId || userId !== input.clerkUserId) throw new Error('Not authenticated')
+
+  const existing = await getClientByClerkId(userId)
+  const patch = {
+    assessment_result: input.assessmentResult,
+    assessment_meta: input.assessmentMeta,
+  }
+
+  if (existing) {
+    const { error } = await supabaseAdmin.from('clients').update(patch).eq('clerk_user_id', userId)
+    if (error) throw new Error(error.message)
+    return
+  }
+
+  const clerkUser = await currentUser()
+  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? `noemail_${userId}@beetamin.internal`
+  const startDate = new Date()
+  const endDate = new Date()
+  endDate.setMonth(endDate.getMonth() + 3)
+
+  const { error } = await supabaseAdmin.from('clients').insert({
+    clerk_user_id: userId,
+    name: clerkUser?.fullName || clerkUser?.firstName || 'User',
+    email,
+    phone: '',
+    ...patch,
+    plan_start_date: startDate.toISOString().split('T')[0],
+    plan_end_date: endDate.toISOString().split('T')[0],
+    status: 'active',
+    sessions_total: 6,
+    sessions_used: 0,
+    sessions_remaining: 6,
+  })
+  if (error) throw new Error(error.message)
 }
 
 export async function createClientProfile(data: {

@@ -1,17 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { Resend } from 'resend'
+import { validateLeadInput } from '@/lib/utils'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+const rateMap = new Map<string, { count: number; reset: number }>()
+
+function checkRateLimit(ip: string, limit: number, windowMs: number): boolean {
+  const now = Date.now()
+  const entry = rateMap.get(ip)
+
+  if (!entry || now > entry.reset) {
+    rateMap.set(ip, { count: 1, reset: now + windowMs })
+    return true
+  }
+
+  if (entry.count >= limit) return false
+
+  entry.count++
+  return true
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { name, email, phone, source } = body
-
-    if (!name || !email) {
-      return NextResponse.json({ error: 'name and email required' }, { status: 400 })
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    const allowed = checkRateLimit(ip, 5, 60_000)
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please wait.' }, { status: 429 })
     }
+
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
+    }
+
+    const validation = validateLeadInput(body)
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+
+    const { name, email, phone, source } = validation.data
 
     await supabaseAdmin.from('leads').upsert({ name, email, phone, source }, { onConflict: 'email' })
 

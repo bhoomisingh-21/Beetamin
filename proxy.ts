@@ -1,19 +1,21 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { ALLOWED_NUTRITIONIST_EMAILS } from '@/lib/nutritionist-config'
+import { verifySignedCookieAsync } from '@/lib/nut-session-crypto-edge'
 
 // ── Nutritionist session helper ──────────────────────────────────────────────
-// After sign-in, the client sets a `nut-email` cookie so this middleware can
-// detect the session. (Supabase browser client uses localStorage by default,
-// not cookies, so we can't read the Supabase JWT here directly.)
-function getNutEmailFromCookies(req: NextRequest): string | null {
-  const cookie = req.cookies.get('nut-email')
+// HttpOnly `nut-session` cookie is set by POST /api/auth/nutritionist-session
+// after Supabase login; value is HMAC-signed server-side (see nut-session-crypto-*).
+async function getVerifiedNutEmailFromCookies(req: NextRequest): Promise<string | null> {
+  const secret = process.env.COOKIE_SECRET
+  if (!secret) return null
+  const cookie = req.cookies.get('nut-session')
   if (!cookie?.value) return null
-  try {
-    return decodeURIComponent(cookie.value).toLowerCase().trim()
-  } catch {
-    return null
-  }
+  const email = await verifySignedCookieAsync(cookie.value, secret)
+  if (!email) return null
+  const normalized = email.toLowerCase().trim()
+  if (!ALLOWED_NUTRITIONIST_EMAILS.includes(normalized)) return null
+  return normalized
 }
 
 // ── Clerk-protected user routes ──────────────────────────────────────────────
@@ -33,8 +35,8 @@ export default clerkMiddleware(async (auth, req) => {
   // ── Nutritionist gate (Supabase session) ──
   // Skip if Clerk has authenticated this request — that means it's a patient, not a nutritionist.
   const { userId } = await auth()
-  const nutEmail = getNutEmailFromCookies(req)
-  if (!userId && nutEmail && ALLOWED_NUTRITIONIST_EMAILS.includes(nutEmail.toLowerCase().trim())) {
+  const nutEmail = await getVerifiedNutEmailFromCookies(req)
+  if (!userId && nutEmail) {
     // Allow: dashboard, sign-in (for logout redirect), and internal Next.js paths
     const allowed =
       path.startsWith('/nutritionist-dashboard') ||

@@ -8,7 +8,7 @@ import {
   CheckCircle, Loader2, Calendar, Clock,
   Shield, Star, ArrowRight, Leaf, User,
 } from 'lucide-react'
-import { getClientByClerkId } from '@/lib/booking-actions'
+import { getClientByClerkId, saveAssessmentToProfile } from '@/lib/booking-actions'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
@@ -43,6 +43,22 @@ export default function BookingPage() {
 
     ;(async () => {
       try {
+        const assessmentResult = localStorage.getItem('assessmentResult')
+        const assessmentMeta = localStorage.getItem('assessmentMeta')
+        if (assessmentResult && user?.id) {
+          try {
+            await saveAssessmentToProfile({
+              clerkUserId: user.id,
+              assessmentResult: JSON.parse(assessmentResult) as unknown,
+              assessmentMeta: assessmentMeta ? (JSON.parse(assessmentMeta) as unknown) : null,
+            })
+            localStorage.removeItem('assessmentResult')
+            localStorage.removeItem('assessmentMeta')
+          } catch {
+            // keep localStorage if persist fails (e.g. offline); user can retry
+          }
+        }
+
         // Check for a post-login destination saved by the ₹29 button
         const postLoginDest = sessionStorage.getItem('postLoginDest')
         if (postLoginDest === '29-plan') {
