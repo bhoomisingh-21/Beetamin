@@ -333,10 +333,10 @@ export default function SignInPage() {
     !ALLOWED_NUTRITIONIST_EMAILS.includes(clerkEmail.toLowerCase().trim())
 
   return (
-    <div className="min-h-screen flex">
-      {/* ── LEFT PANEL ─────────────────────────────────────────────────── */}
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      {/* ── LEFT PANEL (desktop only) ──────────────────────────────────── */}
       <div
-        className="hidden lg:flex lg:w-[52%] flex-col justify-between bg-[#010d06] px-12 py-10 relative overflow-hidden"
+        className="relative hidden flex-col justify-between overflow-hidden bg-[#010d06] px-12 py-10 lg:flex lg:w-[52%]"
         style={{
           backgroundImage: `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'70\' viewBox=\'0 0 60 70\'><path d=\'M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z\' fill=\'none\' stroke=\'%2322C55E\' stroke-width=\'0.5\' stroke-opacity=\'0.15\'/></svg>')}")`,
           backgroundSize: '60px 70px',
@@ -387,19 +387,21 @@ export default function SignInPage() {
       </div>
 
       {/* ── RIGHT PANEL ────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-white px-6 py-12 min-h-screen">
-        {/* Mobile logo */}
-        <div className="flex items-center justify-between w-full max-w-[420px] mb-8 lg:hidden">
+      <div className="flex min-h-screen w-full flex-1 flex-col items-center justify-start overflow-y-auto bg-white px-6 py-8 lg:justify-center lg:px-12 lg:py-12">
+        {/* Mobile: logo + back (left panel is hidden below lg) */}
+        <div className="mb-8 flex w-full max-w-[420px] items-center justify-between lg:hidden">
           <a href="/" className="flex items-center gap-2">
-            <Leaf className="text-emerald-500" size={20} />
-            <span className="text-gray-900 font-bold text-lg">TheBeetamin</span>
+            <Leaf className="text-emerald-500" size={22} />
+            <span className="text-lg font-bold text-gray-900">TheBeetamin</span>
           </a>
-          <a href="/" className="text-gray-400 hover:text-gray-600 text-sm">← Back</a>
+          <a href="/" className="text-muted-foreground text-sm hover:text-gray-600">
+            ← Back to home
+          </a>
         </div>
 
         <div className="w-full max-w-[420px]">
           {/* ── Toggle ── */}
-          <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+          <div className="mb-6 flex w-full gap-0 rounded-full border border-gray-200 bg-gray-50 p-1 lg:rounded-xl lg:border-0 lg:bg-gray-100">
             <button
               onClick={() => {
                 setIsNutritionist(false)
@@ -449,14 +451,15 @@ export default function SignInPage() {
                 <p className="text-gray-500 text-sm mt-1">Get started with your nutrition transformation.</p>
               </div>
 
-              <SignIn
-                key="patient"
-                forceRedirectUrl="/booking"
-                appearance={{
-                  layout: { logoPlacement: 'none', socialButtonsVariant: 'blockButton' },
-                  elements: {
-                    rootBox: 'w-full',
-                    card: 'shadow-none p-0 gap-0 bg-transparent',
+              <div className="clerk-sign-in-wrapper w-full">
+                <SignIn
+                  key="patient"
+                  forceRedirectUrl="/booking"
+                  appearance={{
+                    layout: { logoPlacement: 'none', socialButtonsVariant: 'blockButton' },
+                    elements: {
+                      rootBox: 'w-full',
+                      card: 'shadow-none p-0 gap-0 bg-transparent',
                     headerTitle: 'hidden',
                     headerSubtitle: 'hidden',
                     header: 'hidden',
@@ -474,9 +477,10 @@ export default function SignInPage() {
                     formFieldInputShowPasswordButton: 'text-gray-400 hover:text-gray-600',
                   },
                 }}
-              />
+                />
+              </div>
 
-              <div className="mt-6 flex items-center justify-center gap-4 flex-wrap">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                 <span className="flex items-center gap-1.5 text-gray-400 text-xs">
                   <Shield size={12} className="text-emerald-500" />HIPAA-safe & secure
                 </span>

@@ -133,3 +133,13 @@
     scroll-behavior: smooth;
   }
 }
+
+/* Sign-in page: full-width Clerk on small screens */
+.clerk-sign-in-wrapper .cl-rootBox {
+  width: 100% !important;
+}
+.clerk-sign-in-wrapper .cl-card {
+  width: 100% !important;
+  box-shadow: none !important;
+  border: none !important;
+}
