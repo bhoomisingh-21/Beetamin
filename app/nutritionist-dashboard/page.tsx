@@ -316,23 +316,23 @@ export default function NutritionistDashboard() {
           <p className="text-gray-400 mt-1 text-sm sm:text-base">Start the day with managing new appointments</p>
         </motion.div>
 
-        {/* Stat cards */}
+        {/* Stat cards — always 3 columns */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8"
+          className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8"
         >
           {[
-            { icon: <CalendarCheck size={22} />, value: dashboard.upcoming.length, label: 'Scheduled', sub: 'Confirmed sessions', bg: 'bg-amber-500/10 border-amber-500/20', icon_color: 'text-amber-400' },
-            { icon: <Clock size={22} />,         value: dashboard.pending.length,  label: 'Pending',   sub: 'Awaiting your action', bg: 'bg-orange-500/10 border-orange-500/20', icon_color: 'text-orange-400' },
-            { icon: <TriangleAlert size={22} />, value: allByTab.cancelled.length, label: 'Cancelled', sub: 'Rejected or cancelled', bg: 'bg-red-500/10 border-red-500/20',       icon_color: 'text-red-400' },
+            { icon: <CalendarCheck className="w-5 h-5 sm:w-[22px] sm:h-[22px] shrink-0" strokeWidth={2} />, value: dashboard.upcoming.length, label: 'Scheduled', sub: 'Confirmed sessions', bg: 'bg-amber-500/10 border-amber-500/20', icon_color: 'text-amber-400' },
+            { icon: <Clock className="w-5 h-5 sm:w-[22px] sm:h-[22px] shrink-0" strokeWidth={2} />,         value: dashboard.pending.length,  label: 'Pending',   sub: 'Awaiting your action', bg: 'bg-orange-500/10 border-orange-500/20', icon_color: 'text-orange-400' },
+            { icon: <TriangleAlert className="w-5 h-5 sm:w-[22px] sm:h-[22px] shrink-0" strokeWidth={2} />, value: allByTab.cancelled.length, label: 'Cancelled', sub: 'Rejected or cancelled', bg: 'bg-red-500/10 border-red-500/20',       icon_color: 'text-red-400' },
           ].map((s) => (
-            <div key={s.label} className={`border rounded-2xl p-4 sm:p-5 ${s.bg}`}>
+            <div key={s.label} className={`min-w-0 border rounded-xl sm:rounded-2xl p-3 sm:p-5 ${s.bg}`}>
               <div className={s.icon_color}>{s.icon}</div>
-              <p className="text-white font-black text-3xl sm:text-4xl mt-2">{s.value}</p>
-              <p className="text-white/90 text-sm font-semibold mt-1">{s.label}</p>
-              <p className="text-gray-500 text-xs mt-0.5 leading-snug">{s.sub}</p>
+              <p className="text-white font-black text-2xl sm:text-4xl mt-1.5 sm:mt-2 tabular-nums">{s.value}</p>
+              <p className="text-white/90 text-xs sm:text-sm font-semibold mt-0.5 sm:mt-1 truncate">{s.label}</p>
+              <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5 leading-snug line-clamp-2">{s.sub}</p>
             </div>
           ))}
         </motion.div>
