@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Loader2 } from 'lucide-react'
+import { ChevronLeft, Loader2, Leaf } from 'lucide-react'
 import { ReportGeneratingLoader } from '@/components/ReportGeneratingLoader'
 import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from '@/lib/recovery-report-types'
 
@@ -157,7 +157,7 @@ export default function DetailedAssessmentPage() {
   }, [symptoms])
 
   async function handleGenerateReport() {
-    // TODO: Add Razorpay payment gate here before calling generate-report API
+    // TODO: Add Razorpay "Confirm & pay" step here before calling generate-report (purchase page flow).
     setGenError('')
     if (!isSignedIn) {
       router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))
@@ -202,7 +202,7 @@ export default function DetailedAssessmentPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
       </div>
     )
@@ -210,16 +210,26 @@ export default function DetailedAssessmentPage() {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 text-center">
-        <p className="text-gray-800 font-semibold">Sign in to continue</p>
-        <p className="mt-2 text-sm text-gray-500">We need your account to save and deliver your recovery plan.</p>
-        <button
-          type="button"
-          onClick={() => router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))}
-          className="mt-6 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white"
-        >
-          Sign in
-        </button>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex items-center justify-between">
+          <a href="/" className="flex items-center gap-2">
+            <Leaf className="text-emerald-500 shrink-0" size={18} />
+            <span className="text-gray-900 font-bold">TheBeetamin</span>
+          </a>
+        </header>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <p className="text-gray-800 font-semibold">Sign in to continue</p>
+          <p className="mt-2 text-sm text-gray-500 max-w-sm">
+            We need your account to save and email your personalised recovery PDF.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))}
+            className="mt-6 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm"
+          >
+            Sign in
+          </button>
+        </div>
       </div>
     )
   }
@@ -235,35 +245,65 @@ export default function DetailedAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {phase === 'quiz' && (
-        <>
-          <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 backdrop-blur px-4 py-3">
-            <div className="mx-auto flex max-w-lg items-center gap-3">
-              <button type="button" onClick={goBack} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
-                <ChevronLeft className="h-4 w-4" />
-                Back
-              </button>
-              <div className="flex-1">
-                <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
-                  <div
-                    className="h-full rounded-full bg-emerald-600 transition-all duration-300"
-                    style={{ width: `${(questionNumber / totalQuestions) * 100}%` }}
-                  />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <a href="/" className="flex items-center gap-2">
+          <Leaf className="text-emerald-500 shrink-0" size={18} />
+          <span className="text-gray-900 font-bold">TheBeetamin</span>
+        </a>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push('/assessment/results')}
+            className="text-sm text-gray-500 hover:text-gray-800 transition"
+          >
+            ← Results
+          </button>
+          {user?.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.imageUrl} alt="" className="w-8 h-8 rounded-full ring-2 ring-gray-100" />
+          )}
+        </div>
+      </header>
+
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+        <div className="flex-1 flex flex-col items-center px-4 py-6 sm:py-8 lg:py-12 lg:justify-center overflow-y-auto">
+          <div className="w-full max-w-xl mx-auto">
+            {phase === 'quiz' && (
+              <>
+                <div className="hidden lg:block mb-6 text-center lg:text-left">
+                  <h2 className="text-2xl font-black text-gray-900">Personalised recovery intake</h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    A few follow-up questions — same calm layout as your profile setup.
+                  </p>
                 </div>
-                <p className="mt-1 text-center text-[11px] font-medium text-gray-500">
-                  {questionNumber} / {totalQuestions}
-                </p>
-              </div>
-            </div>
-          </header>
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                  <div className="flex items-center gap-3 sm:gap-4 mb-5">
+                    <button
+                      type="button"
+                      onClick={goBack}
+                      className="flex shrink-0 items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">Back</span>
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          className="h-full rounded-full bg-emerald-600 transition-all duration-300"
+                          style={{ width: `${(questionNumber / totalQuestions) * 100}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-center text-[11px] font-medium text-gray-500 sm:text-xs">
+                        Question {questionNumber} of {totalQuestions}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-center sm:text-left text-xs font-bold uppercase tracking-widest text-emerald-700">
+                    {CATEGORY_NAMES[questionNumber] ?? 'Assessment'}
+                  </p>
 
-          <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6">
-            <p className="text-center text-xs font-bold uppercase tracking-widest text-emerald-700">
-              {CATEGORY_NAMES[questionNumber] ?? 'Assessment'}
-            </p>
-
-            <AnimatePresence mode="wait" custom={direction}>
+                  <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={`${currentKey}-${index}`}
                 custom={direction}
@@ -567,45 +607,103 @@ export default function DetailedAssessmentPage() {
                   </div>
                 )}
               </motion.div>
-            </AnimatePresence>
-          </main>
-        </>
-      )}
+                  </AnimatePresence>
+                </div>
+              </>
+            )}
 
-      {phase === 'summary' && (
-        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-10">
-          <button type="button" onClick={() => { setPhase('quiz'); setIndex(keys.length - 1) }} className="mb-6 flex items-center gap-1 text-sm text-gray-600">
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </button>
-          <div className="text-center">
-            <p className="text-emerald-600 font-bold text-sm">Assessment Complete ✓</p>
-            <h1 className="mt-2 text-2xl font-black text-gray-900">We&apos;re ready to build your plan</h1>
-            <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-              We have everything we need to build your personalised recovery plan.
-            </p>
+            {phase === 'summary' && (
+              <>
+                <div className="hidden lg:block mb-6 text-center lg:text-left">
+                  <h2 className="text-2xl font-black text-gray-900">Almost there</h2>
+                  <p className="text-gray-500 text-sm mt-1">Confirm to generate your doctor-reviewed PDF.</p>
+                </div>
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhase('quiz')
+                      setIndex(keys.length - 1)
+                    }}
+                    className="mb-6 flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back
+                  </button>
+                  <div className="text-center sm:text-left">
+                    <p className="text-emerald-600 font-bold text-sm">Assessment Complete ✓</p>
+                    <h1 className="mt-2 text-2xl font-black text-gray-900">We&apos;re ready to build your plan</h1>
+                    <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                      We have everything we need to build your personalised recovery plan.
+                    </p>
+                  </div>
+                  {topTags.length > 0 && (
+                    <div className="mt-8 flex flex-wrap justify-center sm:justify-start gap-2">
+                      {topTags.map((t) => (
+                        <span
+                          key={t}
+                          className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-900"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {genError && <p className="mt-6 text-center sm:text-left text-sm text-red-600">{genError}</p>}
+                  <button
+                    type="button"
+                    onClick={handleGenerateReport}
+                    className="mt-10 w-full rounded-2xl bg-[#14532d] py-4 text-base font-bold text-white shadow-lg"
+                  >
+                    Confirm &amp; get my PDF
+                  </button>
+                  <p className="mt-3 text-center sm:text-left text-xs text-gray-500">
+                    For now we prepare your report immediately. Secure checkout will appear here before payment goes live.
+                  </p>
+                  <p className="mt-8 text-center sm:text-left text-xs text-gray-400">
+                    Signed in as {user?.primaryEmailAddress?.emailAddress}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
-          {topTags.length > 0 && (
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
-              {topTags.map((t) => (
-                <span key={t} className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-900">
-                  {t}
-                </span>
+        </div>
+
+        <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden bg-[#0A1A10]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=900&auto=format&fit=crop&q=80"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-35"
+          />
+          <div className="relative z-10 flex flex-col justify-center px-10 xl:px-12 py-16">
+            <span className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold tracking-widest uppercase rounded-full px-3 py-1 mb-6 w-fit">
+              Personalised PDF
+            </span>
+            <h2 className="text-white font-black text-3xl leading-tight">
+              Your recovery plan
+              <br />
+              <span className="text-emerald-400">tailored to you.</span>
+            </h2>
+            <p className="text-gray-400 text-sm mt-4 leading-relaxed max-w-sm">
+              Answers you give here are combined with your free deficiency report so the final document matches your
+              diet, lifestyle, and goals.
+            </p>
+            <ul className="mt-8 space-y-4">
+              {[
+                '7-day Indian meal framework',
+                'Supplement guidance with brands',
+                'Daily routine you can actually follow',
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0" />
+                  <span className="text-gray-300 text-sm">{item}</span>
+                </li>
               ))}
-            </div>
-          )}
-          {genError && <p className="mt-6 text-center text-sm text-red-600">{genError}</p>}
-          <button
-            type="button"
-            onClick={handleGenerateReport}
-            className="mt-10 w-full rounded-2xl bg-[#14532d] py-4 text-base font-bold text-white shadow-lg"
-          >
-            Generate My Report
-          </button>
-          <p className="mt-3 text-center text-xs text-gray-500">Your PDF will be ready in about 30 seconds</p>
-          <p className="mt-8 text-center text-xs text-gray-400">Signed in as {user?.primaryEmailAddress?.emailAddress}</p>
-        </main>
-      )}
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

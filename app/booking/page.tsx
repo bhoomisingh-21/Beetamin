@@ -45,6 +45,29 @@ export default function BookingPage() {
       try {
         const assessmentResult = localStorage.getItem('assessmentResult')
         const assessmentMeta = localStorage.getItem('assessmentMeta')
+
+        // Recovery-plan flow from results: go to extra questions first (skip purchase page for now)
+        const postLoginDest = sessionStorage.getItem('postLoginDest')
+        if (postLoginDest === '29-plan') {
+          sessionStorage.removeItem('postLoginDest')
+          if (assessmentResult && user?.id) {
+            try {
+              await saveAssessmentToProfile({
+                clerkUserId: user.id,
+                assessmentResult: JSON.parse(assessmentResult) as unknown,
+                assessmentMeta: assessmentMeta ? (JSON.parse(assessmentMeta) as unknown) : null,
+              })
+              localStorage.removeItem('assessmentResult')
+              localStorage.removeItem('assessmentMeta')
+            } catch {
+              // keep localStorage if persist fails so /detailed-assessment can still read it
+            }
+          }
+          clearTimeout(fallback)
+          router.push('/detailed-assessment')
+          return
+        }
+
         if (assessmentResult && user?.id) {
           try {
             await saveAssessmentToProfile({
@@ -57,15 +80,6 @@ export default function BookingPage() {
           } catch {
             // keep localStorage if persist fails (e.g. offline); user can retry
           }
-        }
-
-        // Check for a post-login destination saved by the ₹29 button
-        const postLoginDest = sessionStorage.getItem('postLoginDest')
-        if (postLoginDest === '29-plan') {
-          sessionStorage.removeItem('postLoginDest')
-          clearTimeout(fallback)
-          router.push('/assessment/purchase')
-          return
         }
 
         // Regular users (Clerk) are NEVER nutritionists — nutritionists use Supabase auth

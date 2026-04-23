@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   ChevronLeft,
 } from 'lucide-react'
-import { UpgradeCard } from '@/components/UpgradeCard'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
   <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.25'/>
@@ -73,7 +72,7 @@ function getOfferHeadline(score: number, name: string, deficiencies: any[]) {
     return {
       h2: `Protect What's Working.`,
       h2sub: `Build on It.`,
-      desc: `${firstName}'s profile is healthy — but optimal is different from average. Your ₹29 plan locks in your current status and builds the margins that prevent future gaps.`,
+      desc: `${firstName}'s profile is healthy — but optimal is different from average. Your ₹39 plan locks in your current status and builds the margins that prevent future gaps.`,
     }
   }
   const topNutrient = deficiencies?.[0]?.nutrient || 'your deficiencies'
@@ -81,7 +80,7 @@ function getOfferHeadline(score: number, name: string, deficiencies: any[]) {
     return {
       h2: `Catch It Early.`,
       h2sub: `Fix It Permanently.`,
-      desc: `${firstName}'s ${topNutrient} gap is early-stage — the easiest and cheapest time to fix it. Your ₹29 plan gives you the exact protocol before it becomes a real problem.`,
+      desc: `${firstName}'s ${topNutrient} gap is early-stage — the easiest and cheapest time to fix it. Your ₹39 plan gives you the exact protocol before it becomes a real problem.`,
     }
   }
   return {
@@ -98,13 +97,13 @@ export default function ResultsPage() {
   const router = useRouter()
   const { isSignedIn } = useUser()
 
-  function handle29Plan() {
+  function handleRecoveryPlanCta() {
     if (!isSignedIn) {
       sessionStorage.setItem('postLoginDest', '29-plan')
       router.push('/sign-in')
       return
     }
-    router.push('/assessment/purchase')
+    router.push('/detailed-assessment')
   }
 
   useEffect(() => {
@@ -434,8 +433,8 @@ export default function ResultsPage() {
                 <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Success rate</p>
               </div>
               <div>
-                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹29</p>
-                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">One time</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹39</p>
+                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Recovery PDF</p>
               </div>
             </div>
 
@@ -474,22 +473,17 @@ export default function ResultsPage() {
               </p>
 
               <p className="line-through text-gray-400 text-sm md:text-lg">₹299</p>
-              <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹29</p>
+              <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹39</p>
               <p className="text-emerald-600 text-xs sm:text-sm font-semibold mt-1.5">
                 {isHealthy
                   ? `Optimization plan for ${meta.name || 'you'}`
                   : `Recovery plan for ${meta.name || 'you'}'s ${result.primaryDeficiencies?.[0]?.nutrient || 'deficiencies'}`}
               </p>
 
-              <div className="mt-4 md:mt-6">
-                <p className="text-xs text-gray-500 font-medium">Secure Payment via Razorpay</p>
-                <div className="flex justify-center items-center gap-2.5 mt-2.5 flex-wrap">
-                  <img src="https://cdn.simpleicons.org/googlepay" className="h-4 sm:h-5 md:h-6" alt="Google Pay" />
-                  <img src="https://cdn.simpleicons.org/phonepe" className="h-4 sm:h-5 md:h-6" alt="PhonePe" />
-                  <img src="https://cdn.simpleicons.org/paytm" className="h-4 sm:h-5 md:h-6" alt="Paytm" />
-                  <img src="https://cdn.simpleicons.org/visa" className="h-4 sm:h-5 md:h-6" alt="Visa" />
-                  <img src="https://cdn.simpleicons.org/mastercard" className="h-4 sm:h-5 md:h-6" alt="Mastercard" />
-                </div>
+              <div className="mt-4 md:mt-6 rounded-xl bg-emerald-50/80 border border-emerald-100 px-3 py-3 sm:px-4">
+                <p className="text-xs sm:text-sm text-emerald-900 font-medium leading-relaxed">
+                  Next: a short follow-up questionnaire (about 2 minutes). Your personalised PDF is prepared right after you confirm — secure payment will be added here soon.
+                </p>
               </div>
 
               <p className="mt-3 text-xs text-gray-500">
@@ -497,20 +491,20 @@ export default function ResultsPage() {
               </p>
 
               <button
-                onClick={handle29Plan}
+                onClick={handleRecoveryPlanCta}
                 className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                🔒 GET MY PERSONALIZED PLAN — ₹29
+                GET MY PERSONALISED PLAN — ₹39
               </button>
 
               <p className="mt-3 text-[10px] sm:text-xs text-gray-400">
-                🔐 100% Secure • No hidden charges • Instant access
+                🔐 Private • Doctor-reviewed format • PDF to your inbox
               </p>
 
               <div className="mt-2 flex justify-center gap-2.5 text-[10px] text-gray-400 flex-wrap">
-                <span>✔ Safe Checkout</span>
-                <span>✔ Instant Delivery</span>
-                <span>✔ Verified Plan</span>
+                <span>✔ Quick questions first</span>
+                <span>✔ Instant PDF</span>
+                <span>✔ Payment step coming soon</span>
               </div>
 
               <div className="mt-4 pt-4 border-t border-gray-100">
@@ -529,10 +523,6 @@ export default function ResultsPage() {
               </div>
             </div>
           </motion.div>
-
-          <div className="col-span-full mt-12 md:mt-16 max-w-4xl mx-auto w-full">
-            <UpgradeCard />
-          </div>
 
         </div>
       </div>
