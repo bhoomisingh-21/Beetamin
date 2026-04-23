@@ -1,10 +1,115 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { randomBytes } from 'crypto'
+import Groq from 'groq-sdk'
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase-admin'
-import { generateRecoveryReportSections } from '@/lib/groq-recovery-report'
 import { generateRecoveryPlanPdfBuffer } from '@/lib/generate-pdf'
+import { RECOVERY_PLAN_SYSTEM_PROMPT } from '@/lib/recovery-report-prompt'
+import type { DetailedAssessmentPayload, RecoveryReportSections } from '@/lib/recovery-report-types'
 import { sendRecoveryReportEmail } from '@/lib/send-report-email'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+
+const GROQ_APPENDIX = `
+SUPPLEMENT SECTION RULES — VERY IMPORTANT:
+Recommend MAXIMUM 2 supplements only.
+Pick only the top 2 most critical deficiencies to supplement for.
+Do not recommend more than 2 under any circumstance.
+The user should have complete clarity on what to take.
+For the remaining deficiencies, focus on fixing them through the meal plan instead.
+For each supplement, explain very clearly:
+- Exactly what it is in simple language
+- Exactly one brand to buy (be specific, one brand only)
+- Exact dosage (e.g. 1000 IU, 500mg)
+- Exact timing (e.g. every morning with breakfast)
+- How long to take it
+- That it is safe and well researched
+
+MEAL PLAN RULES — VERY IMPORTANT:
+Every single day must have COMPLETELY DIFFERENT meals.
+Do not repeat the same breakfast, lunch, or dinner on any two days.
+Day 1 and Day 4 must be different.
+Day 2 and Day 5 must be different.
+Day 3 and Day 6 must be different.
+Variety is the entire point of a 7-day plan.
+Use a wide range of Indian ingredients across the week:
+poha, upma, idli, dosa, paratha, oats, eggs, daliya, chilla on different mornings.
+Dal, rajma, chana, chole, paneer, tofu, chicken, fish on different lunches and dinners.
+Every day should feel like a genuinely different menu.
+
+DEFICIENCY ANALYSIS — SYMPTOM SPECIFICITY:
+When writing YOUR SYMPTOMS POINTING TO THIS,
+list the patient's ACTUAL specific reported symptoms word for word — not generic descriptions.
+For example instead of "skin and hair issues" write "your reported hair fall, brittle nails, and dry skin".
+Make it clear you are talking about THEIR specific answers.
+`.trim()
+
+function getGroq() {
+  const key = process.env.GROQ_API_KEY
+  if (!key) throw new Error('GROQ_API_KEY is not configured')
+  return new Groq({ apiKey: key })
+}
+
+function safeParseJson(raw: string): RecoveryReportSections {
+  let text = raw.trim()
+  if (text.startsWith('```')) {
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
+  }
+  const parsed = JSON.parse(text) as Partial<RecoveryReportSections>
+  const keys: (keyof RecoveryReportSections)[] = [
+    'deficiencyAnalysis',
+    'mealPlan',
+    'supplements',
+    'blockingFoods',
+    'dailyRoutine',
+    'doctorNote',
+    'disclaimer',
+  ]
+  const out = {} as RecoveryReportSections
+  for (const k of keys) {
+    const v = parsed[k]
+    out[k] =
+      typeof v === 'string' && v.trim()
+        ? v.trim()
+        : `[${String(k)} — content being prepared. Please contact support if this persists.]`
+  }
+  return out
+}
+
+async function generateRecoveryReportSections(input: {
+  patientName: string
+  freeAssessment: unknown
+  detailed: DetailedAssessmentPayload
+}): Promise<RecoveryReportSections> {
+  const groq = getGroq()
+  const userPayload = {
+    patientName: input.patientName,
+    freeDeficiencyAssessment: input.freeAssessment,
+    detailedLifestyleAssessment: input.detailed,
+  }
+
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      {
+        role: 'system',
+        content: `${RECOVERY_PLAN_SYSTEM_PROMPT}\n\n${GROQ_APPENDIX}`,
+      },
+      {
+        role: 'user',
+        content:
+          'Patient data (JSON):\n' +
+          JSON.stringify(userPayload, null, 2) +
+          '\n\nProduce the JSON object as specified in your system instructions.',
+      },
+    ],
+    temperature: 0.35,
+    max_tokens: 8192,
+    response_format: { type: 'json_object' },
+  })
+
+  const raw = completion.choices[0]?.message?.content
+  if (!raw) throw new Error('Empty response from report generation')
+  return safeParseJson(raw)
+}
 
 function makeReportId() {
   const now = new Date()
