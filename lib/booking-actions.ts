@@ -24,6 +24,13 @@ export type ClientRow = {
   assessment_meta?: unknown
 }
 
+export type CreateClientProfileResult =
+  | { success: true; client: ClientRow }
+  | { success: false; message: string }
+
+const CREATE_CLIENT_PROFILE_ERROR_MESSAGE =
+  'We could not save your profile. Please try again in a moment.'
+
 export type AppointmentRow = {
   id: string
   client_id: string
@@ -104,19 +111,22 @@ export async function saveAssessmentToProfile(input: {
   const endDate = new Date()
   endDate.setMonth(endDate.getMonth() + 3)
 
-  const { error } = await supabaseAdmin.from('clients').insert({
-    clerk_user_id: userId,
-    name: clerkUser?.fullName || clerkUser?.firstName || 'User',
-    email,
-    phone: '',
-    ...patch,
-    plan_start_date: startDate.toISOString().split('T')[0],
-    plan_end_date: endDate.toISOString().split('T')[0],
-    status: 'active',
-    sessions_total: 6,
-    sessions_used: 0,
-    sessions_remaining: 6,
-  })
+  const { error } = await supabaseAdmin.from('clients').upsert(
+    {
+      clerk_user_id: userId,
+      name: clerkUser?.fullName || clerkUser?.firstName || 'User',
+      email,
+      phone: '',
+      ...patch,
+      plan_start_date: startDate.toISOString().split('T')[0],
+      plan_end_date: endDate.toISOString().split('T')[0],
+      status: 'active',
+      sessions_total: 6,
+      sessions_used: 0,
+      sessions_remaining: 6,
+    },
+    { onConflict: 'email' },
+  )
   if (error) throw new Error(error.message)
 }
 
@@ -124,59 +134,78 @@ export async function createClientProfile(data: {
   name: string
   phone: string
   goal?: string
-}) {
-  const { userId } = await auth()
-  if (!userId) throw new Error('Not authenticated')
+}): Promise<CreateClientProfileResult> {
+  try {
+    const { userId } = await auth()
+    if (!userId) {
+      return { success: false, message: 'Please sign in again to complete setup.' }
+    }
 
-  const existing = await getClientByClerkId(userId)
-  const clerkUser = await currentUser()
-  const nameFromForm = data.name?.trim()
-  const displayName =
-    nameFromForm || clerkUser?.fullName || clerkUser?.firstName || existing?.name || 'User'
+    const existing = await getClientByClerkId(userId)
+    const clerkUser = await currentUser()
+    const nameFromForm = data.name?.trim()
+    const displayName =
+      nameFromForm || clerkUser?.fullName || clerkUser?.firstName || existing?.name || 'User'
 
-  if (existing) {
-    const { data: updated, error } = await supabaseAdmin
+    if (existing) {
+      const { data: updated, error } = await supabaseAdmin
+        .from('clients')
+        .update({
+          name: displayName,
+          phone: data.phone,
+          ...(data.goal !== undefined && data.goal !== '' ? { assessment_goal: data.goal } : {}),
+        })
+        .eq('clerk_user_id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('[createClientProfile] update', error)
+        return { success: false, message: CREATE_CLIENT_PROFILE_ERROR_MESSAGE }
+      }
+      return { success: true, client: updated as ClientRow }
+    }
+
+    // Fetch the actual email from Clerk so we don't violate the unique constraint
+    const email = clerkUser?.primaryEmailAddress?.emailAddress ?? `noemail_${userId}@beetamin.internal`
+
+    const startDate = new Date()
+    const endDate = new Date()
+    endDate.setMonth(endDate.getMonth() + 3)
+
+    const { data: client, error } = await supabaseAdmin
       .from('clients')
-      .update({
-        name: displayName,
-        phone: data.phone,
-        ...(data.goal !== undefined && data.goal !== '' ? { assessment_goal: data.goal } : {}),
-      })
-      .eq('clerk_user_id', userId)
+      .upsert(
+        {
+          clerk_user_id: userId,
+          name: displayName,
+          email,
+          phone: data.phone,
+          plan_start_date: startDate.toISOString().split('T')[0],
+          plan_end_date: endDate.toISOString().split('T')[0],
+          assessment_goal: data.goal,
+          status: 'active',
+          sessions_total: 6,
+          sessions_used: 0,
+          sessions_remaining: 6,
+        },
+        { onConflict: 'email' },
+      )
       .select()
       .single()
 
-    if (error) throw new Error(error.message)
-    return updated as ClientRow
+    if (error) {
+      console.error('[createClientProfile] upsert', error)
+      return { success: false, message: CREATE_CLIENT_PROFILE_ERROR_MESSAGE }
+    }
+    if (!client) {
+      return { success: false, message: CREATE_CLIENT_PROFILE_ERROR_MESSAGE }
+    }
+    return { success: true, client: client as ClientRow }
+  } catch (e) {
+    console.error('[createClientProfile]', e)
+    return { success: false, message: CREATE_CLIENT_PROFILE_ERROR_MESSAGE }
   }
-
-  // Fetch the actual email from Clerk so we don't violate the unique constraint
-  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? `noemail_${userId}@beetamin.internal`
-
-  const startDate = new Date()
-  const endDate = new Date()
-  endDate.setMonth(endDate.getMonth() + 3)
-
-  const { data: client, error } = await supabaseAdmin
-    .from('clients')
-    .insert({
-      clerk_user_id: userId,
-      name: displayName,
-      email,
-      phone: data.phone,
-      plan_start_date: startDate.toISOString().split('T')[0],
-      plan_end_date: endDate.toISOString().split('T')[0],
-      assessment_goal: data.goal,
-      status: 'active',
-      sessions_total: 6,
-      sessions_used: 0,
-      sessions_remaining: 6,
-    })
-    .select()
-    .single()
-
-  if (error) throw new Error(error.message)
-  return client as ClientRow
 }
 
 // ─── Check if current user is a nutritionist ──────────────────────────────────

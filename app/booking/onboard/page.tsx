@@ -169,11 +169,16 @@ export default function OnboardPage() {
     setIsSubmitting(true)
     setError('')
     try {
-      await createClientProfile({
+      const result = await createClientProfile({
         name: user?.fullName || user?.firstName || 'Friend',
         phone: form.phone,
         goal: form.primaryGoal,
       })
+      if (!result.success) {
+        setError(result.message)
+        setIsSubmitting(false)
+        return
+      }
       router.push('/booking/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
