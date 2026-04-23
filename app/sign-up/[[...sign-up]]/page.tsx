@@ -1,8 +1,11 @@
 'use client'
 
+import { Suspense } from 'react'
 import { SignUp } from '@clerk/nextjs'
-import { Leaf, CheckCircle, Shield, Clock, Star } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { Leaf, CheckCircle, Shield, Clock, Star, Loader2 } from 'lucide-react'
 import { patientClerkAppearance } from '@/components/auth/patient-clerk-appearance'
+import { authReturnPath } from '@/lib/auth-return-path'
 
 const BENEFITS = [
   { icon: CheckCircle, text: 'Doctor-reviewed personalized guidance' },
@@ -15,6 +18,44 @@ const TESTIMONIALS = [
   { name: 'Priya S.', location: 'Mumbai', text: 'Fixed my B12 deficiency in 6 weeks. Life-changing.', avatar: 'P' },
   { name: 'Rahul K.', location: 'Bangalore', text: 'My energy levels are back. Finally feel like myself.', avatar: 'R' },
 ]
+
+function PatientSignUpForm() {
+  const sp = useSearchParams()
+  const after = authReturnPath(sp.get('after'))
+  const signInHref = `/sign-in?after=${encodeURIComponent(after)}`
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-gray-900 font-black text-2xl">Create your account 👋</h2>
+        <p className="text-gray-500 text-sm mt-1">Join thousands transforming their health with TheBeetamin.</p>
+      </div>
+
+      <div className="clerk-sign-up-wrapper w-full">
+        <SignUp
+          signInUrl={signInHref}
+          forceRedirectUrl={after}
+          appearance={patientClerkAppearance}
+        />
+      </div>
+
+      <p className="mt-6 text-center text-gray-400 text-xs">
+        Nutritionist or staff?{' '}
+        <a href={signInHref} className="text-emerald-600 hover:text-emerald-700 font-medium">
+          Use the sign-in page
+        </a>
+      </p>
+
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+        <span className="flex items-center gap-1.5 text-gray-400 text-xs">
+          <Shield size={12} className="text-emerald-500" />HIPAA-safe & secure
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-400 text-xs">
+          <CheckCircle size={12} className="text-emerald-500" />OTP verified sign-in
+        </span>
+      </div>
+    </>
+  )
+}
 
 export default function SignUpPage() {
   return (
@@ -82,34 +123,16 @@ export default function SignUpPage() {
         </div>
 
         <div className="w-full max-w-[420px]">
-          <div className="mb-6">
-            <h2 className="text-gray-900 font-black text-2xl">Create your account 👋</h2>
-            <p className="text-gray-500 text-sm mt-1">Join thousands transforming their health with TheBeetamin.</p>
-          </div>
-
-          <div className="clerk-sign-up-wrapper w-full">
-            <SignUp
-              signInUrl="/sign-in"
-              forceRedirectUrl="/booking"
-              appearance={patientClerkAppearance}
-            />
-          </div>
-
-          <p className="mt-6 text-center text-gray-400 text-xs">
-            Nutritionist or staff?{' '}
-            <a href="/sign-in" className="text-emerald-600 hover:text-emerald-700 font-medium">
-              Use the sign-in page
-            </a>
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <span className="flex items-center gap-1.5 text-gray-400 text-xs">
-              <Shield size={12} className="text-emerald-500" />HIPAA-safe & secure
-            </span>
-            <span className="flex items-center gap-1.5 text-gray-400 text-xs">
-              <CheckCircle size={12} className="text-emerald-500" />OTP verified sign-in
-            </span>
-          </div>
+          <Suspense
+            fallback={
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Loader2 className="animate-spin text-emerald-500" size={28} />
+                <p className="text-gray-500 text-sm">Loading…</p>
+              </div>
+            }
+          >
+            <PatientSignUpForm />
+          </Suspense>
         </div>
       </div>
     </div>

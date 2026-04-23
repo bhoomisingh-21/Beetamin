@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { SignIn, useUser } from '@clerk/nextjs'
 import { patientClerkAppearance } from '@/components/auth/patient-clerk-appearance'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { authReturnPath } from '@/lib/auth-return-path'
 import { Leaf, CheckCircle, Shield, Clock, Star, AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { ALLOWED_NUTRITIONIST_EMAILS } from '@/lib/nutritionist-config'
 import { supabase } from '@/lib/supabase'
@@ -321,6 +322,54 @@ function NutritionistLogin({ onSwitchToUser }: { onSwitchToUser: () => void }) {
   )
 }
 
+// ── Patient Clerk (embedded) — must read `after` via Suspense for Next.js ───────
+function PatientClerkSignInContent() {
+  const sp = useSearchParams()
+  const after = authReturnPath(sp.get('after'))
+  const signUpHref = `/sign-up?after=${encodeURIComponent(after)}`
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="text-gray-900 font-black text-2xl">Hi there 👋</h2>
+        <p className="text-gray-500 text-sm mt-1">Get started with your nutrition transformation.</p>
+      </div>
+
+      <div className="clerk-sign-in-wrapper w-full">
+        <SignIn
+          key="patient"
+          signUpUrl={signUpHref}
+          forceRedirectUrl={after}
+          appearance={patientClerkAppearance}
+        />
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+        <span className="flex items-center gap-1.5 text-gray-400 text-xs">
+          <Shield size={12} className="text-emerald-500" />HIPAA-safe & secure
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-400 text-xs">
+          <CheckCircle size={12} className="text-emerald-500" />OTP verified sign-in
+        </span>
+      </div>
+    </>
+  )
+}
+
+function PatientClerkSignIn() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="animate-spin text-emerald-500" size={28} />
+          <p className="text-gray-500 text-sm">Loading sign-in…</p>
+        </div>
+      }
+    >
+      <PatientClerkSignInContent />
+    </Suspense>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function SignInPage() {
   const { isLoaded, isSignedIn, user } = useUser()
@@ -445,31 +494,7 @@ export default function SignInPage() {
               <NutritionistLogin onSwitchToUser={() => setIsNutritionist(false)} />
             )
           ) : (
-            // ── Patient tab — Clerk SignIn unchanged ──
-            <>
-              <div className="mb-6">
-                <h2 className="text-gray-900 font-black text-2xl">Hi there 👋</h2>
-                <p className="text-gray-500 text-sm mt-1">Get started with your nutrition transformation.</p>
-              </div>
-
-              <div className="clerk-sign-in-wrapper w-full">
-                <SignIn
-                  key="patient"
-                  signUpUrl="/sign-up"
-                  forceRedirectUrl="/booking"
-                  appearance={patientClerkAppearance}
-                />
-              </div>
-
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-                <span className="flex items-center gap-1.5 text-gray-400 text-xs">
-                  <Shield size={12} className="text-emerald-500" />HIPAA-safe & secure
-                </span>
-                <span className="flex items-center gap-1.5 text-gray-400 text-xs">
-                  <CheckCircle size={12} className="text-emerald-500" />OTP verified sign-in
-                </span>
-              </div>
-            </>
+            <PatientClerkSignIn />
           )}
         </div>
       </div>

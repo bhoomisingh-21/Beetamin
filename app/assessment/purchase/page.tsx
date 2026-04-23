@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUser, SignInButton } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import {
   ChevronLeft, CheckCircle, Leaf, Shield, Loader2,
@@ -91,12 +91,19 @@ export default function PurchasePage() {
             <p className="text-gray-500 text-sm mt-2 leading-relaxed">
               Sign in or create a free account to get your personalized ₹29 plan.
             </p>
-            <SignInButton mode="redirect" forceRedirectUrl="/assessment/purchase">
-              <button className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl py-4 text-base transition flex items-center justify-center gap-2">
-                Sign In to Continue
-                <ArrowRight size={18} />
-              </button>
-            </SignInButton>
+            <a
+              href="/sign-in?after=%2Fassessment%2Fpurchase"
+              className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl py-4 text-base transition flex items-center justify-center gap-2"
+            >
+              Sign In to Continue
+              <ArrowRight size={18} />
+            </a>
+            <a
+              href="/sign-up?after=%2Fassessment%2Fpurchase"
+              className="mt-3 block w-full text-center text-emerald-600 hover:text-emerald-700 text-sm font-semibold"
+            >
+              Create a free account
+            </a>
             <p className="text-gray-400 text-xs mt-3">Free to sign up · No payment until you confirm</p>
           </div>
         </div>

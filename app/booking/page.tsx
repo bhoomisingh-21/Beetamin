@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useUser, SignInButton } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import {
   CheckCircle, Loader2, Calendar, Clock,
@@ -118,12 +118,13 @@ export default function BookingPage() {
           <Leaf className="text-emerald-500" size={18} />
           <span className="text-white font-bold">TheBeetamin</span>
         </a>
-        <SignInButton mode="redirect" forceRedirectUrl="/booking">
-          <button className="flex items-center gap-2 border border-white/20 text-gray-300 text-sm rounded-full px-4 py-2 hover:border-white/40 hover:text-white transition">
-            <User size={14} />
-            Sign in
-          </button>
-        </SignInButton>
+        <a
+          href="/sign-in?after=%2Fbooking"
+          className="flex items-center gap-2 border border-white/20 text-gray-300 text-sm rounded-full px-4 py-2 hover:border-white/40 hover:text-white transition"
+        >
+          <User size={14} />
+          Sign in
+        </a>
       </div>
 
       {/* Hero */}
@@ -200,12 +201,20 @@ export default function BookingPage() {
                 🔥 42% off — Limited spots available
               </div>
 
-              <SignInButton mode="redirect" forceRedirectUrl="/booking">
-                <button className="mt-5 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center gap-2">
-                  Get Started — ₹3,999
-                  <ArrowRight size={20} />
-                </button>
-              </SignInButton>
+              <a
+                href="/sign-in?after=%2Fbooking"
+                className="mt-5 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center gap-2"
+              >
+                Get Started — ₹3,999
+                <ArrowRight size={20} />
+              </a>
+
+              <a
+                href="/sign-up?after=%2Fbooking"
+                className="mt-3 block text-center text-emerald-600 hover:text-emerald-500 text-sm font-semibold"
+              >
+                New here? Create an account
+              </a>
 
               <p className="text-gray-400 text-[10px] sm:text-xs mt-3 text-center whitespace-nowrap max-md:tracking-tight">
                 Sign in with Google · No payment until you confirm
@@ -228,11 +237,12 @@ export default function BookingPage() {
 
               <div className="mt-6 pt-5 border-t border-gray-100 text-center">
                 <p className="text-gray-500 text-xs mb-1">Already have a plan?</p>
-                <SignInButton mode="redirect" forceRedirectUrl="/booking/dashboard">
-                  <button className="text-emerald-600 hover:text-emerald-500 text-sm font-semibold underline">
-                    Sign in to your dashboard →
-                  </button>
-                </SignInButton>
+                <a
+                  href="/sign-in?after=%2Fbooking%2Fdashboard"
+                  className="text-emerald-600 hover:text-emerald-500 text-sm font-semibold underline inline-block"
+                >
+                  Sign in to your dashboard →
+                </a>
               </div>
             </div>
 
