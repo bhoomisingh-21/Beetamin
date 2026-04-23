@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { AlertTriangle, Activity, User, Battery, Zap, Brain } from "lucide-react";
+import { AlertTriangle, Activity, User, Battery, Zap, Brain, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
@@ -73,7 +73,8 @@ export default function ProblemSection() {
         </div>
 
         {/* ✅ MOBILE SCROLL */}
-        <div className="flex lg:hidden overflow-x-auto gap-4 px-2 pb-4 scrollbar-hide">
+        <div className="relative">
+          <div className="flex lg:hidden overflow-x-auto gap-4 pl-2 pr-8 pb-4 scrollbar-hide">
           {CARDS.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -132,6 +133,13 @@ export default function ProblemSection() {
               </motion.div>
             );
           })}
+          </div>
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-white pr-1 lg:hidden"
+            aria-hidden
+          >
+            <ChevronRight className="text-slate-400" size={22} strokeWidth={2} />
+          </div>
         </div>
 
         {/* ✅ DESKTOP GRID (UNCHANGED) */}

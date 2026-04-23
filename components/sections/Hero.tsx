@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Sparkles, ClipboardList, ArrowRight, Activity, CheckCircle2 } from "lucide-react";
+import { Sparkles, ClipboardList, ArrowRight, Activity, CheckCircle2, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 
@@ -116,28 +116,36 @@ export default function Hero() {
               </a>
             </motion.div>
 
-            {/* ✅ BADGES */}
+            {/* ✅ BADGES — horizontal scroll on mobile */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="flex flex-nowrap justify-center lg:flex-wrap gap-2 mt-6 overflow-x-auto lg:overflow-visible"
+              className="relative mt-6 w-full max-w-full lg:max-w-xl"
             >
-              {[
-                "Doctor-Reviewed Protocol",
-                "50,000+ Lives Transformed",
-                "Real 1-on-1 Consultations",
-              ].map((text, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 border border-white/5 bg-white/[0.03] rounded-full px-3 py-1.5 whitespace-nowrap"
-                >
-                  <CheckCircle2 size={12} className="text-[#00E676]" />
-                  <span className="text-gray-300 text-[11px] font-medium">
-                    {text}
-                  </span>
-                </div>
-              ))}
+              <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto px-4 pb-2 pr-10 lg:mx-0 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-0 lg:pb-0 lg:pr-0">
+                {[
+                  "Doctor-Reviewed Protocol",
+                  "50,000+ Lives Transformed",
+                  "Real 1-on-1 Consultations",
+                ].map((text, i) => (
+                  <div
+                    key={i}
+                    className="flex shrink-0 snap-start items-center gap-2 rounded-full border border-white/5 bg-white/[0.03] px-3 py-1.5 whitespace-nowrap lg:shrink"
+                  >
+                    <CheckCircle2 size={12} className="text-[#00E676]" />
+                    <span className="text-[11px] font-medium text-gray-300">
+                      {text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-[#010d06] to-transparent lg:hidden"
+                aria-hidden
+              >
+                <ChevronRight className="text-emerald-500/70" size={20} strokeWidth={2.5} />
+              </div>
             </motion.div>
           </div>
 

@@ -74,7 +74,7 @@ export default function Navbar() {
                       Log In
                     </a>
                     <a
-                      href="/sign-in"
+                      href="/sign-up"
                       className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-full px-5 py-2 text-sm transition-all duration-200 hover:scale-105"
                     >
                       Sign Up
@@ -173,7 +173,7 @@ export default function Navbar() {
                       Log In
                     </a>
                     <a
-                      href="/sign-in"
+                      href="/sign-up"
                       onClick={() => setMenuOpen(false)}
                       className="block w-full text-center bg-emerald-500 text-black font-bold rounded-full px-6 py-4 text-base hover:bg-emerald-400 transition"
                     >

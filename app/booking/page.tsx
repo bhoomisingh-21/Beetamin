@@ -192,9 +192,11 @@ export default function BookingPage() {
                 <span className="text-gray-900 font-black text-5xl">₹3,999</span>
                 <span className="text-gray-400 text-xl line-through">₹6,999</span>
               </div>
-              <p className="text-gray-500 text-sm text-center">One-time · 3 months access · 6 sessions</p>
+              <p className="text-gray-500 text-center text-xs sm:text-sm whitespace-nowrap max-md:tracking-tight">
+                One-time · 3 months access · 6 sessions
+              </p>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mt-4 text-amber-700 text-sm font-medium text-center">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-4 text-amber-700 text-xs sm:text-sm font-medium text-center whitespace-nowrap max-md:tracking-tight">
                 🔥 42% off — Limited spots available
               </div>
 
@@ -205,7 +207,7 @@ export default function BookingPage() {
                 </button>
               </SignInButton>
 
-              <p className="text-gray-400 text-xs mt-3 text-center">
+              <p className="text-gray-400 text-[10px] sm:text-xs mt-3 text-center whitespace-nowrap max-md:tracking-tight">
                 Sign in with Google · No payment until you confirm
               </p>
 

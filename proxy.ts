@@ -41,6 +41,7 @@ export default clerkMiddleware(async (auth, req) => {
     const allowed =
       path.startsWith('/nutritionist-dashboard') ||
       path.startsWith('/sign-in') ||
+      path.startsWith('/sign-up') ||
       path.startsWith('/nutritionist-update-password') ||
       path.startsWith('/api/') ||
       path.startsWith('/_next/')

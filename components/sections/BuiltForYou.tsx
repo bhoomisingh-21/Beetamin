@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Zap, User, Brain, Heart, FlaskConical, Scale } from "lucide-react";
+import { Users, Zap, User, Brain, Heart, FlaskConical, Scale, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
@@ -107,7 +107,8 @@ export default function BuiltForYou() {
         </div>
 
         {/* ✅ MOBILE: HORIZONTAL SCROLL */}
-        <div className="flex lg:hidden overflow-x-auto gap-4 mt-12 pb-4 px-2 scrollbar-hide">
+        <div className="relative mt-12">
+          <div className="flex lg:hidden overflow-x-auto gap-4 pb-4 pl-2 pr-8 scrollbar-hide">
           {CARDS.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -148,6 +149,13 @@ export default function BuiltForYou() {
               </motion.div>
             );
           })}
+          </div>
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-[#060a0e] pr-1 lg:hidden"
+            aria-hidden
+          >
+            <ChevronRight className="text-emerald-500/60" size={22} strokeWidth={2} />
+          </div>
         </div>
 
         {/* ✅ DESKTOP GRID (UNCHANGED) */}

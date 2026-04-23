@@ -154,7 +154,7 @@ export default function ResultsPage() {
     <div className="min-h-screen bg-[#0B0F14] text-white">
 
       {/* Back nav */}
-      <div className="sticky top-0 z-10 bg-[#0B0F14]/80 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center gap-3">
+      <div className="sticky top-0 z-10 bg-[#0B0F14]/90 backdrop-blur-md border-b border-white/5 px-3 py-2.5 md:px-4 md:py-3 flex items-center gap-2 md:gap-3">
         <a href="/assessment" className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition">
           <ChevronLeft size={16} />
           Retake Assessment
@@ -165,17 +165,20 @@ export default function ResultsPage() {
 
       {/* ===== SECTION 1 ===== */}
       <div
-        className="relative px-4 md:px-6 pt-10 md:pt-20 pb-10 md:pb-20"
+        className="relative px-3 sm:px-4 md:px-6 pt-6 sm:pt-8 md:pt-20 pb-8 md:pb-20 max-md:pb-12"
         style={{
           backgroundImage: `radial-gradient(circle at 50% 0%, rgba(16,185,129,0.06), transparent 60%), url("${HEX_URL}")`,
           backgroundSize: '100% 100%, 60px 70px',
         }}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto max-md:space-y-6 md:space-y-0">
 
           {/* HEADING */}
-          <motion.div {...fadeUp(0)} className="text-center">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-black leading-tight">
+          <motion.div {...fadeUp(0)} className="text-center max-md:px-0.5">
+            <p className="md:hidden text-[10px] font-bold tracking-[0.2em] text-emerald-400/90 uppercase mb-3">
+              Your report
+            </p>
+            <h1 className="text-[1.35rem] leading-snug sm:text-3xl md:text-4xl lg:text-6xl font-black md:leading-tight">
               <span className="text-white/90">{headline.main}</span>
               <br />
               <span className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-transparent bg-clip-text">
@@ -190,14 +193,14 @@ export default function ResultsPage() {
           </motion.div>
 
           {/* SUBTEXT */}
-          <motion.p {...fadeUp(0.1)} className="mt-4 md:mt-8 text-gray-400 text-sm sm:text-base md:text-lg text-center max-w-3xl mx-auto leading-relaxed px-1">
+          <motion.p {...fadeUp(0.1)} className="mt-3 md:mt-8 text-gray-400 text-[13px] sm:text-base md:text-lg text-center max-w-3xl mx-auto leading-relaxed max-md:leading-relaxed px-0.5 md:px-1">
             {headline.subtext}
           </motion.p>
 
           {/* DIET SUMMARY */}
           {result.dietSummary && (
-            <motion.div {...fadeUp(0.15)} className="mt-4 md:mt-6 max-w-2xl mx-auto bg-[#121821] border border-white/5 rounded-xl sm:rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
-              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed text-center">
+            <motion.div {...fadeUp(0.15)} className="mt-3 md:mt-6 max-w-2xl mx-auto bg-[#121821] border border-white/5 rounded-xl sm:rounded-2xl px-3.5 sm:px-6 py-3 sm:py-4 max-md:shadow-sm max-md:shadow-black/20">
+              <p className="text-gray-400 text-[11px] sm:text-sm leading-relaxed text-center max-md:text-left">
                 <span className="text-emerald-400 font-semibold">Diet analysis: </span>
                 {result.dietSummary}
               </p>
@@ -205,14 +208,14 @@ export default function ResultsPage() {
           )}
 
           {/* ── MOBILE ONLY: Score card ── */}
-          <motion.div {...fadeUp(0.18)} className="mt-5 md:hidden">
-            <div className="bg-[#121821] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+          <motion.div {...fadeUp(0.18)} className="mt-4 md:hidden">
+            <div className="bg-[#121821] border border-emerald-500/15 rounded-2xl p-4 flex items-center gap-3 shadow-lg shadow-black/30">
               <div className="flex-shrink-0">
                 <div className="flex items-end gap-1">
-                  <span className="text-6xl font-black leading-none" style={{ color: scoreInfo.color }}>
+                  <span className="text-5xl font-black leading-none tabular-nums" style={{ color: scoreInfo.color }}>
                     {scoreAnimated}
                   </span>
-                  <span className="text-gray-500 text-base mb-1">/100</span>
+                  <span className="text-gray-500 text-sm mb-1">/100</span>
                 </div>
                 <div className={`mt-2 text-[10px] font-bold px-2.5 py-1 rounded-full inline-block ${scoreInfo.bg}`}>
                   {scoreInfo.label}
@@ -232,10 +235,10 @@ export default function ResultsPage() {
           </motion.div>
 
           {/* MAIN GRID */}
-          <div className="grid lg:grid-cols-[1.3fr_1fr] gap-5 md:gap-12 mt-5 md:mt-16">
+          <div className="grid lg:grid-cols-[1.3fr_1fr] gap-6 md:gap-12 mt-6 md:mt-16 max-md:mt-6">
 
             {/* LEFT — SCORE + DEFICIENCIES */}
-            <motion.div {...fadeUp(0.2)} className="bg-[#121821] border border-white/5 p-5 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl">
+            <motion.div {...fadeUp(0.2)} className="bg-[#121821] border border-white/8 max-md:border-emerald-500/10 p-4 sm:p-5 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl max-md:shadow-lg max-md:shadow-black/25">
 
               {/* Score — desktop only */}
               <div className="hidden md:flex items-end gap-3 mb-3">
@@ -262,12 +265,12 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              <p className="md:hidden text-[10px] font-bold tracking-widest uppercase text-emerald-400 mb-3">
-                Your Deficiency Report
+              <p className="md:hidden text-[10px] font-bold tracking-widest uppercase text-emerald-400 mb-2 pt-1 border-t border-white/10">
+                Nutrient gaps (read next)
               </p>
 
               {/* DEFICIENCY CARDS */}
-              <div className="space-y-2.5 md:space-y-4">
+              <div className="space-y-3 md:space-y-4 max-md:mt-1">
                 {result.primaryDeficiencies?.length > 0 ? (
                   result.primaryDeficiencies.map((def: any, i: number) => (
                     <motion.div
@@ -305,9 +308,12 @@ export default function ResultsPage() {
             </motion.div>
 
             {/* RIGHT — INSIGHTS */}
-            <motion.div {...fadeUp(0.25)} className="flex flex-col gap-2.5 md:gap-4 md:justify-center">
-              <p className={`text-[10px] sm:text-xs font-bold tracking-widest uppercase ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
+            <motion.div {...fadeUp(0.25)} className="flex flex-col gap-3 md:gap-4 md:justify-center max-md:rounded-2xl max-md:border max-md:border-white/10 max-md:bg-[#0e141c] max-md:p-4">
+              <p className={`text-[10px] sm:text-xs font-bold tracking-widest uppercase max-md:mb-0.5 ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
                 {isHealthy ? `What's Working For ${meta.name || 'You'}` : `What This Is Doing To ${meta.name || 'You'}`}
+              </p>
+              <p className="md:hidden text-[11px] text-gray-500 leading-snug -mt-1 mb-1">
+                Short bullets — your detailed plan is below.
               </p>
 
               {result.lifestyleInsights?.map((item: string, i: number) => {
@@ -319,7 +325,7 @@ export default function ResultsPage() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: i * 0.08 }}
-                    className="flex gap-3 bg-[#121821] p-3.5 sm:p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/5"
+                    className="flex gap-3 bg-[#0f141c] md:bg-[#121821] p-3 sm:p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/10 md:border-white/5"
                   >
                     <Icon className={`${insightIconColor} flex-shrink-0 mt-0.5`} size={14} />
                     <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">{item}</p>
@@ -335,7 +341,7 @@ export default function ResultsPage() {
             <p className="text-emerald-400 font-black tracking-widest text-[10px] sm:text-xs md:text-sm">
               {headline.transition}
             </p>
-            <div className="mt-4 flex justify-center">
+            <div className="mt-4 hidden md:flex justify-center">
               <div className="animate-bounce bg-emerald-500/10 p-3 rounded-full">
                 <ArrowDown className="text-emerald-400" size={16} />
               </div>
@@ -343,7 +349,7 @@ export default function ResultsPage() {
           </motion.div>
 
           {/* QUICK WINS */}
-          <motion.div {...fadeUp(0.35)} className="mt-8 md:mt-16 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-2xl md:rounded-[2rem] p-5 sm:p-6 md:p-8 lg:p-12 max-w-5xl mx-auto">
+          <motion.div {...fadeUp(0.35)} className="mt-6 md:mt-16 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/25 rounded-2xl md:rounded-[2rem] p-4 sm:p-6 md:p-8 lg:p-12 max-w-5xl mx-auto max-md:shadow-lg max-md:shadow-black/30">
             <p className="text-center text-[10px] sm:text-xs tracking-widest text-emerald-400 mb-1 font-bold uppercase">
               {isHealthy ? 'Optimize & Maintain' : 'Immediate Corrective Actions'}
             </p>
@@ -353,7 +359,7 @@ export default function ResultsPage() {
                 : `Personalized for ${meta.name || 'your'}'s deficiency pattern`}
             </p>
 
-            <div className="space-y-4 md:space-y-8">
+            <div className="space-y-3 md:space-y-8">
               {result.quickWins?.map((win: string, i: number) => (
                 <motion.div
                   key={i}
@@ -361,12 +367,12 @@ export default function ResultsPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className="flex items-start sm:items-center gap-3 sm:gap-4 md:gap-6 group"
+                  className="flex items-start sm:items-center gap-3 sm:gap-4 md:gap-6 group max-md:rounded-xl max-md:bg-black/20 max-md:p-3 max-md:border max-md:border-white/5"
                 >
-                  <div className="w-9 h-9 sm:w-11 sm:h-11 md:w-14 md:h-14 bg-emerald-500 text-black rounded-lg sm:rounded-xl flex items-center justify-center font-black text-sm sm:text-base md:text-lg flex-shrink-0 mt-0.5 sm:mt-0">
+                  <div className="w-8 h-8 sm:w-11 sm:h-11 md:w-14 md:h-14 bg-emerald-500 text-black rounded-lg sm:rounded-xl flex items-center justify-center font-black text-xs sm:text-base md:text-lg flex-shrink-0 mt-0.5 sm:mt-0">
                     {i + 1}
                   </div>
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold flex-1 group-hover:text-emerald-300 transition leading-snug">
+                  <p className="text-[11px] sm:text-sm md:text-base lg:text-lg font-semibold flex-1 group-hover:text-emerald-300 transition leading-snug max-md:text-gray-200">
                     {win}
                   </p>
                   <ArrowRight className="text-emerald-400 opacity-40 group-hover:opacity-100 flex-shrink-0 hidden sm:block" size={16} />
@@ -390,7 +396,7 @@ export default function ResultsPage() {
                 ? `Want a complete optimization plan built for your profile?`
                 : `Want a complete recovery plan built around your exact deficiencies?`}
             </p>
-            <div className="mt-4 flex justify-center">
+            <div className="mt-4 hidden md:flex justify-center">
               <div className="animate-bounce bg-emerald-500/10 p-3 rounded-full">
                 <ArrowDown className="text-emerald-400" size={16} />
               </div>
@@ -401,8 +407,8 @@ export default function ResultsPage() {
       </div>
 
       {/* ===== SECTION 2 — OFFER ===== */}
-      <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-16">
+      <div className="bg-white text-black px-4 md:px-6 py-8 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-16 max-md:gap-10">
 
           {/* LEFT */}
           <motion.div {...fadeUp(0)}>

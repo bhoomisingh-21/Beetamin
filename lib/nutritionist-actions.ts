@@ -95,11 +95,16 @@ export async function getNutritionistDashboard() {
   const all = (appointments || []) as unknown as AppointmentWithClient[]
   const today = new Date().toISOString().split('T')[0]
 
+  const confirmed = all.filter((a) => a.status === 'confirmed')
+  const sortBySlot = (a: AppointmentWithClient, b: AppointmentWithClient) =>
+    `${a.scheduled_date}T${a.scheduled_time}`.localeCompare(`${b.scheduled_date}T${b.scheduled_time}`)
+
   return {
     nutritionist,
     pending: all.filter((a) => a.status === 'pending'),
     today: all.filter((a) => a.scheduled_date === today && a.status === 'confirmed'),
-    upcoming: all.filter((a) => a.scheduled_date >= today && a.status === 'confirmed'),
+    // All confirmed sessions (including past dates not yet marked complete) so nothing disappears from Scheduled.
+    upcoming: [...confirmed].sort(sortBySlot),
     past: all.filter((a) => a.status === 'completed'),
     stats: {
       pending: all.filter((a) => a.status === 'pending').length,
@@ -172,11 +177,15 @@ export async function getNutritionistDashboardByEmail(email: string) {
   const all = (appointments || []) as unknown as AppointmentWithClient[]
   const today = new Date().toISOString().split('T')[0]
 
+  const confirmed = all.filter((a) => a.status === 'confirmed')
+  const sortBySlot = (a: AppointmentWithClient, b: AppointmentWithClient) =>
+    `${a.scheduled_date}T${a.scheduled_time}`.localeCompare(`${b.scheduled_date}T${b.scheduled_time}`)
+
   return {
     nutritionist,
     pending:  all.filter((a) => a.status === 'pending'),
     today:    all.filter((a) => a.scheduled_date === today && a.status === 'confirmed'),
-    upcoming: all.filter((a) => a.scheduled_date >= today && a.status === 'confirmed'),
+    upcoming: [...confirmed].sort(sortBySlot),
     past:     all.filter((a) => a.status === 'completed' || a.status === 'rejected' || a.status === 'cancelled'),
     stats: {
       pending:    all.filter((a) => a.status === 'pending').length,
@@ -222,11 +231,12 @@ export async function confirmAppointmentByEmail(appointmentId: string, nutEmail:
   if (!appt) throw new Error('Appointment not found')
   await supabaseAdmin.from('appointments').update({ status: 'confirmed' }).eq('id', appointmentId)
   const sessionDate = new Date(`${appt.scheduled_date}T${appt.scheduled_time}`)
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: appt.clients.email,
-    subject: `Session ${appt.session_number} Confirmed — ${sessionDate.toLocaleDateString('en-IN')} 🗓️`,
-    html: `
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Session ${appt.session_number} Confirmed — ${sessionDate.toLocaleDateString('en-IN')} 🗓️`,
+      html: `
       <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
         <h1 style="color:#10B981;">Session ${appt.session_number} Confirmed! ✅</h1>
         <p style="color:#9CA3AF;">Your session request has been accepted by ${nutritionist.name}.</p>
@@ -238,7 +248,10 @@ export async function confirmAppointmentByEmail(appointmentId: string, nutEmail:
         <a href="https://thebeetamin.com/booking/dashboard" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">View Dashboard →</a>
       </div>
     `,
-  })
+    })
+  } catch (e) {
+    console.error('[confirmAppointmentByEmail] Resend failed:', e)
+  }
 }
 
 export async function rejectAppointmentByEmail(appointmentId: string, nutEmail: string, reason?: string) {
@@ -247,11 +260,12 @@ export async function rejectAppointmentByEmail(appointmentId: string, nutEmail: 
   const appt = await getAppointmentWithClient(appointmentId)
   if (!appt) throw new Error('Appointment not found')
   await supabaseAdmin.from('appointments').update({ status: 'rejected', notes: reason }).eq('id', appointmentId)
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: appt.clients.email,
-    subject: `Session Request Update — Please Reschedule`,
-    html: `
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Session Request Update — Please Reschedule`,
+      html: `
       <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
         <h1 style="color:#F59E0B;">Session Request Update</h1>
         <p style="color:#9CA3AF;">${nutritionist.name} is unavailable for your requested slot on ${new Date(appt.scheduled_date).toLocaleDateString('en-IN')} at ${appt.scheduled_time}.</p>
@@ -259,7 +273,10 @@ export async function rejectAppointmentByEmail(appointmentId: string, nutEmail: 
         <a href="https://thebeetamin.com/booking/new" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">Book a New Slot →</a>
       </div>
     `,
-  })
+    })
+  } catch (e) {
+    console.error('[rejectAppointmentByEmail] Resend failed:', e)
+  }
 }
 
 export async function completeAppointmentByEmail(appointmentId: string, nutEmail: string, notes: string) {
@@ -275,6 +292,29 @@ export async function completeAppointmentByEmail(appointmentId: string, nutEmail
     sessions_remaining: newRemaining,
     status: newRemaining === 0 ? 'completed' : 'active',
   }).eq('id', appt.clients.id)
+
+  const safeNotes = notes
+    ? notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    : ''
+
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Session ${appt.session_number} marked complete — thank you`,
+      html: `
+      <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
+        <h1 style="color:#10B981;">Session logged ✅</h1>
+        <p style="color:#9CA3AF;">${nutritionist.name} has marked your session ${appt.session_number} as complete.</p>
+        <p style="color:#9CA3AF;">Sessions remaining on your plan: <strong>${newRemaining}</strong></p>
+        ${safeNotes ? `<p style="color:#E5E7EB;margin-top:16px;">Notes from your session:<br/>${safeNotes}</p>` : ''}
+        <a href="https://thebeetamin.com/booking/dashboard" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">View dashboard →</a>
+      </div>
+    `,
+    })
+  } catch (e) {
+    console.error('[completeAppointmentByEmail] Resend failed:', e)
+  }
 }
 
 // ─── Appointment actions ──────────────────────────────────────────────────────
@@ -302,11 +342,12 @@ export async function confirmAppointment(appointmentId: string) {
 
   const sessionDate = new Date(`${appt.scheduled_date}T${appt.scheduled_time}`)
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: appt.clients.email,
-    subject: `Session ${appt.session_number} Confirmed — ${sessionDate.toLocaleDateString('en-IN')} 🗓️`,
-    html: `
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Session ${appt.session_number} Confirmed — ${sessionDate.toLocaleDateString('en-IN')} 🗓️`,
+      html: `
       <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
         <h1 style="color:#10B981;">Session ${appt.session_number} Confirmed! ✅</h1>
         <p style="color:#9CA3AF;">Your session request has been accepted by ${nutritionist.name}.</p>
@@ -325,7 +366,10 @@ export async function confirmAppointment(appointmentId: string) {
         <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
       </div>
     `,
-  })
+    })
+  } catch (e) {
+    console.error('[confirmAppointment] Resend failed:', e)
+  }
 }
 
 export async function rejectAppointment(appointmentId: string, reason?: string) {
@@ -340,11 +384,12 @@ export async function rejectAppointment(appointmentId: string, reason?: string) 
     .update({ status: 'rejected', notes: reason })
     .eq('id', appointmentId)
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: appt.clients.email,
-    subject: `Session Request Update — Please Reschedule`,
-    html: `
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Session Request Update — Please Reschedule`,
+      html: `
       <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
         <h1 style="color:#F59E0B;">Session Request Update</h1>
         <p style="color:#9CA3AF;">Unfortunately, ${nutritionist.name} is unavailable for your requested time slot on ${new Date(appt.scheduled_date).toLocaleDateString('en-IN')} at ${appt.scheduled_time}.</p>
@@ -357,7 +402,10 @@ export async function rejectAppointment(appointmentId: string, reason?: string) 
         <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
       </div>
     `,
-  })
+    })
+  } catch (e) {
+    console.error('[rejectAppointment] Resend failed:', e)
+  }
 }
 
 export async function completeAppointment(appointmentId: string, notes: string) {

@@ -71,13 +71,13 @@ export default function AssessmentPage() {
   }
 
   const isStepValid = () => {
-    if (currentStep === 1) return answers.name !== '' && answers.email !== '' && answers.phone !== '' && answers.age !== ''
-    if (currentStep === 2) return answers.diet !== '' && answers.goal !== ''
-    if (currentStep === 3) return answers.metabolicRhythm !== ''
-    if (currentStep === 4) return answers.sleepArchitecture !== ''
-    if (currentStep === 5) return answers.dermalMarkers.length > 0
-    if (currentStep === 6) return answers.cognitiveClarity !== ''
-    if (currentStep === 7) return answers.muscleRecovery !== '' && answers.immuneResilience !== ''
+    if (currentStep === 1) return answers.diet !== '' && answers.goal !== ''
+    if (currentStep === 2) return answers.metabolicRhythm !== ''
+    if (currentStep === 3) return answers.sleepArchitecture !== ''
+    if (currentStep === 4) return answers.dermalMarkers.length > 0
+    if (currentStep === 5) return answers.cognitiveClarity !== ''
+    if (currentStep === 6) return answers.muscleRecovery !== '' && answers.immuneResilience !== ''
+    if (currentStep === 7) return answers.name !== '' && answers.email !== '' && answers.phone !== '' && answers.age !== ''
     return false
   }
 
@@ -258,17 +258,243 @@ export default function AssessmentPage() {
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                       >
 
-                        {/* Step 1 — Personal info (with required email + phone) */}
+                        {/* Step 1 — Diet & Health Goal */}
                         {currentStep === 1 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 DIETARY PATTERN ANALYSIS
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5">
+                              Your diet &amp; health goal
+                            </h2>
+                            <div className="flex flex-col gap-4">
+                              <div>
+                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Diet type *</label>
+                                <select
+                                  value={answers.diet}
+                                  onChange={e => setAnswers(prev => ({ ...prev, diet: e.target.value }))}
+                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                >
+                                  <option value="" disabled>Select your diet...</option>
+                                  <option value="vegetarian">🥗 Vegetarian</option>
+                                  <option value="vegan">🌱 Vegan</option>
+                                  <option value="mixed">🍱 Mixed (veg + non-veg)</option>
+                                  <option value="non_veg">🍖 Non-vegetarian</option>
+                                  <option value="irregular">⏰ Irregular / skip meals often</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Primary health goal *</label>
+                                <select
+                                  value={answers.goal}
+                                  onChange={e => setAnswers(prev => ({ ...prev, goal: e.target.value }))}
+                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                >
+                                  <option value="" disabled>Select your goal...</option>
+                                  <option value="energy">⚡ Fix fatigue &amp; get more energy</option>
+                                  <option value="focus">🧠 Improve focus &amp; mental clarity</option>
+                                  <option value="skin_hair">💇 Better skin, hair &amp; nails</option>
+                                  <option value="recovery">💪 Faster recovery &amp; performance</option>
+                                  <option value="immunity">🛡️ Strengthen immunity</option>
+                                  <option value="hormones">⚖️ Hormonal balance &amp; mood</option>
+                                  <option value="wellness">🌿 Overall wellness</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 2 — Energy */}
+                        {currentStep === 2 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 TESTING: B-VITAMINS · IRON · ADRENAL FUNCTION
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                              It&apos;s 2:30 PM. Which best describes your energy right now?
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
+                              {energyOptions.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => setAnswers(prev => ({ ...prev, metabolicRhythm: opt.value }))}
+                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.metabolicRhythm === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                    }`}
+                                >
+                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
+                                  <div>
+                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
+                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 3 — Sleep */}
+                        {currentStep === 3 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 TESTING: MAGNESIUM · CORTISOL BALANCE · MELATONIN
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                              After 7–8 hours of sleep, how do you feel 10 minutes after waking?
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
+                              {sleepOptions.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => setAnswers(prev => ({ ...prev, sleepArchitecture: opt.value }))}
+                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.sleepArchitecture === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                    }`}
+                                >
+                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
+                                  <div>
+                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
+                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 4 — Physical symptoms */}
+                        {currentStep === 4 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 TESTING: ZINC · BIOTIN · OMEGA-3 · COLLAGEN · VITAMIN C
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-2">
+                              Which of these have you noticed recently?
+                            </h2>
+                            <p className="text-gray-400 text-xs md:text-sm mb-4 md:mb-6">Select all that apply — even minor signs count</p>
+                            <div className="grid grid-cols-2 gap-2 md:gap-3">
+                              {dermalOptions.map(opt => {
+                                const selected = answers.dermalMarkers.includes(opt.value)
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => toggleDermalMarker(opt.value)}
+                                    className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-2.5 md:p-3 transition-all duration-200 relative text-left w-full ${selected
+                                      ? 'border-emerald-500 bg-emerald-50'
+                                      : 'border-gray-200 hover:border-emerald-300'
+                                      }`}
+                                  >
+                                    {selected && (
+                                      <div className="absolute top-1.5 right-1.5 md:top-2 md:right-2 bg-emerald-500 rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center">
+                                        <span className="text-white text-[10px]">✓</span>
+                                      </div>
+                                    )}
+                                    <div className="text-lg md:text-xl mb-1">{opt.emoji}</div>
+                                    <div className="text-gray-800 text-xs md:text-sm font-medium leading-tight">{opt.label}</div>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 5 — Mental clarity */}
+                        {currentStep === 5 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 TESTING: VITAMIN D3 · B12 · OMEGA-3 FATTY ACIDS
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                              During deep focus work, what happens to your mental clarity?
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
+                              {clarityOptions.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => setAnswers(prev => ({ ...prev, cognitiveClarity: opt.value }))}
+                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.cognitiveClarity === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                    }`}
+                                >
+                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
+                                  <div>
+                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
+                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 6 — Recovery & immunity */}
+                        {currentStep === 6 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🔬 TESTING: VITAMIN C · D · AMINO ACIDS · ELECTROLYTES
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                              Two quick questions about your recovery &amp; immunity
+                            </h2>
+
+                            <div className="mt-2 mb-6 md:mb-8">
+                              <p className="text-gray-700 font-semibold text-sm md:text-base mb-3">
+                                Muscle soreness 24 hours after light activity:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {muscleOptions.map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => setAnswers(prev => ({ ...prev, muscleRecovery: opt.value }))}
+                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-xs md:text-sm cursor-pointer font-medium transition-all ${answers.muscleRecovery === opt.value
+                                      ? 'bg-emerald-500 text-black border-emerald-500'
+                                      : 'border-gray-300 text-gray-600 hover:border-emerald-400'
+                                      }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="border-t border-gray-100 my-4" />
+
+                            <div>
+                              <p className="text-gray-700 font-semibold text-sm md:text-base mb-3">
+                                Colds, flu, or infections in the last 6 months:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {immuneOptions.map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => setAnswers(prev => ({ ...prev, immuneResilience: opt.value }))}
+                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-xs md:text-sm cursor-pointer font-medium transition-all ${answers.immuneResilience === opt.value
+                                      ? 'bg-emerald-500 text-black border-emerald-500'
+                                      : 'border-gray-300 text-gray-600 hover:border-emerald-400'
+                                      }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 7 — Personal info (last, before report) */}
+                        {currentStep === 7 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 PERSONALIZING YOUR ANALYSIS
                             </span>
                             <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-2">
-                              Tell us a little about yourself
+                              Almost done — where should we send your report?
                             </h2>
                             <p className="text-gray-400 text-xs md:text-sm mb-5">
-                              This personalizes your deficiency report to your biology
+                              We only use this to personalize your results and follow up if you book a session.
                             </p>
                             <div className="flex flex-col gap-3">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -330,232 +556,6 @@ export default function AssessmentPage() {
                                     }))}
                                   />
                                 </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Step 2 — Diet & Health Goal */}
-                        {currentStep === 2 && (
-                          <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
-                              🔬 DIETARY PATTERN ANALYSIS
-                            </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5">
-                              Your diet &amp; health goal
-                            </h2>
-                            <div className="flex flex-col gap-4">
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Diet type *</label>
-                                <select
-                                  value={answers.diet}
-                                  onChange={e => setAnswers(prev => ({ ...prev, diet: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                >
-                                  <option value="" disabled>Select your diet...</option>
-                                  <option value="vegetarian">🥗 Vegetarian</option>
-                                  <option value="vegan">🌱 Vegan</option>
-                                  <option value="mixed">🍱 Mixed (veg + non-veg)</option>
-                                  <option value="non_veg">🍖 Non-vegetarian</option>
-                                  <option value="irregular">⏰ Irregular / skip meals often</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Primary health goal *</label>
-                                <select
-                                  value={answers.goal}
-                                  onChange={e => setAnswers(prev => ({ ...prev, goal: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                >
-                                  <option value="" disabled>Select your goal...</option>
-                                  <option value="energy">⚡ Fix fatigue &amp; get more energy</option>
-                                  <option value="focus">🧠 Improve focus &amp; mental clarity</option>
-                                  <option value="skin_hair">💇 Better skin, hair &amp; nails</option>
-                                  <option value="recovery">💪 Faster recovery &amp; performance</option>
-                                  <option value="immunity">🛡️ Strengthen immunity</option>
-                                  <option value="hormones">⚖️ Hormonal balance &amp; mood</option>
-                                  <option value="wellness">🌿 Overall wellness</option>
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Step 3 — Energy */}
-                        {currentStep === 3 && (
-                          <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
-                              🔬 TESTING: B-VITAMINS · IRON · ADRENAL FUNCTION
-                            </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
-                              It&apos;s 2:30 PM. Which best describes your energy right now?
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                              {energyOptions.map(opt => (
-                                <button
-                                  key={opt.value}
-                                  onClick={() => setAnswers(prev => ({ ...prev, metabolicRhythm: opt.value }))}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.metabolicRhythm === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
-                                    }`}
-                                >
-                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
-                                  <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Step 4 — Sleep */}
-                        {currentStep === 4 && (
-                          <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
-                              🔬 TESTING: MAGNESIUM · CORTISOL BALANCE · MELATONIN
-                            </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
-                              After 7–8 hours of sleep, how do you feel 10 minutes after waking?
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                              {sleepOptions.map(opt => (
-                                <button
-                                  key={opt.value}
-                                  onClick={() => setAnswers(prev => ({ ...prev, sleepArchitecture: opt.value }))}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.sleepArchitecture === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
-                                    }`}
-                                >
-                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
-                                  <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Step 5 — Physical symptoms */}
-                        {currentStep === 5 && (
-                          <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
-                              🔬 TESTING: ZINC · BIOTIN · OMEGA-3 · COLLAGEN · VITAMIN C
-                            </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-2">
-                              Which of these have you noticed recently?
-                            </h2>
-                            <p className="text-gray-400 text-xs md:text-sm mb-4 md:mb-6">Select all that apply — even minor signs count</p>
-                            <div className="grid grid-cols-2 gap-2 md:gap-3">
-                              {dermalOptions.map(opt => {
-                                const selected = answers.dermalMarkers.includes(opt.value)
-                                return (
-                                  <button
-                                    key={opt.value}
-                                    onClick={() => toggleDermalMarker(opt.value)}
-                                    className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-2.5 md:p-3 transition-all duration-200 relative text-left w-full ${selected
-                                      ? 'border-emerald-500 bg-emerald-50'
-                                      : 'border-gray-200 hover:border-emerald-300'
-                                      }`}
-                                  >
-                                    {selected && (
-                                      <div className="absolute top-1.5 right-1.5 md:top-2 md:right-2 bg-emerald-500 rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center">
-                                        <span className="text-white text-[10px]">✓</span>
-                                      </div>
-                                    )}
-                                    <div className="text-lg md:text-xl mb-1">{opt.emoji}</div>
-                                    <div className="text-gray-800 text-xs md:text-sm font-medium leading-tight">{opt.label}</div>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Step 6 — Mental clarity */}
-                        {currentStep === 6 && (
-                          <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
-                              🔬 TESTING: VITAMIN D3 · B12 · OMEGA-3 FATTY ACIDS
-                            </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
-                              During deep focus work, what happens to your mental clarity?
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                              {clarityOptions.map(opt => (
-                                <button
-                                  key={opt.value}
-                                  onClick={() => setAnswers(prev => ({ ...prev, cognitiveClarity: opt.value }))}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.cognitiveClarity === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
-                                    }`}
-                                >
-                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
-                                  <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Step 7 — Recovery & immunity */}
-                        {currentStep === 7 && (
-                          <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
-                              🔬 TESTING: VITAMIN C · D · AMINO ACIDS · ELECTROLYTES
-                            </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
-                              Two quick questions about your recovery &amp; immunity
-                            </h2>
-
-                            <div className="mt-2 mb-6 md:mb-8">
-                              <p className="text-gray-700 font-semibold text-sm md:text-base mb-3">
-                                Muscle soreness 24 hours after light activity:
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {muscleOptions.map(opt => (
-                                  <button
-                                    key={opt.value}
-                                    onClick={() => setAnswers(prev => ({ ...prev, muscleRecovery: opt.value }))}
-                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-xs md:text-sm cursor-pointer font-medium transition-all ${answers.muscleRecovery === opt.value
-                                      ? 'bg-emerald-500 text-black border-emerald-500'
-                                      : 'border-gray-300 text-gray-600 hover:border-emerald-400'
-                                      }`}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="border-t border-gray-100 my-4" />
-
-                            <div>
-                              <p className="text-gray-700 font-semibold text-sm md:text-base mb-3">
-                                Colds, flu, or infections in the last 6 months:
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {immuneOptions.map(opt => (
-                                  <button
-                                    key={opt.value}
-                                    onClick={() => setAnswers(prev => ({ ...prev, immuneResilience: opt.value }))}
-                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-xs md:text-sm cursor-pointer font-medium transition-all ${answers.immuneResilience === opt.value
-                                      ? 'bg-emerald-500 text-black border-emerald-500'
-                                      : 'border-gray-300 text-gray-600 hover:border-emerald-400'
-                                      }`}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                ))}
                               </div>
                             </div>
                           </div>

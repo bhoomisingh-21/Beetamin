@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Medal, ShieldCheck, CheckCircle2, Users, Star } from "lucide-react";
+import { Medal, ShieldCheck, CheckCircle2, Users, Star, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const EXPERTS = [
@@ -69,21 +69,35 @@ export default function Experts() {
             Every plan is designed by certified nutritionists and reviewed by doctors — not AI.
           </p>
 
-          <div className="flex justify-center gap-3 flex-wrap mt-8">
-            {TRUST_BADGES.map(({ icon: Icon, label, iconColor }) => (
-              <div
-                key={label}
-                className="bg-gray-50/80 border border-gray-100 rounded-full px-4 py-2 flex items-center gap-2.5"
-              >
-                <Icon size={15} className={`${iconColor} stroke-[2.5]`} />
-                <span className="text-black text-xs font-semibold">{label}</span>
-              </div>
-            ))}
+          <div className="mt-8 w-full max-w-lg mx-auto md:max-w-none">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:hidden">
+              {TRUST_BADGES.map(({ icon: Icon, label, iconColor }) => (
+                <div
+                  key={label}
+                  className="bg-gray-50/80 border border-gray-100 rounded-full px-3 py-2 sm:px-4 flex items-center gap-2 min-w-0"
+                >
+                  <Icon size={15} className={`${iconColor} shrink-0 stroke-[2.5]`} />
+                  <span className="text-black text-[11px] sm:text-xs font-semibold leading-tight text-left">{label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:flex justify-center gap-3 flex-wrap">
+              {TRUST_BADGES.map(({ icon: Icon, label, iconColor }) => (
+                <div
+                  key={`d-${label}`}
+                  className="bg-gray-50/80 border border-gray-100 rounded-full px-4 py-2 flex items-center gap-2.5"
+                >
+                  <Icon size={15} className={`${iconColor} stroke-[2.5]`} />
+                  <span className="text-black text-xs font-semibold">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* ✅ MOBILE SCROLL */}
-        <div className="flex md:hidden overflow-x-auto gap-5 mt-16 pb-4 px-6 scrollbar-hide">
+        <div className="relative">
+          <div className="flex md:hidden overflow-x-auto gap-5 mt-16 pb-4 pl-6 pr-10 scrollbar-hide">
           {EXPERTS.map((expert, i) => (
             <motion.div
               key={expert.name}
@@ -97,6 +111,13 @@ export default function Experts() {
               <ExpertCardContent expert={expert} />
             </motion.div>
           ))}
+          </div>
+          <div
+            className="pointer-events-none absolute right-0 top-0 bottom-4 flex w-10 items-center justify-end bg-gradient-to-l from-white pr-2 md:hidden"
+            aria-hidden
+          >
+            <ChevronRight className="text-gray-400" size={22} strokeWidth={2} />
+          </div>
         </div>
 
         {/* ✅ DESKTOP GRID (UNCHANGED) */}

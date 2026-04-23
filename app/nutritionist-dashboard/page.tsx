@@ -273,41 +273,47 @@ export default function NutritionistDashboard() {
   return (
     <div className="min-h-screen bg-[#0A0F14]">
       {/* Top bar */}
-      <div className="bg-[#0A0F14]/90 border-b border-white/5 px-6 py-4 flex items-center justify-between">
-        <a href="#" className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
-          <Leaf className="text-emerald-500" size={18} />
-          <span className="text-white font-bold">TheBeetamin</span>
-        </a>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push('/nutritionist-dashboard/availability')}
-            className="hidden sm:flex items-center gap-2 text-gray-400 hover:text-white text-sm border border-white/10 rounded-xl px-4 py-2 transition hover:border-white/30"
-          >
-            <Settings size={14} /> Availability
-          </button>
-          <span className="text-gray-400 text-sm hidden sm:block">Admin Dashboard</span>
-          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0">
-            {initials}
+      <div className="bg-[#0A0F14]/90 border-b border-white/5 px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <a href="#" className="flex items-center gap-2 min-w-0" onClick={(e) => e.preventDefault()}>
+            <Leaf className="text-emerald-500 shrink-0" size={18} />
+            <span className="text-white font-bold text-sm sm:text-base truncate">TheBeetamin</span>
+          </a>
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => router.push('/nutritionist-dashboard/availability')}
+              className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-white text-xs sm:text-sm border border-white/10 rounded-xl px-3 sm:px-4 py-2 transition hover:border-white/30"
+            >
+              <Settings size={14} className="shrink-0" />
+              <span>Availability</span>
+            </button>
+            <span className="text-gray-500 text-xs hidden md:inline">Admin</span>
+            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0">
+              {initials}
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs sm:text-sm font-bold transition"
+            >
+              <LogOut size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-red-400 hover:text-red-300 text-sm font-bold transition"
-          >
-            <LogOut size={14} /> Logout
-          </button>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-white font-black text-3xl">Welcome 👋</h1>
-          <p className="text-gray-400 mt-1">Start the day with managing new appointments</p>
+          <h1 className="text-white font-black text-2xl sm:text-3xl">Welcome 👋</h1>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base">Start the day with managing new appointments</p>
         </motion.div>
 
         {/* Stat cards */}
@@ -315,28 +321,30 @@ export default function NutritionistDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-3 gap-4 mb-8"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8"
         >
           {[
-            { icon: <CalendarCheck size={22} />, value: dashboard.upcoming.length, label: 'Scheduled appointments', bg: 'bg-amber-500/10 border-amber-500/20', icon_color: 'text-amber-400' },
-            { icon: <Clock size={22} />,         value: dashboard.pending.length,  label: 'Pending appointments',   bg: 'bg-orange-500/10 border-orange-500/20', icon_color: 'text-orange-400' },
-            { icon: <TriangleAlert size={22} />, value: allByTab.cancelled.length, label: 'Cancelled appointments', bg: 'bg-red-500/10 border-red-500/20',       icon_color: 'text-red-400' },
+            { icon: <CalendarCheck size={22} />, value: dashboard.upcoming.length, label: 'Scheduled', sub: 'Confirmed sessions', bg: 'bg-amber-500/10 border-amber-500/20', icon_color: 'text-amber-400' },
+            { icon: <Clock size={22} />,         value: dashboard.pending.length,  label: 'Pending',   sub: 'Awaiting your action', bg: 'bg-orange-500/10 border-orange-500/20', icon_color: 'text-orange-400' },
+            { icon: <TriangleAlert size={22} />, value: allByTab.cancelled.length, label: 'Cancelled', sub: 'Rejected or cancelled', bg: 'bg-red-500/10 border-red-500/20',       icon_color: 'text-red-400' },
           ].map((s) => (
-            <div key={s.label} className={`border rounded-2xl p-5 ${s.bg}`}>
+            <div key={s.label} className={`border rounded-2xl p-4 sm:p-5 ${s.bg}`}>
               <div className={s.icon_color}>{s.icon}</div>
-              <p className="text-white font-black text-4xl mt-2">{s.value}</p>
-              <p className="text-gray-400 text-sm mt-1">{s.label}</p>
+              <p className="text-white font-black text-3xl sm:text-4xl mt-2">{s.value}</p>
+              <p className="text-white/90 text-sm font-semibold mt-1">{s.label}</p>
+              <p className="text-gray-500 text-xs mt-0.5 leading-snug">{s.sub}</p>
             </div>
           ))}
         </motion.div>
 
         {/* Tabs */}
-        <div className="flex gap-3 mb-5">
+        <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-5 overflow-x-auto pb-1 -mx-1 px-1">
           {tabs.map((t) => (
             <button
               key={t.key}
+              type="button"
               onClick={() => setActiveTab(t.key)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+              className={`flex shrink-0 items-center gap-2 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition whitespace-nowrap ${
                 activeTab === t.key
                   ? 'bg-emerald-500 text-black font-bold'
                   : 'bg-[#111820] text-gray-400 border border-white/[0.08] hover:text-white'
@@ -359,16 +367,65 @@ export default function NutritionistDashboard() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.25 }}
-          className="bg-[#111820] border border-white/[0.08] rounded-3xl overflow-hidden"
+          className="bg-[#111820] border border-white/[0.08] rounded-2xl sm:rounded-3xl overflow-hidden"
         >
           {rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-600">
+            <div className="flex flex-col items-center justify-center py-16 sm:py-20 text-gray-600 px-4">
               <Calendar size={40} className="mb-3" />
-              <p className="font-medium">No {activeTab} appointments</p>
+              <p className="font-medium text-center text-sm">No {activeTab} appointments</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <>
+            {/* Mobile cards */}
+            <ul className="md:hidden divide-y divide-white/5 p-3 space-y-0">
+              {rows.map((appt) => (
+                <li key={appt.id} className="py-4 first:pt-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-sm shrink-0">
+                        {appt.clients.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-white font-semibold text-sm truncate">{appt.clients.name}</p>
+                        <p className="text-gray-500 text-xs truncate">{appt.clients.phone}</p>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-bold border rounded-full px-2 py-0.5 ${STATUS_BADGE[appt.status] || STATUS_BADGE.pending}`}>
+                      {appt.status === 'confirmed' ? 'Scheduled' : appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
+                    </span>
+                  </div>
+                  <p className="text-white text-sm mt-2">{formatDate(appt.scheduled_date)}, {formatTime(appt.scheduled_time)}</p>
+                  {appt.reason && <p className="text-gray-500 text-xs mt-1 line-clamp-2">{appt.reason}</p>}
+                  <p className="text-gray-500 text-xs mt-1">Session #{appt.session_number}</p>
+                  {(appt.status === 'pending' || appt.status === 'confirmed') && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAppt(appt)}
+                        className={`text-xs font-bold rounded-xl px-4 py-2.5 flex-1 min-w-[120px] ${
+                          appt.status === 'confirmed'
+                            ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                            : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        }`}
+                      >
+                        {appt.status === 'confirmed' ? 'Complete' : 'Schedule'}
+                      </button>
+                      {appt.status === 'pending' && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAppt(appt)}
+                          className="text-xs font-bold rounded-xl px-4 py-2.5 text-red-400 border border-red-500/25 flex-1 min-w-[100px]"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b border-white/5">
                     <th className="text-gray-500 text-xs font-medium text-left px-5 py-4">#</th>
@@ -439,6 +496,7 @@ export default function NutritionistDashboard() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </motion.div>
       </div>
