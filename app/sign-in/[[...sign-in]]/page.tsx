@@ -340,8 +340,8 @@ function PatientClerkSignInContent() {
           routing="path"
           path="/sign-in"
           signUpUrl={signUpHref}
-          forceRedirectUrl={after}
-          signUpForceRedirectUrl={after}
+          fallbackRedirectUrl={after}
+          signUpFallbackRedirectUrl={after}
           appearance={patientClerkAppearance}
         />
       </div>

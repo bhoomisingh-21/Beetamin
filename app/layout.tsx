@@ -13,6 +13,8 @@ const allowedRedirectOrigins = [
   'http://127.0.0.1:3000',
   'https://thebeetamin.com',
   'https://www.thebeetamin.com',
+  // Clerk Frontend API (OAuth handoff); include if your publishable key uses a clerk.* host.
+  'https://clerk.thebeetamin.com',
 ]
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

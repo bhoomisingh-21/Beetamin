@@ -35,8 +35,8 @@ function PatientSignUpForm() {
           routing="path"
           path="/sign-up"
           signInUrl={signInHref}
-          forceRedirectUrl={after}
-          signInForceRedirectUrl={after}
+          fallbackRedirectUrl={after}
+          signInFallbackRedirectUrl={after}
           appearance={patientClerkAppearance}
         />
       </div>
