@@ -337,8 +337,11 @@ function PatientClerkSignInContent() {
       <div className="clerk-sign-in-wrapper w-full">
         <SignIn
           key="patient"
+          routing="path"
+          path="/sign-in"
           signUpUrl={signUpHref}
           forceRedirectUrl={after}
+          signUpForceRedirectUrl={after}
           appearance={patientClerkAppearance}
         />
       </div>

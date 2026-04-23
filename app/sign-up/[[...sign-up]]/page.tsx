@@ -32,8 +32,11 @@ function PatientSignUpForm() {
 
       <div className="clerk-sign-up-wrapper w-full">
         <SignUp
+          routing="path"
+          path="/sign-up"
           signInUrl={signInHref}
           forceRedirectUrl={after}
+          signInForceRedirectUrl={after}
           appearance={patientClerkAppearance}
         />
       </div>
