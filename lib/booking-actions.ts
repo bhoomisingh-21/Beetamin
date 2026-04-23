@@ -51,12 +51,13 @@ export type NutritionistRow = {
 // ─── Client helpers ───────────────────────────────────────────────────────────
 
 export async function getClientByClerkId(clerkUserId: string): Promise<ClientRow | null> {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('clients')
     .select('*')
     .eq('clerk_user_id', clerkUserId)
-    .single()
-  return data
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return data as ClientRow | null
 }
 
 export async function checkClientEligibility(clerkUserId: string) {
@@ -128,10 +129,28 @@ export async function createClientProfile(data: {
   if (!userId) throw new Error('Not authenticated')
 
   const existing = await getClientByClerkId(userId)
-  if (existing) return existing
+  const clerkUser = await currentUser()
+  const nameFromForm = data.name?.trim()
+  const displayName =
+    nameFromForm || clerkUser?.fullName || clerkUser?.firstName || existing?.name || 'User'
+
+  if (existing) {
+    const { data: updated, error } = await supabaseAdmin
+      .from('clients')
+      .update({
+        name: displayName,
+        phone: data.phone,
+        ...(data.goal !== undefined && data.goal !== '' ? { assessment_goal: data.goal } : {}),
+      })
+      .eq('clerk_user_id', userId)
+      .select()
+      .single()
+
+    if (error) throw new Error(error.message)
+    return updated as ClientRow
+  }
 
   // Fetch the actual email from Clerk so we don't violate the unique constraint
-  const clerkUser = await currentUser()
   const email = clerkUser?.primaryEmailAddress?.emailAddress ?? `noemail_${userId}@beetamin.internal`
 
   const startDate = new Date()
@@ -142,7 +161,7 @@ export async function createClientProfile(data: {
     .from('clients')
     .insert({
       clerk_user_id: userId,
-      name: clerkUser?.fullName || clerkUser?.firstName || data.name,
+      name: displayName,
       email,
       phone: data.phone,
       plan_start_date: startDate.toISOString().split('T')[0],
@@ -156,8 +175,8 @@ export async function createClientProfile(data: {
     .select()
     .single()
 
-  if (error) throw error
-  return client
+  if (error) throw new Error(error.message)
+  return client as ClientRow
 }
 
 // ─── Check if current user is a nutritionist ──────────────────────────────────
@@ -280,7 +299,7 @@ export async function requestAppointment(data: {
     .select('*, nutritionists(name, email)')
     .single()
 
-  if (error) throw error
+  if (error) throw new Error(error.message)
 
   // Email the nutritionist
   const { data: nutritionist } = await supabaseAdmin
