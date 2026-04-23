@@ -2,157 +2,237 @@
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Leaf, Calendar, User, Plus, LayoutDashboard, ClipboardList, Home } from 'lucide-react'
+import {
+  Leaf,
+  Calendar,
+  User,
+  Plus,
+  LayoutDashboard,
+  Home,
+  CheckCircle2,
+  Mail,
+  Bell,
+  Sparkles,
+} from 'lucide-react'
 import { Suspense } from 'react'
+import { useUser } from '@clerk/nextjs'
 
 function SuccessContent() {
   const params = useSearchParams()
   const router = useRouter()
+  const { user } = useUser()
 
-  const nutritionist = params.get('nutritionist') || 'Your Nutritionist'
+  const nutritionist = params.get('nutritionist') || 'Your nutritionist'
   const date = params.get('date') || ''
   const time = params.get('time') || ''
 
   return (
-    <div className="min-h-screen bg-[#0A0F14] flex flex-col">
-      {/* Top bar */}
-      <div className="px-6 py-4 flex items-center justify-center border-b border-white/5">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header — match booking / onboard */}
+      <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
         <a href="/" className="flex items-center gap-2">
-          <Leaf className="text-emerald-500" size={18} />
-          <span className="text-white font-bold">TheBeetamin</span>
+          <Leaf className="text-emerald-500 shrink-0" size={18} />
+          <span className="text-gray-900 font-bold">TheBeetamin</span>
         </a>
+        <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => router.push('/booking/dashboard')}
+            className="text-gray-500 hover:text-gray-800 text-sm font-medium transition"
+          >
+            My Sessions
+          </button>
+          {user?.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.imageUrl} alt="" className="w-8 h-8 rounded-full ring-2 ring-gray-100" />
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="w-full max-w-md text-center"
-        >
-          {/* Award badge animation */}
-          <div className="relative flex justify-center mb-6">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+        {/* Main */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:py-14 lg:py-16">
+          <div className="w-full max-w-lg mx-auto text-center">
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 14, delay: 0.15 }}
-              className="relative"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
             >
-              {/* Glow */}
-              <div className="absolute inset-0 rounded-full bg-emerald-500/30 blur-2xl scale-150" />
-              {/* Main badge */}
-              <div className="relative w-28 h-28 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 flex items-center justify-center shadow-2xl shadow-emerald-500/40">
-                <svg viewBox="0 0 80 80" className="w-20 h-20" fill="none">
-                  <circle cx="40" cy="36" r="24" fill="rgba(255,255,255,0.15)" />
-                  <path d="M27 36l9 9 17-18" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                  {/* Ribbon */}
-                  <path d="M30 60 L40 72 L50 60 L44 52 L40 56 L36 52 Z" fill="rgba(255,255,255,0.8)" />
-                  <path d="M34 52 L40 56 L46 52" stroke="rgba(0,200,100,0.8)" strokeWidth="1.5" fill="none" />
-                </svg>
+              {/* Success mark */}
+              <div className="relative flex justify-center mb-8">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.08 }}
+                  className="relative"
+                >
+                  <div className="absolute inset-0 rounded-full bg-emerald-400/25 blur-2xl scale-[1.35]" aria-hidden />
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-500/25 ring-4 ring-white">
+                    <CheckCircle2 className="text-white w-14 h-14 sm:w-16 sm:h-16" strokeWidth={2} />
+                  </div>
+                </motion.div>
               </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <p className="text-emerald-600 text-xs font-bold tracking-widest uppercase mb-2">
+                  Request sent
+                </p>
+                <h1 className="text-gray-900 font-black text-2xl sm:text-3xl leading-tight">
+                  You&apos;re all set — we&apos;ve got your{' '}
+                  <span className="text-emerald-600">session request</span>
+                </h1>
+                <p className="text-gray-500 mt-3 text-sm sm:text-base max-w-md mx-auto leading-relaxed">
+                  Your nutritionist will review it and confirm. You&apos;ll hear from us soon.
+                </p>
+              </motion.div>
+
+              {/* Details card */}
+              {(nutritionist || date) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.32 }}
+                  className="mt-8 text-left bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-7"
+                >
+                  <p className="text-gray-400 text-xs font-semibold uppercase tracking-wide mb-4">
+                    Request summary
+                  </p>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                        <User className="text-emerald-600" size={20} />
+                      </div>
+                      <div className="min-w-0 pt-0.5">
+                        <p className="text-gray-500 text-xs font-medium">Nutritionist</p>
+                        <p className="text-gray-900 font-semibold text-base mt-0.5">{nutritionist}</p>
+                      </div>
+                    </div>
+                    {date && (
+                      <div className="flex items-start gap-4 pt-1 border-t border-gray-100">
+                        <div className="w-11 h-11 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0">
+                          <Calendar className="text-sky-600" size={20} />
+                        </div>
+                        <div className="min-w-0 pt-0.5">
+                          <p className="text-gray-500 text-xs font-medium">Date & time</p>
+                          <p className="text-gray-900 font-semibold text-base mt-0.5">
+                            {date}
+                            {time ? <span className="text-gray-600 font-medium"> · {time}</span> : null}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* What happens next */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.42 }}
+                className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50/60 px-5 py-5 sm:px-6 text-left"
+              >
+                <p className="text-emerald-800 text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  What happens next
+                </p>
+                <ul className="space-y-3 text-sm text-gray-700">
+                  <li className="flex gap-3">
+                    <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={18} />
+                    <span>Your nutritionist reviews and confirms your slot.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <Mail className="text-emerald-600 shrink-0 mt-0.5" size={18} />
+                    <span>Watch your inbox for a confirmation email (usually within 24 hours).</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <Bell className="text-emerald-600 shrink-0 mt-0.5" size={18} />
+                    <span>We&apos;ll remind you 24 hours and 1 hour before your session.</span>
+                  </li>
+                </ul>
+              </motion.div>
+
+              {/* CTAs */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.52 }}
+                className="mt-8 flex flex-col gap-3 max-w-sm mx-auto sm:max-w-none"
+              >
+                <button
+                  type="button"
+                  onClick={() => router.push('/booking/dashboard')}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl py-3.5 sm:py-4 transition flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20"
+                >
+                  <LayoutDashboard size={18} />
+                  Go to My Sessions
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/booking/new')}
+                  className="w-full border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 hover:border-gray-300 rounded-2xl py-3.5 transition flex items-center justify-center gap-2 text-sm font-semibold"
+                >
+                  <Plus size={18} />
+                  Book another session
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/')}
+                  className="w-full text-gray-500 hover:text-gray-800 rounded-2xl py-3 transition flex items-center justify-center gap-2 text-sm font-medium"
+                >
+                  <Home size={18} />
+                  Back to home
+                </button>
+              </motion.div>
+
+              <p className="text-gray-400 text-xs mt-8">
+                Questions? We&apos;re at{' '}
+                <a href="mailto:hi@thebeetamin.com" className="text-emerald-600 font-medium hover:underline">
+                  hi@thebeetamin.com
+                </a>
+              </p>
             </motion.div>
           </div>
+        </div>
 
-          {/* Heading */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <h1 className="text-white font-black text-3xl leading-tight">
-              Your <span className="text-emerald-400">appointment request</span> has been
-              successfully submitted!
-            </h1>
-            <p className="text-gray-400 mt-3">
-              We&apos;ll be in touch shortly to confirm.
+        {/* Side panel — desktop */}
+        <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden bg-[#0A1A10]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&auto=format&fit=crop&q=80"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-30"
+          />
+          <div className="relative z-10 flex flex-col justify-center px-12 py-16">
+            <span className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold tracking-widest uppercase rounded-full px-3 py-1 mb-6 w-fit">
+              ✓ Request received
+            </span>
+            <h2 className="text-white font-black text-3xl leading-tight">
+              Sit tight —
+              <br />
+              <span className="text-emerald-400">we&apos;ll handle the rest.</span>
+            </h2>
+            <p className="text-gray-400 text-sm mt-4 leading-relaxed max-w-sm">
+              Your plan includes expert-led sessions and reminders, so you never miss a beat on your health journey.
             </p>
-          </motion.div>
-
-          {/* Appointment details card */}
-          {(nutritionist || date) && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mt-7 bg-[#111820] border border-white/[0.08] rounded-2xl px-5 py-4"
-            >
-              <p className="text-gray-500 text-xs font-medium mb-3 text-left">Requested appointment details:</p>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* Nutritionist */}
-                <div className="flex items-center gap-2.5 flex-1">
-                  <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                    <User className="text-emerald-400" size={16} />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-gray-500 text-[10px]">Nutritionist</p>
-                    <p className="text-white font-semibold text-sm">{nutritionist}</p>
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="hidden sm:block w-px h-8 bg-white/10" />
-
-                {/* Date & time */}
-                {date && (
-                  <div className="flex items-center gap-2.5 flex-1">
-                    <div className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0">
-                      <Calendar className="text-blue-400" size={16} />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-gray-500 text-[10px]">Date & Time</p>
-                      <p className="text-white font-semibold text-sm">{date}{time ? `, ${time}` : ''}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* What happens next */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-            className="mt-4 bg-emerald-500/5 border border-emerald-500/15 rounded-2xl px-5 py-4 text-left"
-          >
-            <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-2">What happens next</p>
-            <ul className="space-y-1.5 text-gray-400 text-sm">
-              <li>✅ Your nutritionist reviews the request</li>
-              <li>📧 You&apos;ll receive a confirmation email within 24 hours</li>
-              <li>⏰ Reminders sent 24 hours and 1 hour before the session</li>
+            <ul className="mt-10 space-y-4">
+              {[
+                'Pending → confirmed by your nutritionist',
+                'Email updates at every step',
+                'Session reminders before you go live',
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0" />
+                  <span className="text-gray-300 text-sm">{item}</span>
+                </li>
+              ))}
             </ul>
-          </motion.div>
-
-          {/* CTA buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.75 }}
-            className="mt-6 flex flex-col gap-3"
-          >
-            <button
-              onClick={() => router.push('/booking/profile')}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl py-4 transition flex items-center justify-center gap-2"
-            >
-              <LayoutDashboard size={18} />
-              Manage My Sessions
-            </button>
-            <button
-              onClick={() => router.push('/booking/new')}
-              className="w-full border border-white/15 text-gray-300 hover:text-white hover:border-white/30 rounded-2xl py-3.5 transition flex items-center justify-center gap-2 text-sm font-medium"
-            >
-              <Plus size={16} />
-              Book Another Session
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="w-full border border-white/10 text-gray-500 hover:text-gray-300 hover:border-white/20 rounded-2xl py-3.5 transition flex items-center justify-center gap-2 text-sm font-medium"
-            >
-              <Home size={16} />
-              Back to Home
-            </button>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -160,11 +240,16 @@ function SuccessContent() {
 
 export default function SuccessPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0A0F14] flex items-center justify-center">
-        <div className="animate-spin text-emerald-400 text-2xl">●</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-9 w-9 rounded-full border-2 border-emerald-200 border-t-emerald-600 animate-spin" />
+            <p className="text-gray-500 text-sm">Loading…</p>
+          </div>
+        </div>
+      }
+    >
       <SuccessContent />
     </Suspense>
   )

@@ -179,6 +179,13 @@ export default function OnboardPage() {
         setIsSubmitting(false)
         return
       }
+      if (form.gender) {
+        try {
+          localStorage.setItem('beetamin_profile_gender', form.gender)
+        } catch {
+          /* ignore */
+        }
+      }
       router.push('/booking/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

@@ -85,23 +85,23 @@ export default function CalendarPicker({
   }
 
   return (
-    <div className="bg-[#111820] border border-white/[0.08] rounded-2xl p-4 w-full max-w-sm">
+    <div className="bg-white border border-gray-200 rounded-2xl p-4 w-full max-w-sm mx-auto shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={prevMonth}
-          className="p-2 rounded-lg hover:bg-white/5 transition text-gray-400 hover:text-white"
+          className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-500 hover:text-gray-900"
         >
           <ChevronLeft size={18} />
         </button>
-        <span className="text-white font-bold text-sm">
+        <span className="text-gray-900 font-bold text-sm">
           {MONTHS[month]} {year}
         </span>
         <button
           type="button"
           onClick={nextMonth}
-          className="p-2 rounded-lg hover:bg-white/5 transition text-gray-400 hover:text-white"
+          className="p-2 rounded-lg hover:bg-gray-100 transition text-gray-500 hover:text-gray-900"
         >
           <ChevronRight size={18} />
         </button>
@@ -110,7 +110,7 @@ export default function CalendarPicker({
       {/* Day labels */}
       <div className="grid grid-cols-7 mb-2">
         {DAYS.map((d) => (
-          <div key={d} className="text-center text-gray-600 text-xs font-medium py-1">
+          <div key={d} className="text-center text-gray-500 text-xs font-medium py-1">
             {d}
           </div>
         ))}
@@ -132,10 +132,10 @@ export default function CalendarPicker({
               onClick={() => onSelect(new Date(year, month, day))}
               className={`
                 relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-sm transition
-                ${sel ? 'bg-emerald-500 text-black font-bold' : ''}
-                ${!sel && tod ? 'border border-emerald-500/50 text-emerald-400' : ''}
-                ${!sel && !tod && !disabled ? 'text-gray-300 hover:bg-white/10' : ''}
-                ${disabled ? 'text-gray-700 cursor-not-allowed' : ''}
+                ${sel ? 'bg-emerald-500 text-white font-bold shadow-sm' : ''}
+                ${!sel && tod ? 'border border-emerald-500 text-emerald-700 font-medium' : ''}
+                ${!sel && !tod && !disabled ? 'text-gray-800 hover:bg-emerald-50' : ''}
+                ${disabled ? 'text-gray-300 cursor-not-allowed' : ''}
               `}
             >
               {day}

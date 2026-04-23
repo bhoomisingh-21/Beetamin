@@ -25,6 +25,8 @@ const isProtectedRoute = createRouteMatcher([
   '/booking/onboard(.*)',
   '/booking/profile(.*)',
   '/booking/success(.*)',
+  '/detailed-assessment(.*)',
+  '/report(.*)',
   '/nutritionist(.*)',
   // /nutritionist-dashboard is protected by Supabase session (see below), not Clerk
 ])
