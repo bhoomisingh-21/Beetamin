@@ -71,14 +71,14 @@ const styles = StyleSheet.create({
     backgroundColor: GREEN,
     marginTop: 12,
     marginBottom: 28,
-    width: '100%',
+    alignSelf: 'stretch',
   },
   coverTitle: {
     fontFamily: 'Times-Bold',
     fontSize: 22,
     color: GREEN,
     textAlign: 'center',
-    lineHeight: 1.35,
+    lineHeight: 26,
     marginBottom: 8,
   },
   coverSub: {
@@ -89,18 +89,21 @@ const styles = StyleSheet.create({
   },
   coverDivider: {
     borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
     borderBottomColor: '#e5e5e5',
     marginVertical: 16,
+    alignSelf: 'stretch',
   },
   patientBox: {
     backgroundColor: LIGHT_GREEN,
     borderWidth: 1,
+    borderStyle: 'solid',
     borderColor: '#c3e6cb',
     borderRadius: 4,
     padding: 16,
     marginTop: 8,
   },
-  patientRow: { fontSize: 10.5, color: TEXT, marginBottom: 8, lineHeight: 1.7 },
+  patientRow: { fontSize: 11, color: TEXT, marginBottom: 8, lineHeight: 17 },
   patientLabel: { fontFamily: 'Helvetica-Bold', color: GREEN },
   confidential: {
     marginTop: 12,
@@ -119,25 +122,42 @@ const styles = StyleSheet.create({
     color: MUTED,
   },
   bodyPage: {
-    padding: 40,
+    paddingTop: 40,
     paddingBottom: 52,
+    paddingLeft: 40,
+    paddingRight: 40,
     fontFamily: 'Helvetica',
-    fontSize: 10.5,
+    fontSize: 11,
     color: TEXT,
-    lineHeight: 1.7,
+    lineHeight: 17,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     borderBottomWidth: 1,
+    borderStyle: 'solid',
     borderBottomColor: GREEN,
     paddingBottom: 6,
     marginBottom: 12,
+    alignSelf: 'stretch',
   },
-  headerLeft: { fontSize: 8, color: GREEN, fontFamily: 'Helvetica-Bold' },
-  headerCenter: { fontSize: 8, color: TEXT, maxWidth: 240, textAlign: 'center' },
-  headerRight: { fontSize: 7, color: MUTED },
+  headerLeft: {
+    fontSize: 8,
+    color: GREEN,
+    fontFamily: 'Helvetica-Bold',
+    width: 72,
+    flexShrink: 0,
+  },
+  headerCenter: {
+    fontSize: 8,
+    color: TEXT,
+    textAlign: 'center',
+    flexGrow: 1,
+    flexBasis: 0,
+    paddingLeft: 4,
+    paddingRight: 4,
+  },
+  headerRight: { fontSize: 7, color: MUTED, width: 88, flexShrink: 0, textAlign: 'right' },
   sectionBar: {
     backgroundColor: GREEN,
     paddingVertical: 6,
@@ -158,16 +178,16 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
   },
   bodyText: {
-    fontSize: 10.5,
+    fontSize: 11,
     color: TEXT,
-    lineHeight: 1.7,
+    lineHeight: 17,
     marginBottom: 8,
   },
   bodyItalic: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontStyle: 'italic',
     color: MUTED,
-    lineHeight: 1.7,
+    lineHeight: 17,
     marginBottom: 16,
   },
   deficiencyCard: {
@@ -176,6 +196,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: ROW_BG,
     borderLeftWidth: 4,
+    borderLeftStyle: 'solid',
     borderLeftColor: GREEN,
   },
   fieldLabel: {
@@ -183,37 +204,48 @@ const styles = StyleSheet.create({
     color: GREEN,
     fontSize: 10,
     marginBottom: 8,
-    lineHeight: 1.6,
+    lineHeight: 15,
   },
   fieldValue: {
-    fontSize: 10.5,
-    lineHeight: 1.7,
+    fontSize: 11,
+    lineHeight: 17,
     marginBottom: 8,
     color: TEXT,
   },
-  dayHeader: {
+  dayHeaderBox: {
     backgroundColor: LIGHT_GREEN,
     padding: 8,
     marginBottom: 10,
+  },
+  dayHeaderText: {
     color: GREEN,
     fontSize: 11,
     fontFamily: 'Helvetica-Bold',
+    lineHeight: 14,
   },
   mealRow: {
     marginBottom: 10,
     paddingBottom: 8,
     borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
     borderBottomColor: '#eeeeee',
   },
   mealLabel: {
     fontFamily: 'Helvetica-Bold',
     color: GREEN,
-    fontSize: 10.5,
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  mealBody: {
+    fontSize: 11,
+    lineHeight: 17,
+    color: TEXT,
     marginBottom: 4,
   },
   supplementCard: {
     backgroundColor: '#ffffff',
     borderWidth: 1,
+    borderStyle: 'solid',
     borderColor: '#d4edda',
     borderRadius: 8,
     padding: 16,
@@ -228,7 +260,7 @@ const styles = StyleSheet.create({
   supplementFieldValue: {
     fontSize: 10,
     marginBottom: 8,
-    lineHeight: 1.7,
+    lineHeight: 15,
     color: TEXT,
   },
   safetyBox: {
@@ -236,8 +268,10 @@ const styles = StyleSheet.create({
     padding: 8,
     marginTop: 10,
     borderRadius: 4,
+  },
+  safetyText: {
     fontSize: 9,
-    lineHeight: 1.5,
+    lineHeight: 14,
     color: TEXT,
   },
   foodBox: {
@@ -245,29 +279,47 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 6,
     borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
     borderBottomColor: '#e5e5e5',
   },
   avoidLabel: { fontFamily: 'Helvetica-Bold', color: RED, fontSize: 10, marginBottom: 6 },
   tryLabel: { fontFamily: 'Helvetica-Bold', color: GREEN, fontSize: 10, marginTop: 8, marginBottom: 4 },
-  routineRow: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-start' },
-  routineTime: { width: 80, fontFamily: 'Helvetica-Bold', color: GREEN, fontSize: 10.5 },
-  routineBody: { flex: 1, fontSize: 10.5, lineHeight: 1.7, color: TEXT },
+  routineRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+  },
+  routineTime: {
+    width: 80,
+    flexShrink: 0,
+    fontFamily: 'Helvetica-Bold',
+    color: GREEN,
+    fontSize: 11,
+  },
+  routineBodyCol: {
+    flexGrow: 1,
+    flexBasis: 0,
+  },
+  routineBody: { fontSize: 11, lineHeight: 17, color: TEXT },
   doctorBox: {
     backgroundColor: CREAM,
     borderWidth: 1,
+    borderStyle: 'solid',
     borderColor: '#e8e0d0',
     padding: 14,
     marginTop: 12,
   },
   doctorItalic: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontStyle: 'italic',
     color: TEXT,
-    lineHeight: 1.7,
+    lineHeight: 17,
   },
   signatureLine: {
     marginTop: 20,
     borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
     borderBottomColor: TEXT,
     width: 140,
   },
@@ -275,8 +327,37 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 8,
     color: MUTED,
-    lineHeight: 1.5,
+    lineHeight: 12,
   },
+  footerBar: {
+    position: 'absolute',
+    bottom: 14,
+    left: 40,
+    right: 40,
+    borderTopWidth: 1,
+    borderTopStyle: 'solid',
+    borderTopColor: '#cccccc',
+    paddingTop: 6,
+    alignSelf: 'stretch',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 2,
+    alignSelf: 'stretch',
+  },
+  footerLeft: { fontSize: 7, color: MUTED, width: 120, flexShrink: 0 },
+  footerMid: {
+    fontSize: 7,
+    color: MUTED,
+    flexGrow: 1,
+    flexBasis: 0,
+    textAlign: 'center',
+    paddingLeft: 4,
+    paddingRight: 4,
+  },
+  footerRight: { fontSize: 7, color: MUTED, width: 96, flexShrink: 0, textAlign: 'right' },
+  footerDisclaimer: { fontSize: 7, color: MUTED, textAlign: 'center', marginTop: 2 },
 })
 
 function SectionHeader({ title, first }: { title: string; first?: boolean }) {
@@ -327,7 +408,9 @@ function renderMealPlanBlocks(text: string) {
     const mealChunks = rest.split(/(?=\n(?:BREAKFAST|MID-MORNING|LUNCH|EVENING SNACK|DINNER)\s*[—-])/i)
     return (
       <View key={idx} style={{ marginBottom: 20 }} wrap={false}>
-        <Text style={styles.dayHeader}>{firstLine}</Text>
+        <View style={styles.dayHeaderBox}>
+          <Text style={styles.dayHeaderText}>{firstLine}</Text>
+        </View>
         {mealChunks
           .map((c) => c.trim())
           .filter(Boolean)
@@ -341,9 +424,7 @@ function renderMealPlanBlocks(text: string) {
             return (
               <View key={j} style={styles.mealRow}>
                 <Text style={styles.mealLabel}>{label}</Text>
-                {main ? (
-                  <Text style={{ fontSize: 10.5, lineHeight: 1.7, color: TEXT, marginBottom: 4 }}>{main}</Text>
-                ) : null}
+                {main ? <Text style={styles.mealBody}>{main}</Text> : null}
                 {why ? <Text style={styles.bodyItalic}>{why}</Text> : null}
               </View>
             )
@@ -398,7 +479,7 @@ function renderSupplementCards(text: string) {
         {renderSupplementCardLines(mainLines)}
         {safetyPart ? (
           <View style={styles.safetyBox}>
-            <Text style={{ fontSize: 9, lineHeight: 1.5 }}>{safetyPart}</Text>
+            <Text style={styles.safetyText}>{safetyPart}</Text>
           </View>
         ) : null}
       </View>
@@ -434,7 +515,7 @@ function renderFoodBlocks(text: string) {
           )
         }
         return (
-          <Text key={j} style={{ fontSize: 10.5, lineHeight: 1.7, marginBottom: 4 }}>
+          <Text key={j} style={styles.mealBody}>
             {line}
           </Text>
         )
@@ -466,7 +547,7 @@ function renderRoutineRows(text: string) {
     return (
       <View key={idx} style={styles.routineRow} wrap={false}>
         <Text style={styles.routineTime}>{r.time}</Text>
-        <View style={{ flex: 1 }}>
+        <View style={styles.routineBodyCol}>
           <Text style={styles.routineBody}>{main}</Text>
           {why ? <Text style={styles.bodyItalic}>{why.trim()}</Text> : null}
         </View>
@@ -545,7 +626,7 @@ function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: D
         <View style={styles.doctorBox}>
           <Text style={styles.doctorItalic}>{sections.doctorNote}</Text>
           <View style={styles.signatureLine} />
-          <Text style={{ marginTop: 8, fontSize: 10.5, fontFamily: 'Helvetica-Bold' }}>Dr. Priya Sharma</Text>
+          <Text style={{ marginTop: 8, fontSize: 11, fontFamily: 'Helvetica-Bold' }}>Dr. Priya Sharma</Text>
           <Text style={{ fontSize: 8, color: MUTED, marginTop: 2 }}>
             Clinical Nutritionist | M.Sc Nutrition & Dietetics · Reg. No. NUT-2847
           </Text>
@@ -558,27 +639,16 @@ function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: D
           This report was prepared exclusively for {patientName}
         </Text>
 
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 14,
-            left: 40,
-            right: 40,
-            borderTopWidth: 0.5,
-            borderTopColor: '#cccccc',
-            paddingTop: 6,
-          }}
-          fixed
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-            <Text style={{ fontSize: 7, color: MUTED }}>thebeetamin.com</Text>
-            <Text style={{ fontSize: 7, color: MUTED }}>Report ID: {reportId}</Text>
+        <View style={styles.footerBar} fixed>
+          <View style={styles.footerRow}>
+            <Text style={styles.footerLeft}>thebeetamin.com</Text>
+            <Text style={styles.footerMid}>Report ID: {reportId}</Text>
             <Text
-              style={{ fontSize: 7, color: MUTED }}
+              style={styles.footerRight}
               render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
             />
           </View>
-          <Text style={{ fontSize: 6.5, color: MUTED, textAlign: 'center' }}>
+          <Text style={styles.footerDisclaimer}>
             For wellness guidance only — not a substitute for medical advice
           </Text>
         </View>
@@ -602,6 +672,11 @@ export async function generateRecoveryPlanPdfBuffer(input: {
       sections={clean}
     />
   )
-  const buf = await renderToBuffer(doc)
-  return Buffer.from(buf)
+  try {
+    const buf = await renderToBuffer(doc)
+    return Buffer.from(buf)
+  } catch (err) {
+    console.error('[PDF Generation Error]', err)
+    throw err
+  }
 }

@@ -8,6 +8,9 @@ import type { DetailedAssessmentPayload, RecoveryReportSections } from '@/lib/re
 import { sendRecoveryReportEmail } from '@/lib/send-report-email'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
+export const runtime = 'nodejs'
+export const maxDuration = 60
+
 const GROQ_APPENDIX = `
 SUPPLEMENT SECTION RULES — VERY IMPORTANT:
 Recommend MAXIMUM 2 supplements only.
@@ -251,14 +254,11 @@ export async function POST(req: Request) {
         preparedOn,
         sections,
       })
-    } catch (e) {
-      console.error('[generate-report] pdf', e)
+    } catch (err) {
+      console.error('[PDF Generation Error]', err)
       return NextResponse.json(
-        {
-          error: 'We could not build your PDF. See server logs for the react-pdf error.',
-          code: 'PDF_RENDER',
-        },
-        { status: 502 },
+        { error: 'PDF generation failed', detail: String(err) },
+        { status: 500 },
       )
     }
 
@@ -341,6 +341,3 @@ export async function POST(req: Request) {
     )
   }
 }
-
-export const runtime = 'nodejs'
-export const maxDuration = 120
