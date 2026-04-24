@@ -1,8 +1,10 @@
-import { auth } from '@clerk/nextjs/server'
+'use client'
+
+import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Script from 'next/script'
-import { Suspense } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertCircle,
   BadgeCheck,
@@ -12,6 +14,7 @@ import {
   Download,
   FileText,
   LayoutDashboard,
+  Loader2,
   Lock,
   Mail,
   Microscope,
@@ -19,14 +22,31 @@ import {
   Stethoscope,
   UtensilsCrossed,
 } from 'lucide-react'
-import { supabaseAdmin } from '@/lib/supabase-admin'
 
-export default function ReportPage({ params }: { params: Promise<{ reportId: string }> | { reportId: string } }) {
-  return (
-    <Suspense fallback={<ReportLoadingSkeleton />}>
-      <ReportPageContent params={params} />
-    </Suspense>
-  )
+type PollStatus = 'generating' | 'ready' | 'failed' | 'generated' | string | null
+
+type BuildPdfGetResponse = {
+  status: PollStatus
+  pdf_url: string | null
+  email: string | null
+  report_id: string | null
+  patientName: string | null
+  error?: string
+}
+
+const GENERATING_MESSAGES = [
+  'Analyzing your deficiencies and symptoms…',
+  'Building your personalized 7-day meal plan…',
+  'Selecting evidence-based supplement guidance…',
+  'Formatting your recovery plan as a professional PDF…',
+  'Almost there — final checks before delivery…',
+]
+
+const POLL_MS = 4000
+const TIMEOUT_MS = 180000
+
+function isReadyStatus(s: PollStatus): boolean {
+  return s === 'ready' || s === 'generated'
 }
 
 function ReportLoadingSkeleton() {
@@ -60,118 +80,307 @@ function ReportLoadingSkeleton() {
   )
 }
 
-async function ReportPageContent({ params }: { params: Promise<{ reportId: string }> | { reportId: string } }) {
-  const resolved = await Promise.resolve(params)
-  const reportIdRaw = resolved && typeof resolved === 'object' && 'reportId' in resolved ? resolved.reportId : ''
-  if (typeof reportIdRaw !== 'string' || !reportIdRaw.trim()) {
+function ReportErrorState({ title, body, reportId }: { title: string; body: string; reportId: string }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafafa] px-6 py-16 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
+        <AlertCircle className="h-9 w-9 text-orange-600" strokeWidth={2} />
+      </div>
+      <h1 className="mt-6 text-xl font-bold text-gray-900">{title}</h1>
+      <p className="mt-3 max-w-md text-sm text-gray-600">
+        {body}{' '}
+        {reportId ? (
+          <span className="font-mono text-xs text-gray-800">({reportId})</span>
+        ) : null}
+      </p>
+      <Link
+        href="/booking/dashboard"
+        className="mt-8 inline-flex rounded-lg bg-[#1a472a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#143622]"
+      >
+        Go back to Dashboard
+      </Link>
+    </div>
+  )
+}
+
+function ConfettiBurst({ active }: { active: boolean }) {
+  if (!active) return null
+  const pieces = Array.from({ length: 28 }, (_, i) => ({
+    id: i,
+    left: `${(i * 37) % 100}%`,
+    delay: `${(i % 8) * 0.08}s`,
+    hue: (i * 47) % 360,
+  }))
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden" aria-hidden>
+      {pieces.map((p) => (
+        <span
+          key={p.id}
+          className="confetti-piece absolute top-[-12px] h-3 w-2 rounded-sm opacity-90"
+          style={{
+            left: p.left,
+            animationDelay: p.delay,
+            backgroundColor: `hsl(${p.hue} 75% 52%)`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+export default function ReportPage() {
+  const params = useParams()
+  const router = useRouter()
+  const { isLoaded, isSignedIn, user } = useUser()
+
+  const reportIdRaw = params?.reportId
+  const reportId = typeof reportIdRaw === 'string' ? decodeURIComponent(reportIdRaw.trim()) : ''
+
+  const [view, setView] = useState<
+    'loading' | 'generating' | 'ready' | 'failed' | 'timeout' | 'not_found' | 'error'
+  >('loading')
+  const [pollData, setPollData] = useState<BuildPdfGetResponse | null>(null)
+  const [messageIndex, setMessageIndex] = useState(0)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const fetchStatus = useCallback(async (): Promise<BuildPdfGetResponse | null> => {
+    if (!reportId) return null
+    const res = await fetch(`/api/build-pdf?reportId=${encodeURIComponent(reportId)}`, {
+      credentials: 'include',
+    })
+    if (res.status === 401) {
+      router.replace(`/sign-in?after=${encodeURIComponent(`/report/${reportId}`)}`)
+      return null
+    }
+    const json = (await res.json()) as BuildPdfGetResponse & { error?: string }
+    if (!res.ok) {
+      console.error('[report page] status fetch', res.status, json)
+      return null
+    }
+    return json
+  }, [reportId, router])
+
+  useEffect(() => {
+    if (!isLoaded) return
+    if (!isSignedIn) {
+      router.replace(`/sign-in?after=${encodeURIComponent(`/report/${reportId || ''}`)}`)
+      return
+    }
+    if (!reportId) {
+      setView('not_found')
+    }
+  }, [isLoaded, isSignedIn, reportId, router])
+
+  useEffect(() => {
+    if (view !== 'loading' || !reportId || !isSignedIn) return
+    let cancelled = false
+    ;(async () => {
+      const data = await fetchStatus()
+      if (cancelled) return
+      if (!data) {
+        setView('error')
+        return
+      }
+      if (data.status == null) {
+        setView('not_found')
+        return
+      }
+      setPollData(data)
+      if (isReadyStatus(data.status)) {
+        setView('ready')
+        setShowConfetti(true)
+        if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current)
+        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 3200)
+        return
+      }
+      if (data.status === 'failed') {
+        setView('failed')
+        return
+      }
+      if (data.status === 'generating') {
+        setView('generating')
+        return
+      }
+      setView('generating')
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [view, reportId, isSignedIn, fetchStatus])
+
+  useEffect(() => {
+    if (view !== 'generating' || !reportId) return
+
+    const interval = setInterval(async () => {
+      const data = await fetchStatus()
+      if (!data) return
+      setPollData(data)
+      if (isReadyStatus(data.status)) {
+        setView('ready')
+        setShowConfetti(true)
+        if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current)
+        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 3200)
+      } else if (data.status === 'failed') {
+        setView('failed')
+      }
+    }, POLL_MS)
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval)
+      setView((v) => (v === 'generating' ? 'timeout' : v))
+    }, TIMEOUT_MS)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
+  }, [view, reportId, fetchStatus])
+
+  useEffect(() => {
+    if (view !== 'generating') return
+    const t = setInterval(() => {
+      setMessageIndex((i) => (i + 1) % GENERATING_MESSAGES.length)
+    }, 3200)
+    return () => clearInterval(t)
+  }, [view])
+
+  useEffect(() => {
+    return () => {
+      if (confettiTimerRef.current) clearTimeout(confettiTimerRef.current)
+    }
+  }, [])
+
+  const preparedDate = useMemo(() => {
+    const id = pollData?.report_id || reportId
+    const idDateMatch = id?.match(/^BT-(\d{4})(\d{2})(\d{2})-/)
+    let preparedSource = idDateMatch
+      ? new Date(`${idDateMatch[1]}-${idDateMatch[2]}-${idDateMatch[3]}T12:00:00Z`)
+      : new Date()
+    if (Number.isNaN(preparedSource.getTime())) preparedSource = new Date()
+    return preparedSource.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  }, [pollData?.report_id, reportId])
+
+  const displayReportId = pollData?.report_id || reportId
+  const patientName = pollData?.patientName?.trim() || (user?.firstName?.trim() ?? '')
+  const displayName = patientName ? `${patientName}'s` : 'Your'
+  const email = pollData?.email || user?.primaryEmailAddress?.emailAddress || ''
+
+  if (!isLoaded) {
+    return <ReportLoadingSkeleton />
+  }
+
+  if (!isSignedIn) {
+    return <ReportLoadingSkeleton />
+  }
+
+  if (!reportId) {
     return (
       <ReportErrorState
-        title="We couldn&apos;t find your report"
+        title="We couldn't find your report"
         body="Please contact us at support@thebeetamin.com with your Report ID."
         reportId=""
       />
     )
   }
 
-  const decodedId = decodeURIComponent(reportIdRaw.trim())
-
-  let userId: string | null = null
-  try {
-    userId = (await auth()).userId ?? null
-  } catch (e) {
-    console.error('[report page] Clerk auth() failed', e)
+  if (view === 'not_found' || view === 'error') {
     return (
       <ReportErrorState
-        title="Something went wrong"
-        body="We could not verify your session (sign-in service). Refresh the page or try again in a few minutes. If it continues, contact support@thebeetamin.com."
-        reportId={decodedId}
-      />
-    )
-  }
-
-  if (!userId) {
-    redirect('/sign-in?after=' + encodeURIComponent(`/report/${decodedId}`))
-  }
-
-  type PaidReportRow = { pdf_url: string; email: string | null; report_id: string }
-  let row: PaidReportRow | null = null
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('paid_reports')
-      .select('pdf_url, email, report_id')
-      .eq('report_id', decodedId)
-      .eq('user_id', userId)
-      .maybeSingle()
-
-    if (error) {
-      console.error('[report page]', error)
-      return (
-        <ReportErrorState
-          title="We couldn&apos;t find your report"
-          body="Please contact us at support@thebeetamin.com with your Report ID."
-          reportId={decodedId}
-        />
-      )
-    }
-    row = data as PaidReportRow | null
-  } catch (e) {
-    console.error('[report page] unexpected', e)
-    return (
-      <ReportErrorState
-        title="We couldn&apos;t find your report"
+        title="We couldn't find your report"
         body="Please contact us at support@thebeetamin.com with your Report ID."
-        reportId={decodedId}
+        reportId={displayReportId}
       />
     )
   }
 
-  if (!row?.pdf_url) {
+  if (view === 'failed') {
     return (
-      <ReportErrorState
-        title="We couldn&apos;t find your report"
-        body="Please contact us at support@thebeetamin.com with your Report ID."
-        reportId={decodedId}
-      />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafafa] px-6 py-16 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <AlertCircle className="h-9 w-9 text-red-600" strokeWidth={2} />
+        </div>
+        <h1 className="mt-6 text-xl font-bold text-gray-900">Report generation failed</h1>
+        <p className="mt-3 max-w-md text-sm text-gray-600">
+          Something went wrong generating your report. Please contact{' '}
+          <a href="mailto:support@thebeetamin.com" className="font-semibold text-[#1a472a] underline">
+            support@thebeetamin.com
+          </a>{' '}
+          with your Report ID:{' '}
+          <span className="font-mono text-xs text-gray-900">{displayReportId}</span>
+        </p>
+        <Link
+          href="/booking/dashboard"
+          className="mt-8 inline-flex rounded-lg bg-[#1a472a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#143622]"
+        >
+          Go back to Dashboard
+        </Link>
+      </div>
     )
   }
 
-  let patientName = 'there'
-  try {
-    const { data: client } = await supabaseAdmin
-      .from('clients')
-      .select('name')
-      .eq('clerk_user_id', userId)
-      .maybeSingle()
-    patientName = (client?.name as string | undefined)?.trim() || 'there'
-  } catch (e) {
-    console.error('[report page] client fetch', e)
+  if (view === 'timeout') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafafa] px-6 py-16 text-center">
+        <Loader2 className="h-12 w-12 animate-spin text-[#1a472a]" strokeWidth={2} />
+        <h1 className="mt-6 text-xl font-bold text-gray-900">Still working on it</h1>
+        <p className="mt-3 max-w-md text-sm text-gray-600">
+          Your report is taking longer than usual. We&apos;ll email it to you when it&apos;s ready. You can close this
+          page safely.
+        </p>
+        <p className="mt-4 font-mono text-xs text-gray-500">Report ID: {displayReportId}</p>
+        <Link
+          href="/booking/dashboard"
+          className="mt-8 inline-flex rounded-lg border border-[#1a472a] px-6 py-3 text-sm font-semibold text-[#1a472a] hover:bg-[#f0fdf4]"
+        >
+          Go to Dashboard
+        </Link>
+      </div>
+    )
   }
 
-  const displayName = patientName === 'there' ? 'Your' : `${patientName}'s`
-  const idDateMatch = row.report_id?.match(/^BT-(\d{4})(\d{2})(\d{2})-/)
-  let preparedSource = idDateMatch
-    ? new Date(`${idDateMatch[1]}-${idDateMatch[2]}-${idDateMatch[3]}T12:00:00Z`)
-    : new Date()
-  if (Number.isNaN(preparedSource.getTime())) preparedSource = new Date()
-  const preparedDate = preparedSource.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-
-  const email = (row.email as string) || ''
+  if (view === 'loading' || view === 'generating') {
+    return (
+      <div className="min-h-screen bg-[#fafafa] pb-12">
+        <section className="bg-gradient-to-b from-[#1a472a] to-[#2d6a4f] px-4 py-10 md:px-6 md:py-[60px]">
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg">
+              <Loader2 className="h-10 w-10 animate-spin text-[#1a472a]" strokeWidth={2.5} />
+            </div>
+            <h1 className="mt-5 text-[24px] font-extrabold leading-tight text-white md:text-3xl">
+              Preparing your recovery plan
+            </h1>
+            <p className="mt-4 min-h-[3rem] max-w-md text-sm text-white/90 md:text-base">
+              {GENERATING_MESSAGES[messageIndex]}
+            </p>
+            <span className="mt-4 inline-flex items-center rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+              Report ID: {displayReportId}
+            </span>
+          </div>
+        </section>
+        <div className="mx-auto max-w-lg px-4 pt-8 text-center text-sm text-gray-600">
+          This usually takes one to two minutes. This page will update automatically when your PDF is ready.
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
+      <ConfettiBurst active={showConfetti} />
       <style
         dangerouslySetInnerHTML={{
-          __html: `@keyframes reportCheckPop { 0% { transform: scale(0.82); opacity: 0.65; } 100% { transform: scale(1); opacity: 1; } } .report-check-pop { animation: reportCheckPop 0.55s ease-out forwards; }`,
+          __html: `@keyframes reportCheckPop { 0% { transform: scale(0.82); opacity: 0.65; } 100% { transform: scale(1); opacity: 1; } } .report-check-pop { animation: reportCheckPop 0.55s ease-out forwards; } @keyframes confettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0.85; } } .confetti-piece { animation: confettiFall 2.8s ease-in forwards; }`,
         }}
       />
       <script
         type="application/json"
         id="report-dl-config"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({ reportId: row.report_id }) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({ reportId: displayReportId }) }}
       />
       <Script
         id="report-download-init"
@@ -234,7 +443,7 @@ async function ReportPageContent({ params }: { params: Promise<{ reportId: strin
               Prepared by Dr. Priya Sharma, Clinical Nutritionist
             </p>
             <span className="mt-2 inline-flex items-center rounded-full border border-white/30 bg-white px-3 py-1 text-xs font-semibold text-[#1a472a]">
-              Report ID: {row.report_id}
+              Report ID: {displayReportId}
             </span>
           </div>
         </section>
@@ -244,9 +453,7 @@ async function ReportPageContent({ params }: { params: Promise<{ reportId: strin
             <p className="mb-4 text-[9px] font-semibold uppercase tracking-[1.5px] text-[#666] md:text-[11px]">
               Your report is ready to download
             </p>
-            <h2 className="text-base font-bold text-[#1a1a1a] md:text-lg">
-              {displayName} Recovery Plan
-            </h2>
+            <h2 className="text-base font-bold text-[#1a1a1a] md:text-lg">{displayName} Recovery Plan</h2>
             <p className="mt-1 text-[11px] text-[#888] md:text-[13px]">Prepared on {preparedDate}</p>
 
             <button
@@ -313,10 +520,7 @@ async function ReportPageContent({ params }: { params: Promise<{ reportId: strin
                   desc: 'Personal note from Dr. Priya Sharma, Nutritionist',
                 },
               ].map(({ Icon, title, desc }) => (
-                <div
-                  key={title}
-                  className="rounded-xl border border-[#e8f5e9] bg-white p-3 md:p-4"
-                >
+                <div key={title} className="rounded-xl border border-[#e8f5e9] bg-white p-3 md:p-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d4edda] md:h-10 md:w-10">
                     <Icon className="h-5 w-5 text-[#1a472a]" strokeWidth={2} />
                   </div>
@@ -359,26 +563,3 @@ async function ReportPageContent({ params }: { params: Promise<{ reportId: strin
     </>
   )
 }
-
-function ReportErrorState({ title, body, reportId }: { title: string; body: string; reportId: string }) {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafafa] px-6 py-16 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
-        <AlertCircle className="h-9 w-9 text-orange-600" strokeWidth={2} />
-      </div>
-      <h1 className="mt-6 text-xl font-bold text-gray-900">{title}</h1>
-      <p className="mt-3 max-w-md text-sm text-gray-600">
-        {body}{' '}
-        <span className="font-mono text-xs text-gray-800">({reportId})</span>
-      </p>
-      <Link
-        href="/booking/dashboard"
-        className="mt-8 inline-flex rounded-lg bg-[#1a472a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#143622]"
-      >
-        Go back to Dashboard
-      </Link>
-    </div>
-  )
-}
-
-export const runtime = 'nodejs'

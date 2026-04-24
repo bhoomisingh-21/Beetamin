@@ -10,20 +10,19 @@ const MUTED = '#666666'
 const ROW_BG = '#f8f9fa'
 const CREAM = '#faf8f2'
 const RED = '#b91c1c'
-const BULLET = '\u2022 '
 
-/** Strip/replace emoji and pictographs so Helvetica renders reliably in react-pdf */
+/** Strip emojis and unsafe characters for react-pdf (Helvetica). */
 export function sanitizeForPdf(raw: string | null | undefined): string {
   let t = String(raw ?? '')
   const pairs: [RegExp, string][] = [
-    [/🌅\s*/g, 'BREAKFAST — '],
-    [/🍎\s*/g, 'MID-MORNING — '],
-    [/☀️\s*/g, 'LUNCH — '],
-    [/🌿\s*/g, 'EVENING SNACK — '],
-    [/🌙\s*/g, 'DINNER — '],
+    [/🌅\s*/g, ''],
+    [/🍎\s*/g, ''],
+    [/☀️\s*/g, ''],
+    [/🌿\s*/g, ''],
+    [/🌙\s*/g, ''],
     [/⏰\s*/g, ''],
     [/❌\s*/g, '[AVOID] '],
-    [/✅\s*/g, '[TRY INSTEAD] '],
+    [/✅\s*/g, '[SWAP] '],
     [/⚕️\s*/g, ''],
     [/🔬/g, ''],
     [/🥗/g, ''],
@@ -38,13 +37,14 @@ export function sanitizeForPdf(raw: string | null | undefined): string {
     [/🎉/g, ''],
   ]
   for (const [re, rep] of pairs) t = t.replace(re, rep)
+  t = t.replace(/\[TRY INSTEAD\]/gi, '[SWAP]')
   t = t.replace(/\uFE0F/g, '')
   try {
     t = t.replace(/\p{Extended_Pictographic}/gu, '')
   } catch {
     t = t.replace(/[\u231A-\u231B\u23E9-\u23EC\u23F0\u23F3\u25FD-\u25FE\u2614-\u2615\u2648-\u2653\u267F\u2693\u26A1\u26AA-\u26AB\u26BD-\u26BE\u26C4-\u26C5\u26CE\u26D4\u26EA\u26F2-\u26F3\u26F5\u26FA\u26FD\u2705\u270A-\u270B\u2728\u274C\u274E\u2753-\u2755\u2757\u2795-\u2797\u27B0\u27BF\u2B1B-\u2B1C\u2B50\u2B55]/g, '')
   }
-  t = t.replace(/^\s*[-*]\s+/gm, BULLET)
+  t = t.replace(/^\s*[\u2022•*]\s+/gm, '- ')
   return t.replace(/\n{3,}/g, '\n\n').trim()
 }
 
@@ -64,21 +64,27 @@ const styles = StyleSheet.create({
   coverPage: {
     padding: 40,
     backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica',
   },
-  coverLogoLine: {
-    height: 2,
-    backgroundColor: GREEN,
-    marginTop: 12,
-    marginBottom: 28,
-    alignSelf: 'stretch',
-  },
-  coverTitle: {
-    fontFamily: 'Times-Bold',
-    fontSize: 22,
+  coverBrand: {
+    fontSize: 14,
+    fontWeight: 'bold',
     color: GREEN,
     textAlign: 'center',
-    lineHeight: 26,
+    marginBottom: 10,
+  },
+  coverLine: {
+    backgroundColor: GREEN,
+    paddingTop: 1,
+    paddingBottom: 1,
+    marginBottom: 24,
+    width: '100%',
+  },
+  coverTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: GREEN,
+    textAlign: 'center',
+    lineHeight: 1.4,
     marginBottom: 8,
   },
   coverSub: {
@@ -91,8 +97,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: '#e5e5e5',
-    marginVertical: 16,
-    alignSelf: 'stretch',
+    marginTop: 16,
+    marginBottom: 16,
+    width: '100%',
   },
   patientBox: {
     backgroundColor: LIGHT_GREEN,
@@ -103,114 +110,143 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 8,
   },
-  patientRow: { fontSize: 11, color: TEXT, marginBottom: 8, lineHeight: 17 },
-  patientLabel: { fontFamily: 'Helvetica-Bold', color: GREEN },
+  patientRow: {
+    fontSize: 11,
+    color: TEXT,
+    marginBottom: 8,
+    lineHeight: 1.5,
+  },
+  patientLabel: {
+    fontWeight: 'bold',
+    color: GREEN,
+  },
   confidential: {
     marginTop: 12,
     fontSize: 8,
-    letterSpacing: 2,
     color: MUTED,
     textAlign: 'center',
   },
   coverFooter: {
-    position: 'absolute',
-    bottom: 32,
-    left: 40,
-    right: 40,
+    marginTop: 24,
     textAlign: 'center',
     fontSize: 8,
     color: MUTED,
   },
   bodyPage: {
     paddingTop: 40,
-    paddingBottom: 52,
+    paddingBottom: 40,
     paddingLeft: 40,
     paddingRight: 40,
-    fontFamily: 'Helvetica',
-    fontSize: 11,
+    fontSize: 10,
     color: TEXT,
-    lineHeight: 17,
+    lineHeight: 1.5,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderStyle: 'solid',
+    borderBottomStyle: 'solid',
     borderBottomColor: GREEN,
     paddingBottom: 6,
     marginBottom: 12,
-    alignSelf: 'stretch',
+    width: '100%',
   },
   headerLeft: {
     fontSize: 8,
     color: GREEN,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     width: 72,
-    flexShrink: 0,
+  },
+  headerMidWrap: {
+    flexGrow: 1,
+    paddingLeft: 4,
+    paddingRight: 4,
   },
   headerCenter: {
     fontSize: 8,
     color: TEXT,
     textAlign: 'center',
-    flexGrow: 1,
-    flexBasis: 0,
-    paddingLeft: 4,
-    paddingRight: 4,
+    lineHeight: 1.4,
   },
-  headerRight: { fontSize: 7, color: MUTED, width: 88, flexShrink: 0, textAlign: 'right' },
+  headerRight: {
+    fontSize: 8,
+    color: MUTED,
+    width: 88,
+    textAlign: 'right',
+  },
   sectionBar: {
     backgroundColor: GREEN,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    marginTop: 24,
-    marginBottom: 16,
+    paddingTop: 6,
+    paddingBottom: 6,
+    paddingLeft: 10,
+    paddingRight: 10,
+    marginTop: 20,
+    marginBottom: 14,
   },
   sectionBarFirst: {
     backgroundColor: GREEN,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingTop: 6,
+    paddingBottom: 6,
+    paddingLeft: 10,
+    paddingRight: 10,
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   sectionTitle: {
     color: '#ffffff',
-    fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontSize: 12,
+    fontWeight: 'bold',
+    lineHeight: 1.4,
+  },
+  sectionBodyWrap: {
+    marginTop: 4,
   },
   bodyText: {
-    fontSize: 11,
+    fontSize: 10,
     color: TEXT,
-    lineHeight: 17,
-    marginBottom: 8,
+    lineHeight: 1.5,
+    marginBottom: 6,
   },
   bodyItalic: {
-    fontSize: 11,
+    fontSize: 9,
     fontStyle: 'italic',
     color: MUTED,
-    lineHeight: 17,
+    lineHeight: 1.5,
+    marginBottom: 8,
+  },
+  deficiencyRow: {
+    flexDirection: 'row',
     marginBottom: 16,
   },
-  deficiencyCard: {
-    marginBottom: 20,
-    padding: 14,
-    borderRadius: 6,
+  deficiencyStripe: {
+    width: 4,
+    backgroundColor: GREEN,
+    marginRight: 10,
+  },
+  deficiencyCardInner: {
+    flexGrow: 1,
     backgroundColor: ROW_BG,
-    borderLeftWidth: 4,
-    borderLeftStyle: 'solid',
-    borderLeftColor: GREEN,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: '#dddddd',
+    borderRadius: 6,
+    padding: 12,
   },
   fieldLabel: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     color: GREEN,
     fontSize: 10,
-    marginBottom: 8,
-    lineHeight: 15,
+    marginBottom: 4,
+    lineHeight: 1.5,
   },
   fieldValue: {
-    fontSize: 11,
-    lineHeight: 17,
-    marginBottom: 8,
+    fontSize: 10,
+    lineHeight: 1.5,
+    marginBottom: 6,
     color: TEXT,
+  },
+  dayBlock: {
+    marginBottom: 20,
   },
   dayHeaderBox: {
     backgroundColor: LIGHT_GREEN,
@@ -220,8 +256,8 @@ const styles = StyleSheet.create({
   dayHeaderText: {
     color: GREEN,
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
-    lineHeight: 14,
+    fontWeight: 'bold',
+    lineHeight: 1.4,
   },
   mealRow: {
     marginBottom: 10,
@@ -231,14 +267,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eeeeee',
   },
   mealLabel: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     color: GREEN,
-    fontSize: 11,
+    fontSize: 10,
     marginBottom: 4,
+    lineHeight: 1.4,
   },
   mealBody: {
-    fontSize: 11,
-    lineHeight: 17,
+    fontSize: 10,
+    lineHeight: 1.5,
     color: TEXT,
     marginBottom: 4,
   },
@@ -252,15 +289,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   supplementFieldLabel: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     color: GREEN,
     fontSize: 10,
-    marginBottom: 8,
+    marginBottom: 4,
+    lineHeight: 1.5,
   },
   supplementFieldValue: {
     fontSize: 10,
-    marginBottom: 8,
-    lineHeight: 15,
+    marginBottom: 6,
+    lineHeight: 1.5,
     color: TEXT,
   },
   safetyBox: {
@@ -271,7 +309,7 @@ const styles = StyleSheet.create({
   },
   safetyText: {
     fontSize: 9,
-    lineHeight: 14,
+    lineHeight: 1.5,
     color: TEXT,
   },
   foodBox: {
@@ -282,26 +320,41 @@ const styles = StyleSheet.create({
     borderBottomStyle: 'solid',
     borderBottomColor: '#e5e5e5',
   },
-  avoidLabel: { fontFamily: 'Helvetica-Bold', color: RED, fontSize: 10, marginBottom: 6 },
-  tryLabel: { fontFamily: 'Helvetica-Bold', color: GREEN, fontSize: 10, marginTop: 8, marginBottom: 4 },
+  avoidLabel: {
+    fontWeight: 'bold',
+    color: RED,
+    fontSize: 10,
+    marginBottom: 6,
+    lineHeight: 1.4,
+  },
+  tryLabel: {
+    fontWeight: 'bold',
+    color: GREEN,
+    fontSize: 10,
+    marginTop: 8,
+    marginBottom: 4,
+    lineHeight: 1.4,
+  },
   routineRow: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 10,
     alignItems: 'flex-start',
-    alignSelf: 'stretch',
   },
   routineTime: {
     width: 80,
-    flexShrink: 0,
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     color: GREEN,
-    fontSize: 11,
+    fontSize: 10,
+    lineHeight: 1.5,
   },
   routineBodyCol: {
     flexGrow: 1,
-    flexBasis: 0,
   },
-  routineBody: { fontSize: 11, lineHeight: 17, color: TEXT },
+  routineBody: {
+    fontSize: 10,
+    lineHeight: 1.5,
+    color: TEXT,
+  },
   doctorBox: {
     backgroundColor: CREAM,
     borderWidth: 1,
@@ -311,10 +364,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   doctorItalic: {
-    fontSize: 11,
+    fontSize: 10,
     fontStyle: 'italic',
     color: TEXT,
-    lineHeight: 17,
+    lineHeight: 1.5,
   },
   signatureLine: {
     marginTop: 20,
@@ -323,41 +376,76 @@ const styles = StyleSheet.create({
     borderBottomColor: TEXT,
     width: 140,
   },
+  doctorName: {
+    marginTop: 8,
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: TEXT,
+    lineHeight: 1.4,
+  },
+  doctorMeta: {
+    fontSize: 8,
+    color: MUTED,
+    marginTop: 2,
+    lineHeight: 1.5,
+  },
+  doctorClinic: {
+    fontSize: 8,
+    color: MUTED,
+    lineHeight: 1.5,
+  },
   disclaimer: {
     marginTop: 16,
     fontSize: 8,
     color: MUTED,
-    lineHeight: 12,
+    lineHeight: 1.5,
+  },
+  exclusiveNote: {
+    marginTop: 12,
+    fontSize: 8,
+    color: GREEN,
+    fontWeight: 'bold',
+    lineHeight: 1.5,
   },
   footerBar: {
-    position: 'absolute',
-    bottom: 14,
-    left: 40,
-    right: 40,
+    marginTop: 20,
     borderTopWidth: 1,
     borderTopStyle: 'solid',
     borderTopColor: '#cccccc',
     paddingTop: 6,
-    alignSelf: 'stretch',
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     marginBottom: 2,
-    alignSelf: 'stretch',
   },
-  footerLeft: { fontSize: 7, color: MUTED, width: 120, flexShrink: 0 },
+  footerLeft: {
+    fontSize: 8,
+    color: MUTED,
+    width: 120,
+  },
   footerMid: {
-    fontSize: 7,
+    fontSize: 8,
     color: MUTED,
     flexGrow: 1,
-    flexBasis: 0,
     textAlign: 'center',
     paddingLeft: 4,
     paddingRight: 4,
+    lineHeight: 1.4,
   },
-  footerRight: { fontSize: 7, color: MUTED, width: 96, flexShrink: 0, textAlign: 'right' },
-  footerDisclaimer: { fontSize: 7, color: MUTED, textAlign: 'center', marginTop: 2 },
+  footerRight: {
+    fontSize: 8,
+    color: MUTED,
+    width: 96,
+    textAlign: 'right',
+  },
+  footerDisclaimer: {
+    fontSize: 8,
+    color: MUTED,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 1.5,
+  },
 })
 
 function SectionHeader({ title, first }: { title: string; first?: boolean }) {
@@ -373,28 +461,31 @@ function SectionHeader({ title, first }: { title: string; first?: boolean }) {
 function renderDeficiencyBlocks(text: string) {
   const parts = text.split(/(?=\n{0,2}DEFICIENCY NAME:)/i).map((p) => p.trim()).filter(Boolean)
   return parts.map((block, idx) => (
-    <View key={idx} style={styles.deficiencyCard} wrap={false}>
-      {block.split('\n').map((line, j) => {
-        const upper = line.toUpperCase()
-        if (
-          upper.startsWith('DEFICIENCY NAME:') ||
-          upper.startsWith('SEVERITY:') ||
-          upper.startsWith('YOUR SYMPTOMS') ||
-          upper.startsWith('WHY THIS IS HAPPENING') ||
-          upper.startsWith('WHAT THIS MEANS')
-        ) {
+    <View key={idx} style={styles.deficiencyRow} wrap={false}>
+      <View style={styles.deficiencyStripe} />
+      <View style={styles.deficiencyCardInner}>
+        {block.split('\n').map((line, j) => {
+          const upper = line.toUpperCase()
+          if (
+            upper.startsWith('DEFICIENCY NAME:') ||
+            upper.startsWith('SEVERITY:') ||
+            upper.startsWith('YOUR SYMPTOMS') ||
+            upper.startsWith('WHY THIS IS HAPPENING') ||
+            upper.startsWith('WHAT THIS MEANS')
+          ) {
+            return (
+              <Text key={j} style={styles.fieldLabel}>
+                {line}
+              </Text>
+            )
+          }
           return (
-            <Text key={j} style={styles.fieldLabel}>
+            <Text key={j} style={styles.fieldValue}>
               {line}
             </Text>
           )
-        }
-        return (
-          <Text key={j} style={styles.fieldValue}>
-            {line}
-          </Text>
-        )
-      })}
+        })}
+      </View>
     </View>
   ))
 }
@@ -407,7 +498,7 @@ function renderMealPlanBlocks(text: string) {
     const rest = lines.slice(1).join('\n')
     const mealChunks = rest.split(/(?=\n(?:BREAKFAST|MID-MORNING|LUNCH|EVENING SNACK|DINNER)\s*[—-])/i)
     return (
-      <View key={idx} style={{ marginBottom: 20 }} wrap={false}>
+      <View key={idx} style={styles.dayBlock} wrap={false}>
         <View style={styles.dayHeaderBox}>
           <Text style={styles.dayHeaderText}>{firstLine}</Text>
         </View>
@@ -500,10 +591,10 @@ function renderFoodBlocks(text: string) {
             </Text>
           )
         }
-        if (t.startsWith('[TRY INSTEAD]')) {
+        if (t.startsWith('[SWAP]') || t.startsWith('[TRY INSTEAD]')) {
           return (
             <Text key={j} style={styles.tryLabel}>
-              {line}
+              {t.startsWith('[TRY INSTEAD]') ? line.replace(/\[TRY INSTEAD\]/gi, '[SWAP]') : line}
             </Text>
           )
         }
@@ -569,10 +660,8 @@ function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: D
   return (
     <Document title={`Recovery Plan — ${reportId}`} author="The Beetamin" subject="Wellness report">
       <Page size="A4" style={styles.coverPage}>
-        <Text style={{ fontSize: 14, color: GREEN, textAlign: 'center', fontFamily: 'Helvetica-Bold' }}>
-          The Beetamin
-        </Text>
-        <View style={styles.coverLogoLine} />
+        <Text style={styles.coverBrand}>The Beetamin</Text>
+        <View style={styles.coverLine} />
         <Text style={styles.coverTitle}>PERSONALISED DEFICIENCY{'\n'}RECOVERY REPORT</Text>
         <Text style={styles.coverSub}>Prepared by The Beetamin Wellness Clinic</Text>
         <View style={styles.coverDivider} />
@@ -603,43 +692,43 @@ function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: D
       <Page size="A4" style={styles.bodyPage} wrap>
         <View style={styles.headerRow} fixed>
           <Text style={styles.headerLeft}>The Beetamin</Text>
-          <Text style={styles.headerCenter}>{headerCenter}</Text>
+          <View style={styles.headerMidWrap}>
+            <Text style={styles.headerCenter}>{headerCenter}</Text>
+          </View>
           <Text style={styles.headerRight}>{reportId}</Text>
         </View>
 
         <SectionHeader title="SECTION 1 — YOUR DEFICIENCY ANALYSIS" first />
-        <View style={{ marginTop: 4 }}>{renderDeficiencyBlocks(sections.deficiencyAnalysis)}</View>
+        <View style={styles.sectionBodyWrap}>{renderDeficiencyBlocks(sections.deficiencyAnalysis)}</View>
 
         <SectionHeader title="SECTION 2 — YOUR 7-DAY RECOVERY MEAL PLAN" />
-        <View style={{ marginTop: 4 }}>{renderMealPlanBlocks(sections.mealPlan)}</View>
+        <View style={styles.sectionBodyWrap}>{renderMealPlanBlocks(sections.mealPlan)}</View>
 
         <SectionHeader title="SECTION 3 — YOUR SUPPLEMENT PLAN" />
-        <View style={{ marginTop: 4 }}>{renderSupplementCards(sections.supplements)}</View>
+        <View style={styles.sectionBodyWrap}>{renderSupplementCards(sections.supplements)}</View>
 
         <SectionHeader title="SECTION 4 — FOODS BLOCKING YOUR RECOVERY" />
-        <View style={{ marginTop: 4 }}>{renderFoodBlocks(sections.blockingFoods)}</View>
+        <View style={styles.sectionBodyWrap}>{renderFoodBlocks(sections.blockingFoods)}</View>
 
         <SectionHeader title="SECTION 5 — YOUR PERSONALISED DAILY ROUTINE" />
-        <View style={{ marginTop: 4 }}>{renderRoutineRows(sections.dailyRoutine)}</View>
+        <View style={styles.sectionBodyWrap}>{renderRoutineRows(sections.dailyRoutine)}</View>
 
         <SectionHeader title="SECTION 6 — A NOTE FROM DR. PRIYA" />
         <View style={styles.doctorBox}>
           <Text style={styles.doctorItalic}>{sections.doctorNote}</Text>
           <View style={styles.signatureLine} />
-          <Text style={{ marginTop: 8, fontSize: 11, fontFamily: 'Helvetica-Bold' }}>Dr. Priya Sharma</Text>
-          <Text style={{ fontSize: 8, color: MUTED, marginTop: 2 }}>
+          <Text style={styles.doctorName}>Dr. Priya Sharma</Text>
+          <Text style={styles.doctorMeta}>
             Clinical Nutritionist | M.Sc Nutrition & Dietetics · Reg. No. NUT-2847
           </Text>
-          <Text style={{ fontSize: 8, color: MUTED }}>The Beetamin Wellness Clinic</Text>
+          <Text style={styles.doctorClinic}>The Beetamin Wellness Clinic</Text>
         </View>
 
         <SectionHeader title="DISCLAIMER" />
         <Text style={styles.disclaimer}>{sections.disclaimer}</Text>
-        <Text style={{ marginTop: 12, fontSize: 8, color: GREEN, fontFamily: 'Helvetica-Bold' }}>
-          This report was prepared exclusively for {patientName}
-        </Text>
+        <Text style={styles.exclusiveNote}>This report was prepared exclusively for {patientName}</Text>
 
-        <View style={styles.footerBar} fixed>
+        <View style={styles.footerBar}>
           <View style={styles.footerRow}>
             <Text style={styles.footerLeft}>thebeetamin.com</Text>
             <Text style={styles.footerMid}>Report ID: {reportId}</Text>
