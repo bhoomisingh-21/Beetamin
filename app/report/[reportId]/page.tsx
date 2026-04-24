@@ -1,6 +1,6 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
+import { useAuth, useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import Script from 'next/script'
@@ -22,16 +22,15 @@ import {
   Stethoscope,
   UtensilsCrossed,
 } from 'lucide-react'
+import { createSupabaseBrowserWithClerk } from '@/lib/supabase-clerk'
 
 type PollStatus = 'generating' | 'ready' | 'failed' | 'generated' | string | null
 
-type BuildPdfGetResponse = {
+type PaidReportRow = {
   status: PollStatus
   pdf_url: string | null
   email: string | null
   report_id: string | null
-  patientName: string | null
-  error?: string
 }
 
 const GENERATING_MESSAGES = [
@@ -131,35 +130,45 @@ function ConfettiBurst({ active }: { active: boolean }) {
 export default function ReportPage() {
   const params = useParams()
   const router = useRouter()
+  const { getToken } = useAuth()
   const { isLoaded, isSignedIn, user } = useUser()
 
   const reportIdRaw = params?.reportId
   const reportId = typeof reportIdRaw === 'string' ? decodeURIComponent(reportIdRaw.trim()) : ''
 
+  const supabase = useMemo(
+    () =>
+      createSupabaseBrowserWithClerk(async () => {
+        try {
+          return (await getToken({ template: 'supabase' })) ?? null
+        } catch {
+          return null
+        }
+      }),
+    [getToken],
+  )
+
   const [view, setView] = useState<
     'loading' | 'generating' | 'ready' | 'failed' | 'timeout' | 'not_found' | 'error'
   >('loading')
-  const [pollData, setPollData] = useState<BuildPdfGetResponse | null>(null)
+  const [pollData, setPollData] = useState<PaidReportRow | null>(null)
   const [messageIndex, setMessageIndex] = useState(0)
   const [showConfetti, setShowConfetti] = useState(false)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const fetchStatus = useCallback(async (): Promise<BuildPdfGetResponse | null> => {
-    if (!reportId) return null
-    const res = await fetch(`/api/build-pdf?reportId=${encodeURIComponent(reportId)}`, {
-      credentials: 'include',
-    })
-    if (res.status === 401) {
-      router.replace(`/sign-in?after=${encodeURIComponent(`/report/${reportId}`)}`)
-      return null
+  const pollPaidReport = useCallback(async (): Promise<{ data: PaidReportRow | null; error: boolean }> => {
+    if (!reportId) return { data: null, error: true }
+    const { data, error } = await supabase
+      .from('paid_reports')
+      .select('status, pdf_url, email, report_id')
+      .eq('report_id', reportId)
+      .maybeSingle()
+    if (error) {
+      console.error('[report page] Supabase paid_reports', error)
+      return { data: null, error: true }
     }
-    const json = (await res.json()) as BuildPdfGetResponse & { error?: string }
-    if (!res.ok) {
-      console.error('[report page] status fetch', res.status, json)
-      return null
-    }
-    return json
-  }, [reportId, router])
+    return { data: data as PaidReportRow | null, error: false }
+  }, [reportId, supabase])
 
   useEffect(() => {
     if (!isLoaded) return
@@ -176,10 +185,14 @@ export default function ReportPage() {
     if (view !== 'loading' || !reportId || !isSignedIn) return
     let cancelled = false
     ;(async () => {
-      const data = await fetchStatus()
+      const { data, error } = await pollPaidReport()
       if (cancelled) return
-      if (!data) {
+      if (error) {
         setView('error')
+        return
+      }
+      if (!data) {
+        setView('not_found')
         return
       }
       if (data.status == null) {
@@ -207,14 +220,14 @@ export default function ReportPage() {
     return () => {
       cancelled = true
     }
-  }, [view, reportId, isSignedIn, fetchStatus])
+  }, [view, reportId, isSignedIn, pollPaidReport])
 
   useEffect(() => {
     if (view !== 'generating' || !reportId) return
 
     const interval = setInterval(async () => {
-      const data = await fetchStatus()
-      if (!data) return
+      const { data, error } = await pollPaidReport()
+      if (error || !data) return
       setPollData(data)
       if (isReadyStatus(data.status)) {
         setView('ready')
@@ -235,7 +248,7 @@ export default function ReportPage() {
       clearInterval(interval)
       clearTimeout(timeout)
     }
-  }, [view, reportId, fetchStatus])
+  }, [view, reportId, pollPaidReport])
 
   useEffect(() => {
     if (view !== 'generating') return
@@ -266,7 +279,7 @@ export default function ReportPage() {
   }, [pollData?.report_id, reportId])
 
   const displayReportId = pollData?.report_id || reportId
-  const patientName = pollData?.patientName?.trim() || (user?.firstName?.trim() ?? '')
+  const patientName = user?.firstName?.trim() ?? ''
   const displayName = patientName ? `${patientName}'s` : 'Your'
   const email = pollData?.email || user?.primaryEmailAddress?.emailAddress || ''
 
@@ -288,7 +301,17 @@ export default function ReportPage() {
     )
   }
 
-  if (view === 'not_found' || view === 'error') {
+  if (view === 'error') {
+    return (
+      <ReportErrorState
+        title="We couldn't load your report status"
+        body="Please refresh the page. If it keeps failing, contact support@thebeetamin.com. (For developers: Clerk JWT template named supabase plus Supabase third-party auth and RLS on paid_reports must be configured.)"
+        reportId={displayReportId}
+      />
+    )
+  }
+
+  if (view === 'not_found') {
     return (
       <ReportErrorState
         title="We couldn't find your report"

@@ -1,10 +1,12 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { waitUntil } from '@vercel/functions'
 import { randomBytes } from 'crypto'
 import { NextResponse } from 'next/server'
+import { runPaidReportGeneration } from '@/lib/run-paid-report-generation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 300
 
 function makeReportId() {
   const now = new Date()
@@ -15,26 +17,15 @@ function makeReportId() {
   return `BT-${y}${m}${d}-${suffix}`
 }
 
-function appBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
-    'http://localhost:3000'
-  )
-}
-
-function triggerBuildPdf(payload: { reportId: string; userId: string; detailedAssessmentId: string }) {
-  const url = `${appBaseUrl()}/api/build-pdf`
-  const secret = process.env.BUILD_PDF_INTERNAL_SECRET
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (secret) {
-    headers['x-build-pdf-secret'] = secret
+function resolveAppOrigin(req: Request): string {
+  const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
+  if (fromEnv) return fromEnv
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  try {
+    return new URL(req.url).origin
+  } catch {
+    return 'http://localhost:3000'
   }
-  fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  }).catch((err) => console.error('[generate-report] build-pdf trigger failed', err))
 }
 
 export async function POST(req: Request) {
@@ -54,6 +45,9 @@ export async function POST(req: Request) {
   if (!userId) {
     return NextResponse.json({ error: 'Please sign in to generate your report.' }, { status: 401 })
   }
+
+  const cookieHeader = req.headers.get('cookie')
+  const appOrigin = resolveAppOrigin(req)
 
   try {
     let body: { detailedAssessmentId?: string; freeAssessmentResult?: unknown }
@@ -142,7 +136,15 @@ export async function POST(req: Request) {
       )
     }
 
-    triggerBuildPdf({ reportId, userId, detailedAssessmentId: detailedId })
+    waitUntil(
+      runPaidReportGeneration({
+        reportId,
+        userId,
+        detailedAssessmentId: detailedId,
+        appOrigin,
+        cookieHeader,
+      }),
+    )
 
     return NextResponse.json({
       reportId,

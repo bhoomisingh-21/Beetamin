@@ -1,14 +1,10 @@
-import { auth, clerkClient } from '@clerk/nextjs/server'
+import { clerkClient } from '@clerk/nextjs/server'
 import Groq from 'groq-sdk'
-import { NextResponse } from 'next/server'
 import { generateRecoveryPlanPdfBuffer } from '@/lib/generate-pdf'
 import { RECOVERY_PLAN_SYSTEM_PROMPT } from '@/lib/recovery-report-prompt'
 import type { DetailedAssessmentPayload, RecoveryReportSections } from '@/lib/recovery-report-types'
 import { sendRecoveryReportEmail } from '@/lib/send-report-email'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-
-export const runtime = 'nodejs'
-export const maxDuration = 300
 
 const GROQ_APPENDIX = `
 SUPPLEMENT SECTION RULES — VERY IMPORTANT:
@@ -126,89 +122,36 @@ async function markFailed(reportId: string, userId: string) {
     .eq('user_id', userId)
 }
 
-/** Browser polling: status + email + display name for the report page. */
-export async function GET(req: Request) {
-  try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const { searchParams } = new URL(req.url)
-    const reportId = searchParams.get('reportId')?.trim()
-    if (!reportId) {
-      return NextResponse.json({ error: 'reportId is required' }, { status: 400 })
-    }
-
-    const { data: row, error } = await supabaseAdmin
-      .from('paid_reports')
-      .select('status, pdf_url, email, report_id')
-      .eq('report_id', reportId)
-      .eq('user_id', userId)
-      .maybeSingle()
-
-    if (error) {
-      console.error('[build-pdf GET]', error)
-      return NextResponse.json({ error: 'Could not load status' }, { status: 502 })
-    }
-
-    const { data: client } = await supabaseAdmin
-      .from('clients')
-      .select('name')
-      .eq('clerk_user_id', userId)
-      .maybeSingle()
-
-    return NextResponse.json({
-      status: row?.status ?? null,
-      pdf_url: row?.pdf_url ?? null,
-      email: row?.email ?? null,
-      report_id: row?.report_id ?? reportId,
-      patientName: (client?.name as string | undefined)?.trim() || null,
-    })
-  } catch (e) {
-    console.error('[build-pdf GET]', e)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+async function triggerSendReportEmail(args: {
+  appOrigin: string
+  cookieHeader: string | null
+  reportId: string
+}): Promise<boolean> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (args.cookieHeader) headers.Cookie = args.cookieHeader
+  const res = await fetch(`${args.appOrigin.replace(/\/$/, '')}/api/send-report`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ reportId: args.reportId }),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    console.error('[run-paid-report-generation] send-report failed', res.status, text)
+    return false
   }
+  return true
 }
 
-type BuildPdfBody = {
-  reportId?: string
-  userId?: string
-  detailedAssessmentId?: string
-}
-
-export async function POST(req: Request) {
-  const secret = process.env.BUILD_PDF_INTERNAL_SECRET
-  if (secret) {
-    const hdr = req.headers.get('x-build-pdf-secret')
-    if (hdr !== secret) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-  }
-
-  let reportId = ''
-  let userId = ''
-  let detailedAssessmentId = ''
+export async function runPaidReportGeneration(args: {
+  reportId: string
+  userId: string
+  detailedAssessmentId: string
+  appOrigin: string
+  cookieHeader: string | null
+}) {
+  const { reportId, userId, detailedAssessmentId, appOrigin, cookieHeader } = args
 
   try {
-    let body: BuildPdfBody
-    try {
-      body = (await req.json()) as BuildPdfBody
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-    }
-
-    reportId = typeof body.reportId === 'string' ? body.reportId.trim() : ''
-    userId = typeof body.userId === 'string' ? body.userId.trim() : ''
-    detailedAssessmentId =
-      typeof body.detailedAssessmentId === 'string' ? body.detailedAssessmentId.trim() : ''
-
-    if (!reportId || !userId || !detailedAssessmentId) {
-      return NextResponse.json(
-        { error: 'reportId, userId, and detailedAssessmentId are required' },
-        { status: 400 },
-      )
-    }
-
     const { data: jobRow, error: jobErr } = await supabaseAdmin
       .from('paid_reports')
       .select('status, pdf_url, email')
@@ -217,11 +160,12 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (jobErr || !jobRow) {
-      console.error('[build-pdf POST] job row', jobErr)
-      return NextResponse.json({ error: 'Report job not found' }, { status: 404 })
+      console.error('[run-paid-report-generation] job row', jobErr)
+      return
     }
     if (jobRow.status !== 'generating') {
-      return NextResponse.json({ error: 'Report is not in generating state', status: jobRow.status }, { status: 409 })
+      console.warn('[run-paid-report-generation] skip, status is', jobRow.status)
+      return
     }
 
     const storagePath = `${userId}/${reportId}.pdf`
@@ -234,9 +178,9 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (dErr || !detailed) {
-      console.error('[build-pdf POST] detailed', dErr)
+      console.error('[run-paid-report-generation] detailed', dErr)
       await markFailed(reportId, userId)
-      return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
+      return
     }
 
     const { data: client } = await supabaseAdmin
@@ -247,9 +191,9 @@ export async function POST(req: Request) {
 
     const freeAssessment = client?.assessment_result
     if (!freeAssessment || typeof freeAssessment !== 'object') {
-      console.error('[build-pdf POST] missing free assessment')
+      console.error('[run-paid-report-generation] missing free assessment')
       await markFailed(reportId, userId)
-      return NextResponse.json({ error: 'Free assessment not found for user' }, { status: 400 })
+      return
     }
 
     let clerkUser
@@ -257,7 +201,7 @@ export async function POST(req: Request) {
       const cc = await clerkClient()
       clerkUser = await cc.users.getUser(userId)
     } catch (e) {
-      console.error('[build-pdf POST] clerk user', e)
+      console.error('[run-paid-report-generation] clerk user', e)
       clerkUser = null
     }
     const primaryEmail =
@@ -294,9 +238,9 @@ export async function POST(req: Request) {
         detailed: detailedPayload,
       })
     } catch (e) {
-      console.error('[build-pdf POST] Groq', e)
+      console.error('[run-paid-report-generation] Groq', e)
       await markFailed(reportId, userId)
-      return NextResponse.json({ error: 'AI generation failed', detail: String(e) }, { status: 502 })
+      return
     }
 
     const preparedOn = new Date().toLocaleDateString('en-IN', {
@@ -314,12 +258,9 @@ export async function POST(req: Request) {
         sections,
       })
     } catch (pdfError) {
-      console.error('[PDF Style Error]', pdfError)
+      console.error('[run-paid-report-generation] PDF', pdfError)
       await markFailed(reportId, userId)
-      return NextResponse.json(
-        { error: 'PDF generation failed', detail: String(pdfError) },
-        { status: 500 },
-      )
+      return
     }
 
     const { error: upErr } = await supabaseAdmin.storage
@@ -327,19 +268,9 @@ export async function POST(req: Request) {
       .upload(storagePath, pdfBuffer, { contentType: 'application/pdf', upsert: true })
 
     if (upErr) {
-      console.error('[build-pdf POST] storage upload', upErr)
+      console.error('[run-paid-report-generation] storage upload', upErr)
       await markFailed(reportId, userId)
-      return NextResponse.json({ error: 'Storage upload failed' }, { status: 502 })
-    }
-
-    const { data: signed, error: signErr } = await supabaseAdmin.storage
-      .from('reports')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
-
-    if (signErr || !signed?.signedUrl) {
-      console.error('[build-pdf POST] signed url', signErr)
-      await markFailed(reportId, userId)
-      return NextResponse.json({ error: 'Could not create signed URL' }, { status: 502 })
+      return
     }
 
     const { error: upRowErr } = await supabaseAdmin
@@ -353,29 +284,33 @@ export async function POST(req: Request) {
       .eq('user_id', userId)
 
     if (upRowErr) {
-      console.error('[build-pdf POST] paid_reports update', upRowErr)
+      console.error('[run-paid-report-generation] paid_reports update', upRowErr)
       await markFailed(reportId, userId)
-      return NextResponse.json({ error: 'Could not update report row' }, { status: 502 })
+      return
     }
 
-    const emailResult = await sendRecoveryReportEmail({
-      to: email,
-      name: patientName,
-      reportId,
-      signedDownloadUrl: signed.signedUrl,
-      pdfBuffer,
-    })
-
-    if (!emailResult.ok) {
-      console.error('[build-pdf POST] email', emailResult.error)
+    const emailed = await triggerSendReportEmail({ appOrigin, cookieHeader, reportId })
+    if (!emailed) {
+      const { data: signed, error: signErr } = await supabaseAdmin.storage
+        .from('reports')
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+      if (signErr || !signed?.signedUrl) {
+        console.error('[run-paid-report-generation] fallback signed URL', signErr)
+        return
+      }
+      const fallback = await sendRecoveryReportEmail({
+        to: email,
+        name: patientName,
+        reportId,
+        signedDownloadUrl: signed.signedUrl,
+        pdfBuffer,
+      })
+      if (!fallback.ok) {
+        console.error('[run-paid-report-generation] fallback email', fallback.error)
+      }
     }
-
-    return NextResponse.json({ ok: true, reportId, emailSent: emailResult.ok })
   } catch (e) {
-    console.error('[build-pdf POST] unhandled', e)
-    if (reportId && userId) {
-      await markFailed(reportId, userId)
-    }
-    return NextResponse.json({ error: 'Server error', detail: String(e) }, { status: 500 })
+    console.error('[run-paid-report-generation] unhandled', e)
+    await markFailed(reportId, userId)
   }
 }
