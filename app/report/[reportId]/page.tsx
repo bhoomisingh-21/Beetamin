@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-export default function ReportPage({ params }: { params: Promise<{ reportId: string }> }) {
+export default function ReportPage({ params }: { params: Promise<{ reportId: string }> | { reportId: string } }) {
   return (
     <Suspense fallback={<ReportLoadingSkeleton />}>
       <ReportPageContent params={params} />
@@ -60,24 +60,49 @@ function ReportLoadingSkeleton() {
   )
 }
 
-async function ReportPageContent({ params }: { params: Promise<{ reportId: string }> }) {
-  const { userId } = await auth()
-  const { reportId } = await params
-  const decodedId = decodeURIComponent(reportId)
+async function ReportPageContent({ params }: { params: Promise<{ reportId: string }> | { reportId: string } }) {
+  const resolved = await Promise.resolve(params)
+  const reportIdRaw = resolved && typeof resolved === 'object' && 'reportId' in resolved ? resolved.reportId : ''
+  if (typeof reportIdRaw !== 'string' || !reportIdRaw.trim()) {
+    return (
+      <ReportErrorState
+        title="We couldn&apos;t find your report"
+        body="Please contact us at support@thebeetamin.com with your Report ID."
+        reportId=""
+      />
+    )
+  }
 
+  const decodedId = decodeURIComponent(reportIdRaw.trim())
+
+  const { userId } = await auth()
   if (!userId) {
     redirect('/sign-in?after=' + encodeURIComponent(`/report/${decodedId}`))
   }
 
-  const { data: row, error } = await supabaseAdmin
-    .from('paid_reports')
-    .select('pdf_url, email, report_id, created_at')
-    .eq('report_id', decodedId)
-    .eq('user_id', userId)
-    .maybeSingle()
+  type PaidReportRow = { pdf_url: string; email: string | null; report_id: string }
+  let row: PaidReportRow | null = null
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('paid_reports')
+      .select('pdf_url, email, report_id')
+      .eq('report_id', decodedId)
+      .eq('user_id', userId)
+      .maybeSingle()
 
-  if (error) {
-    console.error('[report page]', error)
+    if (error) {
+      console.error('[report page]', error)
+      return (
+        <ReportErrorState
+          title="We couldn&apos;t find your report"
+          body="Please contact us at support@thebeetamin.com with your Report ID."
+          reportId={decodedId}
+        />
+      )
+    }
+    row = data as PaidReportRow | null
+  } catch (e) {
+    console.error('[report page] unexpected', e)
     return (
       <ReportErrorState
         title="We couldn&apos;t find your report"
@@ -97,26 +122,29 @@ async function ReportPageContent({ params }: { params: Promise<{ reportId: strin
     )
   }
 
-  const { data: client } = await supabaseAdmin
-    .from('clients')
-    .select('name')
-    .eq('clerk_user_id', userId)
-    .maybeSingle()
+  let patientName = 'there'
+  try {
+    const { data: client } = await supabaseAdmin
+      .from('clients')
+      .select('name')
+      .eq('clerk_user_id', userId)
+      .maybeSingle()
+    patientName = (client?.name as string | undefined)?.trim() || 'there'
+  } catch (e) {
+    console.error('[report page] client fetch', e)
+  }
 
-  const patientName = (client?.name as string | undefined)?.trim() || 'there'
   const displayName = patientName === 'there' ? 'Your' : `${patientName}'s`
-  const preparedDate =
-    row.created_at != null
-      ? new Date(row.created_at as string).toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })
-      : new Date().toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })
+  const idDateMatch = row.report_id?.match(/^BT-(\d{4})(\d{2})(\d{2})-/)
+  let preparedSource = idDateMatch
+    ? new Date(`${idDateMatch[1]}-${idDateMatch[2]}-${idDateMatch[3]}T12:00:00Z`)
+    : new Date()
+  if (Number.isNaN(preparedSource.getTime())) preparedSource = new Date()
+  const preparedDate = preparedSource.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 
   const email = (row.email as string) || ''
 

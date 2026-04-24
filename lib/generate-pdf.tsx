@@ -13,8 +13,8 @@ const RED = '#b91c1c'
 const BULLET = '\u2022 '
 
 /** Strip/replace emoji and pictographs so Helvetica renders reliably in react-pdf */
-export function sanitizeForPdf(raw: string): string {
-  let t = raw
+export function sanitizeForPdf(raw: string | null | undefined): string {
+  let t = String(raw ?? '')
   const pairs: [RegExp, string][] = [
     [/🌅\s*/g, 'BREAKFAST — '],
     [/🍎\s*/g, 'MID-MORNING — '],
@@ -50,13 +50,13 @@ export function sanitizeForPdf(raw: string): string {
 
 function sanitizeSections(s: RecoveryReportSections): RecoveryReportSections {
   return {
-    deficiencyAnalysis: sanitizeForPdf(s.deficiencyAnalysis),
-    mealPlan: sanitizeForPdf(s.mealPlan),
-    supplements: sanitizeForPdf(s.supplements),
-    blockingFoods: sanitizeForPdf(s.blockingFoods),
-    dailyRoutine: sanitizeForPdf(s.dailyRoutine),
-    doctorNote: sanitizeForPdf(s.doctorNote),
-    disclaimer: sanitizeForPdf(s.disclaimer),
+    deficiencyAnalysis: sanitizeForPdf(s?.deficiencyAnalysis),
+    mealPlan: sanitizeForPdf(s?.mealPlan),
+    supplements: sanitizeForPdf(s?.supplements),
+    blockingFoods: sanitizeForPdf(s?.blockingFoods),
+    dailyRoutine: sanitizeForPdf(s?.dailyRoutine),
+    doctorNote: sanitizeForPdf(s?.doctorNote),
+    disclaimer: sanitizeForPdf(s?.disclaimer),
   }
 }
 
