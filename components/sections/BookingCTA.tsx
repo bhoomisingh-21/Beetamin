@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle, ArrowRight, ClipboardList, LayoutDashboard } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
+import { getClientAssessmentFlags } from '@/lib/booking-actions'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
@@ -16,8 +18,68 @@ const PLAN_HIGHLIGHTS = [
   '3 months validity · ₹3,999 one-time',
 ]
 
+type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>
+
 export default function BookingCTA() {
-  const { isSignedIn } = useUser()
+  const { isSignedIn, user } = useUser()
+  const [flags, setFlags] = useState<AssessmentFlags | null>(null)
+
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) {
+      setFlags(null)
+      return
+    }
+    let cancelled = false
+    getClientAssessmentFlags(user.id)
+      .then((f) => {
+        if (!cancelled) setFlags(f)
+      })
+      .catch(() => {
+        if (!cancelled) setFlags(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isSignedIn, user?.id])
+
+  const assessmentHref =
+    !isSignedIn
+      ? '/assessment'
+      : flags?.recoveryReportReady
+        ? `/report/${encodeURIComponent(flags.recoveryReportReady.report_id)}`
+        : flags?.recoveryReportGenerating
+          ? `/report/${encodeURIComponent(flags.recoveryReportGenerating.report_id)}`
+          : flags?.hasFreeAssessment
+            ? '/assessment/results'
+            : '/assessment'
+
+  const assessmentTitle =
+    isSignedIn && flags && (flags.recoveryReportReady || flags.recoveryReportGenerating)
+      ? 'Your recovery plan'
+      : isSignedIn
+        ? 'Your Assessment Results'
+        : 'Free Health Assessment'
+
+  const assessmentDesc =
+    isSignedIn && flags?.recoveryReportReady
+      ? 'Your personalised PDF is ready — open or download anytime.'
+      : isSignedIn && flags?.recoveryReportGenerating
+        ? 'Your PDF is still generating — open this page to watch progress.'
+        : isSignedIn
+          ? 'View your personalised deficiency report'
+          : 'Discover your hidden deficiencies in 2 minutes'
+
+  const hasPaidReport =
+    Boolean(flags?.recoveryReportReady) || Boolean(flags?.recoveryReportGenerating)
+
+  const assessmentCtaLabel =
+    isSignedIn && flags && hasPaidReport
+      ? 'Open My PDF Report'
+      : isSignedIn && flags?.hasFreeAssessment
+        ? 'View My Free Report'
+        : isSignedIn
+          ? 'See My Results'
+          : 'Start Free Assessment'
 
   return (
     <section
@@ -117,19 +179,17 @@ export default function BookingCTA() {
                 {isSignedIn ? 'YOUR RESULTS' : 'FREE'}
               </span>
               <h3 className="text-white font-black text-xl mt-3">
-                {isSignedIn ? 'Your Assessment Results' : 'Free Health Assessment'}
+                {assessmentTitle}
               </h3>
               <p className="text-gray-400 text-sm mt-1">
-                {isSignedIn
-                  ? 'View your personalized deficiency report'
-                  : 'Discover your hidden deficiencies in 2 minutes'}
+                {assessmentDesc}
               </p>
               <a
-                href={isSignedIn ? "/booking/profile" : "/assessment"}
+                href={assessmentHref}
                 className="inline-flex items-center gap-2 bg-emerald-500 text-black font-bold rounded-full px-5 py-2.5 mt-4 hover:bg-emerald-400 transition text-sm"
               >
                 <ClipboardList size={14} />
-                {isSignedIn ? 'See My Results' : 'Start Free Assessment'}
+                {assessmentCtaLabel}
               </a>
             </div>
 

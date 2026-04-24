@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
+import { getClientAssessmentFlags } from '@/lib/booking-actions'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -11,6 +12,7 @@ import {
   ArrowRight,
   ShieldCheck,
   ChevronLeft,
+  Loader2,
 } from 'lucide-react'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
@@ -90,12 +92,15 @@ function getOfferHeadline(score: number, name: string, deficiencies: any[]) {
   }
 }
 
+type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>
+
 export default function ResultsPage() {
   const [result, setResult] = useState<any>(null)
   const [meta, setMeta] = useState<any>({})
   const [scoreAnimated, setScoreAnimated] = useState(0)
+  const [flags, setFlags] = useState<AssessmentFlags | null>(null)
   const router = useRouter()
-  const { isSignedIn } = useUser()
+  const { isSignedIn, user } = useUser()
 
   function handleRecoveryPlanCta() {
     if (!isSignedIn) {
@@ -105,6 +110,24 @@ export default function ResultsPage() {
     }
     router.push('/detailed-assessment')
   }
+
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) {
+      setFlags(null)
+      return
+    }
+    let cancelled = false
+    getClientAssessmentFlags(user.id)
+      .then((f) => {
+        if (!cancelled) setFlags(f)
+      })
+      .catch(() => {
+        if (!cancelled) setFlags(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isSignedIn, user?.id])
 
   useEffect(() => {
     const stored = localStorage.getItem('assessmentResult')
@@ -406,126 +429,182 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* ===== SECTION 2 — OFFER ===== */}
-      <div className="bg-white text-black px-4 md:px-6 py-8 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-16 max-md:gap-10">
-
-          {/* LEFT */}
-          <motion.div {...fadeUp(0)}>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
-              {offerHeadline.h2}
-              <span className="block text-emerald-600 mt-1 md:mt-2">
-                {offerHeadline.h2sub}
-              </span>
+      {/* ===== SECTION 2 — PAID RECOVERY READY / GENERATING OR ₹39 OFFER ===== */}
+      {flags?.recoveryReportReady ? (
+        <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
+          <motion.div
+            {...fadeUp(0)}
+            className="max-w-2xl mx-auto text-center"
+          >
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <CheckCircle size={36} strokeWidth={2.5} />
+            </div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight">
+              Your personalised recovery plan is ready
             </h2>
-
-            <p className="mt-4 md:mt-6 text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
-              {offerHeadline.desc}
+            <p className="mt-4 text-gray-600 text-sm sm:text-base leading-relaxed">
+              We emailed your PDF. Open your report page anytime to download or share.
             </p>
-
-            <div className="grid grid-cols-3 mt-6 md:mt-12 gap-2 md:gap-10">
-              <div>
-                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">50,000+</p>
-                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Indians helped</p>
-              </div>
-              <div>
-                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">94%</p>
-                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Success rate</p>
-              </div>
-              <div>
-                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹39</p>
-                <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Recovery PDF</p>
-              </div>
-            </div>
-
-            <div className="mt-6 md:mt-12 bg-gray-50 p-4 sm:p-5 md:p-8 lg:p-10 rounded-xl sm:rounded-2xl">
-              <p className="text-[10px] sm:text-xs font-bold mb-3 md:mb-6 text-gray-400 uppercase">
-                {`${meta.name || 'Your'}'s 90-Day Protocol Includes`}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
-                {[
-                  result.primaryDeficiencies?.[0]?.nutrient
-                    ? `${result.primaryDeficiencies[0].nutrient} recovery meal plan`
-                    : 'Personalized 90-day meal plan',
-                  'Exact supplement list with dosages',
-                  `Daily routine for ${meta.goal || 'your goal'}`,
-                  'Foods actively worsening your levels',
-                  'WhatsApp nutritionist check-in',
-                  'Doctor-reviewed & signed off',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <CheckCircle size={13} className="text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-xs sm:text-sm text-gray-700 leading-snug">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <p className="mt-2 font-mono text-xs text-gray-500">{flags.recoveryReportReady.report_id}</p>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(`/report/${encodeURIComponent(flags.recoveryReportReady!.report_id)}`)
+              }
+              className="mt-8 w-full max-w-md mx-auto block bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-4 rounded-xl font-black text-base shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              Open my recovery plan
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/detailed-assessment')}
+              className="mt-6 text-sm font-semibold text-emerald-700 underline underline-offset-2"
+            >
+              Run detailed assessment again for an updated report
+            </button>
           </motion.div>
-
-          {/* RIGHT — PRICING CARD */}
-          <motion.div {...fadeUp(0.1)} className="bg-white border rounded-2xl md:rounded-3xl p-5 sm:p-6 md:p-8 lg:p-12 shadow-xl md:shadow-2xl text-center relative overflow-hidden">
-
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-72 h-72 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
-
-            <div className="relative z-10">
-              <p className="text-red-500 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-3">
-                🔥 New User Offer — Expires Soon
-              </p>
-
-              <p className="line-through text-gray-400 text-sm md:text-lg">₹299</p>
-              <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹39</p>
-              <p className="text-emerald-600 text-xs sm:text-sm font-semibold mt-1.5">
-                {isHealthy
-                  ? `Optimization plan for ${meta.name || 'you'}`
-                  : `Recovery plan for ${meta.name || 'you'}'s ${result.primaryDeficiencies?.[0]?.nutrient || 'deficiencies'}`}
-              </p>
-
-              <div className="mt-4 md:mt-6 rounded-xl bg-emerald-50/80 border border-emerald-100 px-3 py-3 sm:px-4">
-                <p className="text-xs sm:text-sm text-emerald-900 font-medium leading-relaxed">
-                  Next: a short follow-up questionnaire (about 2 minutes). Your personalised PDF is prepared right after you confirm — secure payment will be added here soon.
-                </p>
-              </div>
-
-              <p className="mt-3 text-xs text-gray-500">
-                Trusted by <span className="font-bold text-black">50,000+ Indians</span>
-              </p>
-
-              <button
-                onClick={handleRecoveryPlanCta}
-                className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                GET MY PERSONALISED PLAN — ₹39
-              </button>
-
-              <p className="mt-3 text-[10px] sm:text-xs text-gray-400">
-                🔐 Private • Doctor-reviewed format • PDF to your inbox
-              </p>
-
-              <div className="mt-2 flex justify-center gap-2.5 text-[10px] text-gray-400 flex-wrap">
-                <span>✔ Quick questions first</span>
-                <span>✔ Instant PDF</span>
-                <span>✔ Payment step coming soon</span>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => router.push('/booking')}
-                  className="w-full bg-black text-white font-bold rounded-xl py-3 text-sm hover:bg-gray-900 transition"
-                >
-                  📅 Book the Complete ₹3999 Plan →
-                </button>
-                <button
-                  onClick={() => { localStorage.clear(); router.push('/assessment') }}
-                  className="text-gray-400 text-xs mt-3 underline cursor-pointer hover:text-gray-500 transition block mx-auto"
-                >
-                  Retake assessment
-                </button>
-              </div>
-            </div>
-          </motion.div>
-
         </div>
-      </div>
+      ) : flags?.recoveryReportGenerating ? (
+        <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
+          <motion.div {...fadeUp(0)} className="max-w-2xl mx-auto text-center">
+            <Loader2 className="mx-auto mb-6 h-14 w-14 animate-spin text-emerald-600" strokeWidth={2.5} />
+            <h2 className="text-2xl sm:text-4xl font-black">Your recovery plan is generating</h2>
+            <p className="mt-4 text-gray-600 text-sm sm:text-base">
+              This usually takes a minute or two. Keep this tab open, or check your email when it is ready.
+            </p>
+            <p className="mt-2 font-mono text-xs text-gray-500">{flags.recoveryReportGenerating.report_id}</p>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(`/report/${encodeURIComponent(flags.recoveryReportGenerating!.report_id)}`)
+              }
+              className="mt-8 w-full max-w-md mx-auto block rounded-xl bg-emerald-600 py-4 font-black text-white hover:bg-emerald-700 transition"
+            >
+              View live status
+            </button>
+          </motion.div>
+        </div>
+      ) : (
+        <div className="bg-white text-black px-4 md:px-6 py-8 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
+          <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 md:gap-16 max-md:gap-10">
+
+            {/* LEFT */}
+            <motion.div {...fadeUp(0)}>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
+                {offerHeadline.h2}
+                <span className="block text-emerald-600 mt-1 md:mt-2">
+                  {offerHeadline.h2sub}
+                </span>
+              </h2>
+
+              <p className="mt-4 md:mt-6 text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
+                {offerHeadline.desc}
+              </p>
+
+              <div className="grid grid-cols-3 mt-6 md:mt-12 gap-2 md:gap-10">
+                <div>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">50,000+</p>
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Indians helped</p>
+                </div>
+                <div>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">94%</p>
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Success rate</p>
+                </div>
+                <div>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹39</p>
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Recovery PDF</p>
+                </div>
+              </div>
+
+              <div className="mt-6 md:mt-12 bg-gray-50 p-4 sm:p-5 md:p-8 lg:p-10 rounded-xl sm:rounded-2xl">
+                <p className="text-[10px] sm:text-xs font-bold mb-3 md:mb-6 text-gray-400 uppercase">
+                  {`${meta.name || 'Your'}'s 90-Day Protocol Includes`}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
+                  {[
+                    result.primaryDeficiencies?.[0]?.nutrient
+                      ? `${result.primaryDeficiencies[0].nutrient} recovery meal plan`
+                      : 'Personalized 90-day meal plan',
+                    'Exact supplement list with dosages',
+                    `Daily routine for ${meta.goal || 'your goal'}`,
+                    'Foods actively worsening your levels',
+                    'WhatsApp nutritionist check-in',
+                    'Doctor-reviewed & signed off',
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <CheckCircle size={13} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs sm:text-sm text-gray-700 leading-snug">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* RIGHT — PRICING CARD */}
+            <motion.div {...fadeUp(0.1)} className="bg-white border rounded-2xl md:rounded-3xl p-5 sm:p-6 md:p-8 lg:p-12 shadow-xl md:shadow-2xl text-center relative overflow-hidden">
+
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-72 h-72 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
+
+              <div className="relative z-10">
+                <p className="text-red-500 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-3">
+                  🔥 New User Offer — Expires Soon
+                </p>
+
+                <p className="line-through text-gray-400 text-sm md:text-lg">₹299</p>
+                <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹39</p>
+                <p className="text-emerald-600 text-xs sm:text-sm font-semibold mt-1.5">
+                  {isHealthy
+                    ? `Optimization plan for ${meta.name || 'you'}`
+                    : `Recovery plan for ${meta.name || 'you'}'s ${result.primaryDeficiencies?.[0]?.nutrient || 'deficiencies'}`}
+                </p>
+
+                <div className="mt-4 md:mt-6 rounded-xl bg-emerald-50/80 border border-emerald-100 px-3 py-3 sm:px-4">
+                  <p className="text-xs sm:text-sm text-emerald-900 font-medium leading-relaxed">
+                    Next: a short follow-up questionnaire (about 2 minutes). Your personalised PDF is prepared right after you confirm — secure payment will be added here soon.
+                  </p>
+                </div>
+
+                <p className="mt-3 text-xs text-gray-500">
+                  Trusted by <span className="font-bold text-black">50,000+ Indians</span>
+                </p>
+
+                <button
+                  onClick={handleRecoveryPlanCta}
+                  className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  GET MY PERSONALISED PLAN — ₹39
+                </button>
+
+                <p className="mt-3 text-[10px] sm:text-xs text-gray-400">
+                  🔐 Private • Doctor-reviewed format • PDF to your inbox
+                </p>
+
+                <div className="mt-2 flex justify-center gap-2.5 text-[10px] text-gray-400 flex-wrap">
+                  <span>✔ Quick questions first</span>
+                  <span>✔ Instant PDF</span>
+                  <span>✔ Payment step coming soon</span>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => router.push('/booking')}
+                    className="w-full bg-black text-white font-bold rounded-xl py-3 text-sm hover:bg-gray-900 transition"
+                  >
+                    📅 Book the Complete ₹3999 Plan →
+                  </button>
+                  <button
+                    onClick={() => { localStorage.clear(); router.push('/assessment') }}
+                    className="text-gray-400 text-xs mt-3 underline cursor-pointer hover:text-gray-500 transition block mx-auto"
+                  >
+                    Retake assessment
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   )

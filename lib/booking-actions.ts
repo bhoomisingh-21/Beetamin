@@ -378,6 +378,39 @@ export async function getAvailabilityDays(nutritionistId: string): Promise<numbe
 
 // ─── Client dashboard ─────────────────────────────────────────────────────────
 
+export type PaidReportSummary = {
+  report_id: string
+  status: string
+  created_at?: string
+}
+
+export async function getClientAssessmentFlags(clerkUserId: string) {
+  const client = await getClientByClerkId(clerkUserId)
+  const hasFreeAssessment =
+    !!client?.assessment_result && typeof client.assessment_result === 'object'
+
+  const { data: paidRows } = await supabaseAdmin
+    .from('paid_reports')
+    .select('report_id, status, created_at')
+    .eq('user_id', clerkUserId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  const rows = paidRows || []
+  const recoveryReportReady = rows.find((r) => r.status === 'ready' || r.status === 'generated') || null
+  const recoveryReportGenerating = rows.find((r) => r.status === 'generating') || null
+
+  return {
+    hasFreeAssessment,
+    recoveryReportReady: recoveryReportReady
+      ? { report_id: String(recoveryReportReady.report_id), status: String(recoveryReportReady.status) }
+      : null,
+    recoveryReportGenerating: recoveryReportGenerating
+      ? { report_id: String(recoveryReportGenerating.report_id) }
+      : null,
+  }
+}
+
 export async function getClientDashboard(clerkUserId: string) {
   const client = await getClientByClerkId(clerkUserId)
   if (!client) return null
@@ -388,7 +421,33 @@ export async function getClientDashboard(clerkUserId: string) {
     .eq('client_id', client.id)
     .order('scheduled_date', { ascending: true })
 
-  return { client, appointments: appointments || [] }
+  const { data: paidRows } = await supabaseAdmin
+    .from('paid_reports')
+    .select('report_id, status, created_at')
+    .eq('user_id', clerkUserId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  const rows = paidRows || []
+  const recoveryReportReady = rows.find((r) => r.status === 'ready' || r.status === 'generated') || null
+  const recoveryReportGenerating = rows.find((r) => r.status === 'generating') || null
+  const paidReports: PaidReportSummary[] = rows.map((r) => ({
+    report_id: String(r.report_id),
+    status: String(r.status),
+    created_at: r.created_at ? String(r.created_at) : undefined,
+  }))
+
+  return {
+    client,
+    appointments: appointments || [],
+    paidReports,
+    recoveryReportReady: recoveryReportReady
+      ? { report_id: String(recoveryReportReady.report_id), status: String(recoveryReportReady.status) }
+      : null,
+    recoveryReportGenerating: recoveryReportGenerating
+      ? { report_id: String(recoveryReportGenerating.report_id) }
+      : null,
+  }
 }
 
 // ─── Update client profile ────────────────────────────────────────────────────

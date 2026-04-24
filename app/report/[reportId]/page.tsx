@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuth, useUser } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import Script from 'next/script'
@@ -22,7 +22,6 @@ import {
   Stethoscope,
   UtensilsCrossed,
 } from 'lucide-react'
-import { createSupabaseBrowserWithClerk } from '@/lib/supabase-clerk'
 
 type PollStatus = 'generating' | 'ready' | 'failed' | 'generated' | string | null
 
@@ -130,23 +129,10 @@ function ConfettiBurst({ active }: { active: boolean }) {
 export default function ReportPage() {
   const params = useParams()
   const router = useRouter()
-  const { getToken } = useAuth()
   const { isLoaded, isSignedIn, user } = useUser()
 
   const reportIdRaw = params?.reportId
   const reportId = typeof reportIdRaw === 'string' ? decodeURIComponent(reportIdRaw.trim()) : ''
-
-  const supabase = useMemo(
-    () =>
-      createSupabaseBrowserWithClerk(async () => {
-        try {
-          return (await getToken({ template: 'supabase' })) ?? null
-        } catch {
-          return null
-        }
-      }),
-    [getToken],
-  )
 
   const [view, setView] = useState<
     'loading' | 'generating' | 'ready' | 'failed' | 'timeout' | 'not_found' | 'error'
@@ -158,17 +144,29 @@ export default function ReportPage() {
 
   const pollPaidReport = useCallback(async (): Promise<{ data: PaidReportRow | null; error: boolean }> => {
     if (!reportId) return { data: null, error: true }
-    const { data, error } = await supabase
-      .from('paid_reports')
-      .select('status, pdf_url, email, report_id')
-      .eq('report_id', reportId)
-      .maybeSingle()
-    if (error) {
-      console.error('[report page] Supabase paid_reports', error)
+    const res = await fetch(`/api/report-status?reportId=${encodeURIComponent(reportId)}`, {
+      credentials: 'include',
+    })
+    if (res.status === 401) {
+      router.replace(`/sign-in?after=${encodeURIComponent(`/report/${reportId}`)}`)
       return { data: null, error: true }
     }
-    return { data: data as PaidReportRow | null, error: false }
-  }, [reportId, supabase])
+    const json = (await res.json()) as PaidReportRow & { error?: string }
+    if (!res.ok) {
+      console.error('[report page] report-status', res.status, json)
+      return { data: null, error: true }
+    }
+    if (json.error) {
+      return { data: null, error: true }
+    }
+    const data: PaidReportRow = {
+      status: json.status,
+      pdf_url: json.pdf_url ?? null,
+      email: json.email ?? null,
+      report_id: json.report_id ?? null,
+    }
+    return { data, error: false }
+  }, [reportId, router])
 
   useEffect(() => {
     if (!isLoaded) return
@@ -305,7 +303,7 @@ export default function ReportPage() {
     return (
       <ReportErrorState
         title="We couldn't load your report status"
-        body="Please refresh the page. If it keeps failing, contact support@thebeetamin.com. (For developers: Clerk JWT template named supabase plus Supabase third-party auth and RLS on paid_reports must be configured.)"
+        body="Please refresh the page. If it keeps failing, contact support@thebeetamin.com."
         reportId={displayReportId}
       />
     )

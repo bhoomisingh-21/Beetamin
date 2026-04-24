@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import {
   Leaf, ChevronLeft, Loader2, CheckCircle, XCircle, Clock,
   User, CalendarDays, Settings2, Edit3, Save, X,
-  ClipboardCheck, AlertCircle,
+  ClipboardCheck, AlertCircle, FileText,
 } from 'lucide-react'
 import { getClientDashboard, updateClientProfile, cancelAppointment } from '@/lib/booking-actions'
 
@@ -178,6 +178,51 @@ export default function ProfilePage() {
             </div>
           </div>
         </motion.div>
+
+        {/* Paid recovery report (PDF) */}
+        {(data.recoveryReportReady || data.recoveryReportGenerating) && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="mb-6 rounded-2xl border border-emerald-500/35 bg-emerald-500/10 p-5"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <FileText size={22} strokeWidth={2} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                    Personalised recovery plan
+                  </p>
+                  <p className="text-white font-bold text-base mt-0.5">
+                    {data.recoveryReportReady ? 'Your PDF report is ready' : 'Your PDF is generating'}
+                  </p>
+                  <p className="text-gray-400 text-xs mt-1 font-mono truncate">
+                    {(data.recoveryReportReady || data.recoveryReportGenerating)?.report_id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/report/${encodeURIComponent((data.recoveryReportReady || data.recoveryReportGenerating)!.report_id)}`,
+                  )
+                }
+                className="shrink-0 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-black hover:bg-emerald-400 transition"
+              >
+                {data.recoveryReportReady ? 'Open report' : 'View status'}
+              </button>
+            </div>
+            {data.paidReports && data.paidReports.length > 1 && (
+              <p className="mt-3 text-xs text-gray-500 border-t border-white/10 pt-3">
+                {data.paidReports.length} report{data.paidReports.length > 1 ? 's' : ''} on file — latest shown above.
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">

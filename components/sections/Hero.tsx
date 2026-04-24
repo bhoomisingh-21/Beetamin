@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { Sparkles, ClipboardList, ArrowRight, Activity, CheckCircle2, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
+import { getClientAssessmentFlags } from "@/lib/booking-actions";
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
   <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.27'/>
@@ -15,8 +17,55 @@ const HEADLINE_LINES = [
   ["Deficiencies", "in"],
 ];
 
+type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
+
 export default function Hero() {
   const { isSignedIn, user } = useUser();
+  const [flags, setFlags] = useState<AssessmentFlags | null>(null);
+
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) {
+      setFlags(null);
+      return;
+    }
+    let cancelled = false;
+    getClientAssessmentFlags(user.id)
+      .then((f) => {
+        if (!cancelled) setFlags(f);
+      })
+      .catch(() => {
+        if (!cancelled) setFlags(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, user?.id]);
+
+  const assessmentHref =
+    !isSignedIn
+      ? "/assessment"
+      : flags?.recoveryReportReady
+        ? `/report/${encodeURIComponent(flags.recoveryReportReady.report_id)}`
+        : flags?.recoveryReportGenerating
+          ? `/report/${encodeURIComponent(flags.recoveryReportGenerating.report_id)}`
+          : flags?.hasFreeAssessment
+            ? "/assessment/results"
+            : "/assessment";
+
+  const hasPaidReport =
+    Boolean(flags?.recoveryReportReady) || Boolean(flags?.recoveryReportGenerating);
+
+  const assessmentLabel =
+    !isSignedIn
+      ? "Start Free Health Assessment"
+      : flags === null
+        ? "Start Free Health Assessment"
+        : hasPaidReport
+          ? "Open My PDF Report"
+          : flags.hasFreeAssessment
+            ? "View My Free Report"
+            : "Start Free Health Assessment";
+
   let wordIndex = 0;
 
   return (
@@ -100,11 +149,11 @@ export default function Hero() {
               className="hidden lg:flex flex-col gap-3 sm:flex-row sm:items-center mt-8 sm:mt-10 w-full"
             >
               <a
-                href="/assessment"
+                href={assessmentHref}
                 className="flex items-center justify-center gap-2 sm:gap-3 bg-[#00E676] text-black font-bold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-[#00c864] transition-all shadow-lg shadow-emerald-500/10 w-full sm:w-auto text-sm sm:text-base"
               >
                 <ClipboardList size={17} strokeWidth={2.5} />
-                Start Free Health Assessment
+                {assessmentLabel}
               </a>
 
               <a
@@ -171,11 +220,11 @@ export default function Hero() {
             {/* ✅ MOBILE CTA BELOW IMAGE */}
             <div className="flex flex-col gap-3 w-full max-w-md mt-6 lg:hidden">
               <a
-                href="/assessment"
+                href={assessmentHref}
                 className="flex items-center justify-center gap-2 bg-[#00E676] text-black font-bold rounded-full px-6 py-4 text-sm"
               >
                 <ClipboardList size={16} />
-                Start Free Health Assessment
+                {assessmentLabel}
               </a>
 
               <a
