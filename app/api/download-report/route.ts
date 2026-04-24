@@ -3,8 +3,18 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET(req: Request) {
+  let userId: string | null = null
   try {
-    const { userId } = await auth()
+    userId = (await auth()).userId ?? null
+  } catch (e) {
+    console.error('[download-report] Clerk auth() failed', e)
+    return NextResponse.json(
+      { error: 'Sign-in service error. Refresh and try again.', code: 'AUTH_UNAVAILABLE' },
+      { status: 503 },
+    )
+  }
+
+  try {
     const { searchParams } = new URL(req.url)
     const reportId = searchParams.get('reportId')?.trim()
 
@@ -26,8 +36,14 @@ export async function GET(req: Request) {
       .maybeSingle()
 
     if (error) {
-      console.error('[download-report]', error)
-      return NextResponse.json({ error: 'Could not load your report.' }, { status: 500 })
+      console.error('[download-report] paid_reports query', error)
+      return NextResponse.json(
+        {
+          error: 'Could not load your report from the database.',
+          code: 'SUPABASE_PAID_REPORTS',
+        },
+        { status: 502 },
+      )
     }
     if (!row?.pdf_url) {
       return NextResponse.json({ error: 'Report not found.' }, { status: 404 })
@@ -39,7 +55,13 @@ export async function GET(req: Request) {
 
     if (signErr || !signed?.signedUrl) {
       console.error('[download-report] sign', signErr)
-      return NextResponse.json({ error: 'Could not create download link.' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'Could not create a signed URL for the PDF file.',
+          code: 'STORAGE_SIGN_URL',
+        },
+        { status: 502 },
+      )
     }
 
     return NextResponse.redirect(signed.signedUrl)

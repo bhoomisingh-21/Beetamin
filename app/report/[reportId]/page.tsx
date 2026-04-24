@@ -75,7 +75,20 @@ async function ReportPageContent({ params }: { params: Promise<{ reportId: strin
 
   const decodedId = decodeURIComponent(reportIdRaw.trim())
 
-  const { userId } = await auth()
+  let userId: string | null = null
+  try {
+    userId = (await auth()).userId ?? null
+  } catch (e) {
+    console.error('[report page] Clerk auth() failed', e)
+    return (
+      <ReportErrorState
+        title="Something went wrong"
+        body="We could not verify your session (sign-in service). Refresh the page or try again in a few minutes. If it continues, contact support@thebeetamin.com."
+        reportId={decodedId}
+      />
+    )
+  }
+
   if (!userId) {
     redirect('/sign-in?after=' + encodeURIComponent(`/report/${decodedId}`))
   }

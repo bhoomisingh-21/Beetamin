@@ -121,11 +121,24 @@ function makeReportId() {
 }
 
 export async function POST(req: Request) {
+  let userId: string | null = null
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Please sign in to generate your report.' }, { status: 401 })
-    }
+    userId = (await auth()).userId ?? null
+  } catch (e) {
+    console.error('[generate-report] Clerk auth() failed', e)
+    return NextResponse.json(
+      {
+        error: 'Sign-in service error. Refresh the page and try again.',
+        code: 'AUTH_UNAVAILABLE',
+      },
+      { status: 503 },
+    )
+  }
+  if (!userId) {
+    return NextResponse.json({ error: 'Please sign in to generate your report.' }, { status: 401 })
+  }
+
+  try {
 
     let body: { detailedAssessmentId?: string; freeAssessmentResult?: unknown }
     try {
@@ -148,7 +161,13 @@ export async function POST(req: Request) {
 
     if (dErr) {
       console.error('[generate-report] detailed fetch', dErr)
-      return NextResponse.json({ error: 'Could not load your assessment.' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'Could not load your assessment from the database. Check Supabase tables and env keys.',
+          code: 'SUPABASE_DETAILED_ASSESSMENT',
+        },
+        { status: 502 },
+      )
     }
     if (!detailed) {
       return NextResponse.json({ error: 'Assessment not found or access denied.' }, { status: 404 })
@@ -176,7 +195,12 @@ export async function POST(req: Request) {
       )
     }
 
-    const user = await currentUser()
+    let user: Awaited<ReturnType<typeof currentUser>> = null
+    try {
+      user = await currentUser()
+    } catch (e) {
+      console.error('[generate-report] currentUser() failed', e)
+    }
     const email = user?.primaryEmailAddress?.emailAddress || detailed.email
     const patientName =
       (client?.name as string | undefined)?.trim() ||
@@ -229,7 +253,13 @@ export async function POST(req: Request) {
       })
     } catch (e) {
       console.error('[generate-report] pdf', e)
-      return NextResponse.json({ error: 'We could not build your PDF. Please try again.' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'We could not build your PDF. See server logs for the react-pdf error.',
+          code: 'PDF_RENDER',
+        },
+        { status: 502 },
+      )
     }
 
     const storagePath = `${userId}/${reportId}.pdf`
@@ -239,7 +269,13 @@ export async function POST(req: Request) {
 
     if (upErr) {
       console.error('[generate-report] storage upload', upErr)
-      return NextResponse.json({ error: 'We could not store your report. Please try again.' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'We could not upload the PDF. Ensure the Supabase "reports" bucket exists and the service role can write to it.',
+          code: 'STORAGE_UPLOAD',
+        },
+        { status: 502 },
+      )
     }
 
     const { data: signed, error: signErr } = await supabaseAdmin.storage
@@ -248,7 +284,13 @@ export async function POST(req: Request) {
 
     if (signErr || !signed?.signedUrl) {
       console.error('[generate-report] signed url', signErr)
-      return NextResponse.json({ error: 'Could not create a download link.' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'Could not create a signed download link for storage.',
+          code: 'STORAGE_SIGN_URL',
+        },
+        { status: 502 },
+      )
     }
 
     const { error: insErr } = await supabaseAdmin.from('paid_reports').insert({
@@ -262,7 +304,13 @@ export async function POST(req: Request) {
 
     if (insErr) {
       console.error('[generate-report] paid_reports insert', insErr)
-      return NextResponse.json({ error: 'We could not finalise your report record.' }, { status: 500 })
+      return NextResponse.json(
+        {
+          error: 'We could not save your report row. Check the paid_reports table and RLS/policies.',
+          code: 'PAID_REPORTS_INSERT',
+        },
+        { status: 502 },
+      )
     }
 
     const emailResult = await sendRecoveryReportEmail({
@@ -283,8 +331,14 @@ export async function POST(req: Request) {
       emailError: emailResult.ok ? undefined : emailResult.error,
     })
   } catch (e) {
-    console.error('[generate-report]', e)
-    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
+    console.error('[generate-report] unhandled', e)
+    return NextResponse.json(
+      {
+        error: 'Something went wrong. Please try again.',
+        code: 'UNHANDLED',
+      },
+      { status: 500 },
+    )
   }
 }
 
