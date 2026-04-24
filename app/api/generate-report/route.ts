@@ -17,17 +17,6 @@ function makeReportId() {
   return `BT-${y}${m}${d}-${suffix}`
 }
 
-function resolveAppOrigin(req: Request): string {
-  const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')
-  if (fromEnv) return fromEnv
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  try {
-    return new URL(req.url).origin
-  } catch {
-    return 'http://localhost:3000'
-  }
-}
-
 export async function POST(req: Request) {
   let userId: string | null = null
   try {
@@ -45,9 +34,6 @@ export async function POST(req: Request) {
   if (!userId) {
     return NextResponse.json({ error: 'Please sign in to generate your report.' }, { status: 401 })
   }
-
-  const cookieHeader = req.headers.get('cookie')
-  const appOrigin = resolveAppOrigin(req)
 
   try {
     let body: { detailedAssessmentId?: string; freeAssessmentResult?: unknown }
@@ -116,24 +102,24 @@ export async function POST(req: Request) {
     const reportId = makeReportId()
     const storagePath = `${userId}/${reportId}.pdf`
 
-    const { error: insErr } = await supabaseAdmin.from('paid_reports').insert({
-      user_id: userId,
-      email,
-      report_id: reportId,
-      pdf_url: storagePath,
-      amount: 39,
-      status: 'generating',
-    })
+    const { data: insertData, error: insertError } = await supabaseAdmin
+      .from('paid_reports')
+      .insert({
+        user_id: userId,
+        email,
+        report_id: reportId,
+        pdf_url: storagePath,
+        amount: 39,
+        status: 'generating',
+      })
+      .select()
+      .single()
 
-    if (insErr) {
-      console.error('[generate-report] paid_reports insert', insErr)
-      return NextResponse.json(
-        {
-          error: 'We could not start your report. Check the paid_reports table and policies.',
-          code: 'PAID_REPORTS_INSERT',
-        },
-        { status: 502 },
-      )
+    console.log('[generate-report] Insert result:', insertData, insertError)
+
+    if (insertError) {
+      console.error('[generate-report] Failed to create record:', insertError)
+      return NextResponse.json({ error: 'Failed to create report record' }, { status: 500 })
     }
 
     waitUntil(
@@ -141,8 +127,6 @@ export async function POST(req: Request) {
         reportId,
         userId,
         detailedAssessmentId: detailedId,
-        appOrigin,
-        cookieHeader,
       }),
     )
 

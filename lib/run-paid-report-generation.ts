@@ -122,34 +122,12 @@ async function markFailed(reportId: string, userId: string) {
     .eq('user_id', userId)
 }
 
-async function triggerSendReportEmail(args: {
-  appOrigin: string
-  cookieHeader: string | null
-  reportId: string
-}): Promise<boolean> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (args.cookieHeader) headers.Cookie = args.cookieHeader
-  const res = await fetch(`${args.appOrigin.replace(/\/$/, '')}/api/send-report`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ reportId: args.reportId }),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    console.error('[run-paid-report-generation] send-report failed', res.status, text)
-    return false
-  }
-  return true
-}
-
 export async function runPaidReportGeneration(args: {
   reportId: string
   userId: string
   detailedAssessmentId: string
-  appOrigin: string
-  cookieHeader: string | null
 }) {
-  const { reportId, userId, detailedAssessmentId, appOrigin, cookieHeader } = args
+  const { reportId, userId, detailedAssessmentId } = args
 
   try {
     const { data: jobRow, error: jobErr } = await supabaseAdmin
@@ -289,25 +267,27 @@ export async function runPaidReportGeneration(args: {
       return
     }
 
-    const emailed = await triggerSendReportEmail({ appOrigin, cookieHeader, reportId })
-    if (!emailed) {
-      const { data: signed, error: signErr } = await supabaseAdmin.storage
-        .from('reports')
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
-      if (signErr || !signed?.signedUrl) {
-        console.error('[run-paid-report-generation] fallback signed URL', signErr)
-        return
-      }
-      const fallback = await sendRecoveryReportEmail({
-        to: email,
-        name: patientName,
-        reportId,
-        signedDownloadUrl: signed.signedUrl,
-        pdfBuffer,
-      })
-      if (!fallback.ok) {
-        console.error('[run-paid-report-generation] fallback email', fallback.error)
-      }
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from('reports')
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+
+    if (signErr || !signed?.signedUrl) {
+      console.error('[run-paid-report-generation] signed URL for email', signErr)
+      return
+    }
+
+    const emailResult = await sendRecoveryReportEmail({
+      to: email,
+      name: patientName,
+      reportId,
+      signedDownloadUrl: signed.signedUrl,
+      pdfBuffer,
+    })
+
+    if (!emailResult.ok) {
+      console.error('[run-paid-report-generation] email', emailResult.error)
+    } else {
+      console.log('[run-paid-report-generation] Email sent successfully')
     }
   } catch (e) {
     console.error('[run-paid-report-generation] unhandled', e)
