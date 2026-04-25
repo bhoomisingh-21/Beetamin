@@ -246,7 +246,7 @@ export async function confirmAppointmentByEmail(appointmentId: string, nutEmail:
           <p style="color:white;margin:8px 0;">⏰ Time: <strong>${appt.scheduled_time}</strong></p>
           <p style="color:white;margin:0;">👤 Nutritionist: <strong>${nutritionist.name}</strong></p>
         </div>
-        <a href="https://thebeetamin.com/booking/dashboard" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">View Dashboard →</a>
+        <a href="https://thebeetamin.com/sessions" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">View My Sessions →</a>
       </div>
     `,
     })
@@ -311,7 +311,7 @@ export async function completeAppointmentByEmail(appointmentId: string, nutEmail
         <p style="color:#9CA3AF;">${nutritionist.name} has marked your session ${appt.session_number} as complete.</p>
         <p style="color:#9CA3AF;">Sessions remaining on your plan: <strong>${newRemaining}</strong></p>
         ${safeNotes ? `<p style="color:#E5E7EB;margin-top:16px;">Notes from your session:<br/>${safeNotes}</p>` : ''}
-        <a href="https://thebeetamin.com/booking/dashboard" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">View dashboard →</a>
+        <a href="https://thebeetamin.com/sessions" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">View My Sessions →</a>
       </div>
     `,
     })
@@ -362,9 +362,9 @@ export async function confirmAppointment(appointmentId: string) {
           <p style="color:white;margin:0;">📊 Sessions remaining after this: <strong>${appt.clients.sessions_remaining - 1}</strong></p>
         </div>
         <p style="color:#9CA3AF;">You will receive a Google Meet link 30 minutes before your session.</p>
-        <a href="https://thebeetamin.com/booking/dashboard"
+        <a href="https://thebeetamin.com/sessions"
            style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">
-          View Dashboard →
+          View My Sessions →
         </a>
         <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
       </div>

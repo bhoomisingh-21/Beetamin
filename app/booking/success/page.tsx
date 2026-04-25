@@ -37,7 +37,7 @@ function SuccessContent() {
         <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => router.push('/booking/dashboard')}
+            onClick={() => router.push('/sessions')}
             className="text-gray-500 hover:text-gray-800 text-sm font-medium transition"
           >
             My Sessions
@@ -165,7 +165,7 @@ function SuccessContent() {
               >
                 <button
                   type="button"
-                  onClick={() => router.push('/booking/dashboard')}
+                  onClick={() => router.push('/sessions')}
                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl py-3.5 sm:py-4 transition flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20"
                 >
                   <LayoutDashboard size={18} />

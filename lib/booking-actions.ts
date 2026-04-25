@@ -661,20 +661,46 @@ export async function upsertProgressLog(input: {
     height_cm = c?.height_cm != null ? Number(c.height_cm) : null
   }
 
+  const day = input.logged_at.slice(0, 10)
+  const { data: existing } = await supabaseAdmin
+    .from('progress_logs')
+    .select('weight_kg, energy_level, notes')
+    .eq('user_id', userId)
+    .eq('logged_at', day)
+    .maybeSingle()
+
+  const mergedWeight =
+    weight ??
+    (existing?.weight_kg != null && existing.weight_kg !== ''
+      ? Number(existing.weight_kg)
+      : null)
+  const mergedEnergy =
+    energy ??
+    (existing?.energy_level != null ? Number(existing.energy_level) : null)
+  const notesTrim = input.notes !== undefined && input.notes !== null ? String(input.notes).trim() : undefined
+  const mergedNotes =
+    notesTrim !== undefined
+      ? notesTrim === ''
+        ? (existing?.notes != null ? String(existing.notes) : null)
+        : notesTrim.slice(0, 280)
+      : existing?.notes != null
+        ? String(existing.notes)
+        : null
+
   let bmi: number | null = null
-  if (weight != null && height_cm != null && height_cm > 0) {
+  if (mergedWeight != null && height_cm != null && height_cm > 0) {
     const hM = height_cm / 100
-    bmi = Math.round((weight / (hM * hM)) * 100) / 100
+    bmi = Math.round((mergedWeight / (hM * hM)) * 100) / 100
   }
 
   const row = {
     user_id: userId,
-    weight_kg: weight,
+    weight_kg: mergedWeight,
     height_cm,
     bmi,
-    energy_level: energy,
-    notes: input.notes?.trim() || null,
-    logged_at: input.logged_at.slice(0, 10),
+    energy_level: mergedEnergy,
+    notes: mergedNotes,
+    logged_at: day,
   }
 
   const { error } = await supabaseAdmin.from('progress_logs').upsert(row, {

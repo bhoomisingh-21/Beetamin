@@ -201,7 +201,7 @@ export default function Comparison() {
         {/* CTA */}
         <div className="text-center">
           <a
-            href={isSignedIn ? "/booking/dashboard" : "/booking"}
+            href={isSignedIn ? "/sessions" : "/booking"}
             className="inline-block bg-[#050B0D] text-white px-8 py-4 rounded-full font-bold w-full sm:w-auto hover:bg-[#1a2a1a] transition"
           >
             {isSignedIn ? "Manage My Sessions →" : "Start 90-Day Transformation →"}

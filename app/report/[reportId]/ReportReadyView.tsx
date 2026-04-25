@@ -13,7 +13,7 @@ import {
   Ban,
   Sparkles,
   Stethoscope,
-  LayoutDashboard,
+  User,
 } from 'lucide-react'
 
 type Props = {
@@ -40,7 +40,7 @@ export function ReportReadyView({ reportId, patientName, email }: Props) {
       <header className="border-b border-gray-100 bg-white px-4 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <span className="text-sm font-bold text-emerald-800">The Beetamin</span>
-          <Link href="/booking/dashboard" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+          <Link href="/sessions" className="text-sm font-medium text-gray-600 hover:text-gray-900">
             My Sessions
           </Link>
         </div>
@@ -100,11 +100,11 @@ export function ReportReadyView({ reportId, patientName, email }: Props) {
         </p>
 
         <Link
-          href="/booking/dashboard"
+          href="/profile"
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-3.5 text-sm font-bold text-gray-800 transition hover:bg-gray-50"
         >
-          <LayoutDashboard className="h-4 w-4" />
-          Back to dashboard
+          <User className="h-4 w-4" />
+          Back to My Profile
         </Link>
       </main>
     </div>

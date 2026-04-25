@@ -46,18 +46,25 @@ function getGroq() {
   return new Groq({ apiKey: key })
 }
 
-function extractDeficiencySummary(freeAssessment: unknown): unknown[] | null {
+function extractDeficiencySummary(freeAssessment: unknown): Record<string, unknown> | null {
   if (!freeAssessment || typeof freeAssessment !== 'object') return null
-  const raw = (freeAssessment as { primaryDeficiencies?: unknown }).primaryDeficiencies
+  const fa = freeAssessment as {
+    primaryDeficiencies?: unknown
+    deficiencyScore?: unknown
+  }
+  const raw = fa.primaryDeficiencies
   if (!Array.isArray(raw)) return null
-  const out: unknown[] = []
+  const deficiencies: unknown[] = []
   for (const item of raw) {
     if (!item || typeof item !== 'object') continue
     const o = item as Record<string, unknown>
     const sev = o.severity
     const severity =
       sev === 'high' || sev === 'medium' || sev === 'low' ? sev : 'low'
-    out.push({
+    const symptoms = Array.isArray(o.symptoms)
+      ? (o.symptoms as unknown[]).filter((s): s is string => typeof s === 'string')
+      : []
+    deficiencies.push({
       nutrient: typeof o.nutrient === 'string' ? o.nutrient : String(o.nutrient ?? ''),
       severity,
       reason:
@@ -66,9 +73,12 @@ function extractDeficiencySummary(freeAssessment: unknown): unknown[] | null {
           : typeof o.explanation === 'string'
             ? o.explanation
             : '',
+      symptoms,
     })
   }
-  return out.length ? out : null
+  if (!deficiencies.length) return null
+  const score = typeof fa.deficiencyScore === 'number' ? fa.deficiencyScore : null
+  return { overallScore: score, deficiencies }
 }
 
 function safeParseJson(raw: string): RecoveryReportSections {

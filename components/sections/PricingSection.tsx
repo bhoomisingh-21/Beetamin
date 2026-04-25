@@ -36,7 +36,7 @@ export default function PricingSection() {
   let coreButtonLabel = "Get Started Now";
   if (isSignedIn) {
     if (hasBooking) {
-      coreButtonHref = "/booking/profile";
+      coreButtonHref = "/profile";
       coreButtonLabel = "Manage My Booking";
     } else {
       coreButtonHref = "/booking";
@@ -137,7 +137,7 @@ export default function PricingSection() {
           {/* Logged-in with active booking: show Track Progress */}
           {isSignedIn && hasBooking ? (
             <a
-              href="/booking/dashboard"
+              href="/sessions"
               className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
             >
               <LayoutDashboard size={16} />

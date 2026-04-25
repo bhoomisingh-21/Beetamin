@@ -147,7 +147,7 @@ export default function BookingCTA() {
 
             {isSignedIn ? (
               <a
-                href="/booking/dashboard"
+                href="/sessions"
                 className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl px-8 py-4 transition text-base"
               >
                 <LayoutDashboard size={18} />
@@ -217,7 +217,7 @@ export default function BookingCTA() {
                 </ul>
               )}
               <a
-                href={isSignedIn ? "/booking/dashboard" : "/booking"}
+                href={isSignedIn ? "/sessions" : "/booking"}
                 className="inline-flex items-center gap-2 border border-white/20 text-white font-bold rounded-full px-5 py-2.5 mt-4 hover:border-emerald-500 hover:text-emerald-400 transition text-sm"
               >
                 {isSignedIn ? (

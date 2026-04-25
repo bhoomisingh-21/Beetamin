@@ -86,7 +86,7 @@ export default function BookingPage() {
         const client = await getClientByClerkId(user.id)
         clearTimeout(fallback)
         if (client) {
-          router.push('/booking/dashboard')
+          router.push('/sessions')
         } else {
           router.push('/booking/onboard')
         }
@@ -252,7 +252,7 @@ export default function BookingPage() {
               <div className="mt-6 pt-5 border-t border-gray-100 text-center">
                 <p className="text-gray-500 text-xs mb-1">Already have a plan?</p>
                 <a
-                  href="/sign-in?after=%2Fbooking%2Fdashboard"
+                  href="/sign-in?after=%2Fsessions"
                   className="text-emerald-600 hover:text-emerald-500 text-sm font-semibold underline inline-block"
                 >
                   Sign in to your dashboard →

@@ -83,19 +83,13 @@ export default function Navbar() {
                 ) : (
                   <>
                     <a
-                      href="/booking/profile"
+                      href="/profile"
                       className="text-gray-300 hover:text-white text-sm font-medium transition"
                     >
                       My Profile
                     </a>
                     <a
-                      href="/dashboard"
-                      className="text-gray-300 hover:text-white text-sm font-medium transition mr-1"
-                    >
-                      Dashboard
-                    </a>
-                    <a
-                      href="/booking/dashboard"
+                      href="/sessions"
                       className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-full px-5 py-2 text-sm transition-all duration-200 hover:scale-105"
                     >
                       My Sessions
@@ -191,21 +185,14 @@ export default function Navbar() {
                 {isLoaded && isSignedIn && (
                   <>
                     <a
-                      href="/booking/profile"
+                      href="/profile"
                       onClick={() => setMenuOpen(false)}
                       className="block w-full text-center border border-white/20 text-white font-bold rounded-full px-6 py-4 text-base hover:bg-white/5 transition"
                     >
                       My Profile
                     </a>
                     <a
-                      href="/dashboard"
-                      onClick={() => setMenuOpen(false)}
-                      className="block w-full text-center border border-white/20 text-white font-bold rounded-full px-6 py-4 text-base hover:bg-white/5 transition mb-3"
-                    >
-                      Dashboard
-                    </a>
-                    <a
-                      href="/booking/dashboard"
+                      href="/sessions"
                       onClick={() => setMenuOpen(false)}
                       className="block w-full text-center bg-emerald-500 text-black font-bold rounded-full px-6 py-4 text-base hover:bg-emerald-400 transition"
                     >

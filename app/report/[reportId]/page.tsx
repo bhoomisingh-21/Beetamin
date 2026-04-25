@@ -80,10 +80,10 @@ function ReportErrorState({ title, body, reportId }: { title: string; body: stri
             {reportId ? <span className="font-mono text-xs text-stone-800">({reportId})</span> : null}
           </p>
           <Link
-            href="/dashboard"
+            href="/profile"
             className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-[#1a472a] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1a472a]/25 transition hover:bg-[#143622]"
           >
-            Go back to Dashboard
+            Go back to My Profile
           </Link>
         </div>
       </div>
@@ -389,10 +389,10 @@ function ReportPageInner() {
             <span className="font-mono text-xs text-stone-800">{displayReportId}</span>
           </p>
           <Link
-            href="/dashboard"
+            href="/profile"
             className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-[#1a472a] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1a472a]/25 transition hover:bg-[#143622]"
           >
-            Go back to Dashboard
+            Go back to My Profile
           </Link>
         </div>
       </div>
@@ -413,10 +413,10 @@ function ReportPageInner() {
           </p>
           <p className="mt-4 font-mono text-xs text-stone-500">Report ID: {displayReportId}</p>
           <Link
-            href="/dashboard"
+            href="/profile"
             className="mt-8 inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#1a472a]/20 bg-white px-6 py-3.5 text-sm font-semibold text-[#1a472a] transition hover:border-[#1a472a]/40 hover:bg-[#f0fdf4]"
           >
-            Go to Dashboard
+            Go to My Profile
           </Link>
         </div>
       </div>

@@ -9,7 +9,7 @@ import {
   Check,
   Download,
   FileText,
-  LayoutDashboard,
+  User,
   Loader2,
   Lock,
   Mail,
@@ -229,11 +229,11 @@ export function ReportReadyLayout({
               </ul>
             </div>
             <Link
-              href="/dashboard"
+              href="/profile"
               className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#1a472a]/25 bg-white px-5 py-3.5 text-sm font-bold text-[#1a472a] shadow-sm transition hover:border-[#1a472a]/40 hover:bg-[#f0fdf4]"
             >
-              <LayoutDashboard className="h-4 w-4 shrink-0" strokeWidth={2} />
-              Go to Dashboard
+              <User className="h-4 w-4 shrink-0" strokeWidth={2} />
+              Go to My Profile
             </Link>
           </motion.aside>
         </div>

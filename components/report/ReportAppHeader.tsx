@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, LayoutDashboard, User } from 'lucide-react'
+import { ArrowLeft, CalendarDays, User } from 'lucide-react'
 
 export function ReportAppHeader() {
   const router = useRouter()
@@ -25,18 +25,18 @@ export function ReportAppHeader() {
         </button>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link
-            href="/booking/profile"
+            href="/profile"
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-800 shadow-sm transition hover:border-[#1a472a]/30 hover:text-[#1a472a]"
           >
             <User className="h-4 w-4 shrink-0" strokeWidth={2} />
-            <span className="hidden sm:inline">Profile</span>
+            <span className="hidden sm:inline">My Profile</span>
           </Link>
           <Link
-            href="/dashboard"
+            href="/sessions"
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#1a472a] px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#143622]"
           >
-            <LayoutDashboard className="h-4 w-4 shrink-0" strokeWidth={2} />
-            <span className="hidden sm:inline">Dashboard</span>
+            <CalendarDays className="h-4 w-4 shrink-0" strokeWidth={2} />
+            <span className="hidden sm:inline">My Sessions</span>
           </Link>
         </div>
       </div>

@@ -157,7 +157,7 @@ export default function Hero() {
               </a>
 
               <a
-                href={isSignedIn ? "/booking/dashboard" : "/booking"}
+                href={isSignedIn ? "/sessions" : "/booking"}
                 className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-white/10 transition-all w-full sm:w-auto text-sm sm:text-base"
               >
                 {isSignedIn ? "My Sessions" : "Book a Nutritionist"}
@@ -228,7 +228,7 @@ export default function Hero() {
               </a>
 
               <a
-                href={isSignedIn ? "/booking/dashboard" : "/booking"}
+                href={isSignedIn ? "/sessions" : "/booking"}
                 className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 py-4 text-sm"
               >
                 {isSignedIn ? "My Sessions" : "Book a Nutritionist"}

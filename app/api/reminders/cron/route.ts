@@ -94,9 +94,9 @@ export async function GET(req: NextRequest) {
               <p style="color:white;margin:8px 0;">⏱️ Duration: <strong>30 minutes</strong></p>
             </div>
             <p style="color:#9CA3AF;">You will receive a Google Meet link 30 minutes before your session.</p>
-            <a href="https://thebeetamin.com/booking/dashboard"
+            <a href="https://thebeetamin.com/sessions"
                style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">
-              View Dashboard →
+              View My Sessions →
             </a>
             <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
           </div>

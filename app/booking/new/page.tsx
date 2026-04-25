@@ -118,7 +118,7 @@ export default function NewBookingPage() {
       <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => router.push('/booking/dashboard')}
+          onClick={() => router.push('/sessions')}
           className="flex items-center gap-2 text-left"
         >
           <Leaf className="text-emerald-500 shrink-0" size={18} />
@@ -127,7 +127,7 @@ export default function NewBookingPage() {
         <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => router.push('/booking/dashboard')}
+            onClick={() => router.push('/sessions')}
             className="text-gray-400 hover:text-gray-600 text-sm transition"
           >
             ← My Sessions
@@ -320,7 +320,7 @@ export default function NewBookingPage() {
               <p className="text-center text-gray-400 text-xs mt-5">
                 <button
                   type="button"
-                  onClick={() => router.push('/booking/dashboard')}
+                  onClick={() => router.push('/sessions')}
                   className="hover:text-gray-600 transition underline underline-offset-2"
                 >
                   ← Back to My Sessions

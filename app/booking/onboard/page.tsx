@@ -186,7 +186,7 @@ export default function OnboardPage() {
           /* ignore */
         }
       }
-      router.push('/booking/dashboard')
+      router.push('/sessions')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsSubmitting(false)
