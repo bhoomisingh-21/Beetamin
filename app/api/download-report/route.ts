@@ -69,6 +69,28 @@ export async function GET(req: Request) {
       return NextResponse.json({ url: signed.signedUrl })
     }
 
+    /** Same-origin PDF stream so the browser can save without navigating to storage. */
+    const wantsAttachment = searchParams.get('disposition') === 'attachment'
+    if (wantsAttachment) {
+      const fileRes = await fetch(signed.signedUrl)
+      if (!fileRes.ok) {
+        console.error('[download-report] storage fetch', fileRes.status)
+        return NextResponse.json(
+          { error: 'Could not read the PDF from storage.' },
+          { status: 502 },
+        )
+      }
+      const safeId = reportId.replace(/[^a-zA-Z0-9-_.]/g, '_').slice(0, 120)
+      const filename = `Beetamin-Recovery-${safeId || 'plan'}.pdf`
+      return new NextResponse(fileRes.body, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'private, no-store',
+        },
+      })
+    }
+
     return NextResponse.redirect(signed.signedUrl, 302)
   } catch (e) {
     console.error('[download-report]', e)
