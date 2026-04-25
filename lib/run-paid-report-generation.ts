@@ -46,6 +46,31 @@ function getGroq() {
   return new Groq({ apiKey: key })
 }
 
+function extractDeficiencySummary(freeAssessment: unknown): unknown[] | null {
+  if (!freeAssessment || typeof freeAssessment !== 'object') return null
+  const raw = (freeAssessment as { primaryDeficiencies?: unknown }).primaryDeficiencies
+  if (!Array.isArray(raw)) return null
+  const out: unknown[] = []
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue
+    const o = item as Record<string, unknown>
+    const sev = o.severity
+    const severity =
+      sev === 'high' || sev === 'medium' || sev === 'low' ? sev : 'low'
+    out.push({
+      nutrient: typeof o.nutrient === 'string' ? o.nutrient : String(o.nutrient ?? ''),
+      severity,
+      reason:
+        typeof o.reason === 'string'
+          ? o.reason
+          : typeof o.explanation === 'string'
+            ? o.explanation
+            : '',
+    })
+  }
+  return out.length ? out : null
+}
+
 function safeParseJson(raw: string): RecoveryReportSections {
   let text = raw.trim()
   if (text.startsWith('```')) {
@@ -174,6 +199,8 @@ export async function runPaidReportGeneration(args: {
       return
     }
 
+    const deficiencySummary = extractDeficiencySummary(freeAssessment)
+
     let clerkUser
     try {
       const cc = await clerkClient()
@@ -257,6 +284,7 @@ export async function runPaidReportGeneration(args: {
         status: 'ready',
         pdf_url: storagePath,
         email,
+        deficiency_summary: deficiencySummary,
       })
       .eq('report_id', reportId)
       .eq('user_id', userId)

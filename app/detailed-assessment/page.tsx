@@ -189,11 +189,20 @@ export default function DetailedAssessmentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ detailedAssessmentId, freeAssessmentResult }),
       })
-      const genJson = await genRes.json().catch(() => ({}))
+      const genJson = (await genRes.json().catch(() => ({}))) as {
+        reportId?: string
+        alreadyExists?: boolean
+        error?: string
+      }
       if (!genRes.ok) {
         throw new Error(genJson.error || 'Could not generate your report')
       }
-      router.push(`/report/${encodeURIComponent(genJson.reportId)}`)
+      const rid = genJson.reportId
+      if (!rid) {
+        throw new Error('Could not generate your report')
+      }
+      const q = genJson.alreadyExists ? '?notice=already-have-report' : ''
+      router.push(`/report/${encodeURIComponent(rid)}${q}`)
     } catch (e) {
       setPhase('summary')
       setGenError(e instanceof Error ? e.message : 'Something went wrong')

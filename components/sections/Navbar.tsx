@@ -89,6 +89,12 @@ export default function Navbar() {
                       My Profile
                     </a>
                     <a
+                      href="/dashboard"
+                      className="text-gray-300 hover:text-white text-sm font-medium transition mr-1"
+                    >
+                      Dashboard
+                    </a>
+                    <a
                       href="/booking/dashboard"
                       className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-full px-5 py-2 text-sm transition-all duration-200 hover:scale-105"
                     >
@@ -190,6 +196,13 @@ export default function Navbar() {
                       className="block w-full text-center border border-white/20 text-white font-bold rounded-full px-6 py-4 text-base hover:bg-white/5 transition"
                     >
                       My Profile
+                    </a>
+                    <a
+                      href="/dashboard"
+                      onClick={() => setMenuOpen(false)}
+                      className="block w-full text-center border border-white/20 text-white font-bold rounded-full px-6 py-4 text-base hover:bg-white/5 transition mb-3"
+                    >
+                      Dashboard
                     </a>
                     <a
                       href="/booking/dashboard"

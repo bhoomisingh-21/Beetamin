@@ -81,10 +81,22 @@ export default function DashboardPage() {
   const completedAppts = appointments.filter((a) => a.status === 'completed')
   const rejectedAppts = appointments.filter((a) => a.status === 'rejected')
 
-  const canBook =
+  const planComplete =
+    client.status === 'completed' ||
+    (client.sessions_total > 0 && client.sessions_used >= client.sessions_total)
+
+  const prevSessionCompleted = (n: number) =>
+    n === 1 ||
+    !!appointments.find((a) => a.session_number === n - 1 && a.status === 'completed')
+
+  const sessionBookable = (n: number) =>
     client.status === 'active' &&
     client.sessions_remaining > 0 &&
-    !activeAppt
+    !activeAppt &&
+    prevSessionCompleted(n) &&
+    n === client.sessions_used + 1
+
+  const canBookNextSession = sessionBookable(client.sessions_used + 1)
 
   return (
     <div
@@ -128,6 +140,23 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Session progress */}
+        {planComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4 text-center"
+          >
+            <p className="text-emerald-300 font-black text-lg">Plan Complete 🎉</p>
+            <p className="text-gray-400 text-sm mt-1">You&apos;ve finished all six sessions on this plan.</p>
+            <a
+              href="/booking/purchase"
+              className="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-black hover:bg-emerald-400 transition"
+            >
+              Start a new plan
+            </a>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -187,8 +216,7 @@ export default function DashboardPage() {
                 )
               }
 
-              // Bookable next session
-              if (n === client.sessions_used + 1 && canBook) {
+              if (sessionBookable(n)) {
                 return (
                   <div
                     key={n}
@@ -202,11 +230,16 @@ export default function DashboardPage() {
                 )
               }
 
+              const lockHint =
+                n > 1 && !prevSessionCompleted(n)
+                  ? `Complete session ${n - 1} first`
+                  : 'Locked'
+
               return (
-                <div key={n} className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 text-center opacity-40">
-                  <Lock className="text-gray-600 mx-auto" size={24} />
-                  <p className="text-gray-600 font-bold text-sm mt-1">Session {n}</p>
-                  <p className="text-gray-600 text-xs mt-1">Locked</p>
+                <div key={n} className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 text-center opacity-70">
+                  <Lock className="text-gray-500 mx-auto" size={24} />
+                  <p className="text-gray-500 font-bold text-sm mt-1">Session {n}</p>
+                  <p className="text-gray-600 text-[10px] leading-tight mt-1 px-0.5">{lockHint}</p>
                 </div>
               )
             })}
@@ -214,7 +247,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* CTA — Book next session */}
-        {canBook && (
+        {canBookNextSession && !planComplete && (
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

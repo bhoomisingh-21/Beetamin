@@ -106,7 +106,7 @@ export default function ResultsPage() {
   function handleRecoveryPlanCta() {
     if (!isSignedIn) {
       sessionStorage.setItem('postLoginDest', '29-plan')
-      router.push('/sign-in')
+      router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))
       return
     }
     router.push('/detailed-assessment')
@@ -196,6 +196,21 @@ export default function ResultsPage() {
     viewport: { once: true },
     transition: { duration: 0.5, delay },
   })
+
+  const latestDetailedId = flags?.latestDetailedAssessmentId ?? null
+  const paidForLatest = flags?.paidReportForLatestDetailed
+  const readyReportId =
+    paidForLatest && (paidForLatest.status === 'ready' || paidForLatest.status === 'generated')
+      ? paidForLatest.report_id
+      : !latestDetailedId && flags?.recoveryReportReady
+        ? flags.recoveryReportReady.report_id
+        : null
+  const generatingReportId =
+    paidForLatest?.status === 'generating'
+      ? paidForLatest.report_id
+      : !latestDetailedId && flags?.recoveryReportGenerating
+        ? flags.recoveryReportGenerating.report_id
+        : null
 
   return (
     <div className="min-h-screen bg-[#0B0F14] text-white">
@@ -454,7 +469,7 @@ export default function ResultsPage() {
       </div>
 
       {/* ===== SECTION 2 — PAID RECOVERY READY / GENERATING OR ₹39 OFFER ===== */}
-      {flags?.recoveryReportReady ? (
+      {readyReportId ? (
         <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
           <motion.div
             {...fadeUp(0)}
@@ -469,15 +484,15 @@ export default function ResultsPage() {
             <p className="mt-4 text-gray-600 text-sm sm:text-base leading-relaxed">
               We emailed your PDF. Open your report page anytime to download or share.
             </p>
-            <p className="mt-2 font-mono text-xs text-gray-500">{flags.recoveryReportReady.report_id}</p>
+            <p className="mt-2 font-mono text-xs text-gray-500">{readyReportId}</p>
             <button
               type="button"
               onClick={() =>
-                router.push(`/report/${encodeURIComponent(flags.recoveryReportReady!.report_id)}`)
+                router.push(`/report/${encodeURIComponent(readyReportId)}`)
               }
-              className="mt-8 w-full max-w-md mx-auto block bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-4 rounded-xl font-black text-base shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="mt-8 w-full max-w-md mx-auto block rounded-xl bg-emerald-600 py-4 font-black text-base text-white shadow-lg hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
-              Open my recovery plan
+              Open My PDF Report
             </button>
             <button
               type="button"
@@ -488,7 +503,7 @@ export default function ResultsPage() {
             </button>
           </motion.div>
         </div>
-      ) : flags?.recoveryReportGenerating ? (
+      ) : generatingReportId ? (
         <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
           <motion.div {...fadeUp(0)} className="max-w-2xl mx-auto text-center">
             <Loader2 className="mx-auto mb-6 h-14 w-14 animate-spin text-emerald-600" strokeWidth={2.5} />
@@ -496,11 +511,11 @@ export default function ResultsPage() {
             <p className="mt-4 text-gray-600 text-sm sm:text-base">
               This usually takes a minute or two. Keep this tab open, or check your email when it is ready.
             </p>
-            <p className="mt-2 font-mono text-xs text-gray-500">{flags.recoveryReportGenerating.report_id}</p>
+            <p className="mt-2 font-mono text-xs text-gray-500">{generatingReportId}</p>
             <button
               type="button"
               onClick={() =>
-                router.push(`/report/${encodeURIComponent(flags.recoveryReportGenerating!.report_id)}`)
+                router.push(`/report/${encodeURIComponent(generatingReportId)}`)
               }
               className="mt-8 w-full max-w-md mx-auto block rounded-xl bg-emerald-600 py-4 font-black text-white hover:bg-emerald-700 transition"
             >
@@ -596,7 +611,7 @@ export default function ResultsPage() {
                   onClick={handleRecoveryPlanCta}
                   className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
-                  GET MY PERSONALISED PLAN — ₹39
+                  Get Paid Report — ₹29
                 </button>
 
                 <p className="mt-3 text-[10px] sm:text-xs text-gray-400">

@@ -69,6 +69,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Assessment not found or access denied.' }, { status: 404 })
     }
 
+    const { data: existingReport } = await supabaseAdmin
+      .from('paid_reports')
+      .select('report_id, status')
+      .eq('user_id', userId)
+      .eq('assessment_id', detailedId)
+      .maybeSingle()
+
+    if (existingReport?.report_id) {
+      return NextResponse.json({
+        reportId: existingReport.report_id,
+        alreadyExists: true,
+        status: existingReport.status,
+      })
+    }
+
     const { data: client } = await supabaseAdmin
       .from('clients')
       .select('assessment_result, name')
@@ -111,6 +126,7 @@ export async function POST(req: Request) {
         pdf_url: storagePath,
         amount: 39,
         status: 'generating',
+        assessment_id: detailedId,
       })
       .select()
       .single()
@@ -118,6 +134,26 @@ export async function POST(req: Request) {
     console.log('[generate-report] Insert result:', insertData, insertError)
 
     if (insertError) {
+      const msg = insertError.message || ''
+      const isDup =
+        insertError.code === '23505' ||
+        msg.toLowerCase().includes('duplicate') ||
+        msg.toLowerCase().includes('unique')
+      if (isDup) {
+        const { data: again } = await supabaseAdmin
+          .from('paid_reports')
+          .select('report_id, status')
+          .eq('user_id', userId)
+          .eq('assessment_id', detailedId)
+          .maybeSingle()
+        if (again?.report_id) {
+          return NextResponse.json({
+            reportId: again.report_id,
+            alreadyExists: true,
+            status: again.status,
+          })
+        }
+      }
       console.error('[generate-report] Failed to create record:', insertError)
       return NextResponse.json({ error: 'Failed to create report record' }, { status: 500 })
     }

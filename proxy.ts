@@ -20,6 +20,7 @@ async function getVerifiedNutEmailFromCookies(req: NextRequest): Promise<string 
 
 // ── Clerk-protected user routes ──────────────────────────────────────────────
 const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
   '/booking/dashboard(.*)',
   '/booking/new(.*)',
   '/booking/onboard(.*)',

@@ -22,6 +22,7 @@ export type ClientRow = {
   assessment_goal?: string
   assessment_result?: unknown
   assessment_meta?: unknown
+  height_cm?: number | null
 }
 
 export type CreateClientProfileResult =
@@ -382,6 +383,20 @@ export type PaidReportSummary = {
   report_id: string
   status: string
   created_at?: string
+  assessment_id?: string | null
+  deficiency_summary?: unknown
+}
+
+export type ProgressLogRow = {
+  id: string
+  user_id: string
+  weight_kg: number | null
+  height_cm: number | null
+  bmi: number | null
+  energy_level: number | null
+  notes: string | null
+  logged_at: string
+  created_at: string
 }
 
 export async function getClientAssessmentFlags(clerkUserId: string) {
@@ -391,7 +406,7 @@ export async function getClientAssessmentFlags(clerkUserId: string) {
 
   const { data: paidRows } = await supabaseAdmin
     .from('paid_reports')
-    .select('report_id, status, created_at')
+    .select('report_id, status, created_at, assessment_id, deficiency_summary')
     .eq('user_id', clerkUserId)
     .order('created_at', { ascending: false })
     .limit(20)
@@ -399,6 +414,23 @@ export async function getClientAssessmentFlags(clerkUserId: string) {
   const rows = paidRows || []
   const recoveryReportReady = rows.find((r) => r.status === 'ready' || r.status === 'generated') || null
   const recoveryReportGenerating = rows.find((r) => r.status === 'generating') || null
+
+  const { data: latestDetailed } = await supabaseAdmin
+    .from('detailed_assessments')
+    .select('id')
+    .eq('user_id', clerkUserId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const latestDetailedId = latestDetailed?.id ? String(latestDetailed.id) : null
+  let paidReportForLatestDetailed: { report_id: string; status: string } | null = null
+  if (latestDetailedId) {
+    const match = rows.find((r) => r.assessment_id && String(r.assessment_id) === latestDetailedId)
+    if (match) {
+      paidReportForLatestDetailed = { report_id: String(match.report_id), status: String(match.status) }
+    }
+  }
 
   return {
     hasFreeAssessment,
@@ -408,6 +440,8 @@ export async function getClientAssessmentFlags(clerkUserId: string) {
     recoveryReportGenerating: recoveryReportGenerating
       ? { report_id: String(recoveryReportGenerating.report_id) }
       : null,
+    latestDetailedAssessmentId: latestDetailedId,
+    paidReportForLatestDetailed,
   }
 }
 
@@ -423,7 +457,7 @@ export async function getClientDashboard(clerkUserId: string) {
 
   const { data: paidRows } = await supabaseAdmin
     .from('paid_reports')
-    .select('report_id, status, created_at')
+    .select('report_id, status, created_at, assessment_id, deficiency_summary')
     .eq('user_id', clerkUserId)
     .order('created_at', { ascending: false })
     .limit(20)
@@ -435,6 +469,8 @@ export async function getClientDashboard(clerkUserId: string) {
     report_id: String(r.report_id),
     status: String(r.status),
     created_at: r.created_at ? String(r.created_at) : undefined,
+    assessment_id: r.assessment_id != null ? String(r.assessment_id) : null,
+    deficiency_summary: r.deficiency_summary,
   }))
 
   return {
@@ -455,11 +491,195 @@ export async function getClientDashboard(clerkUserId: string) {
 export async function updateClientProfile(clerkUserId: string, data: {
   phone?: string
   assessment_goal?: string
+  height_cm?: number | null
 }) {
   const { error } = await supabaseAdmin
     .from('clients')
     .update(data)
     .eq('clerk_user_id', clerkUserId)
+  if (error) throw new Error(error.message)
+}
+
+/** Idempotent completion: increments sessions_used / decrements sessions_remaining. */
+export async function markAppointmentCompleteById(
+  appointmentId: string,
+  notes?: string | null,
+  opts?: { allowPending?: boolean },
+): Promise<{ ok: true; alreadyDone?: boolean } | { ok: false; reason: string }> {
+  const { data: appt, error } = await supabaseAdmin
+    .from('appointments')
+    .select(
+      'id, status, session_number, clients(id, sessions_used, sessions_remaining, email, name)',
+    )
+    .eq('id', appointmentId)
+    .maybeSingle()
+
+  if (error || !appt) {
+    return { ok: false, reason: 'not_found' }
+  }
+
+  const status = String(appt.status)
+  if (status === 'completed') {
+    return { ok: true, alreadyDone: true }
+  }
+  const canComplete = status === 'confirmed' || (opts?.allowPending === true && status === 'pending')
+  if (!canComplete) {
+    return { ok: false, reason: 'not_confirmed' }
+  }
+
+  const rawClients = appt.clients as unknown
+  const clients = (Array.isArray(rawClients) ? rawClients[0] : rawClients) as {
+    id: string
+    sessions_used: number
+    sessions_remaining: number
+    email: string
+    name: string
+  } | null
+  if (!clients?.id) {
+    return { ok: false, reason: 'not_found' }
+  }
+
+  const newUsed = clients.sessions_used + 1
+  const newRemaining = clients.sessions_remaining - 1
+
+  const { error: u1 } = await supabaseAdmin
+    .from('appointments')
+    .update({ status: 'completed', notes: notes ?? null })
+    .eq('id', appointmentId)
+
+  if (u1) {
+    return { ok: false, reason: 'update_failed' }
+  }
+
+  const { error: u2 } = await supabaseAdmin
+    .from('clients')
+    .update({
+      sessions_used: newUsed,
+      sessions_remaining: newRemaining,
+      status: newRemaining === 0 ? 'completed' : 'active',
+    })
+    .eq('id', clients.id)
+
+  if (u2) {
+    return { ok: false, reason: 'client_update_failed' }
+  }
+
+  return { ok: true }
+}
+
+export async function getDashboardBundle(clerkUserId: string) {
+  const { userId } = await auth()
+  if (!userId || userId !== clerkUserId) {
+    throw new Error('Not authenticated')
+  }
+
+  const client = await getClientByClerkId(clerkUserId)
+
+  const [{ data: paidRows }, { data: logRows }] = await Promise.all([
+    supabaseAdmin
+      .from('paid_reports')
+      .select('report_id, status, created_at, assessment_id, deficiency_summary')
+      .eq('user_id', clerkUserId)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabaseAdmin
+      .from('progress_logs')
+      .select('*')
+      .eq('user_id', clerkUserId)
+      .order('logged_at', { ascending: true }),
+  ])
+
+  let appointments: AppointmentRow[] = []
+  if (client) {
+    const { data: appts } = await supabaseAdmin
+      .from('appointments')
+      .select('*, nutritionists(name)')
+      .eq('client_id', client.id)
+      .order('scheduled_date', { ascending: true })
+    appointments = (appts || []) as AppointmentRow[]
+  }
+
+  const paidReports: PaidReportSummary[] = (paidRows || []).map((r) => ({
+    report_id: String(r.report_id),
+    status: String(r.status),
+    created_at: r.created_at ? String(r.created_at) : undefined,
+    assessment_id: r.assessment_id != null ? String(r.assessment_id) : null,
+    deficiency_summary: r.deficiency_summary,
+  }))
+
+  const latestReadyReport = paidReports.find((p) => p.status === 'ready' || p.status === 'generated') || null
+
+  const detailedIds = paidReports.map((p) => p.assessment_id).filter(Boolean) as string[]
+  let assessmentDates: Record<string, string> = {}
+  if (detailedIds.length > 0) {
+    const { data: details } = await supabaseAdmin
+      .from('detailed_assessments')
+      .select('id, created_at')
+      .in('id', detailedIds)
+    for (const d of details || []) {
+      assessmentDates[String((d as { id: string }).id)] = String((d as { created_at: string }).created_at)
+    }
+  }
+
+  return {
+    client,
+    appointments,
+    paidReports,
+    progressLogs: (logRows || []) as ProgressLogRow[],
+    latestReadyReport,
+    assessmentDates,
+  }
+}
+
+export async function upsertProgressLog(input: {
+  clerkUserId: string
+  weight_kg?: number | null
+  energy_level?: number | null
+  notes?: string | null
+  logged_at: string
+  height_cm?: number | null
+}) {
+  const { userId } = await auth()
+  if (!userId || userId !== input.clerkUserId) throw new Error('Not authenticated')
+
+  const energy =
+    input.energy_level != null && input.energy_level !== undefined
+      ? Math.min(10, Math.max(1, Math.round(Number(input.energy_level))))
+      : null
+
+  const weight =
+    input.weight_kg != null && input.weight_kg !== undefined && !Number.isNaN(Number(input.weight_kg))
+      ? Number(input.weight_kg)
+      : null
+
+  let height_cm: number | null = null
+  if (input.height_cm != null && !Number.isNaN(Number(input.height_cm))) {
+    height_cm = Number(input.height_cm)
+    await supabaseAdmin.from('clients').update({ height_cm }).eq('clerk_user_id', userId)
+  } else {
+    const c = await getClientByClerkId(userId)
+    height_cm = c?.height_cm != null ? Number(c.height_cm) : null
+  }
+
+  let bmi: number | null = null
+  if (weight != null && height_cm != null && height_cm > 0) {
+    const hM = height_cm / 100
+    bmi = Math.round((weight / (hM * hM)) * 100) / 100
+  }
+
+  const row = {
+    user_id: userId,
+    weight_kg: weight,
+    height_cm,
+    bmi,
+    energy_level: energy,
+    notes: input.notes?.trim() || null,
+    logged_at: input.logged_at.slice(0, 10),
+  }
+
+  const { error } = await supabaseAdmin.from('progress_logs').upsert(row, {
+    onConflict: 'user_id,logged_at',
+  })
   if (error) throw new Error(error.message)
 }
 
