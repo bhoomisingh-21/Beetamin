@@ -179,47 +179,108 @@ export default function ProfilePage() {
           </div>
         </motion.div>
 
-        {/* Paid recovery report (PDF) */}
-        {(data.recoveryReportReady || data.recoveryReportGenerating) && (
+        {/* Paid recovery report (PDF) — latest spotlight + full history */}
+        {(data.recoveryReportReady ||
+          data.recoveryReportGenerating ||
+          (data.paidReports && data.paidReports.length > 0)) && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
             className="mb-6 rounded-2xl border border-emerald-500/35 bg-emerald-500/10 p-5"
           >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
-                  <FileText size={22} strokeWidth={2} />
+            {(data.recoveryReportReady || data.recoveryReportGenerating) && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <FileText size={22} strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                      Personalised recovery plan
+                    </p>
+                    <p className="text-white font-bold text-base mt-0.5">
+                      {data.recoveryReportReady ? 'Your PDF report is ready' : 'Your PDF is generating'}
+                    </p>
+                    <p className="text-gray-400 text-xs mt-1 font-mono truncate">
+                      {(data.recoveryReportReady || data.recoveryReportGenerating)?.report_id}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                    Personalised recovery plan
-                  </p>
-                  <p className="text-white font-bold text-base mt-0.5">
-                    {data.recoveryReportReady ? 'Your PDF report is ready' : 'Your PDF is generating'}
-                  </p>
-                  <p className="text-gray-400 text-xs mt-1 font-mono truncate">
-                    {(data.recoveryReportReady || data.recoveryReportGenerating)?.report_id}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/report/${encodeURIComponent((data.recoveryReportReady || data.recoveryReportGenerating)!.report_id)}`,
+                    )
+                  }
+                  className="shrink-0 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-black hover:bg-emerald-400 transition"
+                >
+                  {data.recoveryReportReady ? 'Open report' : 'View status'}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    `/report/${encodeURIComponent((data.recoveryReportReady || data.recoveryReportGenerating)!.report_id)}`,
-                  )
+            )}
+            {data.paidReports && data.paidReports.length > 0 && (
+              <div
+                className={
+                  data.recoveryReportReady || data.recoveryReportGenerating
+                    ? 'mt-4 border-t border-white/10 pt-4'
+                    : ''
                 }
-                className="shrink-0 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-black hover:bg-emerald-400 transition"
               >
-                {data.recoveryReportReady ? 'Open report' : 'View status'}
-              </button>
-            </div>
-            {data.paidReports && data.paidReports.length > 1 && (
-              <p className="mt-3 text-xs text-gray-500 border-t border-white/10 pt-3">
-                {data.paidReports.length} report{data.paidReports.length > 1 ? 's' : ''} on file — latest shown above.
-              </p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">PDF report history</p>
+                <p className="mt-1 text-[11px] leading-snug text-gray-500">
+                  Each paid recovery plan is kept here. Retaking the free assessment updates your profile only — it does
+                  not remove past PDFs.
+                </p>
+                <ul className="mt-3 max-h-52 space-y-2 overflow-y-auto pr-1">
+                  {data.paidReports.map((r) => {
+                    const when = r.created_at ? formatDate(r.created_at.split('T')[0]) : '—'
+                    const statusLabel =
+                      r.status === 'ready' || r.status === 'generated'
+                        ? 'Ready'
+                        : r.status === 'generating'
+                          ? 'Generating'
+                          : r.status === 'failed'
+                            ? 'Failed'
+                            : r.status
+                    const statusClass =
+                      r.status === 'ready' || r.status === 'generated'
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        : r.status === 'generating'
+                          ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                          : r.status === 'failed'
+                            ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                            : 'bg-white/10 text-gray-400 border-white/15'
+                    return (
+                      <li
+                        key={r.report_id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0A0F14] px-3 py-2.5"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-mono text-[11px] font-semibold text-white">{r.report_id}</p>
+                          <p className="mt-0.5 text-[10px] text-gray-500">
+                            {when}
+                            <span className="mx-1.5 text-gray-600">·</span>
+                            <span
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${statusClass}`}
+                            >
+                              {statusLabel}
+                            </span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/report/${encodeURIComponent(r.report_id)}`)}
+                          className="shrink-0 rounded-lg border border-white/15 px-2.5 py-1.5 text-[10px] font-bold text-emerald-400 transition hover:border-emerald-500/40 hover:bg-emerald-500/10"
+                        >
+                          Open
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
             )}
           </motion.div>
         )}

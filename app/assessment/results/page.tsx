@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
-import { getClientAssessmentFlags } from '@/lib/booking-actions'
+import { getClientAssessmentFlags, saveAssessmentToProfile } from '@/lib/booking-actions'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -99,6 +99,7 @@ export default function ResultsPage() {
   const [meta, setMeta] = useState<any>({})
   const [scoreAnimated, setScoreAnimated] = useState(0)
   const [flags, setFlags] = useState<AssessmentFlags | null>(null)
+  const assessmentSyncedRef = useRef(false)
   const router = useRouter()
   const { isSignedIn, user } = useUser()
 
@@ -128,6 +129,29 @@ export default function ResultsPage() {
       cancelled = true
     }
   }, [isSignedIn, user?.id])
+
+  /** Latest free assessment overwrites `clients.assessment_result` so report generation & CTAs use new answers. */
+  useEffect(() => {
+    if (!result || !isSignedIn || !user?.id || assessmentSyncedRef.current) return
+    assessmentSyncedRef.current = true
+    const metaRaw = localStorage.getItem('assessmentMeta')
+    let metaParsed: unknown = null
+    if (metaRaw) {
+      try {
+        metaParsed = JSON.parse(metaRaw) as unknown
+      } catch {
+        metaParsed = null
+      }
+    }
+    void saveAssessmentToProfile({
+      clerkUserId: user.id,
+      assessmentResult: result,
+      assessmentMeta: metaParsed,
+    }).catch((err) => {
+      console.error('[assessment/results] saveAssessmentToProfile', err)
+      assessmentSyncedRef.current = false
+    })
+  }, [result, isSignedIn, user?.id])
 
   useEffect(() => {
     const stored = localStorage.getItem('assessmentResult')

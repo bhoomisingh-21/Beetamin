@@ -64,7 +64,12 @@ export async function GET(req: Request) {
       )
     }
 
-    return NextResponse.redirect(signed.signedUrl)
+    const wantsJson = searchParams.get('format') === 'json'
+    if (wantsJson) {
+      return NextResponse.json({ url: signed.signedUrl })
+    }
+
+    return NextResponse.redirect(signed.signedUrl, 302)
   } catch (e) {
     console.error('[download-report]', e)
     return NextResponse.json({ error: 'Something went wrong.' }, { status: 500 })
