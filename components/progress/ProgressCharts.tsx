@@ -125,7 +125,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">Not enough data yet — log weight on two or more days.</p>
+          <p className="mt-4 text-sm text-gray-500">Log at least 2 days to see this chart.</p>
         )}
       </div>
 
@@ -155,7 +155,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">Not enough data yet — log energy on two or more days.</p>
+          <p className="mt-4 text-sm text-gray-500">Log at least 2 days to see this chart.</p>
         )}
       </div>
 
@@ -195,7 +195,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">Not enough data yet.</p>
+          <p className="mt-4 text-sm text-gray-500">Log at least 2 days to see this chart.</p>
         )}
       </div>
 
@@ -222,7 +222,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">Not enough data yet.</p>
+          <p className="mt-4 text-sm text-gray-500">Log at least 2 days to see this chart.</p>
         )}
       </div>
     </div>

@@ -51,6 +51,7 @@ function extractDeficiencySummary(freeAssessment: unknown): Record<string, unkno
   const fa = freeAssessment as {
     primaryDeficiencies?: unknown
     deficiencyScore?: unknown
+    urgencyMessage?: unknown
   }
   const raw = fa.primaryDeficiencies
   if (!Array.isArray(raw)) return null
@@ -78,7 +79,14 @@ function extractDeficiencySummary(freeAssessment: unknown): Record<string, unkno
   }
   if (!deficiencies.length) return null
   const score = typeof fa.deficiencyScore === 'number' ? fa.deficiencyScore : null
-  return { overallScore: score, deficiencies }
+  const urgencyRaw = fa.urgencyMessage
+  const urgencyMessage =
+    typeof urgencyRaw === 'string' && urgencyRaw.trim() ? urgencyRaw.trim() : undefined
+  return {
+    overallScore: score,
+    deficiencies,
+    ...(urgencyMessage ? { urgencyMessage } : {}),
+  }
 }
 
 function safeParseJson(raw: string): RecoveryReportSections {

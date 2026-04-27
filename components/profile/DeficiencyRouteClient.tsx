@@ -18,7 +18,7 @@ export default function DeficiencyRouteClient({ paidReports }: Props) {
       className="mx-auto max-w-4xl space-y-10"
     >
       <div>
-        <h1 className={`${heading} text-3xl`}>My Deficiency Profile</h1>
+        <h1 className={`${heading} text-3xl`}>Deficiency Profile</h1>
         <p className={subheading}>Based on your latest paid report</p>
       </div>
       <DeficiencyReportSection paidReports={paidReports} showHeading={false} />

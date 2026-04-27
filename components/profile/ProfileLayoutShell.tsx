@@ -2,123 +2,103 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { SignOutButton, useUser } from '@clerk/nextjs'
-import { Leaf } from 'lucide-react'
+import { SignOutButton } from '@clerk/nextjs'
+import {
+  FileText,
+  FlaskConical,
+  LayoutDashboard,
+  Leaf,
+  Target,
+  TrendingUp,
+} from 'lucide-react'
+import Navbar from '@/components/sections/Navbar'
 
 const NAV = [
-  { href: '/profile', label: 'Personal Info', emoji: '👤' },
-  { href: '/profile/deficiency', label: 'Deficiency Profile', emoji: '🧬' },
-  { href: '/profile/reports', label: 'My Reports', emoji: '📋' },
-  { href: '/profile/progress', label: 'Progress Tracker', emoji: '📊' },
-  { href: '/profile/goals', label: 'Wellness Goals', emoji: '🎯' },
+  { href: '/profile', label: 'Overview', Icon: LayoutDashboard },
+  { href: '/profile/deficiency', label: 'Deficiency', Icon: FlaskConical },
+  { href: '/profile/reports', label: 'My Reports', Icon: FileText },
+  { href: '/profile/progress', label: 'Progress', Icon: TrendingUp },
+  { href: '/profile/goals', label: 'Goals', Icon: Target },
 ] as const
 
 export default function ProfileLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { user, isLoaded } = useUser()
 
-  const displayName =
-    user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User'
-  const initials = displayName
-    .split(/\s+/)
-    .map((s) => s[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  function isActive(href: string) {
+    if (href === '/profile') return pathname === '/profile'
+    return pathname === href || pathname?.startsWith(href + '/')
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0F14] text-white">
-      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#0A0F14]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 font-bold text-white">
-            <Leaf className="text-emerald-500" size={20} />
-            TheBeetamin
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/sessions"
-              className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-black hover:bg-emerald-400"
-            >
-              My Sessions
-            </Link>
-            <SignOutButton redirectUrl="/">
-              <button
-                type="button"
-                className="px-2 text-sm font-medium text-gray-400 hover:text-white"
-              >
-                Log out
-              </button>
-            </SignOutButton>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
-      <div className="mx-auto flex max-w-[1400px] flex-col md:flex-row">
-        <aside className="hidden w-[240px] shrink-0 border-r border-white/[0.08] bg-[#0A0F14] md:block">
-          <div className="sticky top-[57px] space-y-6 px-4 py-8">
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-base font-black text-black">
-                {isLoaded ? initials : '••'}
-              </div>
-              <p className="mt-3 text-sm font-bold leading-tight text-white">{displayName}</p>
-              <p className="mt-1 max-w-[200px] break-all text-xs text-gray-500">
-                {user?.primaryEmailAddress?.emailAddress ?? '—'}
-              </p>
-            </div>
-            <div className="h-px w-full bg-white/[0.08]" />
+      <div className="mx-auto flex max-w-[1600px] flex-col md:flex-row">
+        <aside className="relative z-30 hidden w-[220px] shrink-0 flex-col border-r border-white/[0.08] bg-[#0A0F14] md:flex">
+          <div className="flex min-h-[calc(100vh-4rem)] flex-col px-3 py-6">
+            <Link href="/" className="flex items-center gap-2 px-2 font-bold text-white">
+              <Leaf className="shrink-0 text-emerald-500" size={20} aria-hidden />
+              <span className="text-base tracking-tight">TheBeetamin</span>
+            </Link>
+
+            <div className="my-5 h-px bg-white/[0.08]" />
+
             <nav className="flex flex-col gap-0.5">
-              {NAV.map((item) => {
-                const active =
-                  item.href === '/profile'
-                    ? pathname === '/profile'
-                    : pathname === item.href || pathname?.startsWith(item.href + '/')
+              {NAV.map(({ href, label, Icon }) => {
+                const active = isActive(href)
                 return (
                   <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 rounded-r-lg border-l-[3px] px-3 py-2.5 text-sm font-semibold transition ${
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 rounded-lg border-l-[3px] px-3 py-2.5 text-sm font-semibold transition-colors ${
                       active
-                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                        : 'border-transparent text-gray-400 hover:text-emerald-400/90'
+                        ? 'border-emerald-500 bg-[#0d2418] text-emerald-400'
+                        : 'border-transparent text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'
                     }`}
                   >
-                    <span className="text-base" aria-hidden>
-                      {item.emoji}
-                    </span>
-                    {item.label}
+                    <Icon className="h-4 w-4 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
+                    {label}
                   </Link>
                 )
               })}
             </nav>
+
+            <div className="mt-auto border-t border-white/[0.08] pt-4">
+              <SignOutButton redirectUrl="/">
+                <button
+                  type="button"
+                  className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.04] hover:text-white"
+                >
+                  Log out
+                </button>
+              </SignOutButton>
+            </div>
           </div>
         </aside>
 
-        <div className="md:hidden border-b border-white/[0.08] bg-[#0A0F14] px-3 py-3">
-          <div className="-mx-1 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {NAV.map((item) => {
-              const active =
-                item.href === '/profile'
-                  ? pathname === '/profile'
-                  : pathname === item.href || pathname?.startsWith(item.href + '/')
+        <div className="border-b border-white/[0.08] bg-[#0A0F14] px-2 py-3 md:hidden">
+          <div className="-mx-0.5 flex gap-2 overflow-x-auto pb-0.5 scrollbar-thin">
+            {NAV.map(({ href, label, Icon }) => {
+              const active = isActive(href)
               return (
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`shrink-0 rounded-full border px-3 py-2 text-xs font-bold transition ${
+                  key={href}
+                  href={href}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold transition-colors ${
                     active
-                      ? 'border-emerald-500 bg-emerald-500 text-black'
-                      : 'border-white/15 bg-transparent text-gray-400 hover:border-emerald-500/40'
+                      ? 'border-emerald-500 bg-emerald-500 text-white'
+                      : 'border-gray-600 bg-transparent text-gray-400 hover:border-gray-500'
                   }`}
                 >
-                  <span className="mr-1">{item.emoji}</span>
-                  <span className="whitespace-nowrap">{item.label}</span>
+                  <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                  <span className="whitespace-nowrap">{label}</span>
                 </Link>
               )
             })}
           </div>
         </div>
 
-        <main className="min-h-[calc(100vh-57px)] min-w-0 flex-1 px-4 py-6 sm:px-6 md:px-8 md:py-10">
+        <main className="min-h-[calc(100vh-3.5rem)] min-w-0 flex-1 bg-[#0A0F14] p-4 md:min-h-[calc(100vh-4rem)] md:p-8">
           {children}
         </main>
       </div>

@@ -59,21 +59,11 @@ export function BMICard({ client, progressLogs }: Props) {
 
   const ideal = heightCm != null && heightCm > 0 ? idealWeightRangeKg(heightCm) : null
 
-  if (heightCm == null || heightCm <= 0) {
-    return (
-      <div className={`${darkCardSm} border-dashed border-amber-500/25`}>
-        <p className="text-sm text-gray-400">
-          Log your weight to see BMI — add height on your first weight entry if needed.
-        </p>
-      </div>
-    )
-  }
-
   return (
-    <div className={`${darkCardSm} ${category?.card ?? 'border-white/10'}`}>
+    <div className={`${darkCardSm} ${bmi != null ? category?.card ?? 'border-white/10' : 'border-white/10'}`}>
       <h3 className="text-lg font-black text-white">BMI</h3>
       {bmi == null ? (
-        <p className="mt-4 text-sm text-gray-500">Log your weight to see BMI.</p>
+        <p className="mt-4 text-sm text-gray-500">Log weight + height to see BMI.</p>
       ) : (
         <>
           <p className={`mt-4 text-5xl font-black tabular-nums ${category?.accent}`}>

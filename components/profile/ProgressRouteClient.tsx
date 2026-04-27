@@ -64,10 +64,15 @@ export default function ProgressRouteClient({ initialBundle }: Props) {
         className="mx-auto max-w-5xl"
       >
         <h1 className={`${heading} text-3xl`}>Progress Tracker</h1>
-        <p className={subheading}>Track your wellness journey</p>
+        <p className={subheading}>Log and track your health metrics</p>
 
         <ProgressTrackerErrorBoundary>
           <div className="mt-10 space-y-10">
+            <div>
+              <h2 className={`${heading} text-lg text-white`}>Today&apos;s Logging</h2>
+              <p className="mt-1 text-xs text-gray-500">Everything saves to today&apos;s log.</p>
+            </div>
+
             <div className="grid gap-6 lg:grid-cols-2">
               <WeightLogger
                 userId={user.id}
@@ -108,9 +113,9 @@ export default function ProgressRouteClient({ initialBundle }: Props) {
               onToast={onToast}
             />
 
-            <div>
+            <div className="border-t border-white/[0.06] pt-10">
               <h2 className={`${heading} mb-2 text-xl`}>Your Trends</h2>
-              <p className={`${subheading} mb-6`}>Visualize your progress over time</p>
+              <p className={`${subheading} mb-6`}>Charts update when you have enough history.</p>
               <ProgressCharts progressLogs={progressLogs} />
             </div>
           </div>

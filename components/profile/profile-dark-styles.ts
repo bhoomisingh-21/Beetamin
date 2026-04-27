@@ -17,7 +17,7 @@ export function deficiencyScorePresentation(score: number): {
     return {
       textClass: 'text-emerald-400',
       barClass: 'from-emerald-500/30 to-emerald-600/10',
-      label: 'Healthy Profile',
+      label: 'Healthy',
     }
   if (score <= 45)
     return {

@@ -11,47 +11,58 @@ import {
 } from '@/lib/booking-actions'
 import { heading, subheading } from '@/components/profile/profile-dark-styles'
 
+function normalizeGoalKey(goal: string | null | undefined): string {
+  const g = (goal || '').trim().toLowerCase().replace(/\s+/g, '_')
+  if (g === 'skin_hair' || g.includes('skin') || g.includes('hair')) return 'skin_hair'
+  if (g.includes('energy')) return 'energy'
+  if (g.includes('focus')) return 'focus'
+  if (g.includes('immunity')) return 'immunity'
+  return 'default'
+}
+
 function goalTexts(goal: string | null | undefined): string[] {
-  const g = (goal || '').toLowerCase()
-  if (g.includes('energy'))
-    return [
-      'Log energy level for 7 consecutive days',
-      'Drink 8 glasses of water daily for 1 week',
-      'Sleep 7+ hours for 5 nights in a row',
-      'Book and complete your first nutrition session',
-      'Log your weight for 2 weeks',
-    ]
-  if (g.includes('focus'))
-    return [
-      'Log energy level daily for 7 days',
-      'Sleep 8 hours for 5 consecutive nights',
-      'Drink 2L water daily for 1 week',
-      'Complete 2 nutrition sessions',
-      'Track progress for 30 days',
-    ]
-  if (g.includes('immunity'))
-    return [
-      'Log wellness metrics for 7 days in a row',
-      'Hit water goal daily for 1 week',
-      'Sleep 7+ hours for 5 nights',
-      'Complete first nutrition session',
-      'Log weight weekly for 1 month',
-    ]
-  if (g.includes('skin') || g.includes('hair'))
-    return [
-      'Log water intake daily for 2 weeks',
-      'Log energy for 7 days',
-      'Complete first nutrition session',
-      'Track weight for 1 month',
-      'Sleep 8 hours for 5 nights',
-    ]
-  return [
-    'Log wellness metrics for 7 days in a row',
-    'Stay hydrated — hit water goal for a week',
-    'Prioritize sleep — 7+ hours for 5 nights',
-    'Book and complete your first nutrition session',
-    'Track weight weekly for one month',
-  ]
+  switch (normalizeGoalKey(goal)) {
+    case 'energy':
+      return [
+        'Log energy level for 7 consecutive days',
+        'Drink 8 glasses of water daily for 1 week',
+        'Sleep 7+ hours for 5 nights in a row',
+        'Book and complete your first nutrition session',
+        'Log your weight for 2 weeks',
+      ]
+    case 'focus':
+      return [
+        'Log energy level daily for 7 days',
+        'Sleep 8 hours for 5 consecutive nights',
+        'Drink 2L water daily for 1 week',
+        'Complete 2 nutrition sessions',
+        'Track your progress for 30 days',
+      ]
+    case 'immunity':
+      return [
+        'Log wellness metrics for 7 days in a row',
+        'Hit your water goal daily for a week',
+        'Sleep 7+ hours for 5 nights',
+        'Complete your first nutrition session',
+        'Log weight weekly for 1 month',
+      ]
+    case 'skin_hair':
+      return [
+        'Log water intake daily for 2 weeks',
+        'Log energy level for 7 days',
+        'Complete your first nutrition session',
+        'Track weight for 1 month',
+        'Sleep 8 hours for 5 nights',
+      ]
+    default:
+      return [
+        'Log wellness metrics for 7 days in a row',
+        'Stay hydrated — hit daily water goal for a week',
+        'Prioritize sleep — 7+ hours for 5 nights',
+        'Book and complete your first nutrition session',
+        'Track weight weekly for one month',
+      ]
+  }
 }
 
 type Props = {
@@ -95,6 +106,12 @@ export default function GoalsRouteClient({ initialBundle }: Props) {
 
   const [toast, setToast] = useState('')
 
+  const completedCount = useMemo(() => {
+    return texts.reduce((n, _, i) => (progress[String(i)] ? n + 1 : n), 0)
+  }, [texts, progress])
+
+  const pct = Math.round((completedCount / 5) * 100)
+
   async function toggle(index: number, next: boolean) {
     const key = String(index)
     const prev = progress
@@ -132,37 +149,64 @@ export default function GoalsRouteClient({ initialBundle }: Props) {
         <h1 className={`${heading} text-3xl`}>Wellness Goals</h1>
         <p className={subheading}>Check them off as you go</p>
 
-        <div className="mt-10 space-y-3">
+        <div className="mt-8 rounded-2xl border border-white/[0.08] bg-[#111820] p-5">
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <span className="font-semibold text-white">
+              {completedCount} of 5 goals completed
+            </span>
+            <span className="tabular-nums text-emerald-400">{pct}%</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/50">
+            <motion.div
+              className="h-full rounded-full bg-emerald-500"
+              initial={false}
+              animate={{ width: `${pct}%` }}
+              transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-8 space-y-3">
           {texts.map((text, index) => {
             const done = Boolean(progress[String(index)])
             return (
-              <motion.label
+              <motion.button
                 key={index}
                 layout
-                className={`flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition ${
+                type="button"
+                disabled={!client}
+                onClick={() => void toggle(index, !done)}
+                className={`flex w-full items-center gap-4 rounded-2xl border p-5 text-left transition-colors disabled:opacity-40 ${
                   done
-                    ? 'border-emerald-500/35 bg-emerald-500/15'
-                    : 'border-white/[0.08] bg-[#111820] hover:border-emerald-500/25'
+                    ? 'border-emerald-500/30 bg-emerald-500/[0.08]'
+                    : 'border-white/[0.08] bg-[#111820] hover:border-emerald-500/20'
                 }`}
               >
-                <input
-                  type="checkbox"
-                  checked={done}
-                  disabled={!client}
-                  onChange={(e) => void toggle(index, e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-black/40 text-emerald-500 focus:ring-emerald-500 disabled:opacity-40"
-                />
                 <span
-                  className={`flex-1 text-sm leading-relaxed transition ${
-                    done ? 'text-gray-400 line-through' : 'text-gray-200'
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                    done
+                      ? 'border-emerald-500 bg-emerald-500 text-black'
+                      : 'border-white/25 bg-transparent'
+                  }`}
+                  aria-hidden
+                >
+                  {done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                </span>
+
+                <span
+                  className={`min-w-0 flex-1 text-sm leading-relaxed transition-colors ${
+                    done ? 'text-gray-400 line-through' : 'font-medium text-white'
                   }`}
                 >
-                  {done && (
-                    <Check className="mr-2 inline h-4 w-4 shrink-0 text-emerald-400" aria-hidden />
-                  )}
                   {text}
                 </span>
-              </motion.label>
+
+                {done ? (
+                  <Check className="h-6 w-6 shrink-0 text-emerald-400" strokeWidth={2.5} aria-hidden />
+                ) : (
+                  <span className="h-6 w-6 shrink-0" aria-hidden />
+                )}
+              </motion.button>
             )
           })}
         </div>
