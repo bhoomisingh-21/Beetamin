@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { type ClientRow, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm } from '@/components/profile/profile-dark-styles'
+import { cardSubtitle, cardTitle, profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   client: ClientRow | null
@@ -36,49 +36,55 @@ export function BMICard({ client, progressLogs }: Props) {
       : bmi < 18.5
         ? {
             label: 'Underweight',
-            card: 'border-blue-500/30 bg-blue-500/10',
+            ring: 'border-blue-400 shadow-[0_0_40px_rgba(96,165,250,0.25)]',
             accent: 'text-blue-300',
           }
         : bmi < 25
           ? {
               label: 'Healthy',
-              card: 'border-emerald-500/35 bg-emerald-500/10',
+              ring: 'border-emerald-400 shadow-[0_0_40px_rgba(52,211,153,0.25)]',
               accent: 'text-emerald-400',
             }
           : bmi < 30
             ? {
                 label: 'Overweight',
-                card: 'border-orange-500/35 bg-orange-500/10',
+                ring: 'border-orange-400 shadow-[0_0_40px_rgba(251,146,60,0.2)]',
                 accent: 'text-orange-300',
               }
             : {
                 label: 'Obese',
-                card: 'border-red-500/35 bg-red-500/10',
+                ring: 'border-red-400 shadow-[0_0_40px_rgba(248,113,113,0.25)]',
                 accent: 'text-red-400',
               }
 
   const ideal = heightCm != null && heightCm > 0 ? idealWeightRangeKg(heightCm) : null
 
   return (
-    <div className={`${darkCardSm} ${bmi != null ? category?.card ?? 'border-white/10' : 'border-white/10'}`}>
-      <h3 className="text-lg font-black text-white">BMI</h3>
+    <div className={`${profileCard} p-5`}>
+      <h3 className={cardTitle}>BMI</h3>
+      <p className={`${cardSubtitle} mt-1`}>Based on latest weight & height</p>
+
       {bmi == null ? (
-        <p className="mt-4 text-sm text-gray-500">Log weight + height to see BMI.</p>
+        <p className={`mt-8 text-sm ${textSecondary}`}>Log weight + height to see BMI.</p>
       ) : (
-        <>
-          <p className={`mt-4 text-5xl font-black tabular-nums ${category?.accent}`}>
-            {bmi.toFixed(1)}
-          </p>
-          <p className={`mt-2 text-lg font-bold ${category?.accent}`}>{category?.label}</p>
+        <div className="mt-8 flex flex-col items-center">
+          <div
+            className={`flex h-44 w-44 items-center justify-center rounded-full border-4 bg-[#060910] transition-all duration-500 ${category?.ring ?? ''}`}
+          >
+            <div className="text-center">
+              <p className={`text-5xl font-black tabular-nums ${category?.accent}`}>{bmi.toFixed(1)}</p>
+              <p className={`mt-2 text-sm font-bold ${category?.accent}`}>{category?.label}</p>
+            </div>
+          </div>
           {ideal && (
-            <p className="mt-4 text-xs leading-relaxed text-gray-500">
-              Ideal weight range for your height:{' '}
-              <span className="font-semibold text-gray-300">
+            <p className={`mt-6 max-w-xs text-center text-xs leading-relaxed ${textSecondary}`}>
+              Ideal weight range:{' '}
+              <span className="font-semibold text-[#F0F4F8]">
                 {ideal.min}–{ideal.max} kg
               </span>
             </p>
           )}
-        </>
+        </div>
       )}
     </div>
   )

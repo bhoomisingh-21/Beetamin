@@ -9,7 +9,11 @@ import {
   updateClientGoalsProgress,
   type DashboardBundle,
 } from '@/lib/booking-actions'
-import { heading, subheading } from '@/components/profile/profile-dark-styles'
+import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
+import { profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
+
+const BANNER =
+  'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80'
 
 function normalizeGoalKey(goal: string | null | undefined): string {
   const g = (goal || '').trim().toLowerCase().replace(/\s+/g, '_')
@@ -63,6 +67,13 @@ function goalTexts(goal: string | null | undefined): string[] {
         'Track weight weekly for one month',
       ]
   }
+}
+
+function motivate(completed: number): string {
+  if (completed === 0) return 'Start your wellness journey 🌱'
+  if (completed <= 2) return 'Good start! Keep going 💪'
+  if (completed <= 4) return "Almost there! You're crushing it 🔥"
+  return "All goals complete! You're amazing 🎉"
 }
 
 type Props = {
@@ -136,7 +147,7 @@ export default function GoalsRouteClient({ initialBundle }: Props) {
   return (
     <>
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/15 bg-[#111820] px-5 py-2.5 text-sm font-semibold text-white shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/10 bg-[#0F1623] px-5 py-2.5 text-sm font-semibold text-[#F0F4F8] shadow-lg">
           {toast}
         </div>
       )}
@@ -146,27 +157,29 @@ export default function GoalsRouteClient({ initialBundle }: Props) {
         transition={{ duration: 0.35 }}
         className="mx-auto max-w-3xl"
       >
-        <h1 className={`${heading} text-3xl`}>Wellness Goals</h1>
-        <p className={subheading}>Check them off as you go</p>
-
-        <div className="mt-8 rounded-2xl border border-white/[0.08] bg-[#111820] p-5">
-          <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="font-semibold text-white">
-              {completedCount} of 5 goals completed
-            </span>
-            <span className="tabular-nums text-emerald-400">{pct}%</span>
-          </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/50">
+        <div className={`${profileCard} mb-6 p-6`}>
+          <p className="text-center text-sm font-semibold text-[#F0F4F8]">
+            {completedCount} of 5 goals completed
+          </p>
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#060910]">
             <motion.div
-              className="h-full rounded-full bg-emerald-500"
+              className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400"
               initial={false}
               animate={{ width: `${pct}%` }}
-              transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+              transition={{ type: 'spring', stiffness: 120, damping: 22 }}
             />
           </div>
+          <p className="mt-4 text-center text-sm text-[#8B9AB0]">{motivate(completedCount)}</p>
         </div>
 
-        <div className="mt-8 space-y-3">
+        <ProfilePageBanner
+          src={BANNER}
+          alt=""
+          title="Wellness Goals"
+          subtitle="Check them off as you go"
+        />
+
+        <div className="mt-2 space-y-3">
           {texts.map((text, index) => {
             const done = Boolean(progress[String(index)])
             return (
@@ -176,36 +189,47 @@ export default function GoalsRouteClient({ initialBundle }: Props) {
                 type="button"
                 disabled={!client}
                 onClick={() => void toggle(index, !done)}
-                className={`flex w-full items-center gap-4 rounded-2xl border p-5 text-left transition-colors disabled:opacity-40 ${
+                className={`flex w-full items-start gap-4 rounded-2xl border p-5 text-left transition-colors disabled:opacity-40 ${
                   done
-                    ? 'border-emerald-500/30 bg-emerald-500/[0.08]'
-                    : 'border-white/[0.08] bg-[#111820] hover:border-emerald-500/20'
+                    ? 'border-emerald-500/25 bg-emerald-500/[0.07]'
+                    : 'border-white/[0.06] bg-[#0F1623] hover:border-emerald-500/15'
                 }`}
+                style={{
+                  boxShadow:
+                    '0 0 0 1px rgba(16,185,129,0.05), 0 4px 24px rgba(0,0,0,0.4)',
+                }}
               >
                 <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border-2 transition-all ${
                     done
                       ? 'border-emerald-500 bg-emerald-500 text-black'
-                      : 'border-white/25 bg-transparent'
+                      : 'border-[#4B5563] bg-transparent'
                   }`}
                   aria-hidden
                 >
-                  {done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                  {done && <Check className="h-3 w-3" strokeWidth={3} />}
                 </span>
 
-                <span
-                  className={`min-w-0 flex-1 text-sm leading-relaxed transition-colors ${
-                    done ? 'text-gray-400 line-through' : 'font-medium text-white'
-                  }`}
-                >
-                  {text}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={`text-[15px] leading-snug transition-colors ${
+                      done ? 'text-[#8B9AB0] line-through' : 'font-medium text-[#F0F4F8]'
+                    }`}
+                  >
+                    {text}
+                  </p>
+                  <p className={`mt-2 text-xs ${textSecondary}`}>Log daily to complete this goal</p>
+                </div>
 
-                {done ? (
-                  <Check className="h-6 w-6 shrink-0 text-emerald-400" strokeWidth={2.5} aria-hidden />
-                ) : (
-                  <span className="h-6 w-6 shrink-0" aria-hidden />
-                )}
+                <div className="shrink-0 pt-0.5">
+                  {done ? (
+                    <span className="inline-flex rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold text-emerald-400 ring-1 ring-emerald-500/30">
+                      ✓ Completed
+                    </span>
+                  ) : (
+                    <span className="inline-block h-6 w-16" aria-hidden />
+                  )}
+                </div>
               </motion.button>
             )
           })}

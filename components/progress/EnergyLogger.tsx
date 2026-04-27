@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { upsertProgressLog, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm, heading } from '@/components/profile/profile-dark-styles'
+import { cardSubtitle, cardTitle, profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   userId: string
@@ -38,10 +38,10 @@ export function EnergyLogger({ userId, progressLogs, onReload, onToast }: Props)
 
   const emojiLine =
     energy <= 3
-      ? { emoji: '😴', text: 'Low energy' }
+      ? { emoji: '😴', text: 'Low' }
       : energy <= 6
         ? { emoji: '😐', text: 'Moderate' }
-        : { emoji: '⚡', text: 'High energy' }
+        : { emoji: '⚡', text: 'High' }
 
   async function handleLog() {
     setSaving(true)
@@ -61,25 +61,31 @@ export function EnergyLogger({ userId, progressLogs, onReload, onToast }: Props)
   }
 
   return (
-    <div className={darkCardSm}>
-      <h3 className={`${heading} text-lg`}>Energy Level</h3>
+    <div className={`${profileCard} p-5`}>
+      <h3 className={cardTitle}>Energy Level</h3>
+      <p className={`${cardSubtitle} mt-1`}>Slide to rate how you feel</p>
+
       <input
         type="range"
         min={1}
         max={10}
         value={energy}
         onChange={(e) => setEnergy(Number(e.target.value))}
-        className="mt-4 w-full accent-emerald-500"
+        className="energy-slider mt-8 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#141B24]"
       />
-      <p className="mt-3 text-2xl">
-        <span className="mr-2">{emojiLine.emoji}</span>
-        <span className="text-lg font-bold text-white">{emojiLine.text}</span>
-      </p>
-      <p className="text-sm text-gray-500">{energy} / 10</p>
+
+      <div className="mt-8 flex flex-col items-center gap-2">
+        <span className="text-5xl">{emojiLine.emoji}</span>
+        <p className="text-xl font-black text-[#F0F4F8]">{energy}</p>
+        <p className={`text-sm font-semibold ${textSecondary}`}>{emojiLine.text}</p>
+      </div>
 
       {yesterdayEnergy != null && (
-        <p className="mt-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-gray-400">
-          Yesterday: <span className="font-bold text-gray-200">{yesterdayEnergy}/10</span>
+        <p className="mt-6 rounded-xl border border-white/[0.06] bg-[#060910] px-4 py-3 text-center text-sm text-[#8B9AB0]">
+          <span className="font-bold text-emerald-400">
+            {energy >= yesterdayEnergy ? '↑' : '↓'} from {yesterdayEnergy}
+          </span>{' '}
+          yesterday
         </p>
       )}
 
@@ -87,10 +93,34 @@ export function EnergyLogger({ userId, progressLogs, onReload, onToast }: Props)
         type="button"
         disabled={saving}
         onClick={() => void handleLog()}
-        className="mt-5 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-black hover:bg-emerald-400 disabled:opacity-50"
+        className="mt-6 w-full rounded-xl bg-emerald-500 py-3 text-sm font-black text-black hover:bg-emerald-400 disabled:opacity-50"
       >
         Log Energy
       </button>
+
+      <style jsx>{`
+        .energy-slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 22px;
+          width: 22px;
+          border-radius: 9999px;
+          background: #10b981;
+          border: 3px solid #060910;
+          box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4);
+        }
+        .energy-slider::-moz-range-thumb {
+          height: 22px;
+          width: 22px;
+          border-radius: 9999px;
+          background: #10b981;
+          border: 3px solid #060910;
+        }
+        .energy-slider::-webkit-slider-runnable-track {
+          height: 8px;
+          border-radius: 9999px;
+          background: linear-gradient(to right, #ef4444 0%, #f59e0b 45%, #10b981 100%);
+        }
+      `}</style>
     </div>
   )
 }

@@ -2,12 +2,15 @@
 
 import { motion } from 'framer-motion'
 import { DeficiencyReportSection } from '@/components/profile/DeficiencyReportSection'
+import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
 import type { PaidReportSummary } from '@/lib/booking-actions'
-import { heading, subheading } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   paidReports: PaidReportSummary[]
 }
+
+const BANNER =
+  'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=1200&q=80'
 
 export default function DeficiencyRouteClient({ paidReports }: Props) {
   return (
@@ -15,12 +18,14 @@ export default function DeficiencyRouteClient({ paidReports }: Props) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="mx-auto max-w-4xl space-y-10"
+      className="mx-auto max-w-5xl"
     >
-      <div>
-        <h1 className={`${heading} text-3xl`}>Deficiency Profile</h1>
-        <p className={subheading}>Based on your latest paid report</p>
-      </div>
+      <ProfilePageBanner
+        src={BANNER}
+        alt=""
+        title="Your Deficiency Profile"
+        subtitle="Based on your latest paid report"
+      />
       <DeficiencyReportSection paidReports={paidReports} showHeading={false} />
     </motion.div>
   )

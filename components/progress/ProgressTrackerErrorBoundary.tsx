@@ -23,8 +23,8 @@ export class ProgressTrackerErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-3xl border border-white/[0.08] bg-[#111820] p-8 text-center shadow-sm">
-          <p className="text-sm text-gray-400">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-8 text-center shadow-[0_0_0_1px_rgba(16,185,129,0.05),0_4px_24px_rgba(0,0,0,0.4)]">
+          <p className="text-sm text-[#8B9AB0]">
             Could not load progress tracker. Please refresh.
           </p>
         </div>

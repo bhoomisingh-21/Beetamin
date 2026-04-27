@@ -1,19 +1,40 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
-import { Edit3, Loader2, Save, X } from 'lucide-react'
-import Footer from '@/components/sections/Footer'
+import {
+  ArrowRight,
+  Calendar,
+  Edit3,
+  Loader2,
+  Phone,
+  Save,
+  Target,
+  X,
+  Zap,
+  CalendarDays,
+} from 'lucide-react'
 import {
   getDashboardBundle,
   updateClientProfile,
   type ClientRow,
   type DashboardBundle,
 } from '@/lib/booking-actions'
-import { bmiMeta as bmiMetaFromHelpers, formatReportHeadingDate } from './profile-helpers'
+import {
+  cardSubtitle,
+  cardTitle,
+  profileCard,
+  textPrimary,
+  textSecondary,
+} from '@/components/profile/profile-dark-styles'
+import { formatReportHeadingDate } from '@/components/profile/profile-helpers'
+
+const HERO_IMG =
+  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80'
 
 function daysInPlan(client: ClientRow | null): number {
   if (!client) return 0
@@ -51,7 +72,7 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
         setEditGoal(b.client.assessment_goal || '')
       }
     } catch {
-      /* getDashboardBundle returns empty on failure */
+      /* ignore */
     } finally {
       setHydrating(false)
     }
@@ -90,7 +111,7 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[#0A0F14]">
+      <div className="flex min-h-[40vh] items-center justify-center bg-[#060910]">
         <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
       </div>
     )
@@ -98,7 +119,7 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
 
   if (!user) return null
 
-  const { client, paidReports, latestReadyReport, progressLogs } = bundle
+  const { client, paidReports } = bundle
   const displayName =
     user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
   const initials = displayName
@@ -108,200 +129,243 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
     .slice(0, 2)
     .toUpperCase()
 
-  const planBadge = !client
-    ? { label: 'No Plan', cls: 'bg-stone-200 text-stone-700 border border-stone-300' }
+  const planPill = !client
+    ? { label: 'No plan', cls: 'border-white/10 bg-white/5 text-[#8B9AB0]' }
     : client.status === 'active'
-      ? { label: 'Active', cls: 'bg-emerald-100 text-emerald-800 border border-emerald-200' }
+      ? {
+          label: '● Active',
+          cls: 'border-emerald-500/35 bg-emerald-500/10 text-emerald-400',
+        }
       : client.status === 'expired'
-        ? { label: 'Expired', cls: 'bg-red-100 text-red-800 border border-red-200' }
-        : { label: 'Completed', cls: 'bg-blue-100 text-blue-900 border border-blue-200' }
+        ? { label: 'Expired', cls: 'border-red-500/30 bg-red-500/10 text-red-400' }
+        : { label: 'Completed', cls: 'border-blue-500/30 bg-blue-500/10 text-blue-300' }
 
   const daysLabel =
-    client && client.status === 'active' ? String(daysInPlan(client)) : client ? 'No active plan' : '—'
+    client && client.status === 'active' ? String(daysInPlan(client)) : client ? '—' : '—'
 
-  const latestWeightLog = (() => {
-    const withW = progressLogs.filter((l) => l.weight_kg != null)
-    if (!withW.length) return null
-    return withW.reduce((a, b) => (new Date(a.logged_at) > new Date(b.logged_at) ? a : b))
-  })()
+  const stats = [
+    { label: 'Sessions Used', value: client ? String(client.sessions_used) : '—' },
+    { label: 'Sessions Remaining', value: client ? String(client.sessions_remaining) : '—' },
+    {
+      label: 'Reports Generated',
+      value: String(paidReports.filter((p) => p.status === 'ready' || p.status === 'generated').length),
+    },
+    {
+      label: 'Days in Plan',
+      value: client && client.status === 'active' ? String(daysInPlan(client)) : daysLabel,
+    },
+  ]
 
   return (
     <>
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 shadow-lg">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-white/10 bg-[#0F1623] px-5 py-2.5 text-sm font-semibold text-[#F0F4F8] shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
           {toast}
         </div>
       )}
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
         {hydrating && (
           <div className="mb-4 flex justify-end">
-            <Loader2 className="h-5 w-5 animate-spin text-gray-500" aria-hidden />
+            <Loader2 className="h-5 w-5 animate-spin text-emerald-500/80" aria-hidden />
           </div>
         )}
 
-        <div className="mx-auto max-w-4xl space-y-8">
-          <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="flex flex-wrap items-start gap-5">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg font-black text-emerald-800 ring-2 ring-emerald-200/80">
-                {initials}
+        <header className="mb-8">
+          <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">Overview</h1>
+          <p className="mt-1 text-sm text-[#8B9AB0]">Your dashboard at a glance</p>
+          <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
+        </header>
+
+        <div className={`${profileCard} overflow-hidden p-0`}>
+          {/* Mobile: image first */}
+          <div className="relative h-[160px] w-full md:hidden">
+            <Image src={HERO_IMG} alt="" fill className="object-cover" sizes="100vw" priority />
+            <div
+              className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(15,22,35,0.2),#0F1623)]"
+              aria-hidden
+            />
+          </div>
+
+          <div className="flex flex-col md:flex-row">
+            <div className="relative w-full p-6 md:w-[60%] md:p-8">
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 text-xl font-black text-white shadow-[0_4px_24px_rgba(16,185,129,0.4)]">
+                  {initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-[28px] font-black leading-tight text-[#F0F4F8]">{displayName}</h2>
+                  <p className="mt-1 text-sm text-[#8B9AB0]">
+                    {user.primaryEmailAddress?.emailAddress || '—'}
+                  </p>
+                  <span
+                    className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${planPill.cls}`}
+                  >
+                    {planPill.label}
+                  </span>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-black text-stone-900">{displayName}</h1>
-                <p className="mt-1 text-sm text-stone-600">
-                  {user.primaryEmailAddress?.emailAddress || '—'}
-                </p>
-                <span
-                  className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold ${planBadge.cls}`}
-                >
-                  {planBadge.label}
-                </span>
+
+              <div className="mt-8 grid grid-cols-2 gap-4 gap-y-5">
+                <div className="flex gap-3">
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500/90" aria-hidden />
+                  <div>
+                    <p className={cardSubtitle}>Phone</p>
+                    <p className={`mt-1 text-sm font-medium ${textPrimary}`}>{client?.phone || '—'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Target className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500/90" aria-hidden />
+                  <div>
+                    <p className={cardSubtitle}>Health goal</p>
+                    <p className={`mt-1 text-sm font-medium ${textPrimary}`}>
+                      {client?.assessment_goal || '—'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500/90" aria-hidden />
+                  <div>
+                    <p className={cardSubtitle}>Plan start</p>
+                    <p className={`mt-1 text-sm font-medium ${textPrimary}`}>
+                      {client ? formatReportHeadingDate(client.plan_start_date) : '—'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Zap className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500/90" aria-hidden />
+                  <div>
+                    <p className={cardSubtitle}>Sessions</p>
+                    <p className={`mt-1 text-sm font-medium ${textPrimary}`}>
+                      {client
+                        ? `${client.sessions_used} used · ${client.sessions_remaining} left`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { label: 'Sessions Used', value: client ? String(client.sessions_used) : '—' },
-              { label: 'Sessions Remaining', value: client ? String(client.sessions_remaining) : '—' },
-              {
-                label: 'Reports Generated',
-                value: String(
-                  paidReports.filter((p) => p.status === 'ready' || p.status === 'generated').length,
-                ),
-              },
-              {
-                label: 'Days in Plan',
-                value: client && client.status === 'active' ? String(daysInPlan(client)) : daysLabel,
-              },
-            ].map((s) => (
-              <div key={s.label} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wider text-stone-400">{s.label}</p>
-                <p className="mt-2 text-2xl font-black text-[#1a472a]">{s.value}</p>
-              </div>
-            ))}
+            <div className="relative hidden min-h-[280px] w-[40%] md:block">
+              <Image src={HERO_IMG} alt="" fill className="object-cover" sizes="40vw" priority />
+              <div
+                className="absolute inset-0 bg-[linear-gradient(to_right,#0F1623_0%,transparent_42%)]"
+                aria-hidden
+              />
+            </div>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/sessions"
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#1a472a] px-6 py-4 text-center text-sm font-bold text-white shadow-md hover:bg-[#143622]"
-            >
-              Book My Next Session
-            </Link>
-            {latestReadyReport && (
-              <Link
-                href={`/report/${encodeURIComponent(latestReadyReport.report_id)}`}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-[#1a472a]/30 bg-white px-6 py-4 text-center text-sm font-bold text-[#1a472a] hover:bg-emerald-50"
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className={`${profileCard} relative overflow-hidden px-5 py-6`}>
+              <div className="absolute left-0 top-0 h-0.5 w-[30%] rounded-full bg-emerald-500/90" aria-hidden />
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#8B9AB0]">{s.label}</p>
+              <p
+                className="mt-3 text-[32px] font-black tabular-nums text-emerald-400"
+                style={{ textShadow: '0 0 28px rgba(16,185,129,0.25)' }}
               >
-                View Latest Report
-              </Link>
-            )}
-          </div>
-
-          {latestWeightLog && (
-            <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-stone-500">
-                Latest weight log
-              </h2>
-              <p className="mt-3 text-2xl font-black text-[#1a472a]">
-                {Number(latestWeightLog.weight_kg).toFixed(1)} kg
-              </p>
-              <p className="mt-1 text-sm text-stone-600">
-                BMI:{' '}
-                {latestWeightLog.bmi != null ? (
-                  <>
-                    <span className="font-bold">{Number(latestWeightLog.bmi).toFixed(1)}</span>
-                    <span className={` ml-2 ${bmiMetaFromHelpers(Number(latestWeightLog.bmi)).cls}`}>
-                      ({bmiMetaFromHelpers(Number(latestWeightLog.bmi)).label})
-                    </span>
-                  </>
-                ) : (
-                  '—'
-                )}
-              </p>
-              <p className="mt-2 text-xs text-stone-500">
-                Last logged:{' '}
-                {formatReportHeadingDate(latestWeightLog.logged_at)}
+                {s.value}
               </p>
             </div>
-          )}
+          ))}
+        </div>
 
-          {client && (
-            <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-bold text-stone-900">Account</h2>
-                {!editMode ? (
-                  <button
-                    type="button"
-                    onClick={() => setEditMode(true)}
-                    className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
-                  >
-                    <Edit3 size={14} /> Edit
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditMode(false)
-                      setEditPhone(client.phone || '')
-                      setEditGoal(client.assessment_goal || '')
-                    }}
-                    className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800"
-                  >
-                    <X size={14} /> Cancel
-                  </button>
-                )}
-              </div>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="text-xs font-medium text-stone-500">Phone / WhatsApp</p>
-                  {editMode ? (
-                    <input
-                      type="tel"
-                      value={editPhone}
-                      onChange={(e) => setEditPhone(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2"
-                    />
-                  ) : (
-                    <p className="mt-1 rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
-                      {client.phone || '—'}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-stone-500">Health goal</p>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      value={editGoal}
-                      onChange={(e) => setEditGoal(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-stone-200 px-3 py-2"
-                    />
-                  ) : (
-                    <p className="mt-1 rounded-xl border border-stone-100 bg-stone-50 px-3 py-2">
-                      {client.assessment_goal || '—'}
-                    </p>
-                  )}
-                </div>
-              </div>
-              {editMode && (
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/sessions"
+            className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 text-center text-sm font-bold text-black shadow-[0_4px_24px_rgba(16,185,129,0.35)] transition hover:brightness-110 hover:scale-[1.01]"
+          >
+            <CalendarDays className="h-5 w-5 shrink-0" aria-hidden />
+            Book My Next Session
+            <ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" aria-hidden />
+          </Link>
+          <Link
+            href="/profile/reports"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/[0.06] bg-[#0F1623] py-4 text-center text-sm font-bold text-[#F0F4F8] shadow-[0_0_0_1px_rgba(16,185,129,0.05),0_4px_24px_rgba(0,0,0,0.4)] transition hover:border-emerald-500/25"
+          >
+            View Latest Report
+          </Link>
+        </div>
+
+        {client && (
+          <div className={`${profileCard} mt-10 p-6 md:p-8`}>
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className={cardTitle}>Account Details</h2>
+              {!editMode ? (
                 <button
                   type="button"
-                  disabled={isSavingProfile}
-                  onClick={() => void handleSaveProfile()}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                  onClick={() => setEditMode(true)}
+                  className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-emerald-400 hover:bg-emerald-500/10"
                 >
-                  <Save size={16} />
-                  {isSavingProfile ? 'Saving…' : 'Save'}
+                  <Edit3 size={16} /> Edit
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditMode(false)
+                    setEditPhone(client.phone || '')
+                    setEditGoal(client.assessment_goal || '')
+                  }}
+                  className="flex items-center gap-1 text-sm text-[#8B9AB0] hover:text-[#F0F4F8]"
+                >
+                  <X size={14} /> Cancel
                 </button>
               )}
             </div>
-          )}
-        </div>
-      </motion.div>
 
-      <Footer />
+            <div className="grid gap-8 md:grid-cols-2">
+              <div>
+                <p className={cardSubtitle}>Phone / WhatsApp</p>
+                {editMode ? (
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/[0.08] bg-[#060910] px-4 py-3 text-sm text-[#F0F4F8] outline-none ring-emerald-500/20 focus:ring-2"
+                  />
+                ) : (
+                  <p className={`mt-2 rounded-xl border border-white/[0.06] bg-[#060910]/80 px-4 py-3 text-sm ${textPrimary}`}>
+                    {client.phone || '—'}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className={cardSubtitle}>Health goal</p>
+                {editMode ? (
+                  <input
+                    type="text"
+                    value={editGoal}
+                    onChange={(e) => setEditGoal(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-white/[0.08] bg-[#060910] px-4 py-3 text-sm text-[#F0F4F8] outline-none ring-emerald-500/20 focus:ring-2"
+                  />
+                ) : (
+                  <p className={`mt-2 rounded-xl border border-white/[0.06] bg-[#060910]/80 px-4 py-3 text-sm ${textPrimary}`}>
+                    {client.assessment_goal || '—'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {editMode && (
+              <button
+                type="button"
+                disabled={isSavingProfile}
+                onClick={() => void handleSaveProfile()}
+                className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3.5 text-sm font-bold text-black hover:bg-emerald-400 disabled:opacity-60 md:w-auto md:px-10"
+              >
+                <Save size={18} />
+                {isSavingProfile ? 'Saving…' : 'Save changes'}
+              </button>
+            )}
+          </div>
+        )}
+      </motion.div>
     </>
   )
 }

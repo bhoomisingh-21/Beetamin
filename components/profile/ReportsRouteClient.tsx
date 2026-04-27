@@ -3,13 +3,16 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AssessmentHistorySection } from '@/components/profile/AssessmentHistorySection'
+import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
 import type { PaidReportSummary } from '@/lib/booking-actions'
-import { heading, subheading } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   paidReports: PaidReportSummary[]
   assessmentDates: Record<string, string>
 }
+
+const BANNER =
+  'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=1200&q=80'
 
 export default function ReportsRouteClient({
   paidReports,
@@ -22,12 +25,14 @@ export default function ReportsRouteClient({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="mx-auto max-w-5xl space-y-10"
+      className="mx-auto max-w-5xl"
     >
-      <div>
-        <h1 className={`${heading} text-3xl`}>My Reports</h1>
-        <p className={subheading}>All your assessments and paid reports</p>
-      </div>
+      <ProfilePageBanner
+        src={BANNER}
+        alt=""
+        title="My Reports"
+        subtitle="All your assessments and paid reports"
+      />
       <AssessmentHistorySection
         paidReports={paidReports}
         assessmentDates={assessmentDates}
