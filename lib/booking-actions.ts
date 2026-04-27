@@ -59,13 +59,21 @@ export type NutritionistRow = {
 // ─── Client helpers ───────────────────────────────────────────────────────────
 
 export async function getClientByClerkId(clerkUserId: string): Promise<ClientRow | null> {
-  const { data, error } = await supabaseAdmin
-    .from('clients')
-    .select('*')
-    .eq('clerk_user_id', clerkUserId)
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  return data as ClientRow | null
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('clients')
+      .select('*')
+      .eq('clerk_user_id', clerkUserId)
+      .maybeSingle()
+    if (error) {
+      console.error('[getClientByClerkId]', error)
+      return null
+    }
+    return data as ClientRow | null
+  } catch (e) {
+    console.error('[getClientByClerkId]', e)
+    return null
+  }
 }
 
 export async function checkClientEligibility(clerkUserId: string) {
@@ -397,6 +405,16 @@ export type ProgressLogRow = {
   notes: string | null
   logged_at: string
   created_at: string
+  client_email?: string | null
+}
+
+export type DashboardBundle = {
+  client: ClientRow | null
+  appointments: AppointmentRow[]
+  paidReports: PaidReportSummary[]
+  progressLogs: ProgressLogRow[]
+  latestReadyReport: PaidReportSummary | null
+  assessmentDates: Record<string, string>
 }
 
 export async function getClientAssessmentFlags(clerkUserId: string) {
@@ -445,44 +463,68 @@ export async function getClientAssessmentFlags(clerkUserId: string) {
   }
 }
 
-export async function getClientDashboard(clerkUserId: string) {
-  const client = await getClientByClerkId(clerkUserId)
-  if (!client) return null
+export type ClientSessionsDashboard = {
+  client: ClientRow | null
+  appointments: AppointmentRow[]
+  paidReports: PaidReportSummary[]
+  recoveryReportReady: { report_id: string; status: string } | null
+  recoveryReportGenerating: { report_id: string } | null
+}
 
-  const { data: appointments } = await supabaseAdmin
-    .from('appointments')
-    .select('*, nutritionists(name)')
-    .eq('client_id', client.id)
-    .order('scheduled_date', { ascending: true })
+export async function getClientDashboard(clerkUserId: string): Promise<ClientSessionsDashboard> {
+  const empty: ClientSessionsDashboard = {
+    client: null,
+    appointments: [],
+    paidReports: [],
+    recoveryReportReady: null,
+    recoveryReportGenerating: null,
+  }
+  try {
+    const client = await getClientByClerkId(clerkUserId)
+    if (!client) return empty
 
-  const { data: paidRows } = await supabaseAdmin
-    .from('paid_reports')
-    .select('report_id, status, created_at, assessment_id, deficiency_summary')
-    .eq('user_id', clerkUserId)
-    .order('created_at', { ascending: false })
-    .limit(20)
+    const { data: appointments, error: apErr } = await supabaseAdmin
+      .from('appointments')
+      .select('*, nutritionists(name)')
+      .eq('client_id', client.id)
+      .order('scheduled_date', { ascending: true })
 
-  const rows = paidRows || []
-  const recoveryReportReady = rows.find((r) => r.status === 'ready' || r.status === 'generated') || null
-  const recoveryReportGenerating = rows.find((r) => r.status === 'generating') || null
-  const paidReports: PaidReportSummary[] = rows.map((r) => ({
-    report_id: String(r.report_id),
-    status: String(r.status),
-    created_at: r.created_at ? String(r.created_at) : undefined,
-    assessment_id: r.assessment_id != null ? String(r.assessment_id) : null,
-    deficiency_summary: r.deficiency_summary,
-  }))
+    if (apErr) console.error('[getClientDashboard] appointments', apErr)
 
-  return {
-    client,
-    appointments: appointments || [],
-    paidReports,
-    recoveryReportReady: recoveryReportReady
-      ? { report_id: String(recoveryReportReady.report_id), status: String(recoveryReportReady.status) }
-      : null,
-    recoveryReportGenerating: recoveryReportGenerating
-      ? { report_id: String(recoveryReportGenerating.report_id) }
-      : null,
+    const { data: paidRows, error: prErr } = await supabaseAdmin
+      .from('paid_reports')
+      .select('report_id, status, created_at, assessment_id, deficiency_summary')
+      .eq('user_id', clerkUserId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    if (prErr) console.error('[getClientDashboard] paid_reports', prErr)
+
+    const rows = paidRows || []
+    const recoveryReportReady = rows.find((r) => r.status === 'ready' || r.status === 'generated') || null
+    const recoveryReportGenerating = rows.find((r) => r.status === 'generating') || null
+    const paidReports: PaidReportSummary[] = rows.map((r) => ({
+      report_id: String(r.report_id),
+      status: String(r.status),
+      created_at: r.created_at ? String(r.created_at) : undefined,
+      assessment_id: r.assessment_id != null ? String(r.assessment_id) : null,
+      deficiency_summary: r.deficiency_summary,
+    }))
+
+    return {
+      client,
+      appointments: appointments || [],
+      paidReports,
+      recoveryReportReady: recoveryReportReady
+        ? { report_id: String(recoveryReportReady.report_id), status: String(recoveryReportReady.status) }
+        : null,
+      recoveryReportGenerating: recoveryReportGenerating
+        ? { report_id: String(recoveryReportGenerating.report_id) }
+        : null,
+    }
+  } catch (e) {
+    console.error('[getClientDashboard]', e)
+    return empty
   }
 }
 
@@ -567,67 +609,83 @@ export async function markAppointmentCompleteById(
   return { ok: true }
 }
 
-export async function getDashboardBundle(clerkUserId: string) {
-  const { userId } = await auth()
-  if (!userId || userId !== clerkUserId) {
-    throw new Error('Not authenticated')
-  }
+const EMPTY_DASHBOARD_BUNDLE: DashboardBundle = {
+  client: null,
+  appointments: [],
+  paidReports: [],
+  progressLogs: [],
+  latestReadyReport: null,
+  assessmentDates: {},
+}
 
-  const client = await getClientByClerkId(clerkUserId)
-
-  const [{ data: paidRows }, { data: logRows }] = await Promise.all([
-    supabaseAdmin
-      .from('paid_reports')
-      .select('report_id, status, created_at, assessment_id, deficiency_summary')
-      .eq('user_id', clerkUserId)
-      .order('created_at', { ascending: false })
-      .limit(50),
-    supabaseAdmin
-      .from('progress_logs')
-      .select('*')
-      .eq('user_id', clerkUserId)
-      .order('logged_at', { ascending: true }),
-  ])
-
-  let appointments: AppointmentRow[] = []
-  if (client) {
-    const { data: appts } = await supabaseAdmin
-      .from('appointments')
-      .select('*, nutritionists(name)')
-      .eq('client_id', client.id)
-      .order('scheduled_date', { ascending: true })
-    appointments = (appts || []) as AppointmentRow[]
-  }
-
-  const paidReports: PaidReportSummary[] = (paidRows || []).map((r) => ({
-    report_id: String(r.report_id),
-    status: String(r.status),
-    created_at: r.created_at ? String(r.created_at) : undefined,
-    assessment_id: r.assessment_id != null ? String(r.assessment_id) : null,
-    deficiency_summary: r.deficiency_summary,
-  }))
-
-  const latestReadyReport = paidReports.find((p) => p.status === 'ready' || p.status === 'generated') || null
-
-  const detailedIds = paidReports.map((p) => p.assessment_id).filter(Boolean) as string[]
-  let assessmentDates: Record<string, string> = {}
-  if (detailedIds.length > 0) {
-    const { data: details } = await supabaseAdmin
-      .from('detailed_assessments')
-      .select('id, created_at')
-      .in('id', detailedIds)
-    for (const d of details || []) {
-      assessmentDates[String((d as { id: string }).id)] = String((d as { created_at: string }).created_at)
+export async function getDashboardBundle(clerkUserId: string): Promise<DashboardBundle> {
+  try {
+    const { userId } = await auth()
+    if (!userId || userId !== clerkUserId) {
+      return EMPTY_DASHBOARD_BUNDLE
     }
-  }
 
-  return {
-    client,
-    appointments,
-    paidReports,
-    progressLogs: (logRows || []) as ProgressLogRow[],
-    latestReadyReport,
-    assessmentDates,
+    const client = await getClientByClerkId(clerkUserId)
+
+    const [{ data: paidRows }, { data: logRows }] = await Promise.all([
+      supabaseAdmin
+        .from('paid_reports')
+        .select('report_id, status, created_at, assessment_id, deficiency_summary')
+        .eq('user_id', clerkUserId)
+        .order('created_at', { ascending: false })
+        .limit(50),
+      supabaseAdmin
+        .from('progress_logs')
+        .select('*')
+        .eq('user_id', clerkUserId)
+        .order('logged_at', { ascending: false }),
+    ])
+
+    let appointments: AppointmentRow[] = []
+    if (client) {
+      const { data: appts, error: apErr } = await supabaseAdmin
+        .from('appointments')
+        .select('*, nutritionists(name)')
+        .eq('client_id', client.id)
+        .order('scheduled_date', { ascending: true })
+      if (apErr) console.error('[getDashboardBundle] appointments', apErr)
+      appointments = (appts || []) as AppointmentRow[]
+    }
+
+    const paidReports: PaidReportSummary[] = (paidRows || []).map((r) => ({
+      report_id: String(r.report_id),
+      status: String(r.status),
+      created_at: r.created_at ? String(r.created_at) : undefined,
+      assessment_id: r.assessment_id != null ? String(r.assessment_id) : null,
+      deficiency_summary: r.deficiency_summary,
+    }))
+
+    const latestReadyReport = paidReports.find((p) => p.status === 'ready' || p.status === 'generated') || null
+
+    const detailedIds = paidReports.map((p) => p.assessment_id).filter(Boolean) as string[]
+    let assessmentDates: Record<string, string> = {}
+    if (detailedIds.length > 0) {
+      const { data: details, error: dErr } = await supabaseAdmin
+        .from('detailed_assessments')
+        .select('id, created_at')
+        .in('id', detailedIds)
+      if (dErr) console.error('[getDashboardBundle] detailed_assessments', dErr)
+      for (const d of details || []) {
+        assessmentDates[String((d as { id: string }).id)] = String((d as { created_at: string }).created_at)
+      }
+    }
+
+    return {
+      client,
+      appointments,
+      paidReports,
+      progressLogs: (logRows || []) as ProgressLogRow[],
+      latestReadyReport,
+      assessmentDates,
+    }
+  } catch (e) {
+    console.error('[getDashboardBundle]', e)
+    return EMPTY_DASHBOARD_BUNDLE
   }
 }
 
@@ -641,6 +699,10 @@ export async function upsertProgressLog(input: {
 }) {
   const { userId } = await auth()
   if (!userId || userId !== input.clerkUserId) throw new Error('Not authenticated')
+
+  const clerkUser = await currentUser()
+  const clientEmail =
+    clerkUser?.primaryEmailAddress?.emailAddress?.trim() || null
 
   const energy =
     input.energy_level != null && input.energy_level !== undefined
@@ -693,7 +755,7 @@ export async function upsertProgressLog(input: {
     bmi = Math.round((mergedWeight / (hM * hM)) * 100) / 100
   }
 
-  const row = {
+  const row: Record<string, unknown> = {
     user_id: userId,
     weight_kg: mergedWeight,
     height_cm,
@@ -702,6 +764,7 @@ export async function upsertProgressLog(input: {
     notes: mergedNotes,
     logged_at: day,
   }
+  if (clientEmail) row.client_email = clientEmail
 
   const { error } = await supabaseAdmin.from('progress_logs').upsert(row, {
     onConflict: 'user_id,logged_at',

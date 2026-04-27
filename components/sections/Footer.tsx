@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
       "Deep Discovery",
       "Expert Strategy",
       "Active Tracking",
-      "Personal Dashboard",
+      "My Profile",
     ],
     Company: ["About Us", "Careers", "Contact Us", "Privacy Policy"],
     Support: ["FAQs", "Help Center", "Community", "Referral Program"],

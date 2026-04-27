@@ -217,11 +217,11 @@ export default function BookingCTA() {
                 </ul>
               )}
               <a
-                href={isSignedIn ? "/sessions" : "/booking"}
+                href={isSignedIn ? "/profile" : "/booking"}
                 className="inline-flex items-center gap-2 border border-white/20 text-white font-bold rounded-full px-5 py-2.5 mt-4 hover:border-emerald-500 hover:text-emerald-400 transition text-sm"
               >
                 {isSignedIn ? (
-                  <><LayoutDashboard size={14} /> Go to Dashboard</>
+                  <><LayoutDashboard size={14} /> Go to My Profile</>
                 ) : (
                   <>Book Sessions</>
                 )}

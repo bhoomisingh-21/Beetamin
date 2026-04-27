@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser, UserButton } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -104,7 +104,7 @@ function buildSessionIcs(appt: AppointmentRow & { nutritionists?: { name: string
     pad2(endDate.getUTCMinutes()) +
     pad2(endDate.getUTCSeconds()) +
     'Z'
-  const title = `Beetamin Session ${appt.session_number}`
+  const title = 'TheBeetamin Nutrition Session'
   const host = appt.nutritionists?.name || 'Nutritionist'
   const lines = [
     'BEGIN:VCALENDAR',
@@ -116,7 +116,7 @@ function buildSessionIcs(appt: AppointmentRow & { nutritionists?: { name: string
     `DTSTART:${start}`,
     `DTEND:${end}`,
     `SUMMARY:${title}`,
-    `DESCRIPTION:Session with ${host.replace(/,/g, ' ')}`,
+    `DESCRIPTION:Session ${appt.session_number} with ${host.replace(/,/g, ' ')}`,
     'END:VEVENT',
     'END:VCALENDAR',
   ]
@@ -126,7 +126,9 @@ function buildSessionIcs(appt: AppointmentRow & { nutritionists?: { name: string
 export default function SessionsPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
-  const [data, setData] = useState<{ client: ClientRow; appointments: AppointmentRow[] } | null>(null)
+  const [data, setData] = useState<{ client: ClientRow | null; appointments: AppointmentRow[] } | null>(
+    null,
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null)
 
@@ -134,53 +136,86 @@ export default function SessionsPage() {
     if (!isLoaded || !user) return
     getClientDashboard(user.id)
       .then((result) => {
-        if (!result) {
-          router.push('/booking/onboard')
-          return
-        }
-        setData(result as { client: ClientRow; appointments: AppointmentRow[] })
+        setData({
+          client: result.client,
+          appointments: result.appointments ?? [],
+        })
+      })
+      .catch(() => {
+        setData({ client: null, appointments: [] })
       })
       .finally(() => setIsLoading(false))
-  }, [isLoaded, user, router])
+  }, [isLoaded, user])
 
-  const activeAppt = data?.appointments.find((a) => a.status === 'pending' || a.status === 'confirmed')
-  const confirmedAppts = data?.appointments.filter((a) => a.status === 'confirmed') ?? []
-  const completedAppts = data?.appointments.filter((a) => a.status === 'completed') ?? []
-  const rejectedAppts = data?.appointments.filter((a) => a.status === 'rejected') ?? []
-  const firstConfirmed = confirmedAppts[0]
+  const appointments = data?.appointments ?? []
+  const client = data?.client ?? null
 
-  const planComplete = useMemo(() => {
-    if (!data) return false
-    const { client } = data
-    return (
-      client.status === 'completed' ||
-      (client.sessions_total > 0 && client.sessions_used >= client.sessions_total)
-    )
-  }, [data])
+  const apptForSession = useCallback(
+    (n: number) => appointments.find((a) => a.session_number === n),
+    [appointments],
+  )
 
-  const prevSessionCompleted = (n: number) =>
-    !data
-      ? false
-      : n === 1 ||
-        !!data.appointments.find((a) => a.session_number === n - 1 && a.status === 'completed')
-
-  const sessionBookable = (n: number) => {
-    if (!data) return false
-    const { client, appointments } = data
-    if (client.status !== 'active' || client.sessions_remaining <= 0) return false
-    if (activeAppt) return false
-    return (
-      prevSessionCompleted(n) &&
-      n === client.sessions_used + 1
-    )
+  const prevSessionCompleted = (n: number) => {
+    if (n <= 1) return true
+    const prev = apptForSession(n - 1)
+    return prev?.status === 'completed'
   }
 
-  const canBookNextSession = data ? sessionBookable(data.client.sessions_used + 1) : false
+  const blockingAppt = appointments.find((a) => a.status === 'pending' || a.status === 'confirmed')
+
+  const allSixSessionsComplete = useMemo(
+    () => [1, 2, 3, 4, 5, 6].every((n) => apptForSession(n)?.status === 'completed'),
+    [apptForSession, appointments],
+  )
+
+  const planComplete = allSixSessionsComplete
+
+  const sessionBookable = (n: number) => {
+    if (!client || client.status !== 'active' || client.sessions_remaining <= 0) return false
+    if (blockingAppt) return false
+    if (!prevSessionCompleted(n)) return false
+    const a = apptForSession(n)
+    if (a?.status === 'completed') return false
+    if (a?.status === 'confirmed' || a?.status === 'pending') return false
+    return n >= 1 && n <= 6
+  }
+
+  const canBookNextSession = useMemo(() => {
+    if (!client || client.status !== 'active' || client.sessions_remaining <= 0) return false
+    if (blockingAppt) return false
+    for (let n = 1; n <= 6; n++) {
+      if (!prevSessionCompleted(n)) continue
+      const a = appointments.find((x) => x.session_number === n)
+      if (a?.status === 'completed') continue
+      if (a?.status === 'confirmed' || a?.status === 'pending') continue
+      return true
+    }
+    return false
+  }, [client, appointments, blockingAppt])
+
+  const nextBookableSessionNumber = useMemo(() => {
+    for (let n = 1; n <= 6; n++) {
+      if (sessionBookable(n)) return n
+    }
+    return null
+  }, [client, appointments, blockingAppt, apptForSession])
+
+  const activeAppt = appointments.find((a) => a.status === 'pending' || a.status === 'confirmed')
+  const confirmedAppts = appointments.filter((a) => a.status === 'confirmed')
+  const completedAppts = appointments.filter((a) => a.status === 'completed')
+  const rejectedAppts = appointments.filter((a) => a.status === 'rejected')
+
+  const firstConfirmed = useMemo(() => {
+    if (!confirmedAppts.length) return undefined
+    return [...confirmedAppts].sort((a, b) => {
+      const da = new Date(`${a.scheduled_date}T${a.scheduled_time.slice(0, 5)}`).getTime()
+      const db = new Date(`${b.scheduled_date}T${b.scheduled_time.slice(0, 5)}`).getTime()
+      return da - db
+    })[0]
+  }, [confirmedAppts])
 
   const showNoPlanPricing =
-    data &&
-    data.client.status !== 'active' &&
-    !(data.client.status === 'completed' && data.client.sessions_used >= data.client.sessions_total)
+    !!data && (!client || (client.status !== 'active' && !planComplete))
 
   function downloadIcs() {
     if (!firstConfirmed) return
@@ -205,12 +240,20 @@ export default function SessionsPage() {
 
   if (!data) return null
 
-  const { client, appointments } = data
-  const daysLeft = Math.max(
-    0,
-    Math.ceil((new Date(client.plan_end_date).getTime() - Date.now()) / 86400000),
-  )
-  const progressPct = (client.sessions_used / client.sessions_total) * 100
+  const daysLeft = client
+    ? Math.max(
+        0,
+        Math.ceil((new Date(client.plan_end_date).getTime() - Date.now()) / 86400000),
+      )
+    : 0
+  const progressPct =
+    client && client.sessions_total > 0 ? (client.sessions_used / client.sessions_total) * 100 : 0
+
+  const welcomeName =
+    client?.name?.trim()?.split(/\s+/)[0] ||
+    user?.firstName ||
+    user?.username ||
+    'there'
 
   return (
     <div
@@ -245,9 +288,9 @@ export default function SessionsPage() {
         >
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-white font-black text-3xl md:text-4xl">
-              Welcome back, {client.name.split(' ')[0]}
+              Welcome back, {welcomeName}
             </h1>
-            {statusBadge(client.status)}
+            {client && statusBadge(client.status)}
           </div>
         </motion.div>
 
@@ -258,7 +301,7 @@ export default function SessionsPage() {
             className="mt-6 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-5 text-center"
           >
             <p className="text-emerald-300 font-black text-lg md:text-xl leading-snug">
-              🎉 You&apos;ve completed all 6 sessions! Your transformation journey is complete.
+              🎉 You&apos;ve completed all 6 sessions!
             </p>
             <a
               href="/booking/purchase"
@@ -302,7 +345,7 @@ export default function SessionsPage() {
           </motion.div>
         )}
 
-        {!showNoPlanPricing && (
+        {!showNoPlanPricing && client && (
           <>
             {firstConfirmed && (
               <motion.div
@@ -438,7 +481,7 @@ export default function SessionsPage() {
                 className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-5 transition flex items-center justify-center gap-2"
               >
                 <Plus size={22} />
-                Book Session {client.sessions_used + 1} →
+                Book Session {nextBookableSessionNumber ?? client.sessions_used + 1} →
               </motion.button>
             )}
 
