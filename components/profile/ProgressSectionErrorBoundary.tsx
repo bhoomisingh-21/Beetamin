@@ -23,9 +23,9 @@ export class ProgressSectionErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-stone-600">
-            Could not load progress data. Please refresh the page.
+        <div className="rounded-3xl border border-white/[0.08] bg-[#111820] p-8 text-center shadow-sm">
+          <p className="text-sm text-gray-400">
+            Could not load progress tracker. Please refresh.
           </p>
         </div>
       )

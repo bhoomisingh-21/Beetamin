@@ -23,6 +23,7 @@ export type ClientRow = {
   assessment_result?: unknown
   assessment_meta?: unknown
   height_cm?: number | null
+  goals_progress?: Record<string, boolean> | null
 }
 
 export type CreateClientProfileResult =
@@ -406,6 +407,9 @@ export type ProgressLogRow = {
   logged_at: string
   created_at: string
   client_email?: string | null
+  water_ml?: number | null
+  sleep_hours?: number | null
+  sleep_quality?: string | null
 }
 
 export type DashboardBundle = {
@@ -540,6 +544,28 @@ export async function updateClientProfile(clerkUserId: string, data: {
     .update(data)
     .eq('clerk_user_id', clerkUserId)
   if (error) throw new Error(error.message)
+}
+
+export async function updateClientGoalsProgress(
+  clerkUserId: string,
+  goalsProgress: Record<string, boolean>,
+): Promise<{ ok: boolean }> {
+  try {
+    const { userId } = await auth()
+    if (!userId || userId !== clerkUserId) return { ok: false }
+    const { error } = await supabaseAdmin
+      .from('clients')
+      .update({ goals_progress: goalsProgress })
+      .eq('clerk_user_id', clerkUserId)
+    if (error) {
+      console.error('[updateClientGoalsProgress]', error)
+      return { ok: false }
+    }
+    return { ok: true }
+  } catch (e) {
+    console.error('[updateClientGoalsProgress]', e)
+    return { ok: false }
+  }
 }
 
 /** Idempotent completion: increments sessions_used / decrements sessions_remaining. */
@@ -689,6 +715,16 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
   }
 }
 
+type ProgressExisting = {
+  weight_kg?: number | null
+  energy_level?: number | null
+  notes?: string | null
+  water_ml?: number | null
+  sleep_hours?: number | null
+  sleep_quality?: string | null
+  height_cm?: number | null
+}
+
 export async function upsertProgressLog(input: {
   clerkUserId: string
   weight_kg?: number | null
@@ -696,6 +732,10 @@ export async function upsertProgressLog(input: {
   notes?: string | null
   logged_at: string
   height_cm?: number | null
+  /** Absolute ml for the day (replaces previous water when logging water) */
+  water_ml?: number | null
+  sleep_hours?: number | null
+  sleep_quality?: string | null
 }) {
   const { userId } = await auth()
   if (!userId || userId !== input.clerkUserId) throw new Error('Not authenticated')
@@ -717,23 +757,37 @@ export async function upsertProgressLog(input: {
   let height_cm: number | null = null
   if (input.height_cm != null && !Number.isNaN(Number(input.height_cm))) {
     height_cm = Number(input.height_cm)
-    await supabaseAdmin.from('clients').update({ height_cm }).eq('clerk_user_id', userId)
+    try {
+      await supabaseAdmin.from('clients').update({ height_cm }).eq('clerk_user_id', userId)
+    } catch (e) {
+      console.error('[upsertProgressLog] height update', e)
+    }
   } else {
     const c = await getClientByClerkId(userId)
     height_cm = c?.height_cm != null ? Number(c.height_cm) : null
   }
 
   const day = input.logged_at.slice(0, 10)
-  const { data: existing } = await supabaseAdmin
-    .from('progress_logs')
-    .select('weight_kg, energy_level, notes')
-    .eq('user_id', userId)
-    .eq('logged_at', day)
-    .maybeSingle()
+
+  let existing: ProgressExisting | null = null
+  try {
+    const { data } = await supabaseAdmin
+      .from('progress_logs')
+      .select(
+        'weight_kg, energy_level, notes, water_ml, sleep_hours, sleep_quality, height_cm',
+      )
+      .eq('user_id', userId)
+      .eq('logged_at', day)
+      .maybeSingle()
+    existing = data as ProgressExisting | null
+  } catch (e) {
+    console.error('[upsertProgressLog] fetch existing', e)
+    existing = null
+  }
 
   const mergedWeight =
     weight ??
-    (existing?.weight_kg != null && existing.weight_kg !== ''
+    (existing?.weight_kg != null && !Number.isNaN(Number(existing.weight_kg))
       ? Number(existing.weight_kg)
       : null)
   const mergedEnergy =
@@ -743,33 +797,76 @@ export async function upsertProgressLog(input: {
   const mergedNotes =
     notesTrim !== undefined
       ? notesTrim === ''
-        ? (existing?.notes != null ? String(existing.notes) : null)
+        ? existing?.notes != null
+          ? String(existing.notes)
+          : null
         : notesTrim.slice(0, 280)
       : existing?.notes != null
         ? String(existing.notes)
         : null
 
+  let mergedWater: number | null = null
+  if (input.water_ml !== undefined && input.water_ml !== null) {
+    mergedWater = Math.max(0, Math.round(Number(input.water_ml)))
+  } else if (existing?.water_ml != null) {
+    mergedWater = Number(existing.water_ml)
+  } else {
+    mergedWater = 0
+  }
+
+  let mergedSleepHours: number | null =
+    input.sleep_hours !== undefined && input.sleep_hours !== null
+      ? Math.min(12, Math.max(4, Number(input.sleep_hours)))
+      : existing?.sleep_hours != null
+        ? Number(existing.sleep_hours)
+        : null
+
+  let mergedSleepQuality: string | null =
+    input.sleep_quality !== undefined
+      ? input.sleep_quality === '' || input.sleep_quality === null
+        ? existing?.sleep_quality != null
+          ? String(existing.sleep_quality)
+          : null
+        : String(input.sleep_quality)
+      : existing?.sleep_quality != null
+        ? String(existing.sleep_quality)
+        : null
+
+  const heightForBmi =
+    height_cm ??
+    (existing?.height_cm != null && !Number.isNaN(Number(existing.height_cm))
+      ? Number(existing.height_cm)
+      : null)
+
   let bmi: number | null = null
-  if (mergedWeight != null && height_cm != null && height_cm > 0) {
-    const hM = height_cm / 100
+  if (mergedWeight != null && heightForBmi != null && heightForBmi > 0) {
+    const hM = heightForBmi / 100
     bmi = Math.round((mergedWeight / (hM * hM)) * 100) / 100
   }
 
   const row: Record<string, unknown> = {
     user_id: userId,
     weight_kg: mergedWeight,
-    height_cm,
+    height_cm: heightForBmi,
     bmi,
     energy_level: mergedEnergy,
     notes: mergedNotes,
+    water_ml: mergedWater,
+    sleep_hours: mergedSleepHours,
+    sleep_quality: mergedSleepQuality,
     logged_at: day,
   }
   if (clientEmail) row.client_email = clientEmail
 
-  const { error } = await supabaseAdmin.from('progress_logs').upsert(row, {
-    onConflict: 'user_id,logged_at',
-  })
-  if (error) throw new Error(error.message)
+  try {
+    const { error } = await supabaseAdmin.from('progress_logs').upsert(row, {
+      onConflict: 'user_id,logged_at',
+    })
+    if (error) throw new Error(error.message)
+  } catch (e) {
+    console.error('[upsertProgressLog] upsert', e)
+    throw e instanceof Error ? e : new Error('Could not save progress')
+  }
 }
 
 // ─── Cancel appointment ───────────────────────────────────────────────────────

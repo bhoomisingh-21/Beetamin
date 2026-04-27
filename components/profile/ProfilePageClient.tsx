@@ -14,9 +14,10 @@ import {
   type DashboardBundle,
 } from '@/lib/booking-actions'
 import { bmiMeta as bmiMetaFromHelpers, formatReportHeadingDate } from './profile-helpers'
-import { MyReportsSection } from './MyReportsSection'
-import { DeficiencyProfileSection } from './DeficiencyProfileSection'
-import { ProgressTrackerSection } from './ProgressTrackerSection'
+import { DeficiencyReportSection } from './DeficiencyReportSection'
+import { AssessmentHistorySection } from './AssessmentHistorySection'
+import { ProgressHealthSection } from './ProgressHealthSection'
+import { WellnessGoalsSection } from './WellnessGoalsSection'
 import { ProgressSectionErrorBoundary } from './ProgressSectionErrorBoundary'
 
 function daysInPlan(client: ClientRow | null): number {
@@ -335,7 +336,9 @@ export default function ProfilePageClient({ initialBundle }: Props) {
         </div>
 
         <div className="mt-14 space-y-14">
-          <MyReportsSection
+          <DeficiencyReportSection paidReports={paidReports} />
+
+          <AssessmentHistorySection
             paidReports={paidReports}
             assessmentDates={assessmentDates}
             expandedReport={expandedReport}
@@ -343,7 +346,7 @@ export default function ProfilePageClient({ initialBundle }: Props) {
           />
 
           <ProgressSectionErrorBoundary>
-            <ProgressTrackerSection
+            <ProgressHealthSection
               userId={user.id}
               client={client}
               progressLogs={progressLogs}
@@ -355,7 +358,17 @@ export default function ProfilePageClient({ initialBundle }: Props) {
             />
           </ProgressSectionErrorBoundary>
 
-          <DeficiencyProfileSection paidReports={paidReports} />
+          {client ? (
+            <WellnessGoalsSection
+              userId={user.id}
+              client={client}
+              onReload={reload}
+              onToast={(msg) => {
+                setToast(msg)
+                setTimeout(() => setToast(''), 3000)
+              }}
+            />
+          ) : null}
         </div>
       </div>
 
