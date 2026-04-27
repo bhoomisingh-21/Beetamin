@@ -17,7 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import { type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCard, heading, subheading } from './profile-dark-styles'
+import { darkCard, heading, subheading } from '@/components/profile/profile-dark-styles'
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', {
@@ -28,7 +28,7 @@ function shortDate(iso: string) {
 
 function energyFill(v: number) {
   if (v <= 3) return '#ef4444'
-  if (v <= 6) return '#eab308'
+  if (v <= 6) return '#f59e0b'
   return '#10b981'
 }
 
@@ -49,7 +49,6 @@ export function ProgressCharts({ progressLogs }: Props) {
       .filter((l) => l.weight_kg != null && new Date(l.logged_at).getTime() >= cutoff)
       .map((l) => ({
         date: shortDate(l.logged_at),
-        iso: l.logged_at,
         kg: Number(l.weight_kg),
       }))
   }, [sortedAsc])
@@ -98,7 +97,7 @@ export function ProgressCharts({ progressLogs }: Props) {
   return (
     <div className="space-y-10">
       <div className={darkCard}>
-        <h3 className={`${heading} text-lg`}>Weight trend</h3>
+        <h3 className={`${heading} text-lg`}>Weight</h3>
         <p className={subheading}>Last 30 days</p>
         {weightData.length >= 2 ? (
           <div className={chartWrap}>
@@ -126,7 +125,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">Log weight on at least two days to see this chart.</p>
+          <p className="mt-4 text-sm text-gray-500">Not enough data yet — log weight on two or more days.</p>
         )}
       </div>
 
@@ -156,7 +155,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">Log energy on at least two days to see this chart.</p>
+          <p className="mt-4 text-sm text-gray-500">Not enough data yet — log energy on two or more days.</p>
         )}
       </div>
 
@@ -168,7 +167,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={waterData}>
                 <defs>
-                  <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="waterGradProg" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
@@ -189,22 +188,20 @@ export function ProgressCharts({ progressLogs }: Props) {
                   dataKey="ml"
                   stroke="#3b82f6"
                   fillOpacity={1}
-                  fill="url(#waterGrad)"
+                  fill="url(#waterGradProg)"
                   strokeWidth={2}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">
-            Track water on at least two days to see this chart.
-          </p>
+          <p className="mt-4 text-sm text-gray-500">Not enough data yet.</p>
         )}
       </div>
 
       <div className={darkCard}>
         <h3 className={`${heading} text-lg`}>Sleep</h3>
-        <p className={subheading}>Last 14 nights · Recommended 8h</p>
+        <p className={subheading}>Last 14 nights · 8h recommended</p>
         {sleepData.length >= 2 ? (
           <div className={chartWrap}>
             <ResponsiveContainer width="100%" height="100%">
@@ -225,7 +222,7 @@ export function ProgressCharts({ progressLogs }: Props) {
             </ResponsiveContainer>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500">Log sleep on at least two nights to see this chart.</p>
+          <p className="mt-4 text-sm text-gray-500">Not enough data yet.</p>
         )}
       </div>
     </div>

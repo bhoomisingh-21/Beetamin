@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { type ClientRow, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm } from './profile-dark-styles'
+import { darkCardSm } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   client: ClientRow | null
@@ -41,7 +41,7 @@ export function BMICard({ client, progressLogs }: Props) {
           }
         : bmi < 25
           ? {
-              label: 'Healthy Weight',
+              label: 'Healthy',
               card: 'border-emerald-500/35 bg-emerald-500/10',
               accent: 'text-emerald-400',
             }
@@ -57,14 +57,13 @@ export function BMICard({ client, progressLogs }: Props) {
                 accent: 'text-red-400',
               }
 
-  const ideal =
-    heightCm != null && heightCm > 0 ? idealWeightRangeKg(heightCm) : null
+  const ideal = heightCm != null && heightCm > 0 ? idealWeightRangeKg(heightCm) : null
 
   if (heightCm == null || heightCm <= 0) {
     return (
       <div className={`${darkCardSm} border-dashed border-amber-500/25`}>
         <p className="text-sm text-gray-400">
-          Add your height to see BMI — log weight and include height on your first entry.
+          Log your weight to see BMI — add height on your first weight entry if needed.
         </p>
       </div>
     )
@@ -74,7 +73,7 @@ export function BMICard({ client, progressLogs }: Props) {
     <div className={`${darkCardSm} ${category?.card ?? 'border-white/10'}`}>
       <h3 className="text-lg font-black text-white">BMI</h3>
       {bmi == null ? (
-        <p className="mt-4 text-sm text-gray-500">Log your weight to calculate BMI.</p>
+        <p className="mt-4 text-sm text-gray-500">Log your weight to see BMI.</p>
       ) : (
         <>
           <p className={`mt-4 text-5xl font-black tabular-nums ${category?.accent}`}>
@@ -83,7 +82,7 @@ export function BMICard({ client, progressLogs }: Props) {
           <p className={`mt-2 text-lg font-bold ${category?.accent}`}>{category?.label}</p>
           {ideal && (
             <p className="mt-4 text-xs leading-relaxed text-gray-500">
-              Healthy weight range for your height:{' '}
+              Ideal weight range for your height:{' '}
               <span className="font-semibold text-gray-300">
                 {ideal.min}–{ideal.max} kg
               </span>

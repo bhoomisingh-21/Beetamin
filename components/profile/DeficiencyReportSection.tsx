@@ -18,9 +18,14 @@ function isReadyStatus(s: string) {
 
 type Props = {
   paidReports: PaidReportSummary[]
+  /** When false, omit the built-in title block (page supplies its own). */
+  showHeading?: boolean
 }
 
-export function DeficiencyReportSection({ paidReports }: Props) {
+export function DeficiencyReportSection({
+  paidReports,
+  showHeading = true,
+}: Props) {
   const latestReady = paidReports.find((r) => isReadyStatus(r.status))
 
   const parsed = latestReady
@@ -36,14 +41,20 @@ export function DeficiencyReportSection({ paidReports }: Props) {
 
   return (
     <section className="space-y-6">
-      <div>
-        <h2 className={heading}>My Deficiency Profile</h2>
-        <p className={subheading}>From your latest paid report</p>
-      </div>
+      {showHeading && (
+        <div>
+          <h2 className={heading}>My Deficiency Profile</h2>
+          <p className={subheading}>From your latest paid report</p>
+        </div>
+      )}
 
       {!latestReady ? (
         <div className={`${darkCard} border-dashed border-white/15 bg-[#111820]/80 text-center`}>
-          <p className="text-sm leading-relaxed text-gray-400">
+          <div className="text-5xl" aria-hidden>
+            🧬
+          </div>
+          <p className="mt-4 text-lg font-bold text-white">No deficiency data yet</p>
+          <p className="mt-2 text-sm leading-relaxed text-gray-400">
             Your deficiency profile will appear here after you receive your paid report.
           </p>
           <Link

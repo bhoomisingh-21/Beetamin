@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { upsertProgressLog, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm, heading } from './profile-dark-styles'
+import { darkCardSm, heading } from '@/components/profile/profile-dark-styles'
 
 const QUALITIES = ['Poor', 'Fair', 'Good', 'Great'] as const
 

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { upsertProgressLog, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm, heading } from './profile-dark-styles'
+import { darkCardSm, heading } from '@/components/profile/profile-dark-styles'
 
 const GOAL_ML = 2000
 const GLASS_ML = 250
@@ -14,7 +14,7 @@ type Props = {
   onToast: (msg: string) => void
 }
 
-export function WaterIntakeLogger({ userId, progressLogs, onReload, onToast }: Props) {
+export function WaterLogger({ userId, progressLogs, onReload, onToast }: Props) {
   const today = new Date().toISOString().slice(0, 10)
   const [busy, setBusy] = useState(false)
 
@@ -47,8 +47,10 @@ export function WaterIntakeLogger({ userId, progressLogs, onReload, onToast }: P
 
   return (
     <div className={darkCardSm}>
-      <h3 className={`${heading} text-lg`}>Water</h3>
-      <p className="mt-1 text-xs text-gray-500">Daily goal {GOAL_ML / GLASS_ML} glasses ({GOAL_ML} ml)</p>
+      <h3 className={`${heading} text-lg`}>Water Intake</h3>
+      <p className="mt-1 text-xs text-gray-500">
+        Daily goal: 8 glasses ({GOAL_ML}ml)
+      </p>
 
       <div className="mt-5 h-3 w-full overflow-hidden rounded-full bg-black/50">
         <div
@@ -58,36 +60,44 @@ export function WaterIntakeLogger({ userId, progressLogs, onReload, onToast }: P
       </div>
       <div className="mt-2 flex justify-between text-xs text-gray-400">
         <span>
-          {glasses} of {GOAL_ML / GLASS_ML} glasses
+          {glasses} / 8 glasses
         </span>
         <span>{pct}%</span>
       </div>
-      <p className="mt-1 text-sm font-bold text-blue-300">{todayMl} ml today</p>
+      <p className="mt-1 text-sm font-bold text-blue-300">{todayMl} ml</p>
 
       <div className="mt-5 flex flex-wrap gap-2">
         <button
           type="button"
           disabled={busy}
-          onClick={() => void add(250)}
-          className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
+          onClick={() => void add(GLASS_ML)}
+          className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
         >
-          +250 ml
+          +1 glass (250ml)
         </button>
         <button
           type="button"
           disabled={busy}
           onClick={() => void add(500)}
-          className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
+          className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
         >
-          +500 ml
+          +2 glasses
         </button>
         <button
           type="button"
           disabled={busy}
-          onClick={() => void add(GLASS_ML)}
-          className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-4 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
+          onClick={() => void add(500)}
+          className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
         >
-          +1 glass
+          +500ml
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void add(1000)}
+          className="rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-200 hover:bg-blue-500/25 disabled:opacity-50"
+        >
+          +1L
         </button>
       </div>
     </div>

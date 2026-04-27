@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { upsertProgressLog, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm, heading } from './profile-dark-styles'
+import { darkCardSm, heading } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   userId: string
@@ -72,7 +72,7 @@ export function DailyNotes({ userId, progressLogs, onReload, onToast }: Props) {
       {timeline.length > 0 && (
         <div className="mt-8 space-y-3 border-t border-white/10 pt-6">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
-            Recent days
+            Previous days
           </p>
           {timeline.map((row) => (
             <div

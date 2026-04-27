@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useUser, SignOutButton } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
-import { Edit3, Leaf, Loader2, Save, X } from 'lucide-react'
+import { Edit3, Loader2, Save, X } from 'lucide-react'
 import Footer from '@/components/sections/Footer'
 import {
   getDashboardBundle,
@@ -14,11 +14,6 @@ import {
   type DashboardBundle,
 } from '@/lib/booking-actions'
 import { bmiMeta as bmiMetaFromHelpers, formatReportHeadingDate } from './profile-helpers'
-import { DeficiencyReportSection } from './DeficiencyReportSection'
-import { AssessmentHistorySection } from './AssessmentHistorySection'
-import { ProgressHealthSection } from './ProgressHealthSection'
-import { WellnessGoalsSection } from './WellnessGoalsSection'
-import { ProgressSectionErrorBoundary } from './ProgressSectionErrorBoundary'
 
 function daysInPlan(client: ClientRow | null): number {
   if (!client) return 0
@@ -32,11 +27,10 @@ type Props = {
   initialBundle: DashboardBundle
 }
 
-export default function ProfilePageClient({ initialBundle }: Props) {
+export default function ProfilePersonalClient({ initialBundle }: Props) {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const [bundle, setBundle] = useState<DashboardBundle>(initialBundle)
-  const [expandedReport, setExpandedReport] = useState<string | null>(null)
 
   const [hydrating, setHydrating] = useState(false)
   const [toast, setToast] = useState('')
@@ -96,15 +90,15 @@ export default function ProfilePageClient({ initialBundle }: Props) {
 
   if (!isLoaded) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6f7f4]">
-        <Loader2 className="h-10 w-10 animate-spin text-[#1a472a]" />
+      <div className="flex min-h-[40vh] items-center justify-center bg-[#0A0F14]">
+        <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
       </div>
     )
   }
 
   if (!user) return null
 
-  const { client, paidReports, latestReadyReport, assessmentDates, progressLogs } = bundle
+  const { client, paidReports, latestReadyReport, progressLogs } = bundle
   const displayName =
     user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
   const initials = displayName
@@ -132,50 +126,21 @@ export default function ProfilePageClient({ initialBundle }: Props) {
   })()
 
   return (
-    <div className="min-h-screen bg-[#f6f7f4] text-stone-900">
+    <>
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 shadow-lg">
           {toast}
         </div>
       )}
 
-      <motion.header
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-20 border-b border-stone-200/90 bg-white/95 backdrop-blur-md"
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 font-bold text-stone-900">
-            <Leaf className="text-emerald-600" size={20} />
-            TheBeetamin
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/sessions"
-              className="rounded-xl bg-[#0A0F14] px-3 py-2 text-sm font-semibold text-white hover:bg-black"
-            >
-              My Sessions
-            </Link>
-            <SignOutButton redirectUrl="/">
-              <button
-                type="button"
-                className="px-2 text-sm font-medium text-stone-600 hover:text-stone-900"
-              >
-                Log out
-              </button>
-            </SignOutButton>
-          </div>
-        </div>
-      </motion.header>
-
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         {hydrating && (
           <div className="mb-4 flex justify-end">
-            <Loader2 className="h-5 w-5 animate-spin text-stone-400" aria-hidden />
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500" aria-hidden />
           </div>
         )}
 
-        <div className="space-y-8">
+        <div className="mx-auto max-w-4xl space-y-8">
           <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm md:p-8">
             <div className="flex flex-wrap items-start gap-5">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg font-black text-emerald-800 ring-2 ring-emerald-200/80">
@@ -334,45 +299,9 @@ export default function ProfilePageClient({ initialBundle }: Props) {
             </div>
           )}
         </div>
-
-        <div className="mt-14 space-y-14">
-          <DeficiencyReportSection paidReports={paidReports} />
-
-          <AssessmentHistorySection
-            paidReports={paidReports}
-            assessmentDates={assessmentDates}
-            expandedReport={expandedReport}
-            setExpandedReport={setExpandedReport}
-          />
-
-          <ProgressSectionErrorBoundary>
-            <ProgressHealthSection
-              userId={user.id}
-              client={client}
-              progressLogs={progressLogs}
-              onReload={reload}
-              onToast={(msg) => {
-                setToast(msg)
-                setTimeout(() => setToast(''), 3000)
-              }}
-            />
-          </ProgressSectionErrorBoundary>
-
-          {client ? (
-            <WellnessGoalsSection
-              userId={user.id}
-              client={client}
-              onReload={reload}
-              onToast={(msg) => {
-                setToast(msg)
-                setTimeout(() => setToast(''), 3000)
-              }}
-            />
-          ) : null}
-        </div>
-      </div>
+      </motion.div>
 
       <Footer />
-    </div>
+    </>
   )
 }

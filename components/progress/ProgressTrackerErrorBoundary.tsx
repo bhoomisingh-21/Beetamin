@@ -6,7 +6,7 @@ type Props = { children: ReactNode }
 
 type State = { hasError: boolean }
 
-export class ProgressSectionErrorBoundary extends Component<Props, State> {
+export class ProgressTrackerErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
     this.state = { hasError: false }
@@ -17,7 +17,7 @@ export class ProgressSectionErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[ProgressSection]', error, info.componentStack)
+    console.error('[ProgressTracker]', error, info.componentStack)
   }
 
   render() {

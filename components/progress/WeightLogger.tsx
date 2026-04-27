@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { upsertProgressLog, type ClientRow, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm, heading } from './profile-dark-styles'
+import { darkCardSm, heading } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   userId: string
@@ -110,10 +110,7 @@ export function WeightLogger({ userId, client, progressLogs, onReload, onToast }
         <ul className="mt-6 space-y-2 border-t border-white/10 pt-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Recent</p>
           {recentWeights.map((row) => (
-            <li
-              key={row.id}
-              className="flex justify-between text-sm text-gray-300"
-            >
+            <li key={row.id} className="flex justify-between text-sm text-gray-300">
               <span>
                 {new Date(row.logged_at).toLocaleDateString('en-IN', {
                   day: 'numeric',

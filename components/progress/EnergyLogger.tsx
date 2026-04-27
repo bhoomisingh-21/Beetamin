@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { upsertProgressLog, type ProgressLogRow } from '@/lib/booking-actions'
-import { darkCardSm, heading } from './profile-dark-styles'
+import { darkCardSm, heading } from '@/components/profile/profile-dark-styles'
 
 type Props = {
   userId: string
@@ -62,8 +62,7 @@ export function EnergyLogger({ userId, progressLogs, onReload, onToast }: Props)
 
   return (
     <div className={darkCardSm}>
-      <h3 className={`${heading} text-lg`}>Energy</h3>
-      <p className="mt-3 text-sm text-gray-400">How&apos;s your energy today?</p>
+      <h3 className={`${heading} text-lg`}>Energy Level</h3>
       <input
         type="range"
         min={1}
