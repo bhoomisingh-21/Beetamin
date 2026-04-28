@@ -744,6 +744,23 @@ export async function upsertProgressLog(input: {
   const clientEmail =
     clerkUser?.primaryEmailAddress?.emailAddress?.trim() || null
 
+  if (input.height_cm != null && !Number.isNaN(Number(input.height_cm))) {
+    const heightVal = Number(input.height_cm)
+    if (clientEmail) {
+      const { error: upErr } = await supabaseAdmin
+        .from('clients')
+        .update({ height_cm: heightVal })
+        .eq('email', clientEmail)
+      if (upErr) throw new Error(upErr.message)
+    } else {
+      const { error: upErr2 } = await supabaseAdmin
+        .from('clients')
+        .update({ height_cm: heightVal })
+        .eq('clerk_user_id', userId)
+      if (upErr2) throw new Error(upErr2.message)
+    }
+  }
+
   const energy =
     input.energy_level != null && input.energy_level !== undefined
       ? Math.min(10, Math.max(1, Math.round(Number(input.energy_level))))
@@ -757,11 +774,6 @@ export async function upsertProgressLog(input: {
   let height_cm: number | null = null
   if (input.height_cm != null && !Number.isNaN(Number(input.height_cm))) {
     height_cm = Number(input.height_cm)
-    try {
-      await supabaseAdmin.from('clients').update({ height_cm }).eq('clerk_user_id', userId)
-    } catch (e) {
-      console.error('[upsertProgressLog] height update', e)
-    }
   } else {
     const c = await getClientByClerkId(userId)
     height_cm = c?.height_cm != null ? Number(c.height_cm) : null
@@ -844,19 +856,19 @@ export async function upsertProgressLog(input: {
     bmi = Math.round((mergedWeight / (hM * hM)) * 100) / 100
   }
 
-  const row: Record<string, unknown> = {
+  const row = {
     user_id: userId,
+    client_email: clientEmail,
     weight_kg: mergedWeight,
     height_cm: heightForBmi,
     bmi,
     energy_level: mergedEnergy,
     notes: mergedNotes,
-    water_ml: mergedWater,
+    water_ml: mergedWater ?? 0,
     sleep_hours: mergedSleepHours,
     sleep_quality: mergedSleepQuality,
     logged_at: day,
   }
-  if (clientEmail) row.client_email = clientEmail
 
   try {
     const { error } = await supabaseAdmin.from('progress_logs').upsert(row, {

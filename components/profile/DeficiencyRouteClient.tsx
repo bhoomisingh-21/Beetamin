@@ -1,7 +1,13 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { DeficiencyReportSection } from '@/components/profile/DeficiencyReportSection'
+import {
+  DeficiencyEmptyState,
+  DeficiencyReportSection,
+} from '@/components/profile/DeficiencyReportSection'
+import { FreeAssessmentDeficiencyBlock } from '@/components/profile/FreeAssessmentDeficiencyBlock'
+import { hasFreeAssessmentContent } from '@/components/profile/deficiency-free-storage'
 import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
 import type { PaidReportSummary } from '@/lib/booking-actions'
 
@@ -13,6 +19,24 @@ const BANNER =
   'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=1200&q=80'
 
 export default function DeficiencyRouteClient({ paidReports }: Props) {
+  const [freeHydrated, setFreeHydrated] = useState(false)
+  const [freeAssessment, setFreeAssessment] = useState<unknown | null>(null)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('assessmentResult')
+      setFreeAssessment(raw ? JSON.parse(raw) : null)
+    } catch {
+      setFreeAssessment(null)
+    } finally {
+      setFreeHydrated(true)
+    }
+  }, [])
+
+  const hasPaid = paidReports.some((r) => r.status === 'ready')
+  const hasFree = hasFreeAssessmentContent(freeAssessment)
+  const showEmpty = freeHydrated && !hasPaid && !hasFree
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -24,9 +48,18 @@ export default function DeficiencyRouteClient({ paidReports }: Props) {
         src={BANNER}
         alt=""
         title="Your Deficiency Profile"
-        subtitle="Based on your latest paid report"
+        subtitle="Paid report and free quiz results"
       />
-      <DeficiencyReportSection paidReports={paidReports} showHeading={false} />
+
+      {hasPaid && <DeficiencyReportSection paidReports={paidReports} showHeading={false} />}
+
+      {freeHydrated && hasFree && (
+        <div className={hasPaid ? 'mt-12' : ''}>
+          <FreeAssessmentDeficiencyBlock result={freeAssessment} />
+        </div>
+      )}
+
+      {showEmpty && <DeficiencyEmptyState />}
     </motion.div>
   )
 }

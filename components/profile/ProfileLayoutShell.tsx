@@ -12,7 +12,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import type { ProfilePlanStatus } from '@/components/profile/profile-plan'
-import Navbar from '@/components/sections/Navbar'
+import ProfileNavbar from '@/components/profile/ProfileNavbar'
 import { sidebarBg, textPrimary, textSecondary } from '@/components/profile/profile-dark-styles'
 
 const NAV = [
@@ -77,7 +77,7 @@ export default function ProfileLayoutShell({ children, planStatus }: Props) {
 
   return (
     <div className="min-h-screen bg-[#060910] text-[#F0F4F8]">
-      <Navbar />
+      <ProfileNavbar />
 
       <div className="mx-auto flex max-w-[1680px] flex-col md:flex-row">
         <aside
