@@ -12,6 +12,7 @@ import {
   ProgressCharts,
   type ChartRange,
 } from '@/components/progress/ProgressCharts'
+import { ProgressIdeasPanel } from '@/components/progress/ProgressIdeasPanel'
 import { ProgressTrackerErrorBoundary } from '@/components/progress/ProgressTrackerErrorBoundary'
 import { SleepLogger } from '@/components/progress/SleepLogger'
 import { WaterLogger } from '@/components/progress/WaterLogger'
@@ -120,6 +121,8 @@ export default function ProgressRouteClient({ initialBundle }: Props) {
                 />
               </div>
             </div>
+
+            <ProgressIdeasPanel />
 
             <div className="border-t border-white/[0.06] pt-10">
               <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

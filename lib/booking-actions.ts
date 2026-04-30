@@ -857,7 +857,8 @@ export async function upsertProgressLog(input: {
   }
 
   const row = {
-    user_id: userId,
+    /** Clerk ID — column must be `text` in DB, not uuid */
+    user_id: String(userId),
     client_email: clientEmail,
     weight_kg: mergedWeight,
     height_cm: heightForBmi,

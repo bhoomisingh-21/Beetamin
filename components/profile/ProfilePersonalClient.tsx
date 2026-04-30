@@ -260,13 +260,15 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {stats.map((s) => (
-            <div key={s.label} className={`${profileCard} relative overflow-hidden px-5 py-6`}>
+            <div key={s.label} className={`${profileCard} relative overflow-hidden px-4 py-5 sm:px-5 sm:py-6`}>
               <div className="absolute left-0 top-0 h-0.5 w-[30%] rounded-full bg-emerald-500/90" aria-hidden />
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#8B9AB0]">{s.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B9AB0] sm:text-[11px]">
+                {s.label}
+              </p>
               <p
-                className="mt-3 text-[32px] font-black tabular-nums text-emerald-400"
+                className="mt-2 text-[26px] font-black tabular-nums text-emerald-400 sm:mt-3 sm:text-[32px]"
                 style={{ textShadow: '0 0 28px rgba(16,185,129,0.25)' }}
               >
                 {s.value}
