@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { ALLOWED_NUTRITIONIST_EMAILS } from '@/lib/nutritionist-config'
+import { isRegisteredNutritionistClerkUser } from '@/lib/nutritionist-portal-access'
 import { verifySignedCookieAsync } from '@/lib/nut-session-crypto-edge'
 
 // ── Nutritionist session helper ──────────────────────────────────────────────
@@ -30,9 +31,13 @@ const isProtectedRoute = createRouteMatcher([
   '/booking/success(.*)',
   '/detailed-assessment(.*)',
   '/report(.*)',
-  '/nutritionist(.*)',
-  // /nutritionist-dashboard is protected by Supabase session (see below), not Clerk
+  // /nutritionist/* is handled below (Clerk + nutritionists table)
+  // /nutritionist-dashboard stays on Supabase cookie session (see below)
 ])
+
+function isNutritionistPortalRoute(path: string): boolean {
+  return path.startsWith('/nutritionist') && !path.startsWith('/nutritionist-dashboard')
+}
 
 export default clerkMiddleware(async (auth, req) => {
   const path = req.nextUrl.pathname
@@ -55,6 +60,21 @@ export default clerkMiddleware(async (auth, req) => {
     }
     // Skip Clerk auth for nutritionist-owned paths
     return
+  }
+
+  // ── Clerk nutritionist portal (/nutritionist/*) ──
+  if (isNutritionistPortalRoute(path)) {
+    await auth.protect()
+    const { userId } = await auth()
+    if (!userId) return NextResponse.next()
+    const allowed = await isRegisteredNutritionistClerkUser(userId)
+    if (!allowed) {
+      const url = req.nextUrl.clone()
+      url.pathname = '/sign-in'
+      url.searchParams.set('message', 'not-authorized')
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next()
   }
 
   // ── Regular user routes (Clerk-protected) ──

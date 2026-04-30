@@ -53,7 +53,7 @@ export default function AvailabilityPage() {
       else setSlots(DEFAULT_SLOTS)
       setIsLoading(false)
     }).catch(() => {
-      router.push('/nutritionist-dashboard')
+      router.push('/nutritionist')
     })
   }, [isLoaded, user, router])
 
@@ -103,7 +103,7 @@ export default function AvailabilityPage() {
       <div className="max-w-3xl mx-auto">
         {/* Back */}
         <button
-          onClick={() => router.push('/nutritionist-dashboard')}
+          onClick={() => router.push('/nutritionist')}
           className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition mb-6"
         >
           <ChevronLeft size={16} />

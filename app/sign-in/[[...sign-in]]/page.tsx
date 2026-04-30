@@ -326,9 +326,15 @@ function NutritionistLogin({ onSwitchToUser }: { onSwitchToUser: () => void }) {
 function PatientClerkSignInContent() {
   const sp = useSearchParams()
   const after = authReturnPath(sp.get('after'))
+  const msg = sp.get('message')
   const signUpHref = `/sign-up?after=${encodeURIComponent(after)}`
   return (
     <>
+      {msg === 'not-authorized' && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-950">
+          This account isn&apos;t registered as a nutritionist. Sign in as a patient, or use the nutritionist login if you have portal access.
+        </div>
+      )}
       <div className="mb-6">
         <h2 className="text-gray-900 font-black text-2xl">Hi there 👋</h2>
         <p className="text-gray-500 text-sm mt-1">Get started with your nutrition transformation.</p>
