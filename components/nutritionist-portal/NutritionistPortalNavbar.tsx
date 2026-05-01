@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { UserButton, useUser } from '@clerk/nextjs'
-import { CalendarClock, Leaf, Users } from 'lucide-react'
+import { CalendarClock, CalendarDays, Leaf, Users } from 'lucide-react'
 
 export function NutritionistPortalNavbar() {
   const { user } = useUser()
@@ -23,6 +23,10 @@ export function NutritionistPortalNavbar() {
           <Link href="/nutritionist/clients" className="flex items-center gap-1.5 hover:text-emerald-400">
             <Users size={16} aria-hidden />
             Clients
+          </Link>
+          <Link href="/nutritionist/appointments" className="flex items-center gap-1.5 hover:text-emerald-400">
+            <CalendarDays size={16} aria-hidden />
+            Appointments
           </Link>
           <Link href="/nutritionist/availability" className="flex items-center gap-1.5 hover:text-emerald-400">
             <CalendarClock size={16} aria-hidden />

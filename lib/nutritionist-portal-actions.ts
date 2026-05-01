@@ -11,7 +11,12 @@ import type {
   PortalClientListRow,
   PortalHomePayload,
 } from '@/lib/nutritionist-types'
-import { computeSlotStatus, isoTodayLocal, mondayWeekBounds } from '@/lib/nutritionist-utils'
+import {
+  computeSlotStatus,
+  isoTodayLocal,
+  mondayWeekBounds,
+  sessionStatesFromAppointments,
+} from '@/lib/nutritionist-utils'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -35,13 +40,9 @@ async function assertAppointmentOwnedByNutritionist(
   return !!data
 }
 
-async function assertClientAssigned(nutritionistId: string, clientId: string): Promise<boolean> {
-  const { count } = await supabaseAdmin
-    .from('appointments')
-    .select('id', { count: 'exact', head: true })
-    .eq('nutritionist_id', nutritionistId)
-    .eq('client_id', clientId)
-  return (count ?? 0) > 0
+async function assertClientExists(clientId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin.from('clients').select('id').eq('id', clientId).maybeSingle()
+  return !!data
 }
 
 export async function getNutritionistPortalHome(): Promise<PortalHomePayload | null> {
@@ -84,8 +85,11 @@ export async function getNutritionistPortalHome(): Promise<PortalHomePayload | n
       .filter(
         (a) =>
           a.scheduled_date === today &&
-          (a.status === 'confirmed' || a.status === 'pending'),
+          (a.status === 'confirmed' ||
+            a.status === 'pending' ||
+            a.status === 'completed'),
       )
+      .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time))
       .map((a) => ({
         ...a,
         slotStatus: computeSlotStatus(a),
@@ -141,17 +145,27 @@ export async function getNutritionistPortalClients(): Promise<PortalClientListRo
     const nutritionist = await portalNutritionist()
     if (!nutritionist) return []
 
+    const { data: allClients } = await supabaseAdmin
+      .from('clients')
+      .select('*')
+      .order('name', { ascending: true })
+
     const { data: appts } = await supabaseAdmin
       .from('appointments')
-      .select('client_id, scheduled_date, scheduled_time, status')
+      .select('client_id, session_number, scheduled_date, scheduled_time, status')
       .eq('nutritionist_id', nutritionist.id)
 
     const rows = appts || []
-    const clientIds = [...new Set(rows.map((r) => r.client_id).filter(Boolean))] as string[]
-    if (clientIds.length === 0) return []
-
-    const { data: clients } = await supabaseAdmin.from('clients').select('*').in('id', clientIds)
-    const list = (clients || []) as ClientRow[]
+    const byClient = new Map<string, { session_number: number; status: string }[]>()
+    for (const r of rows) {
+      const cid = r.client_id as string
+      if (!cid) continue
+      if (!byClient.has(cid)) byClient.set(cid, [])
+      byClient.get(cid)!.push({
+        session_number: r.session_number as number,
+        status: String(r.status),
+      })
+    }
 
     function nextSlot(cid: string): string | null {
       const related = rows.filter((r) => r.client_id === cid && r.status === 'confirmed')
@@ -164,9 +178,36 @@ export async function getNutritionistPortalClients(): Promise<PortalClientListRo
       return fut ? `${fut.scheduled_date} ${fut.scheduled_time}` : null
     }
 
-    return list.map((c) => ({ ...c, nextSession: nextSlot(c.id) }))
+    const list = (allClients || []) as ClientRow[]
+    return list.map((c) => ({
+      ...c,
+      nextSession: nextSlot(c.id),
+      sessionStates: sessionStatesFromAppointments(byClient.get(c.id) || []),
+    }))
   } catch (e) {
     console.error('[getNutritionistPortalClients]', e)
+    return []
+  }
+}
+
+export async function getNutritionistPortalAppointments(): Promise<AppointmentWithClient[]> {
+  try {
+    const nutritionist = await portalNutritionist()
+    if (!nutritionist) return []
+
+    const { data } = await supabaseAdmin
+      .from('appointments')
+      .select(
+        `id, client_id, nutritionist_id, session_number, scheduled_date, scheduled_time, reason, status, notes, created_at,
+        clients(id, name, email, phone, sessions_used, sessions_remaining, plan_end_date, status, sessions_total)`,
+      )
+      .eq('nutritionist_id', nutritionist.id)
+      .order('scheduled_date', { ascending: false })
+      .order('scheduled_time', { ascending: false })
+
+    return ((data || []) as unknown as AppointmentWithClient[]) ?? []
+  } catch (e) {
+    console.error('[getNutritionistPortalAppointments]', e)
     return []
   }
 }
@@ -175,8 +216,6 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
   try {
     const nutritionist = await portalNutritionist()
     if (!nutritionist) return null
-    const ok = await assertClientAssigned(nutritionist.id, clientId)
-    if (!ok) return null
 
     const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', clientId).maybeSingle()
     if (!client) return null
@@ -212,24 +251,63 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
 
     const clerkUid = String(client.clerk_user_id || '')
 
-    const { data: paidRows } = await supabaseAdmin
+    let paidReports: {
+      report_id: string
+      status: string
+      deficiency_summary?: unknown
+      created_at?: string
+    }[] = []
+
+    if (clerkUid) {
+      const { data: byUser } = await supabaseAdmin
+        .from('paid_reports')
+        .select('report_id, status, deficiency_summary, created_at')
+        .eq('user_id', clerkUid)
+        .order('created_at', { ascending: false })
+        .limit(25)
+      paidReports.push(...(byUser || []))
+    }
+    const { data: byEmail } = await supabaseAdmin
       .from('paid_reports')
       .select('report_id, status, deficiency_summary, created_at')
-      .eq('user_id', clerkUid)
+      .eq('email', email)
       .order('created_at', { ascending: false })
       .limit(25)
+    paidReports.push(...(byEmail || []))
 
-    const paidReports = paidRows || []
+    const seenReport = new Set<string>()
+    paidReports = paidReports.filter((r) => {
+      if (seenReport.has(r.report_id)) return false
+      seenReport.add(r.report_id)
+      return true
+    }).sort((a, b) =>
+      String(b.created_at || '').localeCompare(String(a.created_at || '')),
+    )
+
     const latestReadyReport =
       paidReports.find((r) => r.status === 'ready' || r.status === 'generated') || null
 
-    const { data: detailedAssessment } = await supabaseAdmin
-      .from('detailed_assessments')
-      .select('id, user_id, email, created_at')
-      .eq('user_id', clerkUid)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    let detailedAssessment: PortalClientBundle['detailedAssessment'] = null
+    if (clerkUid) {
+      const { data: daUser } = await supabaseAdmin
+        .from('detailed_assessments')
+        .select('id, user_id, email, created_at, diet_type')
+        .eq('user_id', clerkUid)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      detailedAssessment = daUser
+    }
+    if (!detailedAssessment) {
+      const { data: daEmail } = await supabaseAdmin
+        .from('detailed_assessments')
+        .select('id, user_id, email, created_at, diet_type')
+        .eq('email', email)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      detailedAssessment = daEmail
+    }
 
     const { data: logsByEmail } = await supabaseAdmin
       .from('progress_logs')
@@ -281,7 +359,40 @@ export async function completePortalAppointment(
 
     const result = await markAppointmentCompleteById(appointmentId, notes ?? null)
     if (!result.ok) return { ok: false, error: result.reason }
+
+    const { data: apptRow } = await supabaseAdmin
+      .from('appointments')
+      .select('session_number, client_id, clients(email)')
+      .eq('id', appointmentId)
+      .eq('nutritionist_id', nutritionist.id)
+      .maybeSingle()
+
+    const trimmed = String(notes ?? '').trim()
+    if (trimmed.length > 0 && apptRow?.client_id != null && apptRow.session_number != null) {
+      const rawClients = apptRow.clients as unknown
+      const ce = (Array.isArray(rawClients) ? rawClients[0] : rawClients) as { email: string } | null
+      const clientEmail = ce?.email ? String(ce.email).toLowerCase() : ''
+      const cid = apptRow.client_id as string
+      if (clientEmail) {
+        const { error: insErr } = await supabaseAdmin.from('nutritionist_notes').insert({
+          nutritionist_id: nutritionist.id,
+          client_id: cid,
+          client_email: clientEmail,
+          session_number: apptRow.session_number as number,
+          content: trimmed,
+          tags: [],
+          is_visible_to_client: false,
+          is_pinned: false,
+        })
+        if (insErr) console.error('[completePortalAppointment] nutritionist_notes', insErr)
+      }
+    }
+
+    const pathClientId = apptRow?.client_id as string | undefined
+    if (pathClientId) revalidatePath(`/nutritionist/clients/${pathClientId}`)
+
     revalidatePath('/nutritionist')
+    revalidatePath('/nutritionist/appointments')
     revalidatePath('/nutritionist/clients')
     return { ok: true }
   } catch (e) {
@@ -302,8 +413,8 @@ export async function createNutritionistNote(input: {
   try {
     const nutritionist = await portalNutritionist()
     if (!nutritionist) return { ok: false, error: 'Unauthorized' }
-    const ok = await assertClientAssigned(nutritionist.id, input.clientId)
-    if (!ok) return { ok: false, error: 'Client not found' }
+    const okClient = await assertClientExists(input.clientId)
+    if (!okClient) return { ok: false, error: 'Client not found' }
 
     if (input.isPinned) {
       await supabaseAdmin
@@ -520,7 +631,7 @@ export async function getSignedDocumentUrl(
 
     const { data: signed, error } = await supabaseAdmin.storage
       .from('client-documents')
-      .createSignedUrl(row.storage_path, 120)
+      .createSignedUrl(row.storage_path, 60)
     if (error || !signed?.signedUrl) return { url: null, error: error?.message || 'sign_failed' }
     return { url: signed.signedUrl }
   } catch (e) {
@@ -547,8 +658,8 @@ export async function uploadClientDocument(formData: FormData): Promise<{ ok: bo
       return { ok: false, error: 'Missing file or client' }
     }
 
-    const ok = await assertClientAssigned(nutritionist.id, clientId)
-    if (!ok) return { ok: false, error: 'Client not assigned' }
+    const okClient = await assertClientExists(clientId)
+    if (!okClient) return { ok: false, error: 'Client not found' }
 
     const max = 10 * 1024 * 1024
     if (file.size > max) return { ok: false, error: 'Max 10MB' }

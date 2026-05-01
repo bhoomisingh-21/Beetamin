@@ -1,24 +1,26 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useMemo, useState, useTransition } from 'react'
 import {
   Activity,
   ArrowLeft,
   ChevronRight,
-  FileText,
   Pin,
   Sparkles,
   Target,
   TrendingUp,
-  Upload,
 } from 'lucide-react'
 import { parseDeficiencySummaryPayload } from '@/lib/deficiency-profile-parse'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { NutritionistNotesTab } from '@/components/nutritionist-portal/NutritionistNotesTab'
 import { NutritionistDocumentsTab } from '@/components/nutritionist-portal/NutritionistDocumentsTab'
-import { NutritionistReadOnlyCharts } from '@/components/nutritionist-portal/NutritionistReadOnlyCharts'
+import { NutritionistProgressCharts } from '@/components/nutritionist/NutritionistProgressCharts'
+import { NutritionistWeightSparkline } from '@/components/nutritionist/NutritionistWeightSparkline'
+import { toggleNutritionistNotePin } from '@/lib/nutritionist-portal-actions'
+import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
 import { severityPillDark } from '@/components/profile/profile-dark-styles'
 
 const DEFAULT_GOALS = [
@@ -36,13 +38,6 @@ function initials(name: string) {
     .join('')
     .slice(0, 2)
     .toUpperCase()
-}
-
-function avatarColor(name: string): string {
-  const PAL = ['#059669', '#2563eb', '#7c3aed', '#db2777', '#ea580c', '#0d9488']
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i)) % 997
-  return PAL[h % PAL.length]
 }
 
 function formatDate(d: string) {
@@ -104,12 +99,16 @@ function deriveProgressStats(bundle: PortalClientBundle) {
   const weights3 = logs.filter((l) => l.weight_kg != null).slice(0, 3)
   const energy3 = logs.filter((l) => l.energy_level != null).slice(0, 3)
 
+  const waterHits7 = week.filter((l) => Number(l.water_ml ?? 0) >= 2000).length
+
   return {
     avgEnergy7,
     avgSleep7,
     latestWeight,
+    latestWeightLoggedAt: latestWeightEntry?.logged_at ?? null,
     currentBmi: bmi,
     waterToday,
+    waterHits7,
     sleepLast: lastSleep?.sleep_hours != null ? Number(lastSleep.sleep_hours) : null,
     weights3,
     energy3,
@@ -125,6 +124,9 @@ export default function NutritionistClientProfileClient({
   bundle: PortalClientBundle
   clientId: string
 }) {
+  const router = useRouter()
+  const [pinBusy, startPin] = useTransition()
+  const [composerKick, setComposerKick] = useState(0)
   const [tab, setTab] = useState<Tab>('overview')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [notesMount, setNotesMount] = useState<{ key: number; session: string }>({
@@ -152,6 +154,11 @@ export default function NutritionistClientProfileClient({
     (a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime(),
   )
 
+  const defaultNoteSession = useMemo(() => {
+    const nums = appointments.map((a) => a.session_number).filter((n) => typeof n === 'number' && !Number.isNaN(n))
+    return nums.length ? Math.max(...nums) : null
+  }, [appointments])
+
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'notes', label: 'Notes' },
@@ -162,7 +169,7 @@ export default function NutritionistClientProfileClient({
   function statusDot(a: AppointmentWithClient) {
     if (a.status === 'completed') return 'bg-emerald-500'
     if (a.status === 'confirmed') return 'bg-blue-400'
-    if (a.status === 'pending') return 'bg-amber-400'
+    if (a.status === 'pending') return 'bg-gray-400'
     return 'bg-[#4B5563]'
   }
 
@@ -177,31 +184,29 @@ export default function NutritionistClientProfileClient({
       </Link>
 
       {firstSessionEmpty && (
-        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.07] to-[#0F1623] p-8 text-center">
-          <Sparkles className="mx-auto text-emerald-400" size={40} />
-          <h2 className="mt-4 text-xl font-black text-[#F0F4F8]">First session with {client.name}</h2>
-          <p className="mt-2 text-sm text-[#8B9AB0]">Get started by adding your initial assessment</p>
-          <div className="mx-auto mt-8 grid max-w-lg grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
-              <FileText className="mx-auto text-emerald-400" size={28} />
-              <p className="mt-3 font-bold text-[#F0F4F8]">Initial assessment note</p>
+        <div className="rounded-2xl border border-transparent bg-gradient-to-br from-emerald-500/30 via-emerald-500/5 to-[#0F1623] p-[1px] shadow-[0_0_40px_rgba(16,185,129,0.08)]">
+          <div className="rounded-2xl bg-[#0F1623] px-6 py-10 text-center sm:px-10">
+            <p className="text-xl font-black text-[#F0F4F8]">👋 First session with {client.name}</p>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-[#8B9AB0]">
+              Get started by adding your initial notes or uploading their intake form.
+            </p>
+            <div className="mx-auto mt-8 grid max-w-lg grid-cols-1 gap-4 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={() => setTab('notes')}
-                className="mt-4 w-full rounded-xl bg-emerald-500 py-3 text-sm font-bold text-black hover:bg-emerald-400"
+                onClick={() => {
+                  setTab('notes')
+                  setComposerKick((k) => k + 1)
+                }}
+                className="rounded-2xl border border-emerald-500/35 bg-emerald-500/10 px-5 py-4 text-sm font-bold text-emerald-400 hover:bg-emerald-500/15"
               >
-                Add note
+                📝 Add First Note
               </button>
-            </div>
-            <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
-              <Upload className="mx-auto text-blue-400" size={28} />
-              <p className="mt-3 font-bold text-[#F0F4F8]">Upload intake form</p>
               <button
                 type="button"
                 onClick={() => setTab('documents')}
-                className="mt-4 w-full rounded-xl border border-emerald-500/35 py-3 text-sm font-bold text-emerald-400 hover:bg-emerald-500/10"
+                className="rounded-2xl border border-white/[0.08] bg-[#060910] px-5 py-4 text-sm font-bold text-[#F0F4F8] hover:border-emerald-500/25"
               >
-                Upload document
+                📎 Upload Document
               </button>
             </div>
           </div>
@@ -213,15 +218,34 @@ export default function NutritionistClientProfileClient({
         <aside className="w-full shrink-0 space-y-6 lg:w-[320px]">
           <div>
             {pinned ? (
-              <div className="relative rounded-2xl border border-amber-500/35 bg-amber-500/[0.08] p-4">
-                <Pin className="absolute right-3 top-3 text-amber-400" size={18} />
-                <p className="pr-8 text-xs font-bold uppercase tracking-wider text-amber-500/90">Pinned</p>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#F0F4F8]">{pinned.content}</p>
+              <div className="group relative rounded-2xl border border-amber-500/40 bg-[#1a1500] p-4">
+                <Pin className="absolute right-3 top-3 fill-amber-400 text-amber-400" size={18} aria-hidden />
+                <p className="pr-8 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                  📌 Quick Reminder
+                </p>
+                <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-[#F0F4F8]">{pinned.content}</p>
+                <button
+                  type="button"
+                  disabled={pinBusy}
+                  onClick={() =>
+                    startPin(async () => {
+                      await toggleNutritionistNotePin(pinned.id, clientId, client.email)
+                      router.refresh()
+                    })
+                  }
+                  className="mt-3 text-[11px] font-semibold text-[#8B9AB0] opacity-0 transition group-hover:opacity-100 hover:text-[#F0F4F8] disabled:opacity-40"
+                >
+                  Unpin
+                </button>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/[0.1] bg-[#0F1623]/40 px-4 py-6 text-center text-xs text-[#8B9AB0]">
-                Pin a note as quick reminder →
-              </div>
+              <button
+                type="button"
+                onClick={() => setTab('notes')}
+                className="w-full rounded-2xl border border-dashed border-white/[0.12] bg-transparent px-4 py-6 text-center text-xs italic text-[#8B9AB0] hover:border-emerald-500/25"
+              >
+                Pin a note as a quick reminder →
+              </button>
             )}
           </div>
 
@@ -229,7 +253,7 @@ export default function NutritionistClientProfileClient({
             <div className="flex flex-col items-center text-center">
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-black text-white"
-                style={{ backgroundColor: avatarColor(client.name) }}
+                style={{ backgroundColor: avatarPaletteFromName(client.name) }}
               >
                 {initials(client.name)}
               </div>
@@ -252,44 +276,44 @@ export default function NutritionistClientProfileClient({
               </p>
             </div>
 
-            <div className="mt-6 space-y-3 border-t border-white/[0.06] pt-5 text-sm">
+            <div className="mt-6 space-y-2.5 border-t border-white/[0.06] pt-5 text-[13px] leading-snug">
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">Health goal</span>
+                <span className="text-[#8B9AB0]">🎯 Goal</span>
                 <span className="text-right font-medium text-[#F0F4F8]">{client.assessment_goal || '—'}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">Sessions</span>
-                <span className="font-medium text-emerald-400">
-                  {client.sessions_used} / {client.sessions_total} used
-                </span>
-              </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">Plan expires</span>
+                <span className="text-[#8B9AB0]">📅 Plan expires</span>
                 <span className="text-[#F0F4F8]">{formatDate(client.plan_end_date)}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">Latest weight</span>
+                <span className="text-[#8B9AB0]">💪 Sessions</span>
+                <span className="font-medium text-emerald-400">
+                  {client.sessions_used} used / {client.sessions_total} total
+                </span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-[#8B9AB0]">⚖️ Latest weight</span>
                 <span className="text-[#F0F4F8]">
                   {stats.latestWeight != null ? `${stats.latestWeight.toFixed(1)} kg` : '—'}
                 </span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">BMI</span>
+                <span className="text-[#8B9AB0]">📊 BMI</span>
                 <span className="text-[#F0F4F8]">
                   {stats.currentBmi != null ? stats.currentBmi.toFixed(1) : '—'}
                 </span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">Latest energy</span>
+                <span className="text-[#8B9AB0]">⚡ Latest energy</span>
                 <span className="text-[#F0F4F8]">
                   {bundle.progressLogs.find((l) => l.energy_level != null)?.energy_level ?? '—'}
                 </span>
               </div>
             </div>
 
-            <p className="mt-4 border-t border-white/[0.06] pt-4 text-center text-[11px] text-[#8B9AB0]">
-              Client can see {bundle.visibleNotesCount} of {notes.length} notes
-            </p>
+            <div className="mt-4 rounded-xl border border-white/[0.06] bg-[#060910]/90 px-4 py-3 text-center text-[11px] text-[#8B9AB0]">
+              👁 Client can see {bundle.visibleNotesCount} of {notes.length} notes
+            </div>
           </div>
 
           <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-4">
@@ -306,7 +330,7 @@ export default function NutritionistClientProfileClient({
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-white/[0.04]"
                   >
                     <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot(a)}`} />
-                    <span className="font-bold text-emerald-400">S{a.session_number}</span>
+                    <span className="font-bold text-emerald-400">Session {a.session_number}</span>
                     <span className="text-[#8B9AB0]">{formatDate(a.scheduled_date)}</span>
                     <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase text-[#8B9AB0]">
                       {a.status}
@@ -354,7 +378,7 @@ export default function NutritionistClientProfileClient({
                         </div>
                       )}
                       <div className="mt-4 space-y-3">
-                        {deficiency.deficiencies.slice(0, 8).map((d, i) => (
+                        {deficiency.deficiencies.slice(0, 3).map((d, i) => (
                           <div
                             key={i}
                             className="rounded-xl border border-white/[0.06] bg-[#060910] px-4 py-3"
@@ -414,11 +438,43 @@ export default function NutritionistClientProfileClient({
                 <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="text-emerald-400" size={18} />
-                    <h3 className="font-black text-[#F0F4F8]">Latest progress</h3>
+                    <h3 className="font-black text-[#F0F4F8]">Recent progress</h3>
                   </div>
                   <div className="mt-4 space-y-4 text-sm">
+                    <div className="grid gap-3 border-b border-white/[0.06] pb-4 sm:grid-cols-2">
+                      <div className="text-[#8B9AB0]">
+                        <p className="font-semibold text-[#F0F4F8]">
+                          Latest weight:{' '}
+                          <span className="text-emerald-400">
+                            {stats.latestWeight != null ? `${stats.latestWeight.toFixed(1)} kg` : '—'}
+                          </span>
+                        </p>
+                        {stats.latestWeightLoggedAt ? (
+                          <p className="mt-1 text-xs">Logged {formatDate(stats.latestWeightLoggedAt)}</p>
+                        ) : null}
+                      </div>
+                      <p className="text-[#8B9AB0]">
+                        Avg energy last 7 days:{' '}
+                        <span className="font-bold text-[#F0F4F8]">
+                          {stats.avgEnergy7 != null ? `${stats.avgEnergy7.toFixed(1)}/10` : '—'}
+                        </span>
+                      </p>
+                      <p className="text-[#8B9AB0]">
+                        Avg sleep last 7 days:{' '}
+                        <span className="font-bold text-[#F0F4F8]">
+                          {stats.avgSleep7 != null ? `${stats.avgSleep7.toFixed(1)}h` : '—'}
+                        </span>
+                      </p>
+                      <p className="text-[#8B9AB0]">
+                        Water goal hit{' '}
+                        <span className="font-bold text-emerald-400">{stats.waterHits7}</span> of last 7 days
+                      </p>
+                    </div>
+
+                    <NutritionistWeightSparkline logs={bundle.progressLogs} />
+
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#8B9AB0]">Weight</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#8B9AB0]">Recent weights</p>
                       <ul className="mt-2 space-y-1">
                         {stats.weights3.map((l) => (
                           <li key={l.id} className="flex justify-between text-[#F0F4F8]">
@@ -492,7 +548,7 @@ export default function NutritionistClientProfileClient({
                 <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
                   <div className="flex items-center gap-2">
                     <Activity className="text-emerald-400" size={18} />
-                    <h3 className="font-black text-[#F0F4F8]">Goals status</h3>
+                    <h3 className="font-black text-[#F0F4F8]">Wellness Goals</h3>
                   </div>
                   <p className="mt-2 text-xs text-[#8B9AB0]">
                     {DEFAULT_GOALS.reduce((n, _, i) => (goals[String(i)] ? n + 1 : n), 0)} of 5 completed
@@ -526,8 +582,11 @@ export default function NutritionistClientProfileClient({
             <NutritionistNotesTab
               key={notesMount.key}
               initialSessionFilter={notesMount.session}
+              composerKick={composerKick}
               clientId={clientId}
               clientEmail={client.email.toLowerCase()}
+              clientName={client.name}
+              defaultNoteSession={defaultNoteSession}
               sessionsTotal={client.sessions_total}
               notes={notes}
               tagFilter={tagFilter}
@@ -550,12 +609,13 @@ export default function NutritionistClientProfileClient({
                   {client.name} hasn&apos;t logged any progress yet.
                 </p>
               ) : (
-                <NutritionistReadOnlyCharts
+                <NutritionistProgressCharts
                   logs={bundle.progressLogs}
                   latestWeight={stats.latestWeight}
                   currentBmi={stats.currentBmi}
                   avgEnergy7={stats.avgEnergy7}
                   avgSleep7={stats.avgSleep7}
+                  clientName={client.name}
                 />
               )}
             </div>

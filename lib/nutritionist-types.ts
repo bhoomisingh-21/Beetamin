@@ -51,8 +51,12 @@ export type PortalHomePayload = {
   pendingRequests: AppointmentWithClient[]
 }
 
+export type SessionDotState = 'completed' | 'confirmed' | 'pending' | null
+
 export type PortalClientListRow = ClientRow & {
   nextSession?: string | null
+  /** Session slot 1–6 → strongest appointment status for this nutritionist */
+  sessionStates?: Partial<Record<number, SessionDotState>>
 }
 
 export type PortalClientBundle = {
@@ -62,7 +66,13 @@ export type PortalClientBundle = {
   documents: ClientDocumentDTO[]
   paidReports: { report_id: string; status: string; deficiency_summary?: unknown; created_at?: string }[]
   latestReadyReport: { report_id: string; status: string; deficiency_summary?: unknown } | null
-  detailedAssessment: { id: string; user_id: string; email: string | null; created_at: string } | null
+  detailedAssessment: {
+    id: string
+    user_id: string
+    email: string | null
+    created_at: string
+    diet_type?: string | null
+  } | null
   progressLogs: ProgressLogRow[]
   visibleNotesCount: number
 }

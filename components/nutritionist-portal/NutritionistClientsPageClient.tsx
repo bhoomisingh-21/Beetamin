@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
 import type { ClientRow } from '@/lib/booking-actions'
-import type { PortalClientListRow } from '@/lib/nutritionist-types'
+import type { PortalClientListRow, SessionDotState } from '@/lib/nutritionist-types'
+import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
+import { Search } from 'lucide-react'
 
 function initials(name: string) {
   return name
@@ -15,24 +16,16 @@ function initials(name: string) {
     .toUpperCase()
 }
 
-function avatarColor(name: string): string {
-  const PAL = ['#059669', '#2563eb', '#7c3aed', '#db2777', '#ea580c', '#0d9488']
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i)) % 997
-  return PAL[h % PAL.length]
-}
-
-function SessionDotsRow({ client }: { client: ClientRow }) {
-  const total = Math.max(1, client.sessions_total || client.sessions_used + client.sessions_remaining)
-  const used = Math.min(client.sessions_used, total)
+function SessionDotsRow({ states }: { states?: Partial<Record<number, SessionDotState>> }) {
   return (
-    <div className="flex gap-1 pt-1" aria-hidden>
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={`h-2 w-2 rounded-full ${i < used ? 'bg-emerald-500' : 'border border-white/25 bg-transparent'}`}
-        />
-      ))}
+    <div className="flex gap-1.5 pt-1" aria-hidden>
+      {[1, 2, 3, 4, 5, 6].map((n) => {
+        const s = states?.[n]
+        let cls = 'h-2 w-2 shrink-0 rounded-full border border-white/20 bg-transparent'
+        if (s === 'completed') cls = 'h-2 w-2 shrink-0 rounded-full bg-emerald-500'
+        else if (s === 'confirmed' || s === 'pending') cls = 'h-2 w-2 shrink-0 rounded-full bg-blue-500'
+        return <span key={n} className={cls} />
+      })}
     </div>
   )
 }
@@ -46,9 +39,12 @@ function statusBadge(status: string) {
   return map[status] || map.completed
 }
 
-function daysRemaining(planEnd: string): number {
-  const end = new Date(planEnd).getTime()
-  return Math.max(0, Math.ceil((end - Date.now()) / 86400000))
+function formatPlanDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  } catch {
+    return iso
+  }
 }
 
 type FilterKey = 'all' | ClientRow['status']
@@ -64,7 +60,8 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
       if (!needle) return true
       return (
         c.name.toLowerCase().includes(needle) ||
-        c.email.toLowerCase().includes(needle)
+        c.email.toLowerCase().includes(needle) ||
+        (c.phone || '').toLowerCase().includes(needle)
       )
     })
   }, [clients, q, filter])
@@ -79,8 +76,8 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">My clients</h1>
-        <p className="mt-1 text-sm text-[#8B9AB0]">Anyone you&apos;ve seen through appointments</p>
+        <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">All Clients</h1>
+        <p className="mt-1 text-sm text-[#8B9AB0]">Everyone on file — search and filter by status</p>
         <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
       </div>
 
@@ -114,56 +111,76 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#0F1623]/50 px-6 py-16 text-center">
-          <p className="font-semibold text-[#F0F4F8]">No clients yet</p>
-          <p className="mt-2 text-sm text-[#8B9AB0]">Clients will appear here after they purchase a plan and book with you.</p>
+          <p className="font-semibold text-[#F0F4F8]">No clients match</p>
+          <p className="mt-2 text-sm text-[#8B9AB0]">Try another search or filter.</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {filtered.map((c) => (
-            <div
-              key={c.id}
-              className="flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.35)] sm:flex-row sm:items-stretch"
-            >
-              <div className="flex shrink-0 justify-center sm:block">
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-full text-lg font-black text-white"
-                  style={{ backgroundColor: avatarColor(c.name) }}
-                >
-                  {initials(c.name)}
+        <div className="grid gap-4">
+          {filtered.map((c) => {
+            const total = Math.max(1, c.sessions_total || c.sessions_used + c.sessions_remaining)
+            const sessionLabelNum =
+              c.status === 'active' && c.sessions_remaining > 0
+                ? Math.min(total, c.sessions_used + 1)
+                : Math.min(total, c.sessions_used)
+            return (
+              <div
+                key={c.id}
+                className="flex flex-col gap-5 rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.35)] lg:flex-row lg:items-center lg:justify-between lg:gap-8"
+              >
+                {/* Left */}
+                <div className="flex min-w-0 flex-1 items-start gap-4">
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-black text-white"
+                    style={{ backgroundColor: avatarPaletteFromName(c.name) }}
+                  >
+                    {initials(c.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-[#F0F4F8]">{c.name}</p>
+                    <p className="text-[13px] text-[#8B9AB0]">{c.email}</p>
+                    {c.phone ? <p className="text-[13px] text-[#8B9AB0]">{c.phone}</p> : null}
+                  </div>
                 </div>
-              </div>
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-bold text-[#F0F4F8]">{c.name}</p>
-                <p className="truncate text-xs text-[#8B9AB0]">{c.email}</p>
-                {c.assessment_goal ? (
-                  <span className="mt-2 inline-block rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                    {c.assessment_goal}
+                {/* Center */}
+                <div className="min-w-0 flex-1 space-y-3 border-y border-white/[0.06] py-5 lg:border-x lg:border-y-0 lg:px-8 lg:py-0">
+                  {c.assessment_goal ? (
+                    <span className="inline-block rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                      {c.assessment_goal}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-[#8B9AB0]">No goal on file</span>
+                  )}
+                  <SessionDotsRow states={c.sessionStates} />
+                  <p className="text-[13px] text-[#8B9AB0]">
+                    Session{' '}
+                    <span className="font-bold text-[#F0F4F8]">
+                      {sessionLabelNum} of {total}
+                    </span>
+                  </p>
+                  <p className="text-[13px] text-[#8B9AB0]">
+                    Plan expires: <span className="text-[#F0F4F8]">{formatPlanDate(c.plan_end_date)}</span>
+                  </p>
+                </div>
+
+                {/* Right */}
+                <div className="flex shrink-0 flex-col items-stretch gap-3 lg:w-[200px] lg:items-end">
+                  <span className={`self-start rounded-full border px-3 py-1 text-[11px] font-bold lg:self-end ${statusBadge(c.status)}`}>
+                    {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
                   </span>
-                ) : null}
-                <div className="mt-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#8B9AB0]">Sessions</p>
-                  <SessionDotsRow client={c} />
+                  <p className="text-sm text-[#8B9AB0] lg:text-right">
+                    <span className="font-semibold text-[#F0F4F8]">{c.sessions_remaining}</span> sessions left
+                  </p>
+                  <Link
+                    href={`/nutritionist/clients/${c.id}`}
+                    className="rounded-xl border border-emerald-500/40 px-4 py-2.5 text-center text-sm font-bold text-emerald-400 hover:bg-emerald-500/10 lg:w-full"
+                  >
+                    View Profile →
+                  </Link>
                 </div>
               </div>
-
-              <div className="flex shrink-0 flex-col items-stretch justify-between gap-3 border-t border-white/[0.06] pt-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
-                <span className={`self-start rounded-full border px-3 py-1 text-[11px] font-bold ${statusBadge(c.status)}`}>
-                  {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
-                </span>
-                <div className="text-right text-xs text-[#8B9AB0]">
-                  <p>{c.sessions_remaining} left</p>
-                  <p className="mt-1">{daysRemaining(c.plan_end_date)} days in plan</p>
-                </div>
-                <Link
-                  href={`/nutritionist/clients/${c.id}`}
-                  className="rounded-xl border border-emerald-500/35 px-4 py-2.5 text-center text-sm font-bold text-emerald-400 hover:bg-emerald-500/10"
-                >
-                  View profile
-                </Link>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

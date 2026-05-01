@@ -10,6 +10,7 @@ import {
   Cell,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -36,6 +37,7 @@ type Props = {
   currentBmi: number | null
   avgEnergy7: number | null
   avgSleep7: number | null
+  clientName: string
 }
 
 const card =
@@ -44,12 +46,13 @@ const subtitle = 'text-xs text-[#8B9AB0]'
 const title = 'text-[15px] font-semibold text-[#F0F4F8]'
 const chartH = 'mt-4 h-[180px] w-full md:h-52'
 
-export function NutritionistReadOnlyCharts({
+export function NutritionistProgressCharts({
   logs,
   latestWeight,
   currentBmi,
   avgEnergy7,
   avgSleep7,
+  clientName,
 }: Props) {
   const anchorMs = useRef(0)
   if (anchorMs.current === 0) {
@@ -104,6 +107,8 @@ export function NutritionistReadOnlyCharts({
     borderRadius: 12,
   }
 
+  const needTwo = `${clientName} needs to log at least 2 days to show this chart`
+
   return (
     <>
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -150,14 +155,14 @@ export function NutritionistReadOnlyCharts({
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className={`mt-4 text-sm ${subtitle}`}>Need more weight logs.</p>
+            <p className={`mt-4 text-sm ${subtitle}`}>{needTwo}</p>
           )}
         </div>
 
         <div className={card}>
           <h3 className={title}>Energy</h3>
           <p className={`${subtitle} mt-1`}>Last 14 days</p>
-          {energy14.length >= 1 ? (
+          {energy14.length >= 2 ? (
             <div className={chartH}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={energy14}>
@@ -174,19 +179,19 @@ export function NutritionistReadOnlyCharts({
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className={`mt-4 text-sm ${subtitle}`}>No energy data.</p>
+            <p className={`mt-4 text-sm ${subtitle}`}>{needTwo}</p>
           )}
         </div>
 
         <div className={card}>
           <h3 className={title}>Water</h3>
           <p className={`${subtitle} mt-1`}>Last 7 days</p>
-          {water7.length >= 1 ? (
+          {water7.length >= 2 ? (
             <div className={chartH}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={water7}>
                   <defs>
-                    <linearGradient id="nw" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="nwNut" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
@@ -195,26 +200,27 @@ export function NutritionistReadOnlyCharts({
                   <XAxis dataKey="date" tick={{ fill: '#8B9AB0', fontSize: 11 }} />
                   <YAxis tick={{ fill: '#8B9AB0', fontSize: 11 }} />
                   <Tooltip contentStyle={ttStyle} />
+                  <ReferenceLine y={2000} stroke="#ffffff35" strokeDasharray="4 4" />
                   <Area
                     type="monotone"
                     dataKey="ml"
                     stroke="#3b82f6"
                     fillOpacity={1}
-                    fill="url(#nw)"
+                    fill="url(#nwNut)"
                     strokeWidth={2}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className={`mt-4 text-sm ${subtitle}`}>No water data.</p>
+            <p className={`mt-4 text-sm ${subtitle}`}>{needTwo}</p>
           )}
         </div>
 
         <div className={card}>
           <h3 className={title}>Sleep</h3>
           <p className={`${subtitle} mt-1`}>Last 14 days</p>
-          {sleep14.length >= 1 ? (
+          {sleep14.length >= 2 ? (
             <div className={chartH}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={sleep14}>
@@ -222,12 +228,13 @@ export function NutritionistReadOnlyCharts({
                   <XAxis dataKey="date" tick={{ fill: '#8B9AB0', fontSize: 11 }} />
                   <YAxis domain={[0, 12]} tick={{ fill: '#8B9AB0', fontSize: 11 }} />
                   <Tooltip contentStyle={ttStyle} />
-                  <Bar dataKey="hours" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+                  <ReferenceLine y={8} stroke="#ffffff35" strokeDasharray="4 4" />
+                  <Bar dataKey="hours" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className={`mt-4 text-sm ${subtitle}`}>No sleep data.</p>
+            <p className={`mt-4 text-sm ${subtitle}`}>{needTwo}</p>
           )}
         </div>
       </div>
