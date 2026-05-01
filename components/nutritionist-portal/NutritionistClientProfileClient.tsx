@@ -14,7 +14,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { parseDeficiencySummaryPayload } from '@/lib/deficiency-profile-parse'
-import type { PortalClientBundle } from '@/lib/nutritionist-portal-actions'
+import type { PortalClientBundle } from '@/lib/nutritionist-types'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { NutritionistNotesTab } from '@/components/nutritionist-portal/NutritionistNotesTab'
 import { NutritionistDocumentsTab } from '@/components/nutritionist-portal/NutritionistDocumentsTab'

@@ -11,7 +11,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import type { NutritionistNoteDTO } from '@/lib/nutritionist-portal-actions'
+import type { NutritionistNoteDTO } from '@/lib/nutritionist-types'
 import {
   createNutritionistNote,
   deleteNutritionistNote,

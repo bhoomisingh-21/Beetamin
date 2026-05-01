@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 import { FileImage, FileText, Loader2, Trash2, Upload } from 'lucide-react'
-import type { ClientDocumentDTO } from '@/lib/nutritionist-portal-actions'
+import type { ClientDocumentDTO } from '@/lib/nutritionist-types'
 import {
   deleteClientDocument,
   getSignedDocumentUrl,

@@ -4,6 +4,14 @@ import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { markAppointmentCompleteById, type ClientRow, type ProgressLogRow } from '@/lib/booking-actions'
 import { getOrCreateNutritionist, type AppointmentWithClient } from '@/lib/nutritionist-actions'
+import type {
+  ClientDocumentDTO,
+  NutritionistNoteDTO,
+  PortalClientBundle,
+  PortalClientListRow,
+  PortalHomePayload,
+} from '@/lib/nutritionist-types'
+import { computeSlotStatus, isoTodayLocal, mondayWeekBounds } from '@/lib/nutritionist-utils'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -34,67 +42,6 @@ async function assertClientAssigned(nutritionistId: string, clientId: string): P
     .eq('nutritionist_id', nutritionistId)
     .eq('client_id', clientId)
   return (count ?? 0) > 0
-}
-
-function isoTodayLocal(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function mondayWeekBounds(): { start: string; end: string } {
-  const d = new Date()
-  const day = d.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  const mon = new Date(d)
-  mon.setDate(d.getDate() + diff)
-  mon.setHours(0, 0, 0, 0)
-  const sun = new Date(mon)
-  sun.setDate(mon.getDate() + 6)
-  const fmt = (x: Date) =>
-    `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
-  return { start: fmt(mon), end: fmt(sun) }
-}
-
-export type SlotStatus = 'Completed' | 'In Progress' | 'Upcoming'
-
-export function computeSlotStatus(appt: {
-  scheduled_date: string
-  scheduled_time: string
-  status: string
-}): SlotStatus {
-  if (appt.status === 'completed') return 'Completed'
-  const today = isoTodayLocal()
-  if (appt.scheduled_date !== today) {
-    return 'Upcoming'
-  }
-  const startMs = new Date(`${appt.scheduled_date}T${appt.scheduled_time}`).getTime()
-  const endMs = startMs + 45 * 60 * 1000
-  const now = Date.now()
-  if (now >= startMs && now <= endMs) return 'In Progress'
-  return 'Upcoming'
-}
-
-export type PortalHomePayload = {
-  nutritionist: { id: string; name: string; email: string }
-  stats: {
-    activeClients: number
-    sessionsThisWeek: number
-    sessionsToday: number
-    pendingBookings: number
-  }
-  todaySessions: (AppointmentWithClient & { slotStatus: SlotStatus })[]
-  upcomingSevenDays: {
-    id: string
-    scheduled_date: string
-    scheduled_time: string
-    session_number: number
-    clientName: string
-    clientId: string
-  }[]
-  pendingRequests: AppointmentWithClient[]
 }
 
 export async function getNutritionistPortalHome(): Promise<PortalHomePayload | null> {
@@ -189,10 +136,6 @@ export async function getNutritionistPortalHome(): Promise<PortalHomePayload | n
   }
 }
 
-export type PortalClientListRow = ClientRow & {
-  nextSession?: string | null
-}
-
 export async function getNutritionistPortalClients(): Promise<PortalClientListRow[]> {
   try {
     const nutritionist = await portalNutritionist()
@@ -226,46 +169,6 @@ export async function getNutritionistPortalClients(): Promise<PortalClientListRo
     console.error('[getNutritionistPortalClients]', e)
     return []
   }
-}
-
-export type NutritionistNoteDTO = {
-  id: string
-  nutritionist_id: string
-  client_id: string | null
-  client_email: string
-  session_number: number | null
-  content: string
-  is_pinned: boolean
-  is_visible_to_client: boolean
-  tags: string[]
-  created_at: string
-  updated_at: string
-}
-
-export type ClientDocumentDTO = {
-  id: string
-  nutritionist_id: string
-  client_email: string
-  storage_path: string
-  file_name: string
-  file_url: string | null
-  file_type: string | null
-  file_size_kb: number | null
-  description: string | null
-  session_number: number | null
-  uploaded_at: string
-}
-
-export type PortalClientBundle = {
-  client: ClientRow
-  appointments: AppointmentWithClient[]
-  notes: NutritionistNoteDTO[]
-  documents: ClientDocumentDTO[]
-  paidReports: { report_id: string; status: string; deficiency_summary?: unknown; created_at?: string }[]
-  latestReadyReport: { report_id: string; status: string; deficiency_summary?: unknown } | null
-  detailedAssessment: { id: string; user_id: string; email: string | null; created_at: string } | null
-  progressLogs: ProgressLogRow[]
-  visibleNotesCount: number
 }
 
 export async function getNutritionistClientBundle(clientId: string): Promise<PortalClientBundle | null> {

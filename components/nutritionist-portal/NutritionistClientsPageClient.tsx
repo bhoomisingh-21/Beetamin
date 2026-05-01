@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import type { ClientRow } from '@/lib/booking-actions'
-import type { PortalClientListRow } from '@/lib/nutritionist-portal-actions'
+import type { PortalClientListRow } from '@/lib/nutritionist-types'
 
 function initials(name: string) {
   return name

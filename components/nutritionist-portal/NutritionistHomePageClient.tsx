@@ -14,9 +14,8 @@ import {
 } from 'lucide-react'
 import {
   completePortalAppointment,
-  type PortalHomePayload,
-  type SlotStatus,
 } from '@/lib/nutritionist-portal-actions'
+import type { PortalHomePayload, SlotStatus } from '@/lib/nutritionist-types'
 import { confirmAppointment, type AppointmentWithClient } from '@/lib/nutritionist-actions'
 
 function formatTime(t: string) {
