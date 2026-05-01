@@ -1,9 +1,12 @@
 'use server'
 
 import { auth } from '@clerk/nextjs/server'
+import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { markAppointmentCompleteById, type ClientRow, type ProgressLogRow } from '@/lib/booking-actions'
+import { isNutritionistEmail } from '@/lib/nutritionist-config'
 import { getOrCreateNutritionist, type AppointmentWithClient } from '@/lib/nutritionist-actions'
+import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
 import type {
   ClientDocumentDTO,
   NutritionistNoteDTO,
@@ -23,8 +26,24 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 async function portalNutritionist() {
   const { userId } = await auth()
-  if (!userId) return null
-  return getOrCreateNutritionist()
+  if (userId) {
+    try {
+      return await getOrCreateNutritionist()
+    } catch {
+      return null
+    }
+  }
+
+  const cookieStore = await cookies()
+  const token = cookieStore.get('nut-session')?.value
+  const secret = process.env.COOKIE_SECRET
+  if (!token || !secret) return null
+  const rawEmail = verifySignedCookie(token, secret)
+  const email = rawEmail?.toLowerCase().trim() ?? ''
+  if (!email || !isNutritionistEmail(email)) return null
+
+  const { data } = await supabaseAdmin.from('nutritionists').select('*').eq('email', email).maybeSingle()
+  return data ?? null
 }
 
 async function assertAppointmentOwnedByNutritionist(

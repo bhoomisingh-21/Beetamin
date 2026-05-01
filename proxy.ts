@@ -47,9 +47,10 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth()
   const nutEmail = await getVerifiedNutEmailFromCookies(req)
   if (!userId && nutEmail) {
-    // Allow: dashboard, sign-in (for logout redirect), and internal Next.js paths
+    // Allow: legacy dashboard, full portal (/nutritionist/*), sign-in, APIs
     const allowed =
       path.startsWith('/nutritionist-dashboard') ||
+      isNutritionistPortalRoute(path) ||
       path.startsWith('/sign-in') ||
       path.startsWith('/sign-up') ||
       path.startsWith('/nutritionist-update-password') ||

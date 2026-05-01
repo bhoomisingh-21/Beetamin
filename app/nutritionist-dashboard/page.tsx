@@ -1,12 +1,14 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar, CalendarCheck, Clock, Loader2, LogOut,
   XCircle, AlertTriangle, Settings, Leaf,
-  ClipboardCheck, TriangleAlert, CheckCircle,
+  ClipboardCheck,   TriangleAlert, CheckCircle,
+  Users, CalendarDays,
 } from 'lucide-react'
 import {
   getNutritionistDashboardByEmail,
@@ -280,6 +282,21 @@ export default function NutritionistDashboard() {
             <span className="text-white font-bold text-sm sm:text-base truncate">TheBeetamin</span>
           </a>
           <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+            <Link
+              href="/nutritionist/clients"
+              className="flex items-center gap-1.5 sm:gap-2 text-emerald-400 hover:text-emerald-300 text-xs sm:text-sm border border-emerald-500/30 rounded-xl px-3 sm:px-4 py-2 transition hover:border-emerald-500/50"
+            >
+              <Users size={14} className="shrink-0" />
+              <span>Clients</span>
+            </Link>
+            <Link
+              href="/nutritionist"
+              className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-white text-xs sm:text-sm border border-white/10 rounded-xl px-3 sm:px-4 py-2 transition hover:border-white/30"
+            >
+              <CalendarDays size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Full portal</span>
+              <span className="sm:hidden">Portal</span>
+            </Link>
             <button
               type="button"
               onClick={() => router.push('/nutritionist-dashboard/availability')}
@@ -316,7 +333,34 @@ export default function NutritionistDashboard() {
           <p className="text-gray-400 mt-1 text-sm sm:text-base">Start the day with managing new appointments</p>
         </motion.div>
 
-        {/* Stat cards — always 3 columns */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.05 }}
+          className="mb-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.07] px-4 py-4 sm:px-5"
+        >
+          <p className="text-white font-bold text-sm sm:text-base">Clinical workspace</p>
+          <p className="text-gray-400 text-xs sm:text-sm mt-1">
+            Open client profiles, session notes, and document uploads in the full portal (same Supabase login — no extra account).
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/nutritionist/clients"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-xs sm:text-sm font-bold text-black hover:bg-emerald-400 transition"
+            >
+              <Users size={16} />
+              All clients &amp; profiles
+            </Link>
+            <Link
+              href="/nutritionist/appointments"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-[#111820] px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:border-emerald-500/35 transition"
+            >
+              <Calendar size={16} />
+              Appointments &amp; history
+            </Link>
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -386,7 +430,12 @@ export default function NutritionistDashboard() {
                         {appt.clients.name.charAt(0)}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-white font-semibold text-sm truncate">{appt.clients.name}</p>
+                        <Link
+                          href={`/nutritionist/clients/${appt.clients.id}`}
+                          className="text-white font-semibold text-sm truncate hover:text-emerald-400 hover:underline"
+                        >
+                          {appt.clients.name}
+                        </Link>
                         <p className="text-gray-500 text-xs truncate">{appt.clients.phone}</p>
                       </div>
                     </div>
@@ -397,6 +446,12 @@ export default function NutritionistDashboard() {
                   <p className="text-white text-sm mt-2">{formatDate(appt.scheduled_date)}, {formatTime(appt.scheduled_time)}</p>
                   {appt.reason && <p className="text-gray-500 text-xs mt-1 line-clamp-2">{appt.reason}</p>}
                   <p className="text-gray-500 text-xs mt-1">Session #{appt.session_number}</p>
+                  <Link
+                    href={`/nutritionist/clients/${appt.clients.id}`}
+                    className="mt-3 flex w-full items-center justify-center rounded-xl border border-emerald-500/35 bg-emerald-500/5 px-4 py-2.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/15"
+                  >
+                    View client profile — notes &amp; files
+                  </Link>
                   {(appt.status === 'pending' || appt.status === 'confirmed') && (
                     <div className="flex flex-wrap gap-2 mt-3">
                       <button
@@ -446,7 +501,12 @@ export default function NutritionistDashboard() {
                             {appt.clients.name.charAt(0)}
                           </div>
                           <div>
-                            <p className="text-white font-medium text-sm">{appt.clients.name}</p>
+                            <Link
+                              href={`/nutritionist/clients/${appt.clients.id}`}
+                              className="text-white font-medium text-sm hover:text-emerald-400 hover:underline"
+                            >
+                              {appt.clients.name}
+                            </Link>
                             <p className="text-gray-500 text-xs">{appt.clients.phone}</p>
                           </div>
                         </div>
@@ -470,26 +530,36 @@ export default function NutritionistDashboard() {
                         <span className="text-gray-400 text-sm font-medium">#{appt.session_number}</span>
                       </td>
                       <td className="px-4 py-4">
-                        {(appt.status === 'pending' || appt.status === 'confirmed') && (
-                          <button
-                            onClick={() => setSelectedAppt(appt)}
-                            className={`text-sm font-bold rounded-xl px-4 py-2 transition ${
-                              appt.status === 'confirmed'
-                                ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 border border-blue-500/30'
-                                : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
-                            }`}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={`/nutritionist/clients/${appt.clients.id}`}
+                            className="text-sm font-bold rounded-xl px-4 py-2 text-emerald-400 border border-emerald-500/35 hover:bg-emerald-500/10 transition"
                           >
-                            {appt.status === 'confirmed' ? 'Complete' : 'Schedule'}
-                          </button>
-                        )}
-                        {appt.status === 'pending' && (
-                          <button
-                            onClick={() => setSelectedAppt(appt)}
-                            className="ml-2 text-sm font-bold rounded-xl px-4 py-2 text-red-400 hover:bg-red-500/10 border border-red-500/20 transition"
-                          >
-                            Cancel
-                          </button>
-                        )}
+                            Profile
+                          </Link>
+                          {(appt.status === 'pending' || appt.status === 'confirmed') && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAppt(appt)}
+                              className={`text-sm font-bold rounded-xl px-4 py-2 transition ${
+                                appt.status === 'confirmed'
+                                  ? 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 border border-blue-500/30'
+                                  : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
+                              }`}
+                            >
+                              {appt.status === 'confirmed' ? 'Complete' : 'Schedule'}
+                            </button>
+                          )}
+                          {appt.status === 'pending' && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAppt(appt)}
+                              className="text-sm font-bold rounded-xl px-4 py-2 text-red-400 hover:bg-red-500/10 border border-red-500/20 transition"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
