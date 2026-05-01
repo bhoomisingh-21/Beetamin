@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Suspense } from 'react'
 import { SignUp } from '@clerk/nextjs'
 import { useSearchParams } from 'next/navigation'
@@ -41,11 +42,25 @@ function PatientSignUpForm() {
         />
       </div>
 
-      <p className="mt-6 text-center text-gray-400 text-xs">
-        Nutritionist or staff?{' '}
-        <a href={signInHref} className="text-emerald-600 hover:text-emerald-700 font-medium">
-          Use the sign-in page
-        </a>
+      <p className="mt-6 text-center text-xs leading-relaxed text-gray-500">
+        <span className="font-medium text-gray-700">Authorized administrator?</span>{' '}
+        <Link href="/login?redirect=/admin" className="font-semibold text-emerald-600 hover:text-emerald-700">
+          Sign in as admin
+        </Link>
+        <span className="text-gray-300"> · </span>
+        <Link
+          href={`/sign-up?after=${encodeURIComponent('/admin')}`}
+          className="font-semibold text-emerald-600 hover:text-emerald-700"
+        >
+          Sign up as admin (redirects to dashboard)
+        </Link>
+        <span className="mt-2 block text-gray-400">
+          Nutritionist login: open{' '}
+          <Link href="/sign-in" className="font-medium text-emerald-600 hover:text-emerald-700">
+            Sign in
+          </Link>{' '}
+          and choose &quot;I&apos;m a Nutritionist&quot;.
+        </span>
       </p>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
@@ -73,11 +88,13 @@ export default function SignUpPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(16,185,129,0.08),transparent_70%)] pointer-events-none" />
 
         <div className="flex items-center justify-between relative z-10">
-          <a href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Leaf className="text-emerald-500" size={22} />
             <span className="text-white font-bold text-xl">TheBeetamin</span>
-          </a>
-          <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition">← Back to home</a>
+          </Link>
+          <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm transition">
+            ← Back to home
+          </Link>
         </div>
 
         <div className="relative z-10">
@@ -116,13 +133,13 @@ export default function SignUpPage() {
 
       <div className="flex min-h-screen w-full flex-1 flex-col items-center justify-start overflow-y-auto bg-white px-6 py-8 lg:justify-center lg:px-12 lg:py-12">
         <div className="mb-8 flex w-full max-w-[420px] items-center justify-between lg:hidden">
-          <a href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Leaf className="text-emerald-500" size={22} />
             <span className="text-lg font-bold text-gray-900">TheBeetamin</span>
-          </a>
-          <a href="/" className="text-muted-foreground text-sm hover:text-gray-600">
+          </Link>
+          <Link href="/" className="text-muted-foreground text-sm hover:text-gray-600">
             ← Back to home
-          </a>
+          </Link>
         </div>
 
         <div className="w-full max-w-[420px]">

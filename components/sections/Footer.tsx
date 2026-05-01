@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Camera, Play, Rss, MessageCircle } from "lucide-react";
 
@@ -124,7 +125,13 @@ const Footer: React.FC = () => {
             © 2026 Beetamin Health. All rights reserved.
           </p>
 
-          <div className="flex gap-4 sm:gap-6">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-6 md:justify-end">
+            <Link
+              href="/login?redirect=/admin"
+              className="text-slate-500 text-xs hover:text-emerald-400 transition-colors"
+            >
+              Admin login / sign up
+            </Link>
             {["Terms", "Privacy", "Cookies"].map((item) => (
               <a
                 key={item}

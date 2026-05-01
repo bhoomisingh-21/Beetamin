@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Suspense, useState } from 'react'
 import { SignIn, useUser } from '@clerk/nextjs'
 import { patientClerkAppearance } from '@/components/auth/patient-clerk-appearance'
@@ -404,11 +405,13 @@ export default function SignInPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(16,185,129,0.08),transparent_70%)] pointer-events-none" />
 
         <div className="flex items-center justify-between relative z-10">
-          <a href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Leaf className="text-emerald-500" size={22} />
             <span className="text-white font-bold text-xl">TheBeetamin</span>
-          </a>
-          <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition">← Back to home</a>
+          </Link>
+          <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm transition">
+            ← Back to home
+          </Link>
         </div>
 
         <div className="relative z-10">
@@ -449,13 +452,13 @@ export default function SignInPage() {
       <div className="flex min-h-screen w-full flex-1 flex-col items-center justify-start overflow-y-auto bg-white px-6 py-8 lg:justify-center lg:px-12 lg:py-12">
         {/* Mobile: logo + back (left panel is hidden below lg) */}
         <div className="mb-8 flex w-full max-w-[420px] items-center justify-between lg:hidden">
-          <a href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Leaf className="text-emerald-500" size={22} />
             <span className="text-lg font-bold text-gray-900">TheBeetamin</span>
-          </a>
-          <a href="/" className="text-muted-foreground text-sm hover:text-gray-600">
+          </Link>
+          <Link href="/" className="text-muted-foreground text-sm hover:text-gray-600">
             ← Back to home
-          </a>
+          </Link>
         </div>
 
         <div className="w-full max-w-[420px]">
@@ -505,6 +508,30 @@ export default function SignInPage() {
           ) : (
             <PatientClerkSignIn />
           )}
+        </div>
+
+        <div className="mx-auto mt-8 w-full max-w-[420px] border-t border-gray-100 pt-6 text-center">
+          <p className="text-xs font-medium text-gray-600">Administrator access</p>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm">
+            <Link
+              href="/login?redirect=/admin"
+              className="font-semibold text-emerald-600 underline-offset-2 hover:text-emerald-700 hover:underline"
+            >
+              Sign in as admin
+            </Link>
+            <span className="text-gray-300" aria-hidden>
+              ·
+            </span>
+            <Link
+              href={`/sign-up?after=${encodeURIComponent('/admin')}`}
+              className="font-semibold text-emerald-600 underline-offset-2 hover:text-emerald-700 hover:underline"
+            >
+              Sign up as admin
+            </Link>
+          </div>
+          <p className="mt-2 px-2 text-[11px] leading-snug text-gray-400">
+            Opens the admin dashboard after you authenticate with your authorized administrator email.
+          </p>
         </div>
       </div>
     </div>
