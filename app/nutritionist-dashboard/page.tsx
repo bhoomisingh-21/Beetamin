@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar, CalendarCheck, Clock, Loader2, LogOut,
   XCircle, AlertTriangle, Settings, Leaf,
-  ClipboardCheck,   TriangleAlert, CheckCircle,
-  Users, CalendarDays,
+  ClipboardCheck, TriangleAlert, CheckCircle,
+  Users, CalendarDays, Menu, X,
 } from 'lucide-react'
 import {
   getNutritionistDashboardByEmail,
@@ -164,6 +164,7 @@ export default function NutritionistDashboard() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
   const [selectedAppt, setSelectedAppt] = useState<AppointmentWithClient | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -268,6 +269,23 @@ export default function NutritionistDashboard() {
 
   const rows = allByTab[activeTab]
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [mobileMenuOpen])
+
+  const dashNavClass =
+    'flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-white transition hover:bg-white/[0.06]'
+
   // Nutritionist initials for avatar
   const initials = (dashboard.nutritionist?.name ?? nutEmail ?? 'N')
     .split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
@@ -277,49 +295,141 @@ export default function NutritionistDashboard() {
       {/* Top bar */}
       <div className="bg-[#0A0F14]/90 border-b border-white/5 px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <a href="#" className="flex items-center gap-2 min-w-0" onClick={(e) => e.preventDefault()}>
-            <Leaf className="text-emerald-500 shrink-0" size={18} />
-            <span className="text-white font-bold text-sm sm:text-base truncate">TheBeetamin</span>
-          </a>
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+          <Link
+            href="/nutritionist-dashboard"
+            className="flex min-h-[44px] min-w-0 shrink items-center gap-2 text-white hover:text-emerald-300"
+          >
+            <Leaf className="shrink-0 text-emerald-500" size={18} />
+            <span className="truncate font-bold text-sm sm:text-base">TheBeetamin</span>
+          </Link>
+
+          <div className="hidden flex-wrap items-center justify-end gap-2 md:flex md:gap-3">
             <Link
               href="/nutritionist/clients"
-              className="flex items-center gap-1.5 sm:gap-2 text-emerald-400 hover:text-emerald-300 text-xs sm:text-sm border border-emerald-500/30 rounded-xl px-3 sm:px-4 py-2 transition hover:border-emerald-500/50"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-xl border border-emerald-500/30 px-3 py-2 text-xs font-bold text-emerald-400 transition hover:border-emerald-500/50 hover:text-emerald-300 sm:text-sm sm:px-4"
             >
               <Users size={14} className="shrink-0" />
               <span>Clients</span>
             </Link>
             <Link
               href="/nutritionist"
-              className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-white text-xs sm:text-sm border border-white/10 rounded-xl px-3 sm:px-4 py-2 transition hover:border-white/30"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-gray-400 transition hover:border-white/30 hover:text-white sm:text-sm sm:px-4"
             >
               <CalendarDays size={14} className="shrink-0" />
               <span className="hidden sm:inline">Full portal</span>
               <span className="sm:hidden">Portal</span>
             </Link>
+            <Link
+              href="/nutritionist/appointments"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-gray-400 transition hover:border-white/30 hover:text-white sm:text-sm sm:px-4"
+            >
+              <Calendar size={14} className="shrink-0" />
+              <span className="hidden lg:inline">Appointments</span>
+              <span className="lg:hidden">Appts</span>
+            </Link>
             <button
               type="button"
               onClick={() => router.push('/nutritionist-dashboard/availability')}
-              className="flex items-center gap-1.5 sm:gap-2 text-gray-400 hover:text-white text-xs sm:text-sm border border-white/10 rounded-xl px-3 sm:px-4 py-2 transition hover:border-white/30"
+              className="flex items-center gap-1.5 sm:gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs text-gray-400 transition hover:border-white/30 hover:text-white sm:text-sm sm:px-4"
             >
               <Settings size={14} className="shrink-0" />
               <span>Availability</span>
             </button>
-            <span className="text-gray-500 text-xs hidden md:inline">Admin</span>
-            <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-black font-black text-xs shrink-0">
+            <span className="hidden text-xs text-gray-500 lg:inline">Admin</span>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-black">
               {initials}
             </div>
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs sm:text-sm font-bold transition"
+              className="flex min-h-[44px] items-center gap-1 rounded-xl px-2 text-xs font-bold text-red-400 transition hover:text-red-300 sm:text-sm"
             >
               <LogOut size={14} className="shrink-0" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
+
+          <div className="flex items-center gap-2 md:hidden">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-black text-black">
+              {initials}
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-red-500/25 text-red-400"
+              aria-label="Log out"
+            >
+              <LogOut size={18} />
+            </button>
+            <button
+              type="button"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-white/15 text-white hover:bg-white/[0.06]"
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              onClick={() => setMobileMenuOpen((o) => !o)}
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {mobileMenuOpen ? (
+        <div className="fixed inset-0 z-[60] md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            aria-label="Close menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <nav className="absolute inset-y-0 right-0 flex w-[min(100%,20rem)] flex-col border-l border-white/10 bg-[#0A0F14] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Navigate</span>
+              <button
+                type="button"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-gray-400 hover:bg-white/[0.06] hover:text-white"
+                aria-label="Close menu"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-3 pb-10">
+              <Link href="/nutritionist/clients" className={dashNavClass} onClick={() => setMobileMenuOpen(false)}>
+                <Users size={20} className="text-emerald-400" />
+                Clients &amp; profiles
+              </Link>
+              <Link href="/nutritionist" className={dashNavClass} onClick={() => setMobileMenuOpen(false)}>
+                <CalendarDays size={20} className="text-emerald-400" />
+                Full portal
+              </Link>
+              <Link href="/nutritionist/appointments" className={dashNavClass} onClick={() => setMobileMenuOpen(false)}>
+                <Calendar size={20} className="text-emerald-400" />
+                All appointments
+              </Link>
+              <button
+                type="button"
+                className={`${dashNavClass} w-full text-left`}
+                onClick={() => {
+                  setMobileMenuOpen(false)
+                  router.push('/nutritionist-dashboard/availability')
+                }}
+              >
+                <Settings size={20} className="text-emerald-400" />
+                Availability
+              </button>
+              <Link
+                href="/nutritionist-dashboard"
+                className={`${dashNavClass} mt-2 border-t border-white/10 pt-4 text-gray-400`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <CalendarCheck size={20} />
+                This dashboard (home)
+              </Link>
+            </div>
+          </nav>
+        </div>
+      ) : null}
 
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header */}

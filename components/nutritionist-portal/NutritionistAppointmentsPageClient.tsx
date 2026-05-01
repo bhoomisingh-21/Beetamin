@@ -3,7 +3,10 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { CheckCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, ChevronLeft, Loader2 } from 'lucide-react'
+
+const backBtn =
+  'inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/[0.08] bg-[#0F1623]/60 px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:border-emerald-500/25 hover:text-emerald-400'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { completePortalAppointment } from '@/lib/nutritionist-portal-actions'
 import { CompleteSessionModal } from '@/components/nutritionist-portal/CompleteSessionModal'
@@ -85,6 +88,17 @@ export default function NutritionistAppointmentsPageClient({
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+        <Link href="/nutritionist" className={backBtn}>
+          <ChevronLeft size={18} aria-hidden />
+          Portal home
+        </Link>
+        <Link href="/nutritionist-dashboard" className={backBtn}>
+          <ChevronLeft size={18} aria-hidden />
+          Quick dashboard
+        </Link>
+      </div>
+
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-[110] max-w-md -translate-x-1/2 rounded-xl border border-white/10 bg-[#0F1623] px-5 py-3 text-sm font-semibold text-[#F0F4F8] shadow-xl">
           {toast}
@@ -104,7 +118,7 @@ export default function NutritionistAppointmentsPageClient({
         <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
         {pills.map((p) => (
           <button
             key={p.key}

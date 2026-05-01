@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from 'react'
 import {
   Calendar,
   CheckCircle,
+  ChevronLeft,
   Clock,
   Loader2,
   Users,
@@ -117,6 +118,16 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
         onClose={() => setCompleteTarget(null)}
         onConfirm={submitComplete}
       />
+
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] pb-4">
+        <Link
+          href="/nutritionist-dashboard"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:bg-white/[0.04] hover:text-emerald-400"
+        >
+          <ChevronLeft size={18} aria-hidden />
+          Back to quick dashboard
+        </Link>
+      </div>
 
       <div>
         <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">Dashboard</h1>

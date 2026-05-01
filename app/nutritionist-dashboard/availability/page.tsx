@@ -104,10 +104,10 @@ export default function AvailabilityPage() {
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => router.push('/nutritionist-dashboard')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white text-sm transition mb-6"
+          className="mb-6 flex min-h-[48px] w-full max-w-xs items-center gap-2 rounded-xl px-2 text-gray-400 transition hover:text-white sm:w-auto sm:max-w-none"
         >
-          <ChevronLeft size={16} />
-          Back to Dashboard
+          <ChevronLeft size={18} aria-hidden />
+          Back to quick dashboard
         </button>
 
         <motion.div

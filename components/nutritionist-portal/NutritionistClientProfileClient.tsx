@@ -175,13 +175,29 @@ export default function NutritionistClientProfileClient({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/nutritionist/clients"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-[#8B9AB0] hover:text-emerald-400"
-      >
-        <ArrowLeft size={16} />
-        Back to clients
-      </Link>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <Link
+          href="/nutritionist/clients"
+          className="inline-flex min-h-[44px] max-w-fit items-center gap-2 rounded-xl border border-white/[0.08] bg-[#0F1623]/60 px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:border-emerald-500/25 hover:text-emerald-400"
+        >
+          <ArrowLeft size={18} aria-hidden />
+          Back to clients
+        </Link>
+        <Link
+          href="/nutritionist"
+          className="inline-flex min-h-[44px] max-w-fit items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:bg-white/[0.04] hover:text-emerald-400"
+        >
+          <ArrowLeft size={18} aria-hidden />
+          Portal home
+        </Link>
+        <Link
+          href="/nutritionist-dashboard"
+          className="inline-flex min-h-[44px] max-w-fit items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:bg-white/[0.04] hover:text-emerald-400"
+        >
+          <ArrowLeft size={18} aria-hidden />
+          Quick dashboard
+        </Link>
+      </div>
 
       {firstSessionEmpty && (
         <div className="rounded-2xl border border-transparent bg-gradient-to-br from-emerald-500/30 via-emerald-500/5 to-[#0F1623] p-[1px] shadow-[0_0_40px_rgba(16,185,129,0.08)]">

@@ -5,7 +5,9 @@ export default function NutritionistPortalLayout({ children }: { children: React
   return (
     <div className="min-h-screen bg-[#060910]">
       <NutritionistPortalNavbar />
-      <div className="mx-auto max-w-6xl px-4 py-8">{children}</div>
+      <div className="mx-auto flex max-w-6xl flex-col px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        {children}
+      </div>
     </div>
   )
 }
