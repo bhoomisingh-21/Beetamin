@@ -213,6 +213,20 @@ export default function NutritionistDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [mobileMenuOpen])
+
   async function handleLogout() {
     await supabase.auth.signOut()
     await fetch('/api/auth/nutritionist-session', { method: 'DELETE' })
@@ -268,20 +282,6 @@ export default function NutritionistDashboard() {
   ]
 
   const rows = allByTab[activeTab]
-
-  useEffect(() => {
-    if (!mobileMenuOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMobileMenuOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [mobileMenuOpen])
 
   const dashNavClass =
     'flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-white transition hover:bg-white/[0.06]'
