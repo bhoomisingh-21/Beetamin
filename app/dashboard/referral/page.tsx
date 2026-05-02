@@ -13,9 +13,9 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
+import { REFERRAL_REWARD_INR } from '@/lib/referral-constants'
 import {
   loadReferralDashboardAction,
-  REFERRAL_REWARD_INR,
   syncPendingReferralCodeAction,
   type ReferralStatsPayload,
 } from '@/lib/referral'

@@ -1,6 +1,6 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { triggerReferralReward } from './referral'
+import { triggerReferralReward } from './referral-trigger'
 import { supabaseAdmin } from './supabase-admin'
 import { Resend } from 'resend'
 
