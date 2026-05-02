@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { SignIn, useUser } from '@clerk/nextjs'
 import { patientClerkAppearance } from '@/components/auth/patient-clerk-appearance'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -329,6 +329,19 @@ function PatientClerkSignInContent() {
   const after = authReturnPath(sp.get('after'))
   const msg = sp.get('message')
   const signUpHref = `/sign-up?after=${encodeURIComponent(after)}`
+
+  const refParam = sp.get('ref')
+  useEffect(() => {
+    const raw = refParam?.trim()
+    if (raw) {
+      try {
+        sessionStorage.setItem('referralCode', raw.toUpperCase())
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [refParam])
+
   return (
     <>
       {msg === 'not-authorized' && (

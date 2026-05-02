@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Leaf, Menu, X } from "lucide-react";
+import { Leaf, Menu, Wallet, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser, SignOutButton } from "@clerk/nextjs";
+import Link from "next/link";
+import { getWalletBalanceClerk } from "@/lib/referral";
 
 // Clerk users are ALWAYS regular patients.
 // Nutritionists use Supabase auth and have their own dashboard navbar — not this component.
@@ -16,7 +18,26 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isLoaded, isSignedIn } = useUser();
+  const [walletBal, setWalletBal] = useState<number | null>(null);
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user?.id) {
+      setWalletBal(null);
+      return;
+    }
+    let cancelled = false;
+    getWalletBalanceClerk()
+      .then((w) => {
+        if (!cancelled) setWalletBal(w);
+      })
+      .catch(() => {
+        if (!cancelled) setWalletBal(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, user?.id]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -82,6 +103,16 @@ export default function Navbar() {
                   </>
                 ) : (
                   <>
+                    {walletBal != null && walletBal > 0 ? (
+                      <Link
+                        href="/dashboard/referral"
+                        className="hidden items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-400 md:inline-flex"
+                        title="Wallet balance"
+                      >
+                        <Wallet size={12} className="opacity-90" aria-hidden />
+                        ₹{walletBal}
+                      </Link>
+                    ) : null}
                     <a
                       href="/profile"
                       className="text-gray-300 hover:text-white text-sm font-medium transition"
@@ -184,6 +215,16 @@ export default function Navbar() {
 
                 {isLoaded && isSignedIn && (
                   <>
+                    {walletBal != null && walletBal > 0 ? (
+                      <Link
+                        href="/dashboard/referral"
+                        onClick={() => setMenuOpen(false)}
+                        className="mb-2 flex items-center justify-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-4 py-3 text-sm font-bold text-emerald-400"
+                      >
+                        <Wallet size={16} aria-hidden />
+                        ₹{walletBal} wallet
+                      </Link>
+                    ) : null}
                     <a
                       href="/profile"
                       onClick={() => setMenuOpen(false)}

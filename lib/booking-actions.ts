@@ -1,5 +1,6 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { triggerReferralReward } from './referral'
 import { supabaseAdmin } from './supabase-admin'
 import { Resend } from 'resend'
 
@@ -19,6 +20,11 @@ export type ClientRow = {
   sessions_used: number
   sessions_remaining: number
   status: 'active' | 'expired' | 'completed'
+  referral_code?: string | null
+  referred_by?: string | null
+  wallet_balance?: number | null
+  total_referrals?: number | null
+  successful_referrals?: number | null
   assessment_goal?: string
   assessment_result?: unknown
   assessment_meta?: unknown
@@ -630,6 +636,12 @@ export async function markAppointmentCompleteById(
 
   if (u2) {
     return { ok: false, reason: 'client_update_failed' }
+  }
+
+  try {
+    await triggerReferralReward(appointmentId, clients.id)
+  } catch (e) {
+    console.error('[markAppointmentCompleteById] referral reward', e)
   }
 
   return { ok: true }

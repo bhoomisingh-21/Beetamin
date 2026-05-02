@@ -418,20 +418,8 @@ export async function completeAppointment(appointmentId: string, notes: string) 
   const appt = await getAppointmentWithClient(appointmentId)
   if (!appt) throw new Error('Appointment not found')
 
-  await supabaseAdmin
-    .from('appointments')
-    .update({ status: 'completed', notes })
-    .eq('id', appointmentId)
-
-  const newUsed = appt.clients.sessions_used + 1
-  const newRemaining = appt.clients.sessions_remaining - 1
-
-  await supabaseAdmin
-    .from('clients')
-    .update({
-      sessions_used: newUsed,
-      sessions_remaining: newRemaining,
-      status: newRemaining === 0 ? 'completed' : 'active',
-    })
-    .eq('id', appt.clients.id)
+  const done = await markAppointmentCompleteById(appointmentId, notes ?? null)
+  if (!done.ok) {
+    throw new Error(done.reason === 'not_found' ? 'Appointment not found' : 'Could not complete appointment')
+  }
 }

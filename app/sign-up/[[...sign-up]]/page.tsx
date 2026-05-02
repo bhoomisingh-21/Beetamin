@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { SignUp } from '@clerk/nextjs'
 import { useSearchParams } from 'next/navigation'
 import { Leaf, CheckCircle, Shield, Clock, Star, Loader2 } from 'lucide-react'
@@ -24,6 +24,18 @@ function PatientSignUpForm() {
   const sp = useSearchParams()
   const after = authReturnPath(sp.get('after'))
   const signInHref = `/sign-in?after=${encodeURIComponent(after)}`
+
+  const refParam = sp.get('ref')
+  useEffect(() => {
+    const raw = refParam?.trim()
+    if (raw) {
+      try {
+        sessionStorage.setItem('referralCode', raw.toUpperCase())
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [refParam])
   return (
     <>
       <div className="mb-6">

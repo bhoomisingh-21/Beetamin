@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Sparkles, ClipboardList, ArrowRight, Activity, CheckCircle2, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -165,6 +166,20 @@ export default function Hero() {
               </a>
             </motion.div>
 
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.82 }}
+              className="mt-4 hidden text-center text-sm text-gray-400 lg:block"
+            >
+              <Link
+                href="/dashboard/referral"
+                className="text-emerald-400/90 underline-offset-2 transition hover:text-emerald-300 hover:underline"
+              >
+                🎁 Refer friends — earn ₹300 per successful booking
+              </Link>
+            </motion.p>
+
             {/* ✅ BADGES — horizontal scroll on mobile */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -234,6 +249,14 @@ export default function Hero() {
                 {isSignedIn ? "My Sessions" : "Book a Nutritionist"}
                 <ArrowRight size={16} />
               </a>
+              <p className="text-center text-xs text-gray-400">
+                <Link
+                  href="/dashboard/referral"
+                  className="text-emerald-400/90 underline-offset-2 hover:text-emerald-300 hover:underline"
+                >
+                  🎁 Refer friends — earn ₹300 per successful booking
+                </Link>
+              </p>
             </div>
 
             {/* FLOATING CARDS (DESKTOP ONLY — UNTOUCHED) */}

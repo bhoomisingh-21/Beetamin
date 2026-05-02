@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowRight, Coins } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -87,13 +88,13 @@ export default function ReferralBanner() {
             variants={textVariant}
             className="mt-5 sm:mt-6"
           >
-            <a
-              href="#"
+            <Link
+              href="/dashboard/referral"
               className="inline-flex items-center justify-center gap-2 bg-[#1D61FF] hover:bg-[#1650d9] text-white font-bold px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-[0_10px_20px_rgba(29,97,255,0.3)] text-xs sm:text-base"
             >
               Get Referral Link
               <ArrowRight size={16} />
-            </a>
+            </Link>
           </motion.div>
         </div>
 
