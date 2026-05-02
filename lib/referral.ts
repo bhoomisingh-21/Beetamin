@@ -1,23 +1,8 @@
 'use server'
 
 import { auth } from '@clerk/nextjs/server'
+import { randomSuffix, sanitizeCodePart } from '@/lib/referral-utils'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-
-function sanitizeCodePart(nameOrEmail: string): string {
-  return nameOrEmail.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8)
-}
-
-function randomSuffix(): string {
-  return Math.random().toString(36).slice(2, 6).toUpperCase()
-}
-
-/** Base code from display name + stable suffix from client UUID (not Clerk id). */
-export function generateReferralCode(name: string, clientUuid: string): string {
-  const cleanName = sanitizeCodePart(name || 'USER') || 'USER'
-  const compact = clientUuid.replace(/-/g, '').toUpperCase()
-  const suffix = compact.slice(-4)
-  return `${cleanName}${suffix}`.slice(0, 24)
-}
 
 async function persistReferralCode(clientId: string, desired: string): Promise<string> {
   let code = desired.slice(0, 24)
