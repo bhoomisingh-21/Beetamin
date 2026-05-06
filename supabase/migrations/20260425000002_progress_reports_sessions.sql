@@ -34,28 +34,48 @@ create table if not exists public.progress_logs (
   unique (user_id, logged_at)
 );
 
-create index if not exists progress_logs_user_id_logged_at_idx on public.progress_logs (user_id, logged_at desc);
+create index if not exists progress_logs_user_id_logged_at_idx 
+  on public.progress_logs (user_id, logged_at desc);
 
 alter table public.progress_logs enable row level security;
 
+-- DROP OLD POLICIES
 drop policy if exists "progress_logs_select_own" on public.progress_logs;
 drop policy if exists "progress_logs_insert_own" on public.progress_logs;
 drop policy if exists "progress_logs_update_own" on public.progress_logs;
 drop policy if exists "progress_logs_delete_own" on public.progress_logs;
 drop policy if exists "users can manage own logs" on public.progress_logs;
 
+-- ✅ FIXED POLICIES (explicit TEXT casting)
+
 create policy "progress_logs_select_own"
   on public.progress_logs for select
-  using (auth.jwt() is not null and (auth.jwt()->>'sub') is not null and (auth.jwt()->>'sub') = user_id);
+  using (
+    auth.jwt() is not null 
+    and (auth.jwt()->>'sub') is not null 
+    and (auth.jwt()->>'sub')::text = user_id::text
+  );
 
 create policy "progress_logs_insert_own"
   on public.progress_logs for insert
-  with check (auth.jwt() is not null and (auth.jwt()->>'sub') is not null and (auth.jwt()->>'sub') = user_id);
+  with check (
+    auth.jwt() is not null 
+    and (auth.jwt()->>'sub') is not null 
+    and (auth.jwt()->>'sub')::text = user_id::text
+  );
 
 create policy "progress_logs_update_own"
   on public.progress_logs for update
-  using (auth.jwt() is not null and (auth.jwt()->>'sub') is not null and (auth.jwt()->>'sub') = user_id);
+  using (
+    auth.jwt() is not null 
+    and (auth.jwt()->>'sub') is not null 
+    and (auth.jwt()->>'sub')::text = user_id::text
+  );
 
 create policy "progress_logs_delete_own"
   on public.progress_logs for delete
-  using (auth.jwt() is not null and (auth.jwt()->>'sub') is not null and (auth.jwt()->>'sub') = user_id);
+  using (
+    auth.jwt() is not null 
+    and (auth.jwt()->>'sub') is not null 
+    and (auth.jwt()->>'sub')::text = user_id::text
+  );
