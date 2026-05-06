@@ -22,21 +22,55 @@ export function sanitizeForPdf(raw: string | null | undefined): string {
     [/🌙\s*/g, ''],
     [/⏰\s*/g, ''],
     [/❌\s*/g, '[AVOID] '],
-    [/✅\s*/g, '[SWAP] '],
     [/⚕️\s*/g, ''],
     [/🔬/g, ''],
     [/🥗/g, ''],
-    [/💊/g, ''],
+    [/💊\s*/g, ''],
     [/🚫/g, ''],
-    [/📅/g, ''],
+    [/📅\s*/g, ''],
     [/👩‍⚕️/g, ''],
     [/👩\u200d⚕️/g, ''],
     [/🔒/g, ''],
     [/📄/g, ''],
     [/📧/g, ''],
     [/🎉/g, ''],
+    [/🟣\s*/g, ''],
+    [/🔍\s*/g, ''],
+    [/📊\s*/g, '[SCORE] '],
+    [/📈\s*/g, ''],
+    [/🛡️\s*/g, ''],
+    [/⚡\s*/g, ''],
+    [/🧠\s*/g, '>> '],
+    [/🎯\s*/g, '>> '],
+    [/🚨\s*/g, '! '],
+    [/🍽️\s*/g, ''],
   ]
   for (const [re, rep] of pairs) t = t.replace(re, rep)
+  t = t.replace(/\u25AA\s*/g, '- ')
+  t = t.replace(/▪\s*/g, '- ')
+
+  /** Severity badges → PDF-safe tags (Helvetica) */
+  t = t
+    .replace(/🔴\s*/g, '[HIGH] ')
+    .replace(/🟠\s*/g, '[MED] ')
+    .replace(/🟡\s*/g, '[MED] ')
+    .replace(/🟢\s*/g, '[OK] ')
+
+  /** Checklist ✔ vs food swap ✅ */
+  t = t
+    .split('\n')
+    .map((line) => {
+      const tr = line.trimStart()
+      if (/^✅\s*SWAP/i.test(tr)) {
+        return line.replace(/^\s*✅\s*/, '[SWAP] ')
+      }
+      if (!/^✅\s*SWAP/i.test(tr) && /^(✔|✅)\s/.test(tr)) {
+        return line.replace(/^\s*✅\s*/, '[x] ').replace(/^\s*✔\s*/, '[x] ')
+      }
+      return line
+    })
+    .join('\n')
+
   t = t.replace(/\[TRY INSTEAD\]/gi, '[SWAP]')
   t = t.replace(/\uFE0F/g, '')
   try {
@@ -525,40 +559,118 @@ function SectionHeader({ title, first }: { title: string; first?: boolean }) {
 }
 
 function renderDeficiencyBlocks(text: string) {
-  const parts = text.split(/(?=\n{0,2}DEFICIENCY NAME:)/i).map((p) => p.trim()).filter(Boolean)
-  return parts.map((block, idx) => (
-    <View key={idx} style={styles.deficiencyRow} wrap={false}>
-      <View style={styles.deficiencyStripe} />
-      <View style={styles.deficiencyCardInner}>
-        {block.split('\n').map((line, j) => {
-          const upper = line.toUpperCase()
-          if (
-            upper.startsWith('DEFICIENCY NAME:') ||
-            upper.startsWith('SEVERITY:') ||
-            upper.startsWith('YOUR SYMPTOMS') ||
-            upper.startsWith('WHY THIS IS HAPPENING') ||
-            upper.startsWith('WHAT THIS MEANS')
-          ) {
-            return (
-              <Text key={j} style={styles.fieldLabel}>
-                {line}
-              </Text>
-            )
-          }
-          return (
-            <Text key={j} style={styles.fieldValue}>
-              {line}
-            </Text>
-          )
-        })}
-      </View>
-    </View>
-  ))
+  const trimmed = text.trim()
+  const dn = /\n\s*DEFICIENCY NAME\s*:/i.exec(trimmed)
+  let snapshot = ''
+  let cardsText = trimmed
+  if (dn && dn.index > 0) {
+    snapshot = trimmed.slice(0, dn.index).trim()
+    cardsText = trimmed.slice(dn.index).trim()
+  }
+
+  const parts = cardsText
+    .split(/(?=\n{0,2}(?:DEFICIENCY NAME\s*:|###\s+))/i)
+    .map((p) => p.trim())
+    .filter(Boolean)
+
+  const renderLine = (line: string, j: number) => {
+    const raw = line
+    const t = raw.trim()
+    const upper = t.toUpperCase()
+    if (t.startsWith('###')) {
+      return (
+        <Text key={j} style={styles.fieldLabel}>
+          {raw.replace(/^#+\s*/, '').trim()}
+        </Text>
+      )
+    }
+    if (/^-{4,}$/.test(t) || /^={3,}$/.test(t)) {
+      return <View key={j} style={{ height: 10 }} />
+    }
+    if (
+      upper.startsWith('DEFICIENCY NAME:') ||
+      upper.startsWith('SEVERITY:') ||
+      (t.startsWith('[') && t.includes(']')) ||
+      /\[[^\]]+\]\s*[→>]\s*\[?(HIGH|MED|OK|LOW)/i.test(t) ||
+      upper.startsWith('YOUR SYMPTOMS') ||
+      upper.startsWith('WHY THIS IS HAPPENING') ||
+      upper.startsWith('WHAT THIS MEANS') ||
+      upper.startsWith('• WHAT') ||
+      /^-\s*WHAT\b/i.test(t) ||
+      upper.startsWith('• WHY') ||
+      /^-\s*WHY\b/i.test(t) ||
+      upper.startsWith('• SYMPTOMS') ||
+      /^-\s*SYMPTOMS/i.test(t) ||
+      upper.startsWith('• RISK') ||
+      /^-\s*RISK\b/i.test(t) ||
+      upper.startsWith('RISK LEVEL') ||
+      upper.startsWith('SNAPSHOT')
+    ) {
+      return (
+        <Text key={j} style={styles.fieldLabel}>
+          {raw}
+        </Text>
+      )
+    }
+    return (
+      <Text key={j} style={styles.fieldValue}>
+        {raw}
+      </Text>
+    )
+  }
+
+  return (
+    <>
+      {snapshot ? (
+        <View
+          wrap={false}
+          style={{
+            marginBottom: 16,
+            padding: 12,
+            backgroundColor: ROW_BG,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderStyle: 'solid',
+            borderColor: '#dddddd',
+          }}
+        >
+          <Text style={{ ...styles.fieldLabel, marginBottom: 8 }}>DEFICIENCY SNAPSHOT</Text>
+          {snapshot.split('\n').map((line, j) => renderLine(line, j))}
+        </View>
+      ) : null}
+      {parts.map((block, idx) => (
+        <View key={idx} style={styles.deficiencyRow} wrap={false}>
+          <View style={styles.deficiencyStripe} />
+          <View style={styles.deficiencyCardInner}>
+            {block.split('\n').map((line, j) => renderLine(line, j))}
+          </View>
+        </View>
+      ))}
+    </>
+  )
 }
 
 function renderMealPlanBlocks(text: string) {
-  const days = text.split(/(?=\n{0,2}DAY\s+\d)/i).map((d) => d.trim()).filter(Boolean)
-  return days.map((dayBlock, idx) => {
+  const chunkList = text.split(/(?=\n{0,2}DAY\s+\d)/i).map((d) => d.trim()).filter(Boolean)
+  const hasIntro = chunkList.length > 0 && !/^DAY\s+\d/i.test(chunkList[0])
+  const introText = hasIntro ? chunkList[0] : null
+  const days = hasIntro ? chunkList.slice(1) : chunkList
+
+  const introEl = introText ? (
+    <View key="meal-intro" style={{ marginBottom: 14 }}>
+      {introText.split('\n').map((line, i) =>
+        line.trim() ? (
+          <Text key={i} style={styles.mealBody}>
+            {line}
+          </Text>
+        ) : (
+          <View key={i} style={{ height: 6 }} />
+        ),
+      )}
+    </View>
+  ) : null
+
+  const dayNodes = days.map((dayBlock, idx) => {
     const lines = dayBlock.split('\n')
     const firstLine = lines[0] || ''
     const rest = lines.slice(1).join('\n')
@@ -589,12 +701,28 @@ function renderMealPlanBlocks(text: string) {
       </View>
     )
   })
+
+  return (
+    <>
+      {introEl}
+      {dayNodes}
+    </>
+  )
 }
 
 function renderSupplementCardLines(lines: string[]) {
   const nodes: React.ReactNode[] = []
   lines.forEach((line, j) => {
+    const t = line.trim()
     const u = line.toUpperCase()
+    if (t.startsWith('[') && t.includes(']') && !u.startsWith('[AVOID]')) {
+      nodes.push(
+        <Text key={j} style={styles.supplementFieldLabel}>
+          {line}
+        </Text>,
+      )
+      return
+    }
     if (
       u.startsWith('SUPPLEMENT:') ||
       u.startsWith('WHY YOU NEED') ||

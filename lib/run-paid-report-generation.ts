@@ -8,6 +8,9 @@ import { sendRecoveryReportEmail } from '@/lib/send-report-email'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const GROQ_APPENDIX = `
+FORMAT ENFORCEMENT (READ FIRST):
+Everything you output inside each JSON string must look like a **dashboard**: ---- dividers, bullets, emoji section headers where the system prompt lists them, 2–3 lines max per sub-block. If it reads like an article, regenerate mentally before answering.
+
 SUPPLEMENT SECTION RULES — VERY IMPORTANT:
 Recommend MAXIMUM 2 supplements only.
 Pick only the top 2 most critical deficiencies to supplement for.
@@ -40,24 +43,8 @@ list the patient's ACTUAL specific reported symptoms word for word — not gener
 For example instead of "skin and hair issues" write "your reported hair fall, brittle nails, and dry skin".
 Make it clear you are talking about THEIR specific answers.
 
-PREMIUM JSON FIELDS (REQUIRED NON-EMPTY STRINGS — every key must contain real prose, never placeholders):
-Include these keys in your JSON WITH the seven main sections:
-
-premiumValueStatement:
-Write 4–6 sentences for an Indian wellness buyer. Explain why this ₹39 Beetamin report is more valuable than a free ChatGPT answer: merges FREE + DETAILED assessments, structured sections, actionable 7-day plan, numbered routine, timeline, supplements limited to what's safe, Indian foods/brands — without naming ChatGPT explicitly (say "generic online tools").
-
-healthScoreSummary:
-Start with OVERALL DEFICIENCY RISK SCORE: X/100 using the patient's score from freeDeficiencyAssessment when present; otherwise estimate from analysis (state that it is clinician-style estimate).
-Then add 5 pillar lines (Energy & Vitality, Skin Hair Nails, Immunity & Recovery, Cognitive Clarity, Sleep & Hormones) each scored 0–100 with ONE short textual progress bar made of █ and ░ (e.g. ████████░░ 82/100) and ONE sentence tying that pillar to THEIR answers (sun, diet_type, symptoms, sleep_quality, digestion, etc.).
-End with WHY THIS SCORE RANK vs risk band (Healthy / Moderate / High) and what it implies for their 90-day plan.
-
-smartInsights:
-Exactly 5 bullet lines. Each bullet starts "- ". Each MUST connect TWO concrete facts from the JSON patient data (e.g. vegetarian + low sun exposure) to one mechanism or meal-plan priority. No fluffy generic wellness quotes.
-
-ninetyDayTimeline:
-Four labelled blocks ONLY:
-Weeks 1–2 | Weeks 3–4 | Weeks 5–8 | Weeks 9–12
-Under each heading, exactly 3 short bullet sentences predicting realistic improvements tied to THEIR named deficiencies — not boilerplate longevity claims.
+PREMIUM JSON KEYS (premiumValueStatement, healthScoreSummary, smartInsights, ninetyDayTimeline):
+Follow the **exact dashboard templates** spelled out under "FINAL MACHINE OUTPUT RULE" in the system prompt (cover panel, health score dash, 5 insights, 4 staged timeline panels). Same rules: bullets, ---- lines, short blocks only — never paragraphs.
 `.trim()
 
 function getGroq() {
