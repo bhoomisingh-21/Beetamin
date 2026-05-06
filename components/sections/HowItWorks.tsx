@@ -39,7 +39,8 @@ const PILLS = ["Calorie Quality Index", "Sleep Analytics"];
 export default function TransformationJourney() {
   return (
     <section
-      className="bg-[#05080b] py-14 sm:py-20 px-4 sm:px-6 font-sans relative overflow-x-hidden"
+      id="how-it-works"
+      className="scroll-mt-28 bg-[#05080b] py-14 sm:py-20 px-4 sm:px-6 font-sans relative overflow-x-hidden"
       style={{
         backgroundImage: `url("${HEX_URL}")`,
         backgroundSize: "80px 92px",

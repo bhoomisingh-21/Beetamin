@@ -11,6 +11,7 @@ import { getWalletBalanceClerk } from "@/lib/referral";
 // Nutritionists use Supabase auth and have their own dashboard navbar — not this component.
 const NAV_LINKS = [
   { label: "How it Works", href: "#how-it-works" },
+  { label: "Why Us", href: "#comparison" },
   { label: "Our Experts", href: "#experts" },
   { label: "Pricing", href: "#pricing" },
 ];
@@ -85,7 +86,7 @@ export default function Navbar() {
                   strokeWidth={2}
                 />
               </span>
-              <span className="bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-base font-semibold tracking-tight text-transparent md:text-lg">
+              <span className="bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-[17px] font-semibold tracking-tight text-transparent md:text-xl">
                 TheBeetamin
               </span>
             </a>
@@ -96,7 +97,7 @@ export default function Navbar() {
                 <li key={href}>
                   <a
                     href={href}
-                    className="group relative rounded-full px-4 py-2 text-[13px] font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
+                    className="group relative rounded-full px-4 py-2 text-sm font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
                   >
                     <span className="relative z-10">{label}</span>
                     <span
@@ -116,13 +117,13 @@ export default function Navbar() {
                     <>
                       <a
                         href="/sign-in"
-                        className="rounded-full px-4 py-2 text-[13px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
+                        className="rounded-full px-4 py-2 text-sm font-medium text-zinc-400 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
                       >
                         Log In
                       </a>
                       <a
                         href="/sign-up"
-                        className="relative overflow-hidden rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2 text-[13px] font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_24px_-4px_rgba(16,185,129,0.45)] transition-[transform,box-shadow,filter] duration-200 hover:from-emerald-300 hover:to-emerald-500 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_12px_32px_-4px_rgba(16,185,129,0.55)] active:translate-y-[0.5px]"
+                        className="relative overflow-hidden rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2 text-sm font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_24px_-4px_rgba(16,185,129,0.45)] transition-[transform,box-shadow,filter] duration-200 hover:from-emerald-300 hover:to-emerald-500 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_12px_32px_-4px_rgba(16,185,129,0.55)] active:translate-y-[0.5px]"
                       >
                         Sign Up
                       </a>
@@ -132,7 +133,7 @@ export default function Navbar() {
                       {walletBal != null && walletBal > 0 ? (
                         <Link
                           href="/dashboard/referral"
-                          className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold tabular-nums text-emerald-300 ring-1 ring-emerald-400/15 backdrop-blur-sm transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/15 md:inline-flex"
+                          className="hidden items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[13px] font-semibold tabular-nums text-emerald-300 ring-1 ring-emerald-400/15 backdrop-blur-sm transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/15 md:inline-flex"
                           title="Wallet balance"
                         >
                           <Wallet size={12} className="opacity-90" aria-hidden />
@@ -141,13 +142,13 @@ export default function Navbar() {
                       ) : null}
                       <a
                         href="/profile"
-                        className="rounded-full px-4 py-2 text-[13px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
+                        className="rounded-full px-4 py-2 text-sm font-medium text-zinc-400 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
                       >
                         My Profile
                       </a>
                       <a
                         href="/sessions"
-                        className="relative overflow-hidden rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2 text-[13px] font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_24px_-4px_rgba(16,185,129,0.45)] transition-[transform,box-shadow,filter] duration-200 hover:from-emerald-300 hover:to-emerald-500 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_12px_32px_-4px_rgba(16,185,129,0.55)] active:translate-y-[0.5px]"
+                        className="relative overflow-hidden rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 px-5 py-2 text-sm font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_24px_-4px_rgba(16,185,129,0.45)] transition-[transform,box-shadow,filter] duration-200 hover:from-emerald-300 hover:to-emerald-500 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_12px_32px_-4px_rgba(16,185,129,0.55)] active:translate-y-[0.5px]"
                       >
                         My Sessions
                       </a>
@@ -189,7 +190,7 @@ export default function Navbar() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-b from-emerald-500/15 to-emerald-600/5 ring-1 ring-emerald-400/20">
                   <Leaf className="text-emerald-400" size={18} strokeWidth={2} />
                 </span>
-                <span className="bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-base font-semibold tracking-tight text-transparent">
+                <span className="bg-gradient-to-r from-white via-white to-zinc-400 bg-clip-text text-[17px] font-semibold tracking-tight text-transparent">
                   TheBeetamin
                 </span>
               </a>
@@ -215,7 +216,7 @@ export default function Navbar() {
                     <a
                       href={href}
                       onClick={() => setMenuOpen(false)}
-                      className="block border-b border-white/[0.06] py-4 text-center text-lg font-semibold tracking-tight text-white transition-colors hover:text-emerald-300"
+                      className="block border-b border-white/[0.06] py-4 text-center text-xl font-semibold tracking-tight text-white transition-colors hover:text-emerald-300"
                     >
                       {label}
                     </a>
@@ -234,14 +235,14 @@ export default function Navbar() {
                     <a
                       href="/sign-in"
                       onClick={() => setMenuOpen(false)}
-                      className="block w-full rounded-2xl border border-white/[0.12] bg-white/[0.03] px-6 py-4 text-center text-base font-semibold text-white ring-1 ring-white/[0.04] transition-colors hover:border-white/20 hover:bg-white/[0.06]"
+                      className="block w-full rounded-2xl border border-white/[0.12] bg-white/[0.03] px-6 py-4 text-center text-[17px] font-semibold text-white ring-1 ring-white/[0.04] transition-colors hover:border-white/20 hover:bg-white/[0.06]"
                     >
                       Log In
                     </a>
                     <a
                       href="/sign-up"
                       onClick={() => setMenuOpen(false)}
-                      className="block w-full rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 px-6 py-4 text-center text-base font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_12px_40px_-8px_rgba(16,185,129,0.55)] transition-[filter,box-shadow] hover:from-emerald-300 hover:to-emerald-500"
+                      className="block w-full rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 px-6 py-4 text-center text-[17px] font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_12px_40px_-8px_rgba(16,185,129,0.55)] transition-[filter,box-shadow] hover:from-emerald-300 hover:to-emerald-500"
                     >
                       Sign Up
                     </a>
@@ -254,7 +255,7 @@ export default function Navbar() {
                       <Link
                         href="/dashboard/referral"
                         onClick={() => setMenuOpen(false)}
-                        className="mb-1 flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3.5 text-sm font-semibold tabular-nums text-emerald-300 ring-1 ring-emerald-400/15"
+                        className="mb-1 flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3.5 text-[15px] font-semibold tabular-nums text-emerald-300 ring-1 ring-emerald-400/15"
                       >
                         <Wallet size={16} aria-hidden />
                         ₹{walletBal} wallet
@@ -263,21 +264,21 @@ export default function Navbar() {
                     <a
                       href="/profile"
                       onClick={() => setMenuOpen(false)}
-                      className="block w-full rounded-2xl border border-white/[0.12] bg-white/[0.03] px-6 py-4 text-center text-base font-semibold text-white ring-1 ring-white/[0.04] transition-colors hover:border-white/20 hover:bg-white/[0.06]"
+                      className="block w-full rounded-2xl border border-white/[0.12] bg-white/[0.03] px-6 py-4 text-center text-[17px] font-semibold text-white ring-1 ring-white/[0.04] transition-colors hover:border-white/20 hover:bg-white/[0.06]"
                     >
                       My Profile
                     </a>
                     <a
                       href="/sessions"
                       onClick={() => setMenuOpen(false)}
-                      className="block w-full rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 px-6 py-4 text-center text-base font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_12px_40px_-8px_rgba(16,185,129,0.55)] transition-[filter,box-shadow] hover:from-emerald-300 hover:to-emerald-500"
+                      className="block w-full rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 px-6 py-4 text-center text-[17px] font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_12px_40px_-8px_rgba(16,185,129,0.55)] transition-[filter,box-shadow] hover:from-emerald-300 hover:to-emerald-500"
                     >
                       My Sessions
                     </a>
                     <SignOutButton redirectUrl="/">
                       <button
                         onClick={() => setMenuOpen(false)}
-                        className="w-full py-3 text-center text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-200"
+                        className="w-full py-3 text-center text-[15px] font-medium text-zinc-500 transition-colors hover:text-zinc-200"
                       >
                         Log Out
                       </button>

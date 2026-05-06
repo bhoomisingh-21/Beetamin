@@ -46,7 +46,7 @@ export default function Comparison() {
   const { isSignedIn } = useUser()
 
   return (
-    <section className="relative bg-white py-14 sm:py-24 overflow-x-hidden">
+    <section id="comparison" className="relative bg-white py-14 sm:py-24 overflow-x-hidden scroll-mt-28">
 
       {/* Background */}
       <div
