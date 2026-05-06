@@ -73,11 +73,13 @@ export default function DeficiencyRouteClient({
         subtitle="Paid report and free quiz results"
       />
 
-      {hasPaid && <DeficiencyReportSection paidReports={paidReports} showHeading={false} />}
-
       {hasFree && freeEffective != null && (
-        <div className={hasPaid ? 'mt-12' : ''}>
-          <FreeAssessmentDeficiencyBlock result={freeEffective} />
+        <FreeAssessmentDeficiencyBlock result={freeEffective} />
+      )}
+
+      {hasPaid && (
+        <div className={hasFree ? 'mt-12' : ''}>
+          <DeficiencyReportSection paidReports={paidReports} showHeading={false} />
         </div>
       )}
 
