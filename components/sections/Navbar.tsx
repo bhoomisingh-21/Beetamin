@@ -10,7 +10,7 @@ import { getWalletBalanceClerk } from "@/lib/referral";
 // Clerk users are ALWAYS regular patients.
 // Nutritionists use Supabase auth and have their own dashboard navbar — not this component.
 const NAV_LINKS = [
-  { label: "How it Works", href: "#how-it-works" },
+  { label: "How it works", href: "#how-it-works" },
   { label: "Why Us", href: "#comparison" },
   { label: "Our Experts", href: "#experts" },
   { label: "Pricing", href: "#pricing" },
@@ -97,7 +97,7 @@ export default function Navbar() {
                 <li key={href}>
                   <a
                     href={href}
-                    className="group relative rounded-full px-4 py-2 text-sm font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
+                    className="group relative rounded-full px-4 py-2 text-base font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
                   >
                     <span className="relative z-10">{label}</span>
                     <span
