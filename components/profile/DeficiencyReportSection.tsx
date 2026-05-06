@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { FlaskConical, Pill } from 'lucide-react'
 import { type PaidReportSummary } from '@/lib/booking-actions'
 import { parseDeficiencySummaryPayload, type DeficiencyItem } from '@/lib/deficiency-profile-parse'
@@ -31,12 +32,14 @@ type Props = {
   showHeading?: boolean
 }
 
-/** Paid report only — status === 'ready' */
+/** Paid report — status ready or generated (completed) */
 export function DeficiencyReportSection({
   paidReports,
   showHeading = true,
 }: Props) {
-  const latestPaid = paidReports.find((r) => r.status === 'ready')
+  const latestPaid = paidReports.find(
+    (r) => r.status === 'ready' || r.status === 'generated',
+  )
 
   const parsed = latestPaid
     ? parseDeficiencySummaryPayload(latestPaid.deficiency_summary)
@@ -63,8 +66,8 @@ export function DeficiencyReportSection({
       )}
 
       <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/90">
-        From your paid report ·{' '}
-        {latestPaid.created_at ? formatReportHeadingDate(latestPaid.created_at) : '—'}
+        Paid Report
+        {latestPaid.created_at ? ` · ${formatReportHeadingDate(latestPaid.created_at)}` : ''}
       </p>
 
       <>
@@ -144,6 +147,13 @@ export function DeficiencyReportSection({
             )
           })}
         </div>
+
+        <Link
+          href={`/report/${encodeURIComponent(latestPaid.report_id)}`}
+          className="flex w-full items-center justify-center rounded-xl border-2 border-emerald-500/50 bg-transparent py-4 text-sm font-bold text-emerald-400 transition hover:border-emerald-400 hover:bg-emerald-500/10"
+        >
+          View Entire Result
+        </Link>
       </>
     </section>
   )

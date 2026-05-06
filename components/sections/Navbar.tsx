@@ -57,7 +57,7 @@ export default function Navbar() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="sticky top-0 z-50 overflow-x-hidden"
+        className="relative z-50 overflow-x-hidden"
         aria-label="Primary"
       >
         <div className="mx-auto max-w-7xl px-3 pt-3 pb-2 sm:px-4 md:px-6 lg:px-8 md:pt-4 md:pb-3">

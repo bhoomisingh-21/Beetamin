@@ -11,5 +11,10 @@ export default async function DeficiencyProfilePage() {
 
   const bundle = await getDashboardBundle(user.id)
 
-  return <DeficiencyRouteClient paidReports={bundle.paidReports} />
+  return (
+    <DeficiencyRouteClient
+      paidReports={bundle.paidReports}
+      initialFreeAssessmentFromProfile={bundle.client?.assessment_result ?? null}
+    />
+  )
 }

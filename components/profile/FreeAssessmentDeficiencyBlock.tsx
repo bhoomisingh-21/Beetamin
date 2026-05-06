@@ -74,7 +74,7 @@ export function FreeAssessmentDeficiencyBlock({ result }: Props) {
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="text-xl font-black text-[#F0F4F8]">From Your Free Assessment</h2>
+        <h2 className="text-xl font-black text-[#F0F4F8]">Free Report</h2>
         <p className={`mt-1 text-sm ${textSecondary}`}>Based on your answers from the quiz</p>
         <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
       </div>
@@ -160,7 +160,7 @@ export function FreeAssessmentDeficiencyBlock({ result }: Props) {
         href="/assessment/results"
         className="flex w-full items-center justify-center rounded-xl border-2 border-emerald-500/50 bg-transparent py-4 text-sm font-bold text-emerald-400 transition hover:border-emerald-400 hover:bg-emerald-500/10"
       >
-        View Full Free Assessment Results →
+        View Entire Result
       </Link>
     </section>
   )

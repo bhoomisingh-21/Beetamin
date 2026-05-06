@@ -11,30 +11,52 @@ import { hasFreeAssessmentContent } from '@/components/profile/deficiency-free-s
 import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
 import type { PaidReportSummary } from '@/lib/booking-actions'
 
+function paidReportIsComplete(status: string) {
+  return status === 'ready' || status === 'generated'
+}
+
 type Props = {
   paidReports: PaidReportSummary[]
+  initialFreeAssessmentFromProfile?: unknown | null
 }
 
 const BANNER =
   'https://images.unsplash.com/photo-1576086213369-97a306d36557?w=1200&q=80'
 
-export default function DeficiencyRouteClient({ paidReports }: Props) {
+export default function DeficiencyRouteClient({
+  paidReports,
+  initialFreeAssessmentFromProfile = null,
+}: Props) {
   const [freeHydrated, setFreeHydrated] = useState(false)
-  const [freeAssessment, setFreeAssessment] = useState<unknown | null>(null)
+  const [freeFromLocal, setFreeFromLocal] = useState<unknown | null>(null)
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem('assessmentResult')
-      setFreeAssessment(raw ? JSON.parse(raw) : null)
+      setFreeFromLocal(raw ? JSON.parse(raw) : null)
     } catch {
-      setFreeAssessment(null)
+      setFreeFromLocal(null)
     } finally {
       setFreeHydrated(true)
     }
   }, [])
 
-  const hasPaid = paidReports.some((r) => r.status === 'ready')
-  const hasFree = hasFreeAssessmentContent(freeAssessment)
+  const freeEffective = (() => {
+    if (!freeHydrated) {
+      if (hasFreeAssessmentContent(initialFreeAssessmentFromProfile)) {
+        return initialFreeAssessmentFromProfile
+      }
+      return null
+    }
+    if (hasFreeAssessmentContent(freeFromLocal)) return freeFromLocal
+    if (hasFreeAssessmentContent(initialFreeAssessmentFromProfile)) {
+      return initialFreeAssessmentFromProfile
+    }
+    return null
+  })()
+
+  const hasPaid = paidReports.some((r) => paidReportIsComplete(r.status))
+  const hasFree = hasFreeAssessmentContent(freeEffective)
   const showEmpty = freeHydrated && !hasPaid && !hasFree
 
   return (
@@ -53,9 +75,9 @@ export default function DeficiencyRouteClient({ paidReports }: Props) {
 
       {hasPaid && <DeficiencyReportSection paidReports={paidReports} showHeading={false} />}
 
-      {freeHydrated && hasFree && (
+      {hasFree && freeEffective != null && (
         <div className={hasPaid ? 'mt-12' : ''}>
-          <FreeAssessmentDeficiencyBlock result={freeAssessment} />
+          <FreeAssessmentDeficiencyBlock result={freeEffective} />
         </div>
       )}
 
