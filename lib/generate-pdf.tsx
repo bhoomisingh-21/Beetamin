@@ -49,7 +49,7 @@ export function sanitizeForPdf(raw: string | null | undefined): string {
 }
 
 function sanitizeSections(s: RecoveryReportSections): RecoveryReportSections {
-  return {
+  const core = {
     deficiencyAnalysis: sanitizeForPdf(s?.deficiencyAnalysis),
     mealPlan: sanitizeForPdf(s?.mealPlan),
     supplements: sanitizeForPdf(s?.supplements),
@@ -58,6 +58,13 @@ function sanitizeSections(s: RecoveryReportSections): RecoveryReportSections {
     doctorNote: sanitizeForPdf(s?.doctorNote),
     disclaimer: sanitizeForPdf(s?.disclaimer),
   }
+  const extra: Partial<RecoveryReportSections> = {}
+  if (s.healthScoreSummary?.trim()) extra.healthScoreSummary = sanitizeForPdf(s.healthScoreSummary)
+  if (s.smartInsights?.trim()) extra.smartInsights = sanitizeForPdf(s.smartInsights)
+  if (s.ninetyDayTimeline?.trim()) extra.ninetyDayTimeline = sanitizeForPdf(s.ninetyDayTimeline)
+  if (s.premiumValueStatement?.trim())
+    extra.premiumValueStatement = sanitizeForPdf(s.premiumValueStatement)
+  return { ...core, ...extra }
 }
 
 const styles = StyleSheet.create({
@@ -407,6 +414,45 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     lineHeight: 1.5,
   },
+  coverScoreBox: {
+    marginTop: 14,
+    padding: 14,
+    backgroundColor: LIGHT_GREEN,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: '#c3e6cb',
+    borderRadius: 6,
+    width: '100%',
+  },
+  coverScoreLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: GREEN,
+    marginBottom: 4,
+  },
+  coverScoreBig: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: GREEN,
+    lineHeight: 1.2,
+  },
+  coverUrgency: {
+    marginTop: 10,
+    fontSize: 9.5,
+    color: TEXT,
+    lineHeight: 1.45,
+    fontStyle: 'italic',
+  },
+  snapshotBlock: {
+    marginBottom: 12,
+    paddingVertical: 4,
+  },
+  snapshotHeading: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: GREEN,
+    marginBottom: 6,
+  },
   footerBar: {
     marginTop: 20,
     borderTopWidth: 1,
@@ -447,6 +493,26 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
   },
 })
+
+function SnapshotBody({ heading, text }: { heading: string; text: string }) {
+  const t = text.trim()
+  if (!t) return null
+  const paras = t.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
+  return (
+    <View style={styles.snapshotBlock}>
+      <Text style={styles.snapshotHeading}>{heading}</Text>
+      {paras.map((p, i) => (
+        <View key={i} wrap={false} style={{ marginBottom: 6 }}>
+          {p.split('\n').map((line, j) => (
+            <Text key={j} style={styles.bodyText}>
+              {line}
+            </Text>
+          ))}
+        </View>
+      ))}
+    </View>
+  )
+}
 
 function SectionHeader({ title, first }: { title: string; first?: boolean }) {
   return (
@@ -652,10 +718,25 @@ type DocProps = {
   reportId: string
   preparedOn: string
   sections: RecoveryReportSections
+  deficiencyScore?: number | null
+  urgencyPreview?: string | null
 }
 
-function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: DocProps) {
+function RecoveryPlanDocument({
+  patientName,
+  reportId,
+  preparedOn,
+  sections,
+  deficiencyScore,
+  urgencyPreview,
+}: DocProps) {
   const headerCenter = `Personalised Recovery Report — ${patientName}`
+  const showSnapshot = Boolean(
+    sections.premiumValueStatement?.trim() ||
+      sections.healthScoreSummary?.trim() ||
+      sections.smartInsights?.trim() ||
+      sections.ninetyDayTimeline?.trim(),
+  )
 
   return (
     <Document title={`Recovery Plan — ${reportId}`} author="The Beetamin" subject="Wellness report">
@@ -684,6 +765,17 @@ function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: D
           </Text>
           <Text style={styles.confidential}>CONFIDENTIAL</Text>
         </View>
+        {deficiencyScore != null && !Number.isNaN(deficiencyScore) ? (
+          <View style={styles.coverScoreBox} wrap={false}>
+            <Text style={styles.coverScoreLabel}>Deficiency risk score</Text>
+            <Text style={styles.coverScoreBig}>
+              {deficiencyScore}
+              {' / '}
+              100
+            </Text>
+            {urgencyPreview ? <Text style={styles.coverUrgency}>{urgencyPreview}</Text> : null}
+          </View>
+        ) : null}
         <Text style={styles.coverFooter}>
           thebeetamin.com · For wellness guidance only — not a substitute for medical advice
         </Text>
@@ -698,7 +790,22 @@ function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: D
           <Text style={styles.headerRight}>{reportId}</Text>
         </View>
 
-        <SectionHeader title="SECTION 1 — YOUR DEFICIENCY ANALYSIS" first />
+        {showSnapshot ? (
+          <>
+            <SectionHeader title="YOUR PREMIUM REPORT SNAPSHOT" first />
+            <View style={styles.sectionBodyWrap}>
+              <SnapshotBody
+                heading="Why this report vs unstructured online advice"
+                text={sections.premiumValueStatement || ''}
+              />
+              <SnapshotBody heading="Health score & pillars" text={sections.healthScoreSummary || ''} />
+              <SnapshotBody heading="Smart personalised insights" text={sections.smartInsights || ''} />
+              <SnapshotBody heading="90-day expectation timeline" text={sections.ninetyDayTimeline || ''} />
+            </View>
+          </>
+        ) : null}
+
+        <SectionHeader title="SECTION 1 — YOUR DEFICIENCY ANALYSIS" first={!showSnapshot} />
         <View style={styles.sectionBodyWrap}>{renderDeficiencyBlocks(sections.deficiencyAnalysis)}</View>
 
         <SectionHeader title="SECTION 2 — YOUR 7-DAY RECOVERY MEAL PLAN" />
@@ -751,6 +858,8 @@ export async function generateRecoveryPlanPdfBuffer(input: {
   reportId: string
   preparedOn: string
   sections: RecoveryReportSections
+  deficiencyScore?: number | null
+  urgencyPreview?: string | null
 }): Promise<Buffer> {
   const clean = sanitizeSections(input.sections)
   const doc = (
@@ -759,6 +868,8 @@ export async function generateRecoveryPlanPdfBuffer(input: {
       reportId={input.reportId}
       preparedOn={input.preparedOn}
       sections={clean}
+      deficiencyScore={input.deficiencyScore ?? null}
+      urgencyPreview={input.urgencyPreview ?? null}
     />
   )
   try {

@@ -1,6 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import Groq from 'groq-sdk'
 import { generateRecoveryPlanPdfBuffer } from '@/lib/generate-pdf'
+import { parseRecoverySectionsJson } from '@/lib/recovery-report-parse'
 import { RECOVERY_PLAN_SYSTEM_PROMPT } from '@/lib/recovery-report-prompt'
 import type { DetailedAssessmentPayload, RecoveryReportSections } from '@/lib/recovery-report-types'
 import { sendRecoveryReportEmail } from '@/lib/send-report-email'
@@ -38,6 +39,25 @@ When writing YOUR SYMPTOMS POINTING TO THIS,
 list the patient's ACTUAL specific reported symptoms word for word — not generic descriptions.
 For example instead of "skin and hair issues" write "your reported hair fall, brittle nails, and dry skin".
 Make it clear you are talking about THEIR specific answers.
+
+PREMIUM JSON FIELDS (REQUIRED NON-EMPTY STRINGS — every key must contain real prose, never placeholders):
+Include these keys in your JSON WITH the seven main sections:
+
+premiumValueStatement:
+Write 4–6 sentences for an Indian wellness buyer. Explain why this ₹39 Beetamin report is more valuable than a free ChatGPT answer: merges FREE + DETAILED assessments, structured sections, actionable 7-day plan, numbered routine, timeline, supplements limited to what's safe, Indian foods/brands — without naming ChatGPT explicitly (say "generic online tools").
+
+healthScoreSummary:
+Start with OVERALL DEFICIENCY RISK SCORE: X/100 using the patient's score from freeDeficiencyAssessment when present; otherwise estimate from analysis (state that it is clinician-style estimate).
+Then add 5 pillar lines (Energy & Vitality, Skin Hair Nails, Immunity & Recovery, Cognitive Clarity, Sleep & Hormones) each scored 0–100 with ONE short textual progress bar made of █ and ░ (e.g. ████████░░ 82/100) and ONE sentence tying that pillar to THEIR answers (sun, diet_type, symptoms, sleep_quality, digestion, etc.).
+End with WHY THIS SCORE RANK vs risk band (Healthy / Moderate / High) and what it implies for their 90-day plan.
+
+smartInsights:
+Exactly 5 bullet lines. Each bullet starts "- ". Each MUST connect TWO concrete facts from the JSON patient data (e.g. vegetarian + low sun exposure) to one mechanism or meal-plan priority. No fluffy generic wellness quotes.
+
+ninetyDayTimeline:
+Four labelled blocks ONLY:
+Weeks 1–2 | Weeks 3–4 | Weeks 5–8 | Weeks 9–12
+Under each heading, exactly 3 short bullet sentences predicting realistic improvements tied to THEIR named deficiencies — not boilerplate longevity claims.
 `.trim()
 
 function getGroq() {
@@ -89,30 +109,19 @@ function extractDeficiencySummary(freeAssessment: unknown): Record<string, unkno
   }
 }
 
-function safeParseJson(raw: string): RecoveryReportSections {
-  let text = raw.trim()
-  if (text.startsWith('```')) {
-    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
-  }
-  const parsed = JSON.parse(text) as Partial<RecoveryReportSections>
-  const keys: (keyof RecoveryReportSections)[] = [
-    'deficiencyAnalysis',
-    'mealPlan',
-    'supplements',
-    'blockingFoods',
-    'dailyRoutine',
-    'doctorNote',
-    'disclaimer',
-  ]
-  const out = {} as RecoveryReportSections
-  for (const k of keys) {
-    const v = parsed[k]
-    out[k] =
-      typeof v === 'string' && v.trim()
-        ? v.trim()
-        : `[${String(k)} — content being prepared. Please contact support if this persists.]`
-  }
-  return out
+function freeAssessmentMeta(free: unknown): {
+  deficiencyScore: number | null
+  urgencyPreview: string | null
+} {
+  if (!free || typeof free !== 'object') return { deficiencyScore: null, urgencyPreview: null }
+  const fa = free as Record<string, unknown>
+  const rawScore = fa.deficiencyScore
+  const deficiencyScore =
+    typeof rawScore === 'number' && !Number.isNaN(rawScore) ? Math.round(rawScore) : null
+  const u = fa.urgencyMessage
+  const urgencyPreview =
+    typeof u === 'string' && u.trim() ? u.trim().slice(0, 320) : null
+  return { deficiencyScore, urgencyPreview }
 }
 
 async function generateRecoveryReportSections(input: {
@@ -143,8 +152,8 @@ async function generateRecoveryReportSections(input: {
             '\n\nProduce the JSON object as specified in your system instructions.',
         },
       ],
-      temperature: 0.7,
-      max_tokens: 4000,
+      temperature: 0.55,
+      max_tokens: 8192,
       response_format: { type: 'json_object' },
     }),
     new Promise<never>((_, reject) => {
@@ -154,7 +163,7 @@ async function generateRecoveryReportSections(input: {
 
   const raw = completion.choices[0]?.message?.content
   if (!raw) throw new Error('Empty response from report generation')
-  return safeParseJson(raw)
+  return parseRecoverySectionsJson(raw)
 }
 
 async function markFailed(reportId: string, userId: string) {
@@ -274,11 +283,14 @@ export async function runPaidReportGeneration(args: {
 
     let pdfBuffer: Buffer
     try {
+      const { deficiencyScore, urgencyPreview } = freeAssessmentMeta(freeAssessment)
       pdfBuffer = await generateRecoveryPlanPdfBuffer({
         patientName,
         reportId,
         preparedOn,
         sections,
+        deficiencyScore,
+        urgencyPreview,
       })
     } catch (pdfError) {
       console.error('[run-paid-report-generation] PDF', pdfError)

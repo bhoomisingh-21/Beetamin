@@ -28,4 +28,12 @@ export type RecoveryReportSections = {
   dailyRoutine: string
   doctorNote: string
   disclaimer: string
+  /** Overall score narrative + pillar sub-scores + short interpretation */
+  healthScoreSummary?: string
+  /** Bullet-style personalised observations tying assessment facts together */
+  smartInsights?: string
+  /** Stage-based expectations (e.g. weeks 1–2 … 9–12) */
+  ninetyDayTimeline?: string
+  /** Short “why this paid report vs generic AI” differentiation */
+  premiumValueStatement?: string
 }

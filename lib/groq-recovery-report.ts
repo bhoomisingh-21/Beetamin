@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk'
+import { parseRecoverySectionsJson } from './recovery-report-parse'
 import { RECOVERY_PLAN_SYSTEM_PROMPT } from './recovery-report-prompt'
 import type { DetailedAssessmentPayload, RecoveryReportSections } from './recovery-report-types'
 
@@ -9,26 +10,7 @@ function getGroq() {
 }
 
 function safeParseJson(raw: string): RecoveryReportSections {
-  let text = raw.trim()
-  if (text.startsWith('```')) {
-    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
-  }
-  const parsed = JSON.parse(text) as Partial<RecoveryReportSections>
-  const keys: (keyof RecoveryReportSections)[] = [
-    'deficiencyAnalysis',
-    'mealPlan',
-    'supplements',
-    'blockingFoods',
-    'dailyRoutine',
-    'doctorNote',
-    'disclaimer',
-  ]
-  const out = {} as RecoveryReportSections
-  for (const k of keys) {
-    const v = parsed[k]
-    out[k] = typeof v === 'string' && v.trim() ? v.trim() : `[${String(k)} — content being prepared. Please contact support if this persists.]`
-  }
-  return out
+  return parseRecoverySectionsJson(raw)
 }
 
 export async function generateRecoveryReportSections(input: {
