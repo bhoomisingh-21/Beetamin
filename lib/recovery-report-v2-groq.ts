@@ -156,6 +156,53 @@ NUMERIC CONSTRAINTS:
 - healthScore is integer 0-100.
 - timeline must have exactly 4 objects in order: Week 1-2, Week 3-4, Week 5-8, Week 9-12 (adjust labels but keep that progression).`
 
+/** Groq free/on-demand TPM is often 12k per request bundle (prompt estimate + completion budget). Stay conservative. */
+const GROQ_TPM_REQUEST_BUDGET = 11000
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** Rough tokenizer for budgeting (English-heavy JSON ~4 chars/token). */
+function estimateTokens(chars: number): number {
+  return Math.ceil(chars / 4)
+}
+
+/** Limit huge assessment blobs so prompt + completion cap stays within Groq TPM. */
+function shrinkForGroqInput(data: unknown, maxStringLen: number, maxArrayItems: number): unknown {
+  if (data === null || data === undefined) return data
+  if (typeof data === 'string') {
+    return data.length <= maxStringLen ? data : `${data.slice(0, maxStringLen)}…`
+  }
+  if (typeof data === 'number' || typeof data === 'boolean') return data
+  if (Array.isArray(data)) {
+    return data.slice(0, maxArrayItems).map((x) => shrinkForGroqInput(x, maxStringLen, maxArrayItems))
+  }
+  if (typeof data === 'object') {
+    const o = data as Record<string, unknown>
+    const out: Record<string, unknown> = {}
+    for (const k of Object.keys(o)) {
+      out[k] = shrinkForGroqInput(o[k], maxStringLen, maxArrayItems)
+    }
+    return out
+  }
+  return data
+}
+
+function buildUserPayloadForGroq(input: GenerateRecoveryReportV2Input, stringCap: number) {
+  return {
+    patientName: input.patientName,
+    age: input.age ?? undefined,
+    diet: input.diet ?? undefined,
+    goal: input.goal ?? undefined,
+    freeAssessment: shrinkForGroqInput(input.freeAssessment, stringCap, 48),
+    detailedLifestyleAssessment: input.detailed
+      ? (shrinkForGroqInput(input.detailed, Math.min(800, stringCap), 32) as DetailedAssessmentPayload)
+      : undefined,
+  }
+}
+
+
 function getGroq() {
   const key = process.env.GROQ_API_KEY
   if (!key) throw new Error('GROQ_API_KEY is not configured')
@@ -624,41 +671,109 @@ export type GenerateRecoveryReportV2Input = {
   goal?: string | null
 }
 
+const USER_PAYLOAD_INSTRUCTION_PREFIX =
+  'Generate the complete recovery report JSON for this patient. Use BOTH freeAssessment and detailedLifestyleAssessment when present; infer carefully only where data is missing.\nPatient payload (JSON):\n'
+
+/** Completion budget so estimated prompt tokens + max_tokens stays under Groq TPM per request (often 12k). */
+function maxCompletionTokensForPrompt(promptCharLength: number): number {
+  const promptTokensEst = estimateTokens(promptCharLength) + 450
+  const room = GROQ_TPM_REQUEST_BUDGET - promptTokensEst - 350
+  return Math.min(6144, Math.max(1536, room))
+}
+
 export async function generateRecoveryReportV2Payload(input: GenerateRecoveryReportV2Input): Promise<Record<string, unknown>> {
   const groq = getGroq()
 
-  const userPayload = {
-    patientName: input.patientName,
-    age: input.age ?? undefined,
-    diet: input.diet ?? undefined,
-    goal: input.goal ?? undefined,
-    freeAssessment: input.freeAssessment,
-    detailedLifestyleAssessment: input.detailed ?? undefined,
+  let stringCap = 2800
+
+  const tryComplete = async (maxCeiling: number): Promise<{ content: string | null | undefined }> => {
+    const userPayload = buildUserPayloadForGroq(input, stringCap)
+    const userJson = JSON.stringify(userPayload)
+    const promptChars =
+      RECOVERY_REPORT_V2_SYSTEM_PROMPT.length + USER_PAYLOAD_INSTRUCTION_PREFIX.length + userJson.length
+    let max_tokens = Math.min(maxCeiling, maxCompletionTokensForPrompt(promptChars))
+
+    /** Still over budget — shrink assessment strings further */
+    while (max_tokens < 2048 && stringCap > 500) {
+      stringCap = Math.floor(stringCap * 0.55)
+      const shrunk = JSON.stringify(buildUserPayloadForGroq(input, stringCap))
+      const chars =
+        RECOVERY_REPORT_V2_SYSTEM_PROMPT.length + USER_PAYLOAD_INSTRUCTION_PREFIX.length + shrunk.length
+      max_tokens = Math.min(maxCeiling, maxCompletionTokensForPrompt(chars))
+      if (stringCap <= 500) break
+    }
+
+    const userPayloadFinal = buildUserPayloadForGroq(input, stringCap)
+    const userJsonFinal = JSON.stringify(userPayloadFinal)
+
+    const completion = await Promise.race([
+      groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: RECOVERY_REPORT_V2_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: USER_PAYLOAD_INSTRUCTION_PREFIX + userJsonFinal,
+          },
+        ],
+        temperature: 0.35,
+        max_tokens,
+        response_format: { type: 'json_object' },
+      }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 90000)),
+    ])
+
+    return { content: completion.choices[0]?.message?.content }
   }
 
-  const completion = await Promise.race([
-    groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: RECOVERY_REPORT_V2_SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content:
-            'Generate the complete recovery report JSON for this patient. Use BOTH freeAssessment and detailedLifestyleAssessment when present; infer carefully only where data is missing.\nPatient payload (JSON):\n' +
-            JSON.stringify(userPayload, null, 2),
-        },
-      ],
-      temperature: 0.35,
-      max_tokens: 14000,
-      response_format: { type: 'json_object' },
-    }),
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 90000)),
-  ])
+  function groqFailureStatus(error: unknown): number | undefined {
+    if (!error || typeof error !== 'object') return undefined
+    const err = error as Record<string, unknown>
+    if (typeof err.status === 'number') return err.status
+    const resp = err.response as { status?: number } | undefined
+    return resp?.status
+  }
 
-  const raw = completion.choices[0]?.message?.content
-  if (!raw) throw new Error('Empty response from report generation')
+  function looksLikeGroqLowTpmBudget(error: unknown): boolean {
+    const status = groqFailureStatus(error)
+    if (status === 413 || status === 429) return true
+    const blob =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'object' &&
+            error !== null &&
+            'message' in error &&
+            typeof (error as { message: unknown }).message === 'string'
+          ? (error as { message: string }).message
+          : JSON.stringify(error)
+    const b = blob.toLowerCase()
+    return (
+      b.includes('rate_limit_exceeded') ||
+      b.includes('tokens per minute') ||
+      (b.includes('request too large') && b.includes('tpm'))
+    )
+  }
 
-  return parseRecoveryReportV2Json(raw)
+  let maxCeiling = 6144
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const { content } = await tryComplete(maxCeiling)
+      if (!content) throw new Error('Empty response from report generation')
+      return parseRecoveryReportV2Json(content)
+    } catch (e: unknown) {
+      const tpmHit = looksLikeGroqLowTpmBudget(e)
+      if (!tpmHit) throw e
+
+      stringCap = Math.max(350, Math.floor(stringCap * 0.52))
+      maxCeiling = Math.max(3072, Math.floor(maxCeiling * 0.72))
+
+      if (attempt >= 2) await sleep(24000)
+      else await sleep(groqFailureStatus(e) === 429 ? 2600 : 450)
+    }
+  }
+
+  throw new Error('Groq rate limit / TPM exceeded after retries — try again shortly or shorten assessment payload.')
 }
 
 export function deficiencySummaryFromV2(reportData: RecoveryReportV2Data) {
