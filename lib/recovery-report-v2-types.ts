@@ -47,6 +47,10 @@ export type SupplementV2 = {
   name: string
   dosage: string
   when: string
+  /** One line: with food / empty stomach / away from tea, etc. */
+  takeWithFood: string
+  /** One line: nutrient or food synergy (e.g. C with iron lunch) */
+  absorptionPair: string
   duration: string
   brand: string
   whyThisForm: string
@@ -66,6 +70,13 @@ export type TimelinePhaseV2 = {
   period: string
   phase: string
   changes: string[]
+}
+
+/** Symptom ↔ deficiency link row — premium “this is your pattern” mapping */
+export type SymptomDeficiencyMapRowV2 = {
+  symptom: string
+  nutrient: string
+  link: string
 }
 
 export type GutAbsorptionTipV2 = { tip: string; reason: string }
@@ -132,6 +143,12 @@ export type RecoveryReportV2Data = {
   subScores: RecoverySubScoresV2
   scoreInterpretation: string
   primaryDeficiencies: PrimaryDeficiencyV2[]
+  /** Exactly 4 rows: symptom they reported → likely gap → one-line why (their lifestyle) */
+  symptomDeficiencyMap: SymptomDeficiencyMapRowV2[]
+  /** Habits/circumstances slowing repletion — not foods (those are foodsToAvoid) */
+  recoveryBlockers: string[]
+  /** 2 short sentences: realistic trajectory if they follow the plan */
+  progressPrediction: string
   morningRoutine: MorningRoutineItemV2[]
   mealPlan: MealPlanDayV2[]
   supplements: SupplementV2[]

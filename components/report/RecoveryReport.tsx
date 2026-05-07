@@ -303,6 +303,56 @@ function DeficienciesSection({ data }: { data: RecoveryReportV2Data }) {
   )
 }
 
+function SymptomMapAndBlockersSection({ data }: { data: RecoveryReportV2Data }) {
+  const map = data.symptomDeficiencyMap
+  const blockers = data.recoveryBlockers
+  if (map.length === 0 && blockers.length === 0) return null
+
+  return (
+    <View style={{ marginTop: 10 }}>
+      {map.length > 0 ? (
+        <>
+          <Text style={styles.sectionLabel}>YOUR PATTERN</Text>
+          <Text style={styles.sectionTitle}>Symptom → deficiency map</Text>
+          <Text style={styles.sectionSubtitle}>How what you feel lines up with the gaps we are fixing.</Text>
+          <View style={styles.sectionDivider} />
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderText, { width: '28%' }]}>SYMPTOM</Text>
+            <Text style={[styles.tableHeaderText, { width: '22%' }]}>GAP</Text>
+            <Text style={[styles.tableHeaderText, { width: '50%' }]}>WHY IT FITS YOU</Text>
+          </View>
+          {map.map((row, i) => (
+            <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]} wrap={false}>
+              <Text style={[styles.tableCellText, { width: '28%', fontWeight: 700 }]}>{row.symptom}</Text>
+              <Text style={[styles.tableEmphasisEmerald, { width: '22%' }]}>{row.nutrient}</Text>
+              <Text style={[styles.tableCellText, { width: '50%', fontStyle: 'italic', color: COLORS.emeraldDark }]}>
+                {row.link}
+              </Text>
+            </View>
+          ))}
+        </>
+      ) : null}
+
+      {blockers.length > 0 ? (
+        <View style={{ marginTop: map.length > 0 ? 12 : 0 }} wrap={false}>
+          <Text style={styles.defLabel}>Recovery blockers (habits & rhythm)</Text>
+          <Text style={[styles.absorptionNoteText, { marginBottom: 6 }]}>
+            Not “bad foods” alone — these slow how fast nutrients refill for your case.
+          </Text>
+          {blockers.map((line, i) => (
+            <View key={i} style={[styles.checkRow, { marginBottom: 4 }]} wrap={false}>
+              <View style={styles.checkBullet}>
+                <Text style={styles.checkMark}>!</Text>
+              </View>
+              <Text style={styles.checkText}>{line}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  )
+}
+
 function MorningRoutineSection({ data }: { data: RecoveryReportV2Data }) {
   return (
     <View>
@@ -406,6 +456,8 @@ function SupplementsSection({ data }: { data: RecoveryReportV2Data }) {
             {[
               ['Dosage', sup.dosage],
               ['When', sup.when],
+              ['With food / empty', sup.takeWithFood],
+              ['Absorption pair', sup.absorptionPair],
               ['Duration', sup.duration],
               ['Brand', sup.brand],
             ].map(([k, v], j) =>
@@ -799,6 +851,13 @@ function InsightsSection({ data }: { data: RecoveryReportV2Data }) {
       <Text style={styles.sectionTitle}>Smart insights</Text>
       <View style={styles.sectionDivider} />
 
+      {data.progressPrediction ? (
+        <View style={[styles.stressImpactCard, { marginBottom: 10 }]} wrap={false}>
+          <Text style={[styles.defLabel, { marginBottom: 4 }]}>If you stay consistent</Text>
+          <Text style={styles.stressImpactText}>{data.progressPrediction}</Text>
+        </View>
+      ) : null}
+
       {data.lifestyleInsights.map((line, i) => (
         <View key={i} style={styles.insightCard} wrap={false}>
           <View style={styles.insightSvg}>
@@ -948,6 +1007,7 @@ export function RecoveryReportPDF({ reportData }: { reportData: RecoveryReportV2
 
       <ReportInteriorPage patientName={name} reportId={rid}>
         <DeficienciesSection data={reportData} />
+        <SymptomMapAndBlockersSection data={reportData} />
       </ReportInteriorPage>
 
       <ReportInteriorPage patientName={name} reportId={rid}>

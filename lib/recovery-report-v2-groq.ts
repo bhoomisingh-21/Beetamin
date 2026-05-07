@@ -7,154 +7,74 @@ import type {
   RecoveryReportV2Data,
   ShoppingListV2,
   ShoppingSupplementBuyV2,
+  SymptomDeficiencyMapRowV2,
   SleepStressV2,
   WeeklyEssentialV2,
   GutAbsorptionTipV2,
   SleepStressNutrientRowV2,
 } from '@/lib/recovery-report-v2-types'
 
-const RECOVERY_REPORT_V2_SYSTEM_PROMPT = `You are Dr. Priya Sharma, Senior Clinical Nutritionist at TheBeetamin.
-Generate a premium, deeply personalized recovery report based on the user's deficiency assessment AND any detailed lifestyle data provided.
+/** Dense prompt = smaller completion. Brevity rules keep output within Groq TPM. */
+const RECOVERY_REPORT_V2_SYSTEM_PROMPT = `You are Dr. Priya Sharma, Senior Clinical Nutritionist (TheBeetamin). Write for Indian readers: kirana/sabzi, metro + tier-2 realistic costs, veg/non-veg per patient diet.
 
-CRITICAL RULES:
-- Every sentence must reference THIS person's specific answers and symptoms when data is provided.
-- Never use generic advice that could apply to everyone.
-- Be specific: name exact foods common in Indian households, practical quantities (cups, katori, tbsp), and timings.
-- Write in warm, doctor-to-patient language — minimise unexplained jargon.
-- Sound premium and worth paying for.
-- Produce a FULL 7-day meal plan with exactly 5 meal rows per day (Breakfast, Mid-morning snack, Lunch, Evening snack, Dinner) unless their diet type makes a slot clearly irrelevant (then substitute with an appropriate Indian meal/snack slot and say why briefly).
-- Recommend at most 3 supplements total; prioritise evidence-based combinations (e.g. D3+K2) when appropriate.
-- Use Indian meal variety across the week; do not clone the same main meals on multiple days.
+VOICE: Smart wellness coach—warm, precise, never textbook. Short paragraphs. Zero filler. Ban phrases like "supports overall health", "balanced diet", "listen to your body" unless tied to their symptom.
 
-Respond ONLY with this exact JSON structure, no markdown, no extra keys, no prose outside JSON:
+ANTI-GENERIC: Every block must tie to THIS patient's JSON (symptoms, sleep, stress, meals, goal). If data missing, infer once, label lightly—never long lectures.
+
+MEALS: 7 days × 5 rows/day (Breakfast, Mid-snack, Lunch, Eve-snack, Dinner). Indian-first; different lunch/dinner mains across the week (no copy-paste dal/roti repeat). "deficiencyTarget" = nutrient focus; "reason" ≤14 words. Affordable swaps (eggs, chana, ragi) where useful.
+
+SUPPLEMENTS: Max 3. Each must include dosage, when, takeWithFood (with meal / empty / away from tea/coffee), absorptionPair (synergy), whyThisForm ≤18 words, howItWorks ≤16 words, expectedResults ≤14 words, 2 foodAlternatives India-specific, safetyNote if needed.
+
+JSON ONLY — no markdown, no keys outside schema:
+
 {
   "healthScore": number,
-  "subScores": {
-    "energyVitality": number,
-    "energyLabel": "string",
-    "skinHairNails": number,
-    "skinHairLabel": "string",
-    "immunity": number,
-    "immunityLabel": "string",
-    "cognitiveClarity": number,
-    "cognitiveLabel": "string",
-    "sleepHormones": number,
-    "sleepLabel": "string"
+  "subScores": { "energyVitality": number, "energyLabel": "≤14 words — their pattern",
+    "skinHairNails": number, "skinHairLabel": "≤14 words",
+    "immunity": number, "immunityLabel": "≤14 words",
+    "cognitiveClarity": number, "cognitiveLabel": "≤14 words",
+    "sleepHormones": number, "sleepLabel": "≤14 words" },
+  "scoreInterpretation": "2 tight sentences — their symptoms + scores only",
+  "primaryDeficiencies": [ { "nutrient": "", "severity": "High"|"Moderate"|"Mild", "tagline": "≤12 words",
+    "whatItMeans": "≤22 words", "whyTheyHaveIt": "their habit/sun/veg choice/sleep — ≤24 words",
+    "symptomsTheyFeel": ["≤10 words each, max 4"],
+    "bodyImpact": "daily life ≤22 words", "recoveryTime": "realistic window" } ],
+  "symptomDeficiencyMap": [ { "symptom": "from their answers", "nutrient": "", "link": "why this pair for THEM ≤18 words" } ],
+  "recoveryBlockers": [ "habit/sleep/stress/absorption issue — ≤18 words each" ],
+  "progressPrediction": "2 sentences — 30/60/90 day trajectory IF they follow plan; credible numbers",
+  "morningRoutine": [ { "time": "", "action": "", "reason": "their case ≤16 words" } ],
+  "mealPlan": [ { "day": 1, "focus": "day theme ≤14 words", "meals": [ { "timing": "", "food": "Indian dish + portion hint", "deficiencyTarget": "", "reason": "" } ] } ],
+  "supplements": [ { "name": "", "dosage": "", "when": "", "takeWithFood": "", "absorptionPair": "",
+    "duration": "", "brand": "realistic India", "whyThisForm": "", "howItWorks": "", "expectedResults": "",
+    "foodAlternatives": ["", ""], "safetyNote": "" } ],
+  "foodsToAvoid": [ { "food": "", "whyHurting": "their symptom link ≤18 words", "swapWith": "affordable Indian ≤14 words" } ],
+  "timeline": [ { "period": "", "phase": "", "changes": ["", "", ""] } ],
+  "lifestyleInsights": [ "pattern insights — ≤16 words each" ],
+  "quickWins": [ "72h — ≤14 words each" ],
+  "doctorNote": "≤45 words — signed-off coach note, specific to them",
+  "top3Issues": ["", "", ""],
+  "top3Actions": ["", "", ""],
+  "gutHealth": { "absorptionScore": number, "absorptionNote": "≤28 words",
+    "gutIssues": ["≤16 words"], "probioticFoods": ["Indian ferments — short"],
+    "absorptionTips": [ {"tip":"","reason":""}, {"tip":"","reason":""}, {"tip":"","reason":""} ],
+    "nutrientPairs": [ {"pair":"","why":""}, {"pair":"","why":""}, {"pair":"","why":""} ]
   },
-  "scoreInterpretation": "string (2 sentences referencing their specifics)",
-  "primaryDeficiencies": [
-    {
-      "nutrient": "string",
-      "severity": "High" | "Moderate" | "Mild",
-      "tagline": "string",
-      "whatItMeans": "string",
-      "whyTheyHaveIt": "string",
-      "symptomsTheyFeel": ["string"],
-      "bodyImpact": "string",
-      "recoveryTime": "string"
-    }
-  ],
-  "morningRoutine": [
-    {
-      "time": "string",
-      "action": "string",
-      "reason": "string"
-    }
-  ],
-  "mealPlan": [
-    {
-      "day": 1,
-      "focus": "string",
-      "meals": [
-        {
-          "timing": "string",
-          "food": "string",
-          "deficiencyTarget": "string",
-          "reason": "string"
-        }
-      ]
-    }
-  ],
-  "supplements": [],
-  "foodsToAvoid": [
-    {
-      "food": "string",
-      "whyHurting": "string",
-      "swapWith": "string"
-    }
-  ],
-  "timeline": [
-    {
-      "period": "string",
-      "phase": "string",
-      "changes": ["string", "string", "string"]
-    }
-  ],
-  "lifestyleInsights": ["string", "string", "string", "string"],
-  "quickWins": ["string", "string", "string"],
-  "doctorNote": "string",
-  "top3Issues": ["string", "string", "string"],
-  "top3Actions": ["string", "string", "string"],
-  "gutHealth": {
-    "absorptionScore": number,
-    "absorptionNote": "string",
-    "gutIssues": ["string"],
-    "probioticFoods": ["string"],
-    "absorptionTips": [
-      { "tip": "string", "reason": "string" },
-      { "tip": "string", "reason": "string" },
-      { "tip": "string", "reason": "string" }
-    ],
-    "nutrientPairs": [
-      { "pair": "string", "why": "string" },
-      { "pair": "string", "why": "string" },
-      { "pair": "string", "why": "string" }
-    ]
-  },
-  "sleepStress": {
-    "sleepScore": number,
-    "stressImpact": "string",
+  "sleepStress": { "sleepScore": number, "stressImpact": "≤28 words tied to them",
     "eveningRoutine": [
-      { "time": "string", "action": "string", "reason": "string" },
-      { "time": "string", "action": "string", "reason": "string" },
-      { "time": "string", "action": "string", "reason": "string" },
-      { "time": "string", "action": "string", "reason": "string" },
-      { "time": "string", "action": "string", "reason": "string" }
+      {"time":"","action":"","reason":""},{"time":"","action":"","reason":""},{"time":"","action":"","reason":""},
+      {"time":"","action":"","reason":""},{"time":"","action":"","reason":""}
     ],
-    "stressNutrients": [
-      { "nutrient": "string", "why": "string" },
-      { "nutrient": "string", "why": "string" },
-      { "nutrient": "string", "why": "string" }
-    ],
-    "breathingExercise": "string",
-    "weekendTip": "string"
+    "stressNutrients": [ {"nutrient":"","why":""}, {"nutrient":"","why":""}, {"nutrient":"","why":""} ],
+    "breathingExercise": "one compact protocol",
+    "weekendTip": "≤20 words"
   },
-  "labTests": [
-    {
-      "testName": "string",
-      "whyNeeded": "string",
-      "normalRange": "string",
-      "theirEstimatedLevel": "string",
-      "whenToGet": "string",
-      "cost": "string",
-      "whereToGet": "string"
-    }
-  ],
-  "shoppingList": {
-    "weeklyEssentials": [],
-    "supplements": [],
-    "totalWeeklyGroceryAdd": "string",
-    "totalSupplementCost": "string",
-    "budgetTip": "string"
-  }
+  "labTests": [ five panels: "25-OH Vitamin D", "Omega-3 Index", "Serum Ferritin", "Magnesium RBC", "CBC" — each with whyNeeded, normalRange, theirEstimatedLevel, whenToGet, cost (₹), whereToGet ],
+  "shoppingList": { "weeklyEssentials": [ { "item":"","quantity":"","deficiencyTarget":"","whereToBuy":"","cost":"" } ],
+    "supplements": [ { "name":"","brand":"","link":"","monthlyQuantity":"","cost":"" } ],
+    "totalWeeklyGroceryAdd": "", "totalSupplementCost": "", "budgetTip": "" }
 }
 
-NUMERIC CONSTRAINTS:
-- gutHealth absorptionScore integer 0-100; sleepStress sleepScore integer 0-100.
-- gutHealth nutrientPairs exactly 3 rows; absorptionTips exactly 3; sleepStress eveningRoutine exactly 5; stressNutrients exactly 3; labTests array length exactly 5 (panels: \"25-OH Vitamin D\", \"Omega-3 Index\", \"Serum Ferritin\", \"Magnesium RBC\", \"CBC\"); shoppingList supplements array aligns with prescribed protocol picks.
-- All subScores fields ending in Vitality/Nails/immunity/Clarity/Hormones are integers 0-100.
-- healthScore is integer 0-100.
-- timeline must have exactly 4 objects in order: Week 1-2, Week 3-4, Week 5-8, Week 9-12 (adjust labels but keep that progression).`
+COUNTS: primaryDeficiencies 3–4 max. symptomDeficiencyMap exactly 4. recoveryBlockers exactly 4. lifestyleInsights exactly 4. quickWins exactly 3. foodsToAvoid ≥3. morningRoutine ≥5 rows. mealPlan exactly 7 days each with exactly 5 meals. timeline exactly 4 phases: Week 1-2 / Week 3-4 / Week 5-8 / Week 9-12 (90-day arc). gutHealth nutrientPairs 3; absorptionTips 3; sleepStress eveningRoutine 5; stressNutrients 3; labTests 5. subScores 0-100; healthScore 0-100; gut absorptionScore 0-100; sleepScore 0-100.`
 
 /** Groq free/on-demand TPM is often 12k per request bundle (prompt estimate + completion budget). Stay conservative. */
 const GROQ_TPM_REQUEST_BUDGET = 11000
@@ -466,6 +386,48 @@ function coerceLabTests(raw: unknown): LabTestV2[] {
   }).slice(0, 5)
 }
 
+function coerceSymptomDeficiencyMap(
+  raw: unknown,
+  defs: {
+    nutrient: string
+    tagline: string
+    whyTheyHaveIt: string
+    symptomsTheyFeel: string[]
+  }[],
+): SymptomDeficiencyMapRowV2[] {
+  const rows: SymptomDeficiencyMapRowV2[] = []
+  if (Array.isArray(raw)) {
+    for (const x of raw) {
+      if (!x || typeof x !== 'object') continue
+      const o = x as Record<string, unknown>
+      rows.push({
+        symptom: asStr(o.symptom, ''),
+        nutrient: asStr(o.nutrient, ''),
+        link: asStr(o.link, ''),
+      })
+    }
+  }
+  const out = rows.filter((r) => r.symptom || r.nutrient || r.link)
+  for (const d of defs) {
+    if (out.length >= 4) break
+    const sym = (d.symptomsTheyFeel[0] ?? '').trim()
+    const link = (d.whyTheyHaveIt || d.tagline).trim()
+    if (!sym && !link) continue
+    const dedupe = `${d.nutrient}|${sym}`
+    if (out.some((r) => `${r.nutrient}|${r.symptom}` === dedupe)) continue
+    out.push({
+      symptom: sym || 'What you reported in the assessment',
+      nutrient: d.nutrient,
+      link: link || 'Linked from your symptoms and lifestyle answers.',
+    })
+  }
+  return out.slice(0, 4)
+}
+
+function coerceRecoveryBlockers(raw: unknown): string[] {
+  return asStrArr(raw).slice(0, 4)
+}
+
 function coerceShoppingList(raw: unknown): ShoppingListV2 {
   if (!raw || typeof raw !== 'object') raw = {}
   const s = raw as Record<string, unknown>
@@ -559,6 +521,7 @@ export function coerceRecoveryReportV2(
       bodyImpact: asStr(d.bodyImpact, ''),
       recoveryTime: asStr(d.recoveryTime, '6–8 weeks with the protocol'),
     }))
+    .slice(0, 4)
 
   const morningRoutineRaw = Array.isArray(data.morningRoutine) ? data.morningRoutine : []
   const morningRoutine = morningRoutineRaw
@@ -597,6 +560,8 @@ export function coerceRecoveryReportV2(
       name: asStr(s.name, ''),
       dosage: asStr(s.dosage, ''),
       when: asStr(s.when, ''),
+      takeWithFood: asStr(s.takeWithFood, ''),
+      absorptionPair: asStr(s.absorptionPair, ''),
       duration: asStr(s.duration, ''),
       brand: asStr(s.brand, ''),
       whyThisForm: asStr(s.whyThisForm, ''),
@@ -629,6 +594,9 @@ export function coerceRecoveryReportV2(
   const top3Issues = asStrArr(data.top3Issues)
   const top3Actions = asStrArr(data.top3Actions)
 
+  const symptomDeficiencyMap = coerceSymptomDeficiencyMap(data.symptomDeficiencyMap, primaryDeficiencies)
+  const recoveryBlockers = coerceRecoveryBlockers(data.recoveryBlockers)
+
   return {
     healthScore: num(data.healthScore, 50, 0, 100),
     subScores,
@@ -637,13 +605,19 @@ export function coerceRecoveryReportV2(
       'Your score sums up symptom burden and probable nutrient gaps from your questionnaire.',
     ),
     primaryDeficiencies,
+    symptomDeficiencyMap,
+    recoveryBlockers,
+    progressPrediction: asStr(
+      data.progressPrediction,
+      'Steady weeks 1–4 calm the worst symptoms; by week 8–12 stores and rhythm usually match how you feel day-to-day.',
+    ),
     morningRoutine,
     mealPlan,
     supplements,
     foodsToAvoid,
     timeline,
-    lifestyleInsights: lifestyleInsights.slice(0, 8),
-    quickWins: quickWins.slice(0, 8),
+    lifestyleInsights: lifestyleInsights.slice(0, 4),
+    quickWins: quickWins.slice(0, 3),
     doctorNote: asStr(data.doctorNote, ''),
     top3Issues: top3Issues.slice(0, 5),
     top3Actions: top3Actions.slice(0, 5),
