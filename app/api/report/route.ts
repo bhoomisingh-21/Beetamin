@@ -4,6 +4,7 @@ import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
 import { coerceRecoveryReportV2, generateRecoveryReportV2Payload } from '@/lib/recovery-report-v2-groq'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
+/** Recovery report Groq prompt + JSON shape live in `recovery-report-v2-groq.ts`. */
 export const runtime = 'nodejs'
 export const maxDuration = 300
 

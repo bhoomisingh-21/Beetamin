@@ -68,6 +68,65 @@ export type TimelinePhaseV2 = {
   changes: string[]
 }
 
+export type GutAbsorptionTipV2 = { tip: string; reason: string }
+
+export type NutrientPairV2 = { pair: string; why: string }
+
+export type GutHealthV2 = {
+  absorptionScore: number
+  absorptionNote: string
+  gutIssues: string[]
+  probioticFoods: string[]
+  absorptionTips: GutAbsorptionTipV2[]
+  nutrientPairs: NutrientPairV2[]
+}
+
+export type SleepStressNutrientRowV2 = { nutrient: string; why: string }
+
+export type SleepStressV2 = {
+  sleepScore: number
+  stressImpact: string
+  eveningRoutine: MorningRoutineItemV2[]
+  stressNutrients: SleepStressNutrientRowV2[]
+  breathingExercise: string
+  weekendTip: string
+}
+
+export type LabTestV2 = {
+  testName: string
+  whyNeeded: string
+  normalRange: string
+  theirEstimatedLevel: string
+  whenToGet: string
+  cost: string
+  whereToGet: string
+}
+
+export type WeeklyEssentialV2 = {
+  item: string
+  quantity: string
+  deficiencyTarget: string
+  whereToBuy: string
+  cost: string
+}
+
+/** Shopping supplements to purchase (distinct from therapeutic protocol `supplements`) */
+export type ShoppingSupplementBuyV2 = {
+  name: string
+  brand: string
+  link: string
+  monthlyQuantity: string
+  cost: string
+}
+
+export type ShoppingListV2 = {
+  weeklyEssentials: WeeklyEssentialV2[]
+  supplementProducts: ShoppingSupplementBuyV2[]
+  totalWeeklyGroceryAdd: string
+  totalSupplementCost: string
+  budgetTip: string
+}
+
 export type RecoveryReportV2Data = {
   healthScore: number
   subScores: RecoverySubScoresV2
@@ -83,6 +142,10 @@ export type RecoveryReportV2Data = {
   doctorNote: string
   top3Issues: string[]
   top3Actions: string[]
+  gutHealth: GutHealthV2
+  sleepStress: SleepStressV2
+  labTests: LabTestV2[]
+  shoppingList: ShoppingListV2
   /** Patient / run metadata merged after Groq parse */
   name?: string
   age?: string
