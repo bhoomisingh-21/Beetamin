@@ -144,7 +144,7 @@ export default function ResultsPage() {
       const res = await fetch('/api/generate-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ detailedAssessmentId: detailedId }),
+        body: JSON.stringify({ detailedAssessmentId: detailedId, freeAssessmentResult: result }),
       })
       const j = await res.json()
       if (!res.ok) throw new Error(typeof j.error === 'string' ? j.error : 'Could not start report generation')

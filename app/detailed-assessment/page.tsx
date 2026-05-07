@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Loader2, Leaf } from 'lucide-react'
 import { ReportGeneratingLoader } from '@/components/ReportGeneratingLoader'
+import { saveAssessmentToProfile } from '@/lib/booking-actions'
 import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from '@/lib/recovery-report-types'
 
 const FOOD_ROWS: { key: FoodFrequencyKey; label: string }[] = [
@@ -77,6 +78,37 @@ export default function DetailedAssessmentPage() {
   }, [index])
 
   const [phase, setPhase] = useState<'quiz' | 'summary' | 'generating'>('quiz')
+  const assessmentSyncRef = useRef(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!isLoaded || !isSignedIn || !user?.id || assessmentSyncRef.current) return
+    const raw = localStorage.getItem('assessmentResult')
+    if (!raw) return
+    assessmentSyncRef.current = true
+    const metaRaw = localStorage.getItem('assessmentMeta')
+    let metaParsed: unknown = null
+    if (metaRaw) {
+      try {
+        metaParsed = JSON.parse(metaRaw) as unknown
+      } catch {
+        metaParsed = null
+      }
+    }
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      void saveAssessmentToProfile({
+        clerkUserId: user.id,
+        assessmentResult: parsed,
+        assessmentMeta: metaParsed,
+      }).catch(() => {
+        assessmentSyncRef.current = false
+      })
+    } catch {
+      assessmentSyncRef.current = false
+    }
+  }, [isLoaded, isSignedIn, user?.id])
+
   const [direction, setDirection] = useState<'next' | 'back'>('next')
 
   const [diet, setDiet] = useState('')

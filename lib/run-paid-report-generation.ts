@@ -37,7 +37,7 @@ export async function runPaidReportGeneration(args: {
   try {
     const { data: jobRow, error: jobErr } = await supabaseAdmin
       .from('paid_reports')
-      .select('status, pdf_url, email')
+      .select('status, pdf_url, email, free_assessment_snapshot')
       .eq('report_id', reportId)
       .eq('user_id', userId)
       .maybeSingle()
@@ -72,9 +72,21 @@ export async function runPaidReportGeneration(args: {
       .eq('clerk_user_id', userId)
       .maybeSingle()
 
-    const freeAssessment = client?.assessment_result
+    const snapshot = jobRow.free_assessment_snapshot
+    const fromSnapshot =
+      snapshot != null && typeof snapshot === 'object' && !Array.isArray(snapshot) ? snapshot : null
+
+    const fromClientRow =
+      client?.assessment_result != null &&
+      typeof client.assessment_result === 'object' &&
+      !Array.isArray(client.assessment_result)
+        ? client.assessment_result
+        : null
+
+    const freeAssessment = fromSnapshot ?? fromClientRow
+
     if (!freeAssessment || typeof freeAssessment !== 'object') {
-      console.error('[run-paid-report-generation] missing free assessment')
+      console.error('[run-paid-report-generation] missing free assessment (no snapshot & no profile JSON)')
       await markFailed(reportId, userId)
       return
     }

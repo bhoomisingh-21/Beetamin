@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
     const { data: row, error } = await supabaseAdmin
       .from('paid_reports')
-      .select('status, pdf_url, email, report_id')
+      .select('status, pdf_url, email, report_id, assessment_id')
       .eq('report_id', reportId)
       .eq('user_id', userId)
       .maybeSingle()
@@ -38,6 +38,7 @@ export async function GET(req: Request) {
       pdf_url: row?.pdf_url ?? null,
       email: row?.email ?? null,
       report_id: row?.report_id ?? reportId,
+      assessment_id: row?.assessment_id ?? null,
     })
   } catch (e) {
     console.error('[report-status]', e)

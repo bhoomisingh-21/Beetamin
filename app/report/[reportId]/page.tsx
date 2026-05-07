@@ -17,6 +17,7 @@ type PaidReportRow = {
   pdf_url: string | null
   email: string | null
   report_id: string | null
+  assessment_id: string | null
 }
 
 const GENERATING_MESSAGES = [
@@ -144,6 +145,8 @@ function ReportPageInner() {
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [downloadStatus, setDownloadStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const downloadBusyRef = useRef(false)
+  const [retryBusy, setRetryBusy] = useState(false)
+  const [retryMessage, setRetryMessage] = useState<string | null>(null)
 
   const pollPaidReport = useCallback(async (): Promise<{ data: PaidReportRow | null; error: boolean }> => {
     if (!reportId) return { data: null, error: true }
@@ -167,9 +170,43 @@ function ReportPageInner() {
       pdf_url: json.pdf_url ?? null,
       email: json.email ?? null,
       report_id: json.report_id ?? null,
+      assessment_id:
+        json.assessment_id != null && json.assessment_id !== '' ? String(json.assessment_id) : null,
     }
     return { data, error: false }
   }, [reportId, router])
+
+  const handleRetryGeneration = useCallback(async () => {
+    const aid = pollData?.assessment_id
+    if (!aid || retryBusy) return
+    setRetryMessage(null)
+    setRetryBusy(true)
+    try {
+      let freeAssessmentResult: unknown = null
+      try {
+        const raw = localStorage.getItem('assessmentResult')
+        if (raw) freeAssessmentResult = JSON.parse(raw) as unknown
+      } catch {
+        /* ignore bad JSON */
+      }
+      const res = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ detailedAssessmentId: aid, freeAssessmentResult }),
+      })
+      const json = (await res.json().catch(() => ({}))) as { error?: string; reportId?: string }
+      if (!res.ok) {
+        setRetryMessage(typeof json.error === 'string' ? json.error : 'Could not restart generation.')
+        return
+      }
+      if (json.reportId) {
+        setView('generating')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    } finally {
+      setRetryBusy(false)
+    }
+  }, [pollData?.assessment_id, retryBusy])
 
   useEffect(() => {
     if (!isLoaded) return
@@ -373,28 +410,61 @@ function ReportPageInner() {
   }
 
   if (view === 'failed') {
+    const canRetry = Boolean(pollData?.assessment_id)
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6f7f4] px-4 py-16">
-        <div className="w-full max-w-lg rounded-3xl border border-stone-200/90 bg-white p-8 text-center shadow-xl shadow-stone-200/40 md:p-10">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 ring-1 ring-red-100">
-            <AlertCircle className="h-9 w-9 text-red-600" strokeWidth={2} />
+      <div className="flex min-h-screen flex-col bg-[#f6f7f4]">
+        <ReportAppHeader />
+        <div className="flex flex-1 items-center justify-center px-4 py-16">
+          <div className="w-full max-w-lg rounded-3xl border border-stone-200/90 bg-white p-8 text-center shadow-xl shadow-stone-200/40 md:p-10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 ring-1 ring-red-100">
+              <AlertCircle className="h-9 w-9 text-red-600" strokeWidth={2} />
+            </div>
+            <h1 className="mt-6 text-xl font-bold tracking-tight text-stone-900 md:text-2xl">Report generation failed</h1>
+            <p className="mt-3 text-sm leading-relaxed text-stone-600">
+              Something went wrong generating your report. You can try again — we&apos;ll use your saved assessment
+              answers when this browser still has them.
+            </p>
+            <p className="mt-2 font-mono text-xs text-stone-500">
+              Report ID: <span className="text-stone-800">{displayReportId}</span>
+            </p>
+            {retryMessage ? (
+              <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800">{retryMessage}</p>
+            ) : null}
+            {canRetry ? (
+              <button
+                type="button"
+                disabled={retryBusy}
+                onClick={() => void handleRetryGeneration()}
+                className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-[#1a472a] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1a472a]/25 transition hover:bg-[#143622] disabled:opacity-60"
+              >
+                {retryBusy ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Starting…
+                  </span>
+                ) : (
+                  'Regenerate PDF'
+                )}
+              </button>
+            ) : (
+              <p className="mt-4 text-xs text-stone-500">
+                We couldn&apos;t link this report to your questionnaire. Open the detailed assessment from your profile
+                and tap generate again, or contact{' '}
+                <a href="mailto:support@thebeetamin.com" className="font-semibold text-[#1a472a] underline">
+                  support@thebeetamin.com
+                </a>
+                .
+              </p>
+            )}
+            <Link
+              href="/profile"
+              className={`mt-4 inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#1a472a]/25 bg-white px-6 py-3.5 text-sm font-semibold text-[#1a472a] transition hover:bg-stone-50 ${canRetry ? '' : 'mt-6'}`}
+            >
+              Go back to My Profile
+            </Link>
           </div>
-          <h1 className="mt-6 text-xl font-bold tracking-tight text-stone-900 md:text-2xl">Report generation failed</h1>
-          <p className="mt-3 text-sm leading-relaxed text-stone-600">
-            Something went wrong generating your report. Please contact{' '}
-            <a href="mailto:support@thebeetamin.com" className="font-semibold text-[#1a472a] underline decoration-[#1a472a]/30 underline-offset-2">
-              support@thebeetamin.com
-            </a>{' '}
-            with your Report ID:{' '}
-            <span className="font-mono text-xs text-stone-800">{displayReportId}</span>
-          </p>
-          <Link
-            href="/profile"
-            className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-[#1a472a] px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#1a472a]/25 transition hover:bg-[#143622]"
-          >
-            Go back to My Profile
-          </Link>
         </div>
+        <Footer />
       </div>
     )
   }

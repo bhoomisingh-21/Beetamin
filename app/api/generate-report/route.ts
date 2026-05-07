@@ -17,6 +17,65 @@ function makeReportId() {
   return `BT-${y}${m}${d}-${suffix}`
 }
 
+/** Persist free quiz JSON so Groq PDF jobs always see it (`runPaidReportGeneration` reads DB). */
+async function syncFreeAssessmentToClientsTable(input: {
+  clerkUserId: string
+  freeAssessment: object
+  email: string
+  displayName: string
+}) {
+  const { data: updated, error: uErr } = await supabaseAdmin
+    .from('clients')
+    .update({ assessment_result: input.freeAssessment })
+    .eq('clerk_user_id', input.clerkUserId)
+    .select('id')
+
+  if (uErr) {
+    console.error('[generate-report] client assessment update', uErr)
+  }
+  if (updated && updated.length > 0) return
+
+  const start = new Date()
+  const end = new Date()
+  end.setMonth(end.getMonth() + 3)
+  const { error: insErr } = await supabaseAdmin.from('clients').insert({
+    clerk_user_id: input.clerkUserId,
+    name: input.displayName || 'User',
+    email: input.email,
+    phone: '',
+    assessment_result: input.freeAssessment,
+    plan_start_date: start.toISOString().split('T')[0],
+    plan_end_date: end.toISOString().split('T')[0],
+    status: 'active',
+    sessions_total: 6,
+    sessions_used: 0,
+    sessions_remaining: 6,
+  })
+  if (insErr?.code === '23505') {
+    const { data: byEmail } = await supabaseAdmin
+      .from('clients')
+      .select('id, clerk_user_id')
+      .eq('email', input.email.toLowerCase())
+      .maybeSingle()
+    const match = byEmail as { id: string; clerk_user_id: string | null } | null
+    if (match?.id && (!match.clerk_user_id || match.clerk_user_id === input.clerkUserId)) {
+      const { error: fixErr } = await supabaseAdmin
+        .from('clients')
+        .update({
+          clerk_user_id: input.clerkUserId,
+          assessment_result: input.freeAssessment,
+          name: input.displayName || 'User',
+        })
+        .eq('id', match.id)
+      if (fixErr) console.error('[generate-report] client merge by email', fixErr)
+    } else if (insErr) {
+      console.error('[generate-report] client insert', insErr)
+    }
+  } else if (insErr) {
+    console.error('[generate-report] client insert', insErr)
+  }
+}
+
 export async function POST(req: Request) {
   let userId: string | null = null
   try {
@@ -76,31 +135,28 @@ export async function POST(req: Request) {
       .eq('assessment_id', detailedId)
       .maybeSingle()
 
-    if (existingReport?.report_id) {
-      return NextResponse.json({
-        reportId: existingReport.report_id,
-        alreadyExists: true,
-        status: existingReport.status,
-      })
-    }
-
     const { data: client } = await supabaseAdmin
       .from('clients')
       .select('assessment_result, name')
       .eq('clerk_user_id', userId)
       .maybeSingle()
 
-    const freeAssessment =
+    const rawFree =
       client?.assessment_result ??
-      (body.freeAssessmentResult && typeof body.freeAssessmentResult === 'object'
+      (body.freeAssessmentResult != null &&
+      typeof body.freeAssessmentResult === 'object' &&
+      !Array.isArray(body.freeAssessmentResult)
         ? body.freeAssessmentResult
         : null)
+
+    const freeAssessment: object | null = rawFree && typeof rawFree === 'object' && !Array.isArray(rawFree) ? rawFree : null
 
     if (!freeAssessment) {
       return NextResponse.json(
         {
           error:
-            'We could not find your free assessment on file. Open your results in this browser once while signed in, or complete the free test again so we can sync your profile.',
+            'We could not find your free assessment on file. Finish the free quiz again or open your results once while signed in, then retry.',
+          code: 'MISSING_FREE_ASSESSMENT',
         },
         { status: 400 },
       )
@@ -112,8 +168,72 @@ export async function POST(req: Request) {
     } catch (e) {
       console.error('[generate-report] currentUser() failed', e)
     }
-    const email = user?.primaryEmailAddress?.emailAddress || (detailed.email as string)
+    const emailResolved =
+      user?.primaryEmailAddress?.emailAddress?.trim() ||
+      String(detailed.email || '').trim() ||
+      `noemail_${userId.slice(-14)}@beetamin.internal`
 
+    const displayName =
+      (client?.name as string | undefined)?.trim() ||
+      user?.fullName?.trim() ||
+      user?.firstName ||
+      user?.username ||
+      'User'
+
+    await syncFreeAssessmentToClientsTable({
+      clerkUserId: userId,
+      freeAssessment,
+      email: emailResolved.toLowerCase(),
+      displayName,
+    })
+
+    /** Terminal states → do not regenerate */
+    const er = existingReport as { report_id: string; status: string } | null
+    if (er?.report_id && ['ready', 'generated', 'generating'].includes(String(er.status))) {
+      return NextResponse.json({
+        reportId: er.report_id,
+        alreadyExists: true,
+        status: er.status,
+      })
+    }
+
+    /** Failed report for this assessment → reset and rerun */
+    if (er?.report_id && String(er.status) === 'failed') {
+      const rid = er.report_id
+      const storagePath = `${userId}/${rid}.pdf`
+      const { error: retryErr } = await supabaseAdmin
+        .from('paid_reports')
+        .update({
+          status: 'generating',
+          free_assessment_snapshot: freeAssessment,
+          deficiency_summary: null,
+          email: emailResolved,
+          pdf_url: storagePath,
+        })
+        .eq('report_id', rid)
+        .eq('user_id', userId)
+
+      if (retryErr) {
+        console.error('[generate-report] failed→generating retry', retryErr)
+        return NextResponse.json({ error: 'Could not retry report generation.' }, { status: 500 })
+      }
+
+      waitUntil(
+        runPaidReportGeneration({
+          reportId: rid,
+          userId,
+          detailedAssessmentId: detailedId,
+        }),
+      )
+
+      return NextResponse.json({
+        reportId: rid,
+        status: 'generating',
+        retriedFromFailed: true,
+      })
+    }
+
+    /** New insert */
     const reportId = makeReportId()
     const storagePath = `${userId}/${reportId}.pdf`
 
@@ -121,12 +241,13 @@ export async function POST(req: Request) {
       .from('paid_reports')
       .insert({
         user_id: userId,
-        email,
+        email: emailResolved,
         report_id: reportId,
         pdf_url: storagePath,
         amount: 39,
         status: 'generating',
         assessment_id: detailedId,
+        free_assessment_snapshot: freeAssessment,
       })
       .select()
       .single()
@@ -147,6 +268,36 @@ export async function POST(req: Request) {
           .eq('assessment_id', detailedId)
           .maybeSingle()
         if (again?.report_id) {
+          const stAgain = String(again.status || '')
+          if (stAgain === 'failed') {
+            const retryRes = await supabaseAdmin
+              .from('paid_reports')
+              .update({
+                status: 'generating',
+                free_assessment_snapshot: freeAssessment,
+                deficiency_summary: null,
+                pdf_url: `${userId}/${again.report_id}.pdf`,
+              })
+              .eq('report_id', again.report_id)
+              .eq('user_id', userId)
+
+            if (!retryRes.error) {
+              waitUntil(
+                runPaidReportGeneration({
+                  reportId: again.report_id,
+                  userId,
+                  detailedAssessmentId: detailedId,
+                }),
+              )
+            }
+
+            return NextResponse.json({
+              reportId: again.report_id,
+              status: 'generating',
+              retriedAfterRace: !!retryRes.error,
+            })
+          }
+
           return NextResponse.json({
             reportId: again.report_id,
             alreadyExists: true,

@@ -181,6 +181,24 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
           <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
         </header>
 
+        {!client ||
+        !String(client.phone || '').trim() ||
+        !String(client.assessment_goal || '').trim() ? (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/[0.09] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-snug text-amber-100/95">
+              {!client
+                ? 'Finish a quick profile setup so your phone, goals, and plan dates appear on this dashboard.'
+                : 'Add your phone number and health goal — it only takes a minute and unlocks the full overview.'}
+            </p>
+            <Link
+              href="/booking/onboard"
+              className="inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-[#0b0f14] transition hover:bg-amber-300"
+            >
+              Complete profile setup →
+            </Link>
+          </div>
+        ) : null}
+
         <div className={`${profileCard} overflow-hidden p-0`}>
           {/* Mobile: image first */}
           <div className="relative h-[160px] w-full md:hidden">
