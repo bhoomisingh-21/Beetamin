@@ -95,12 +95,19 @@ export async function POST(req: Request) {
   }
 
   try {
-    let body: { detailedAssessmentId?: string; freeAssessmentResult?: unknown }
+    let body: {
+      detailedAssessmentId?: string
+      freeAssessmentResult?: unknown
+      /** Second (or later) ₹39 purchase for same detailed assessment — inserts a new paid_reports row. */
+      forceNewPaidReport?: boolean
+    }
     try {
       body = await req.json()
     } catch {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
+
+    const forceNewPaidReport = body.forceNewPaidReport === true
 
     const detailedId = typeof body.detailedAssessmentId === 'string' ? body.detailedAssessmentId.trim() : ''
     if (!detailedId) {
@@ -127,13 +134,6 @@ export async function POST(req: Request) {
     if (!detailed) {
       return NextResponse.json({ error: 'Assessment not found or access denied.' }, { status: 404 })
     }
-
-    const { data: existingReport } = await supabaseAdmin
-      .from('paid_reports')
-      .select('report_id, status')
-      .eq('user_id', userId)
-      .eq('assessment_id', detailedId)
-      .maybeSingle()
 
     const { data: client } = await supabaseAdmin
       .from('clients')
@@ -187,50 +187,82 @@ export async function POST(req: Request) {
       displayName,
     })
 
-    /** Terminal states → do not regenerate */
-    const er = existingReport as { report_id: string; status: string } | null
-    if (er?.report_id && ['ready', 'generated', 'generating'].includes(String(er.status))) {
-      return NextResponse.json({
-        reportId: er.report_id,
-        alreadyExists: true,
-        status: er.status,
-      })
+    if (forceNewPaidReport) {
+      const { count, error: genCountErr } = await supabaseAdmin
+        .from('paid_reports')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'generating')
+      if (genCountErr) {
+        console.error('[generate-report] generating count', genCountErr)
+      } else if (count && count > 0) {
+        return NextResponse.json(
+          {
+            error: 'A report is already generating. Wait for it to finish, then try again.',
+            code: 'GENERATION_IN_FLIGHT',
+          },
+          { status: 409 },
+        )
+      }
     }
 
-    /** Failed report for this assessment → reset and rerun */
-    if (er?.report_id && String(er.status) === 'failed') {
-      const rid = er.report_id
-      const storagePath = `${userId}/${rid}.pdf`
-      const { error: retryErr } = await supabaseAdmin
-        .from('paid_reports')
-        .update({
-          status: 'generating',
-          free_assessment_snapshot: freeAssessment,
-          deficiency_summary: null,
-          email: emailResolved,
-          pdf_url: storagePath,
-        })
-        .eq('report_id', rid)
-        .eq('user_id', userId)
+    const { data: assessmentReportRows } = await supabaseAdmin
+      .from('paid_reports')
+      .select('report_id, status, created_at')
+      .eq('user_id', userId)
+      .eq('assessment_id', detailedId)
+      .order('created_at', { ascending: false })
+      .limit(25)
 
-      if (retryErr) {
-        console.error('[generate-report] failed→generating retry', retryErr)
-        return NextResponse.json({ error: 'Could not retry report generation.' }, { status: 500 })
+    const rows = assessmentReportRows || []
+
+    if (!forceNewPaidReport) {
+      const existingActive = rows.find((r) =>
+        ['ready', 'generated', 'generating'].includes(String(r.status)),
+      )
+      if (existingActive?.report_id) {
+        return NextResponse.json({
+          reportId: existingActive.report_id,
+          alreadyExists: true,
+          status: existingActive.status,
+        })
       }
 
-      waitUntil(
-        runPaidReportGeneration({
-          reportId: rid,
-          userId,
-          detailedAssessmentId: detailedId,
-        }),
-      )
+      const latestRow = rows[0] ?? null
+      if (latestRow?.report_id && String(latestRow.status) === 'failed') {
+        const rid = latestRow.report_id
+        const storagePath = `${userId}/${rid}.pdf`
+        const { error: retryErr } = await supabaseAdmin
+          .from('paid_reports')
+          .update({
+            status: 'generating',
+            free_assessment_snapshot: freeAssessment,
+            deficiency_summary: null,
+            email: emailResolved,
+            pdf_url: storagePath,
+          })
+          .eq('report_id', rid)
+          .eq('user_id', userId)
 
-      return NextResponse.json({
-        reportId: rid,
-        status: 'generating',
-        retriedFromFailed: true,
-      })
+        if (retryErr) {
+          console.error('[generate-report] failed→generating retry', retryErr)
+          return NextResponse.json({ error: 'Could not retry report generation.' }, { status: 500 })
+        }
+
+        waitUntil(
+          runPaidReportGeneration({
+            reportId: rid,
+            userId,
+            detailedAssessmentId: detailedId,
+          }),
+        )
+
+        return NextResponse.json({
+          reportId: rid,
+          status: 'generating',
+          retriedFromFailed: true,
+        })
+      }
     }
 
     /** New insert */
@@ -261,47 +293,51 @@ export async function POST(req: Request) {
         msg.toLowerCase().includes('duplicate') ||
         msg.toLowerCase().includes('unique')
       if (isDup) {
-        const { data: again } = await supabaseAdmin
+        const { data: againRows } = await supabaseAdmin
           .from('paid_reports')
           .select('report_id, status')
           .eq('user_id', userId)
           .eq('assessment_id', detailedId)
-          .maybeSingle()
-        if (again?.report_id) {
-          const stAgain = String(again.status || '')
-          if (stAgain === 'failed') {
-            const retryRes = await supabaseAdmin
-              .from('paid_reports')
-              .update({
-                status: 'generating',
-                free_assessment_snapshot: freeAssessment,
-                deficiency_summary: null,
-                pdf_url: `${userId}/${again.report_id}.pdf`,
-              })
-              .eq('report_id', again.report_id)
-              .eq('user_id', userId)
-
-            if (!retryRes.error) {
-              waitUntil(
-                runPaidReportGeneration({
-                  reportId: again.report_id,
-                  userId,
-                  detailedAssessmentId: detailedId,
-                }),
-              )
-            }
-
-            return NextResponse.json({
-              reportId: again.report_id,
+          .order('created_at', { ascending: false })
+          .limit(8)
+        const againList = againRows || []
+        const active = againList.find((r) =>
+          ['ready', 'generated', 'generating'].includes(String(r.status)),
+        )
+        if (active?.report_id) {
+          return NextResponse.json({
+            reportId: active.report_id,
+            alreadyExists: true,
+            status: active.status,
+          })
+        }
+        const failed = againList.find((r) => String(r.status) === 'failed')
+        if (failed?.report_id && !forceNewPaidReport) {
+          const retryRes = await supabaseAdmin
+            .from('paid_reports')
+            .update({
               status: 'generating',
-              retriedAfterRace: !!retryRes.error,
+              free_assessment_snapshot: freeAssessment,
+              deficiency_summary: null,
+              pdf_url: `${userId}/${failed.report_id}.pdf`,
             })
+            .eq('report_id', failed.report_id)
+            .eq('user_id', userId)
+
+          if (!retryRes.error) {
+            waitUntil(
+              runPaidReportGeneration({
+                reportId: failed.report_id,
+                userId,
+                detailedAssessmentId: detailedId,
+              }),
+            )
           }
 
           return NextResponse.json({
-            reportId: again.report_id,
-            alreadyExists: true,
-            status: again.status,
+            reportId: failed.report_id,
+            status: 'generating',
+            retriedAfterRace: !!retryRes.error,
           })
         }
       }

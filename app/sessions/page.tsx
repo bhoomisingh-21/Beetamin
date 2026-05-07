@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useUser, UserButton } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,8 +15,16 @@ import {
   Plus,
   User,
   ChevronDown,
+  FileText,
 } from 'lucide-react'
-import { getClientDashboard, type ClientRow, type AppointmentRow } from '@/lib/booking-actions'
+import {
+  getClientDashboard,
+  type ClientRow,
+  type AppointmentRow,
+  type PaidReportSummary,
+} from '@/lib/booking-actions'
+import type { SessionBookingAccess } from '@/lib/session-booking-access'
+import { requestRegeneratePaidReport } from '@/lib/report-dashboard-actions'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
@@ -47,6 +56,14 @@ function formatDate(date: string) {
     month: 'short',
     year: 'numeric',
   })
+}
+
+/** Label for dashboard report rows — e.g. "7 May 2026". */
+function formatReportDay(iso?: string) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function formatTime(t: string) {
@@ -126,11 +143,17 @@ function buildSessionIcs(appt: AppointmentRow & { nutritionists?: { name: string
 export default function SessionsPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
-  const [data, setData] = useState<{ client: ClientRow | null; appointments: AppointmentRow[] } | null>(
-    null,
-  )
+  const [data, setData] = useState<{
+    client: ClientRow | null
+    appointments: AppointmentRow[]
+    paidReports: PaidReportSummary[]
+    sessionBooking: SessionBookingAccess
+  } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null)
+  const [openReportId, setOpenReportId] = useState<string | null>(null)
+  const [regenBusy, setRegenBusy] = useState(false)
+  const [regenError, setRegenError] = useState('')
 
   useEffect(() => {
     if (!isLoaded || !user) return
@@ -139,16 +162,78 @@ export default function SessionsPage() {
         setData({
           client: result.client,
           appointments: result.appointments ?? [],
+          paidReports: result.paidReports ?? [],
+          sessionBooking: result.sessionBooking,
         })
       })
       .catch(() => {
-        setData({ client: null, appointments: [] })
+        setData({
+          client: null,
+          appointments: [],
+          paidReports: [],
+          sessionBooking: {
+            allowed: false,
+            reason: 'no_completed_report',
+            latestCompletedAmount: null,
+          },
+        })
       })
       .finally(() => setIsLoading(false))
   }, [isLoaded, user])
 
   const appointments = data?.appointments ?? []
   const client = data?.client ?? null
+
+  const paidReports = data?.paidReports ?? []
+  const sessionBooking = data?.sessionBooking
+  const canUseSessionBooking = sessionBooking?.allowed === true
+
+  const sortedPaidReports = useMemo(
+    () =>
+      [...paidReports].sort((a, b) => {
+        const ta = new Date(a.created_at || 0).getTime()
+        const tb = new Date(b.created_at || 0).getTime()
+        return tb - ta
+      }),
+    [paidReports],
+  )
+
+  useEffect(() => {
+    const latest = sortedPaidReports[0]?.report_id ?? null
+    if (latest) setOpenReportId((prev) => (prev == null ? latest : prev))
+  }, [sortedPaidReports])
+
+  const hasTerminalReport = sortedPaidReports.some((r) =>
+    ['ready', 'generated', 'completed'].includes(r.status),
+  )
+  const hasGeneratingReport = sortedPaidReports.some((r) => r.status === 'generating')
+  const showWantUpdatedSection = hasTerminalReport && !hasGeneratingReport
+
+  const latestAssessmentForRegen = sortedPaidReports.find(
+    (r) => ['ready', 'generated', 'completed'].includes(r.status) && r.assessment_id,
+  )?.assessment_id
+
+  const goBookingFlow = () => {
+    if (!canUseSessionBooking) router.push('/booking')
+    else router.push('/booking/new')
+  }
+
+  async function handleRegenerateReport() {
+    const aid = latestAssessmentForRegen
+    if (!aid) {
+      setRegenError('No assessment is linked to your latest report.')
+      return
+    }
+    setRegenBusy(true)
+    setRegenError('')
+    const res = await requestRegeneratePaidReport(aid)
+    setRegenBusy(false)
+    if (!res.ok) {
+      setRegenError(res.error)
+      return
+    }
+    router.push(`/report/${encodeURIComponent(res.reportId)}`)
+  }
 
   const apptForSession = useCallback(
     (n: number) => appointments.find((a) => a.session_number === n),
@@ -171,6 +256,7 @@ export default function SessionsPage() {
   const planComplete = allSixSessionsComplete
 
   const sessionBookable = (n: number) => {
+    if (!canUseSessionBooking) return false
     if (!client || client.status !== 'active' || client.sessions_remaining <= 0) return false
     if (blockingAppt) return false
     if (!prevSessionCompleted(n)) return false
@@ -181,6 +267,7 @@ export default function SessionsPage() {
   }
 
   const canBookNextSession = useMemo(() => {
+    if (!canUseSessionBooking) return false
     if (!client || client.status !== 'active' || client.sessions_remaining <= 0) return false
     if (blockingAppt) return false
     for (let n = 1; n <= 6; n++) {
@@ -191,14 +278,14 @@ export default function SessionsPage() {
       return true
     }
     return false
-  }, [client, appointments, blockingAppt])
+  }, [client, appointments, blockingAppt, canUseSessionBooking])
 
   const nextBookableSessionNumber = useMemo(() => {
     for (let n = 1; n <= 6; n++) {
       if (sessionBookable(n)) return n
     }
     return null
-  }, [client, appointments, blockingAppt, apptForSession])
+  }, [client, appointments, blockingAppt, apptForSession, canUseSessionBooking])
 
   const activeAppt = appointments.find((a) => a.status === 'pending' || a.status === 'confirmed')
   const confirmedAppts = appointments.filter((a) => a.status === 'confirmed')
@@ -294,6 +381,138 @@ export default function SessionsPage() {
           </div>
         </motion.div>
 
+        {sortedPaidReports.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 bg-[#111820] border border-emerald-500/20 rounded-3xl p-6 md:p-8"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <FileText className="text-emerald-400 shrink-0 mt-1" size={22} />
+              <div className="min-w-0">
+                <h2 className="text-white font-black text-xl">Your reports</h2>
+                <p className="text-gray-500 text-xs mt-1">
+                  Reverse chronological · older reports stay in your archive
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {sortedPaidReports.map((r) => {
+                const isOpen = openReportId === r.report_id
+                const statusLabel =
+                  r.status === 'generating'
+                    ? 'Generating'
+                    : r.status === 'failed'
+                      ? 'Failed'
+                      : ['ready', 'generated', 'completed'].includes(r.status)
+                        ? 'Completed'
+                        : r.status
+
+                return (
+                  <div
+                    key={r.report_id}
+                    className="rounded-2xl border border-white/10 bg-[#0A0F14] overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenReportId((id) => (id === r.report_id ? null : r.report_id))
+                      }
+                      className="w-full flex flex-wrap items-center justify-between gap-2 px-4 py-4 text-left hover:bg-white/[0.03] transition"
+                    >
+                      <span className="text-white font-bold text-sm sm:text-base">
+                        Report — {formatReportDay(r.created_at)}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide ${
+                            statusLabel === 'Completed'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : r.status === 'generating'
+                                ? 'bg-amber-500/20 text-amber-200 border border-amber-500/30'
+                                : 'bg-gray-700 text-gray-300 border border-gray-600'
+                          }`}
+                        >
+                          {statusLabel}
+                        </span>
+                        <ChevronDown
+                          size={16}
+                          className={`text-gray-500 transition ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-4 pt-0 border-t border-white/5">
+                        <div className="flex flex-wrap gap-3 mt-4">
+                          <Link
+                            href={`/report/${encodeURIComponent(r.report_id)}`}
+                            className="inline-flex rounded-xl bg-emerald-500 hover:bg-emerald-400 px-5 py-2.5 text-xs font-black text-black"
+                          >
+                            Open report
+                          </Link>
+                          {typeof r.amount === 'number' ? (
+                            <span className="inline-flex items-center rounded-xl border border-white/15 px-4 py-2 text-xs text-gray-400">
+                              Plan ₹{r.amount.toLocaleString('en-IN')}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {showWantUpdatedSection && (
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <p className="text-white font-bold text-base">Want an updated report?</p>
+                <p className="text-gray-500 text-sm mt-1">
+                  Retake the free quiz for a fresh run, or reuse your current answers — ₹39 checkout is a stub
+                  until payment is wired.
+                </p>
+                {regenError ? (
+                  <p className="text-red-400 text-xs mt-3">{regenError}</p>
+                ) : null}
+                <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/assessment"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem('beetamin.retakePaidReportFlow', '1')
+                      } catch {
+                        /* ignore */
+                      }
+                    }}
+                    className="inline-flex justify-center rounded-2xl border border-emerald-500/50 px-6 py-3 text-sm font-bold text-emerald-300 hover:bg-emerald-500/10 transition"
+                  >
+                    Retake assessment
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={regenBusy || !latestAssessmentForRegen}
+                    onClick={() => void handleRegenerateReport()}
+                    className="inline-flex justify-center items-center gap-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed px-6 py-3 text-sm font-black text-black transition"
+                  >
+                    {regenBusy ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} /> Starting…
+                      </>
+                    ) : (
+                      'Generate new report'
+                    )}
+                  </button>
+                </div>
+                {!latestAssessmentForRegen ? (
+                  <p className="text-amber-400/90 text-xs mt-3">
+                    Generate new report needs a linked assessment on your latest completed PDF — retake instead if this
+                    is missing.
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {planComplete && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -347,7 +566,31 @@ export default function SessionsPage() {
 
         {!showNoPlanPricing && client && (
           <>
-            {firstConfirmed && (
+            {!canUseSessionBooking ? (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 rounded-3xl border border-amber-500/40 bg-amber-950/30 p-8 text-center"
+              >
+                <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-2xl">
+                  🔒
+                </div>
+                <h2 className="text-white font-black text-xl">Sessions are part of the Full Recovery Plan</h2>
+                <p className="text-gray-400 text-sm mt-3 leading-relaxed max-w-lg mx-auto">
+                  Session booking is included in the Full Recovery Plan (₹3,999). Your ₹39 plan includes your
+                  personalised report only.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/booking')}
+                  className="mt-6 inline-flex items-center justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-8 py-3.5 text-black font-black text-sm transition"
+                >
+                  Upgrade to Full Plan
+                </button>
+              </motion.div>
+            ) : (
+              <>
+                {firstConfirmed && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -446,7 +689,7 @@ export default function SessionsPage() {
                     return (
                       <div
                         key={n}
-                        onClick={() => router.push('/booking/new')}
+                        onClick={goBookingFlow}
                         className="bg-emerald-500/10 border-2 border-emerald-500 rounded-2xl p-4 text-center cursor-pointer hover:bg-emerald-500/20 transition"
                       >
                         <Calendar className="text-emerald-400 mx-auto" size={24} />
@@ -477,7 +720,7 @@ export default function SessionsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                onClick={() => router.push('/booking/new')}
+                onClick={goBookingFlow}
                 className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-5 transition flex items-center justify-center gap-2"
               >
                 <Plus size={22} />
@@ -518,7 +761,7 @@ export default function SessionsPage() {
                   <p className="text-red-300 font-bold text-sm">Your last request was declined</p>
                   <p className="text-gray-400 text-sm mt-1">Please choose a different date or time slot.</p>
                   <button
-                    onClick={() => router.push('/booking/new')}
+                    onClick={goBookingFlow}
                     className="mt-3 bg-emerald-500 text-black font-bold rounded-full px-5 py-2 text-sm hover:bg-emerald-400 transition"
                   >
                     Book a New Slot →
@@ -583,6 +826,8 @@ export default function SessionsPage() {
                   </div>
                 ))}
               </motion.div>
+            )}
+              </>
             )}
           </>
         )}

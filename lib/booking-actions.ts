@@ -1,6 +1,7 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { triggerReferralReward } from './referral-trigger'
+import { getSessionBookingAccess, type SessionBookingAccess } from './session-booking-access'
 import { supabaseAdmin } from './supabase-admin'
 import { Resend } from 'resend'
 
@@ -84,21 +85,32 @@ export async function getClientByClerkId(clerkUserId: string): Promise<ClientRow
 }
 
 export async function checkClientEligibility(clerkUserId: string) {
+  const sessionBooking = await getSessionBookingAccess(clerkUserId)
+  if (!sessionBooking.allowed) {
+    const client = await getClientByClerkId(clerkUserId)
+    return {
+      eligible: false,
+      reason: 'session_plan_tier' as const,
+      client,
+      sessionBooking,
+    }
+  }
+
   const client = await getClientByClerkId(clerkUserId)
-  if (!client) return { eligible: false, reason: 'no_plan', client: null }
+  if (!client) return { eligible: false, reason: 'no_plan', client: null, sessionBooking }
 
   const now = new Date()
   const endDate = new Date(client.plan_end_date)
 
   if (now > endDate) {
     await supabaseAdmin.from('clients').update({ status: 'expired' }).eq('id', client.id)
-    return { eligible: false, reason: 'expired', client }
+    return { eligible: false, reason: 'expired', client, sessionBooking }
   }
   if (client.sessions_remaining <= 0) {
     await supabaseAdmin.from('clients').update({ status: 'completed' }).eq('id', client.id)
-    return { eligible: false, reason: 'no_sessions', client }
+    return { eligible: false, reason: 'no_sessions', client, sessionBooking }
   }
-  return { eligible: true, reason: 'ok', client }
+  return { eligible: true, reason: 'ok', client, sessionBooking }
 }
 
 export async function saveAssessmentToProfile(input: {
@@ -318,6 +330,13 @@ export async function requestAppointment(data: {
   if (client.status !== 'active') throw new Error('Plan is not active')
   if (client.sessions_remaining <= 0) throw new Error('No sessions remaining')
 
+  const bookingAccess = await getSessionBookingAccess(userId)
+  if (!bookingAccess.allowed) {
+    throw new Error(
+      'Session booking is included in the Full Recovery Plan (₹3,999). Your current plan includes your personalised report only.',
+    )
+  }
+
   // Block if there's already a pending/confirmed appointment
   const { data: existing } = await supabaseAdmin
     .from('appointments')
@@ -400,6 +419,7 @@ export type PaidReportSummary = {
   created_at?: string
   assessment_id?: string | null
   deficiency_summary?: unknown
+  amount?: number
 }
 
 export type ProgressLogRow = {
@@ -479,19 +499,22 @@ export type ClientSessionsDashboard = {
   paidReports: PaidReportSummary[]
   recoveryReportReady: { report_id: string; status: string } | null
   recoveryReportGenerating: { report_id: string } | null
+  sessionBooking: SessionBookingAccess
 }
 
 export async function getClientDashboard(clerkUserId: string): Promise<ClientSessionsDashboard> {
+  const sessionBooking = await getSessionBookingAccess(clerkUserId)
   const empty: ClientSessionsDashboard = {
     client: null,
     appointments: [],
     paidReports: [],
     recoveryReportReady: null,
     recoveryReportGenerating: null,
+    sessionBooking,
   }
   try {
     const client = await getClientByClerkId(clerkUserId)
-    if (!client) return empty
+    if (!client) return { ...empty, sessionBooking }
 
     const { data: appointments, error: apErr } = await supabaseAdmin
       .from('appointments')
@@ -503,7 +526,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
 
     const { data: paidRows, error: prErr } = await supabaseAdmin
       .from('paid_reports')
-      .select('report_id, status, created_at, assessment_id, deficiency_summary')
+      .select('report_id, status, created_at, assessment_id, deficiency_summary, amount')
       .eq('user_id', clerkUserId)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -519,6 +542,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
       created_at: r.created_at ? String(r.created_at) : undefined,
       assessment_id: r.assessment_id != null ? String(r.assessment_id) : null,
       deficiency_summary: r.deficiency_summary,
+      amount: r.amount != null ? Number(r.amount) : undefined,
     }))
 
     return {
@@ -531,6 +555,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
       recoveryReportGenerating: recoveryReportGenerating
         ? { report_id: String(recoveryReportGenerating.report_id) }
         : null,
+      sessionBooking,
     }
   } catch (e) {
     console.error('[getClientDashboard]', e)
