@@ -1,156 +1,22 @@
 import { clerkClient } from '@clerk/nextjs/server'
-import Groq from 'groq-sdk'
-import { generateRecoveryPlanPdfBuffer } from '@/lib/generate-pdf'
-import { parseRecoverySectionsJson } from '@/lib/recovery-report-parse'
-import { RECOVERY_PLAN_SYSTEM_PROMPT } from '@/lib/recovery-report-prompt'
-import type { DetailedAssessmentPayload, RecoveryReportSections } from '@/lib/recovery-report-types'
+import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
+import {
+  coerceRecoveryReportV2,
+  deficiencySummaryFromV2,
+  generateRecoveryReportV2Payload,
+} from '@/lib/recovery-report-v2-groq'
+import { renderRecoveryReportV2PdfBuffer } from '@/lib/render-recovery-report-v2-pdf'
 import { sendRecoveryReportEmail } from '@/lib/send-report-email'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-const GROQ_APPENDIX = `
-FORMAT ENFORCEMENT (READ FIRST):
-Everything you output inside each JSON string must look like a **dashboard**: ---- dividers, bullets, emoji section headers where the system prompt lists them, 2–3 lines max per sub-block. If it reads like an article, regenerate mentally before answering.
-
-SUPPLEMENT SECTION RULES — VERY IMPORTANT:
-Recommend MAXIMUM 2 supplements only.
-Pick only the top 2 most critical deficiencies to supplement for.
-Do not recommend more than 2 under any circumstance.
-The user should have complete clarity on what to take.
-For the remaining deficiencies, focus on fixing them through the meal plan instead.
-For each supplement, explain very clearly:
-- Exactly what it is in simple language
-- Exactly one brand to buy (be specific, one brand only)
-- Exact dosage (e.g. 1000 IU, 500mg)
-- Exact timing (e.g. every morning with breakfast)
-- How long to take it
-- That it is safe and well researched
-
-MEAL PLAN RULES — VERY IMPORTANT:
-Every single day must have COMPLETELY DIFFERENT meals.
-Do not repeat the same breakfast, lunch, or dinner on any two days.
-Day 1 and Day 4 must be different.
-Day 2 and Day 5 must be different.
-Day 3 and Day 6 must be different.
-Variety is the entire point of a 7-day plan.
-Use a wide range of Indian ingredients across the week:
-poha, upma, idli, dosa, paratha, oats, eggs, daliya, chilla on different mornings.
-Dal, rajma, chana, chole, paneer, tofu, chicken, fish on different lunches and dinners.
-Every day should feel like a genuinely different menu.
-
-DEFICIENCY ANALYSIS — SYMPTOM SPECIFICITY:
-When writing YOUR SYMPTOMS POINTING TO THIS,
-list the patient's ACTUAL specific reported symptoms word for word — not generic descriptions.
-For example instead of "skin and hair issues" write "your reported hair fall, brittle nails, and dry skin".
-Make it clear you are talking about THEIR specific answers.
-
-PREMIUM JSON KEYS (premiumValueStatement, healthScoreSummary, smartInsights, ninetyDayTimeline):
-Follow the **exact dashboard templates** spelled out under "FINAL MACHINE OUTPUT RULE" in the system prompt (cover panel, health score dash, 5 insights, 4 staged timeline panels). Same rules: bullets, ---- lines, short blocks only — never paragraphs.
-`.trim()
-
-function getGroq() {
-  const key = process.env.GROQ_API_KEY
-  if (!key) throw new Error('GROQ_API_KEY is not configured')
-  return new Groq({ apiKey: key })
-}
-
-function extractDeficiencySummary(freeAssessment: unknown): Record<string, unknown> | null {
-  if (!freeAssessment || typeof freeAssessment !== 'object') return null
-  const fa = freeAssessment as {
-    primaryDeficiencies?: unknown
-    deficiencyScore?: unknown
-    urgencyMessage?: unknown
-  }
-  const raw = fa.primaryDeficiencies
-  if (!Array.isArray(raw)) return null
-  const deficiencies: unknown[] = []
-  for (const item of raw) {
-    if (!item || typeof item !== 'object') continue
-    const o = item as Record<string, unknown>
-    const sev = o.severity
-    const severity =
-      sev === 'high' || sev === 'medium' || sev === 'low' ? sev : 'low'
-    const symptoms = Array.isArray(o.symptoms)
-      ? (o.symptoms as unknown[]).filter((s): s is string => typeof s === 'string')
-      : []
-    deficiencies.push({
-      nutrient: typeof o.nutrient === 'string' ? o.nutrient : String(o.nutrient ?? ''),
-      severity,
-      reason:
-        typeof o.reason === 'string'
-          ? o.reason
-          : typeof o.explanation === 'string'
-            ? o.explanation
-            : '',
-      symptoms,
-    })
-  }
-  if (!deficiencies.length) return null
-  const score = typeof fa.deficiencyScore === 'number' ? fa.deficiencyScore : null
-  const urgencyRaw = fa.urgencyMessage
-  const urgencyMessage =
-    typeof urgencyRaw === 'string' && urgencyRaw.trim() ? urgencyRaw.trim() : undefined
+function readAssessmentMeta(am: unknown): { age?: string; diet?: string; goal?: string } {
+  if (!am || typeof am !== 'object') return {}
+  const o = am as Record<string, unknown>
   return {
-    overallScore: score,
-    deficiencies,
-    ...(urgencyMessage ? { urgencyMessage } : {}),
+    age: o.age != null && o.age !== '' ? String(o.age) : undefined,
+    diet: typeof o.diet === 'string' ? o.diet : undefined,
+    goal: typeof o.goal === 'string' ? o.goal : undefined,
   }
-}
-
-function freeAssessmentMeta(free: unknown): {
-  deficiencyScore: number | null
-  urgencyPreview: string | null
-} {
-  if (!free || typeof free !== 'object') return { deficiencyScore: null, urgencyPreview: null }
-  const fa = free as Record<string, unknown>
-  const rawScore = fa.deficiencyScore
-  const deficiencyScore =
-    typeof rawScore === 'number' && !Number.isNaN(rawScore) ? Math.round(rawScore) : null
-  const u = fa.urgencyMessage
-  const urgencyPreview =
-    typeof u === 'string' && u.trim() ? u.trim().slice(0, 320) : null
-  return { deficiencyScore, urgencyPreview }
-}
-
-async function generateRecoveryReportSections(input: {
-  patientName: string
-  freeAssessment: unknown
-  detailed: DetailedAssessmentPayload
-}): Promise<RecoveryReportSections> {
-  const groq = getGroq()
-  const userPayload = {
-    patientName: input.patientName,
-    freeDeficiencyAssessment: input.freeAssessment,
-    detailedLifestyleAssessment: input.detailed,
-  }
-
-  const completion = await Promise.race([
-    groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: `${RECOVERY_PLAN_SYSTEM_PROMPT}\n\n${GROQ_APPENDIX}`,
-        },
-        {
-          role: 'user',
-          content:
-            'Patient data (JSON):\n' +
-            JSON.stringify(userPayload, null, 2) +
-            '\n\nProduce the JSON object as specified in your system instructions.',
-        },
-      ],
-      temperature: 0.55,
-      max_tokens: 8192,
-      response_format: { type: 'json_object' },
-    }),
-    new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Groq timeout')), 90000)
-    }),
-  ])
-
-  const raw = completion.choices[0]?.message?.content
-  if (!raw) throw new Error('Empty response from report generation')
-  return parseRecoverySectionsJson(raw)
 }
 
 async function markFailed(reportId: string, userId: string) {
@@ -202,7 +68,7 @@ export async function runPaidReportGeneration(args: {
 
     const { data: client } = await supabaseAdmin
       .from('clients')
-      .select('assessment_result, name')
+      .select('assessment_result, name, assessment_meta, assessment_goal')
       .eq('clerk_user_id', userId)
       .maybeSingle()
 
@@ -213,7 +79,11 @@ export async function runPaidReportGeneration(args: {
       return
     }
 
-    const deficiencySummary = extractDeficiencySummary(freeAssessment)
+    const meta = readAssessmentMeta(client?.assessment_meta)
+    const goalFromClient =
+      client && typeof client.assessment_goal === 'string' && client.assessment_goal.trim()
+        ? client.assessment_goal.trim()
+        : undefined
 
     let clerkUser
     try {
@@ -249,12 +119,15 @@ export async function runPaidReportGeneration(args: {
       menstrual_health: detailed.menstrual_health,
     }
 
-    let sections: RecoveryReportSections
+    let raw: Record<string, unknown>
     try {
-      sections = await generateRecoveryReportSections({
+      raw = await generateRecoveryReportV2Payload({
         patientName,
         freeAssessment,
         detailed: detailedPayload,
+        age: meta.age ?? 'Not specified',
+        diet: meta.diet ?? detailed.diet_type ?? 'Mixed',
+        goal: meta.goal ?? goalFromClient ?? 'Personalised nutrient recovery',
       })
     } catch (e) {
       console.error('[run-paid-report-generation] Groq', e)
@@ -262,23 +135,21 @@ export async function runPaidReportGeneration(args: {
       return
     }
 
-    const preparedOn = new Date().toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
+    const generatedAt = new Date().toISOString()
+    const reportData = coerceRecoveryReportV2(raw, {
+      name: patientName,
+      age: meta.age,
+      diet: meta.diet ?? detailed.diet_type,
+      goal: meta.goal ?? goalFromClient,
+      reportId,
+      generatedAt,
     })
+
+    const deficiencySummary = deficiencySummaryFromV2(reportData)
 
     let pdfBuffer: Buffer
     try {
-      const { deficiencyScore, urgencyPreview } = freeAssessmentMeta(freeAssessment)
-      pdfBuffer = await generateRecoveryPlanPdfBuffer({
-        patientName,
-        reportId,
-        preparedOn,
-        sections,
-        deficiencyScore,
-        urgencyPreview,
-      })
+      pdfBuffer = await renderRecoveryReportV2PdfBuffer(reportData)
     } catch (pdfError) {
       console.error('[run-paid-report-generation] PDF', pdfError)
       await markFailed(reportId, userId)

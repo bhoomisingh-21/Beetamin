@@ -74,7 +74,7 @@ function getOfferHeadline(score: number, name: string, deficiencies: any[]) {
     return {
       h2: `Protect What's Working.`,
       h2sub: `Build on It.`,
-      desc: `${firstName}'s profile is healthy — but optimal is different from average. Your ₹39 plan locks in your current status and builds the margins that prevent future gaps.`,
+      desc: `${firstName}'s profile is healthy — but optimal is different from average. Your ₹29 plan locks in your current status and builds the margins that prevent future gaps.`,
     }
   }
   const topNutrient = deficiencies?.[0]?.nutrient || 'your deficiencies'
@@ -82,7 +82,7 @@ function getOfferHeadline(score: number, name: string, deficiencies: any[]) {
     return {
       h2: `Catch It Early.`,
       h2sub: `Fix It Permanently.`,
-      desc: `${firstName}'s ${topNutrient} gap is early-stage — the easiest and cheapest time to fix it. Your ₹39 plan gives you the exact protocol before it becomes a real problem.`,
+      desc: `${firstName}'s ${topNutrient} gap is early-stage — the easiest and cheapest time to fix it. Your ₹29 plan gives you the exact protocol before it becomes a real problem.`,
     }
   }
   return {
@@ -99,17 +99,64 @@ export default function ResultsPage() {
   const [meta, setMeta] = useState<any>({})
   const [scoreAnimated, setScoreAnimated] = useState(0)
   const [flags, setFlags] = useState<AssessmentFlags | null>(null)
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
   const assessmentSyncedRef = useRef(false)
   const router = useRouter()
   const { isSignedIn, user } = useUser()
 
-  function handleRecoveryPlanCta() {
+  /**
+   * Queues `/api/generate-report` → `runPaidReportGeneration` (new Groq JSON + react-pdf, storage + inbox).
+   */
+  async function generateAndSendReport(userEmail: string, userName: string) {
+    void userName
+    setGenerateError(null)
     if (!isSignedIn) {
       sessionStorage.setItem('postLoginDest', '29-plan')
       router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))
       return
     }
-    router.push('/detailed-assessment')
+
+    const primary = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase() ?? ''
+    if (!primary || primary !== userEmail.trim().toLowerCase()) {
+      setGenerateError('Sign in with the email you want us to deliver the PDF to.')
+      return
+    }
+
+    const detailedId = flags?.latestDetailedAssessmentId
+    if (!detailedId) {
+      router.push('/detailed-assessment')
+      return
+    }
+
+    const existing = flags?.paidReportForLatestDetailed
+    if (existing?.status === 'ready' || existing?.status === 'generated') {
+      router.push(`/report/${encodeURIComponent(existing.report_id)}`)
+      return
+    }
+    if (existing?.status === 'generating') {
+      router.push(`/report/${encodeURIComponent(existing.report_id)}`)
+      return
+    }
+
+    setIsGeneratingReport(true)
+    try {
+      const res = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ detailedAssessmentId: detailedId }),
+      })
+      const j = await res.json()
+      if (!res.ok) throw new Error(typeof j.error === 'string' ? j.error : 'Could not start report generation')
+      if (j.reportId) {
+        router.push(`/report/${encodeURIComponent(j.reportId)}`)
+      }
+    } catch (e) {
+      console.error('[assessment/results] generateAndSendReport', e)
+      setGenerateError(e instanceof Error ? e.message : 'Could not start your report.')
+    } finally {
+      setIsGeneratingReport(false)
+    }
   }
 
   useEffect(() => {
@@ -468,7 +515,7 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* ===== SECTION 2 — PAID RECOVERY READY / GENERATING OR ₹39 OFFER ===== */}
+      {/* ===== SECTION 2 — PAID RECOVERY READY / GENERATING OR ₹29 OFFER ===== */}
       {readyReportId ? (
         <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
           <motion.div
@@ -550,7 +597,7 @@ export default function ResultsPage() {
                   <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Success rate</p>
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹39</p>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹29</p>
                   <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Recovery PDF</p>
                 </div>
               </div>
@@ -590,7 +637,7 @@ export default function ResultsPage() {
                 </p>
 
                 <p className="line-through text-gray-400 text-sm md:text-lg">₹299</p>
-                <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹39</p>
+                <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹29</p>
                 <p className="text-emerald-600 text-xs sm:text-sm font-semibold mt-1.5">
                   {isHealthy
                     ? `Optimization plan for ${meta.name || 'you'}`
@@ -608,11 +655,28 @@ export default function ResultsPage() {
                 </p>
 
                 <button
-                  onClick={handleRecoveryPlanCta}
-                  className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  type="button"
+                  onClick={() =>
+                    void generateAndSendReport(
+                      user?.primaryEmailAddress?.emailAddress ?? '',
+                      meta.name?.trim() || user?.fullName?.trim() || user?.firstName?.trim() || 'Patient',
+                    )
+                  }
+                  disabled={isGeneratingReport}
+                  className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
                 >
-                  Get Paid Report — ₹29
+                  {isGeneratingReport ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+                      Starting your PDF…
+                    </span>
+                  ) : (
+                    'Get Paid Report — ₹29'
+                  )}
                 </button>
+                {generateError ? (
+                  <p className="mt-3 text-xs text-red-600 text-center font-medium">{generateError}</p>
+                ) : null}
 
                 <p className="mt-3 text-[10px] sm:text-xs text-gray-400">
                   🔐 Private • Doctor-reviewed format • PDF to your inbox
