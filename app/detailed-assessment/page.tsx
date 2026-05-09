@@ -8,6 +8,7 @@ import { ChevronLeft, Loader2, Leaf } from 'lucide-react'
 import { ReportGeneratingLoader } from '@/components/ReportGeneratingLoader'
 import { saveAssessmentToProfile } from '@/lib/booking-actions'
 import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from '@/lib/recovery-report-types'
+import { submitToPayU } from '@/lib/payu-submit'
 
 const FOOD_ROWS: { key: FoodFrequencyKey; label: string }[] = [
   { key: 'green_vegetables', label: 'Green vegetables (palak, methi, broccoli)' },
@@ -189,7 +190,6 @@ export default function DetailedAssessmentPage() {
   }, [symptoms])
 
   async function handleGenerateReport() {
-    // TODO: Add Razorpay "Confirm & pay" step here before calling generate-report (purchase page flow).
     setGenError('')
     if (!isSignedIn) {
       router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))
@@ -204,7 +204,7 @@ export default function DetailedAssessmentPage() {
       })
       const saveJson = await saveRes.json().catch(() => ({}))
       if (!saveRes.ok) {
-        throw new Error(saveJson.error || 'Could not save your answers')
+        throw new Error(typeof saveJson.error === 'string' ? saveJson.error : 'Could not save your answers')
       }
       const detailedAssessmentId = saveJson.id as string
 
@@ -216,25 +216,63 @@ export default function DetailedAssessmentPage() {
         /* ignore */
       }
 
-      const genRes = await fetch('/api/generate-report', {
+      const payRes = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ detailedAssessmentId, freeAssessmentResult }),
+        body: JSON.stringify({ assessmentId: detailedAssessmentId, mode: 'new' }),
       })
-      const genJson = (await genRes.json().catch(() => ({}))) as {
-        reportId?: string
-        alreadyExists?: boolean
-        error?: string
+      let payJson: Record<string, unknown> = {}
+      try {
+        payJson = (await payRes.json()) as Record<string, unknown>
+      } catch {
+        payJson = {}
       }
-      if (!genRes.ok) {
-        throw new Error(genJson.error || 'Could not generate your report')
+
+      if (payRes.ok && typeof payJson.actionUrl === 'string') {
+        const rawParams = payJson.params
+        if (rawParams && typeof rawParams === 'object' && !Array.isArray(rawParams)) {
+          const paramsObj = rawParams as Record<string, unknown>
+          const flattened: Record<string, string> = {}
+          for (const [k, v] of Object.entries(paramsObj)) {
+            flattened[k] = typeof v === 'string' ? v : String(v ?? '')
+          }
+          if (typeof flattened.hash === 'string' && flattened.hash.length > 0) {
+            submitToPayU(flattened, payJson.actionUrl)
+            return
+          }
+        }
       }
-      const rid = genJson.reportId
-      if (!rid) {
-        throw new Error('Could not generate your report')
+
+      if (payRes.status === 503 && payJson.code === 'PAYU_UNAVAILABLE') {
+        const genRes = await fetch('/api/generate-report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ detailedAssessmentId, freeAssessmentResult }),
+        })
+        const genJson = (await genRes.json().catch(() => ({}))) as {
+          reportId?: string
+          alreadyExists?: boolean
+          error?: string
+        }
+        if (!genRes.ok) {
+          throw new Error(genJson.error || 'Could not generate your report')
+        }
+        const rid = genJson.reportId
+        if (!rid) {
+          throw new Error('Could not generate your report')
+        }
+        const q = genJson.alreadyExists ? '?notice=already-have-report' : ''
+        router.push(`/report/${encodeURIComponent(rid)}${q}`)
+        return
       }
-      const q = genJson.alreadyExists ? '?notice=already-have-report' : ''
-      router.push(`/report/${encodeURIComponent(rid)}${q}`)
+
+      throw new Error(
+        typeof payJson.error === 'string'
+          ? payJson.error
+          : payRes.ok
+            ? 'Invalid checkout payload from server.'
+            : 'Checkout could not start.',
+      )
     } catch (e) {
       setPhase('summary')
       setGenError(e instanceof Error ? e.message : 'Something went wrong')
@@ -699,7 +737,8 @@ export default function DetailedAssessmentPage() {
                     Confirm &amp; get my PDF
                   </button>
                   <p className="mt-3 text-center sm:text-left text-xs text-gray-500">
-                    For now we prepare your report immediately. Secure checkout will appear here before payment goes live.
+                    You&apos;ll complete payment on PayU&apos;s secure page. If checkout is unavailable in development,
+                    your report generates immediately instead.
                   </p>
                   <p className="mt-8 text-center sm:text-left text-xs text-gray-400">
                     Signed in as {user?.primaryEmailAddress?.emailAddress}

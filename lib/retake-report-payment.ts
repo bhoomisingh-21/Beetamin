@@ -1,6 +1,6 @@
 /**
- * TODO: Replace with real payment (₹39 retake/regenerate checkout — Razorpay, Stripe, etc.).
- * Simulates success unless `simulateSuccess` is explicitly false.
+ * Dev-only shim when PayU credentials are absent (`503 PAYU_UNAVAILABLE` from `/api/payment/initiate`).
+ * Production regenerate flow uses PayU Hosted Checkout → `/api/payment/success` → `runPaidReportGeneration`.
  */
 export async function triggerRetakePayment(input: {
   userId: string
