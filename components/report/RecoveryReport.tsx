@@ -385,7 +385,7 @@ function MealPlanSection({ data }: { data: RecoveryReportV2Data }) {
       <Text style={styles.sectionLabel}>NUTRITION</Text>
       <Text style={styles.sectionTitle}>7-day meal plan</Text>
       <Text style={styles.sectionSubtitle}>
-        Indian-forward plates with explicit deficiency targets per slot.
+        Indian units only. Each food line: dish — qty — why (your symptoms).
       </Text>
       <View style={styles.sectionDivider} />
 
