@@ -4,36 +4,78 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 const COMPLETED_REPORT_STATUSES = ['ready', 'generated', 'completed'] as const
 
 export type SessionBookingAccess = {
-  /** True only when latest completed paid_reports row has amount === 3999 (Full Recovery Plan). */
+  /**
+   * True when ANY completed `paid_reports` row has amount ₹3,999 OR the user has ANY
+   * completed appointment row (full plan access may predate current report rows).
+   */
   allowed: boolean
   reason: 'full_plan' | 'report_only' | 'no_completed_report'
+  /** Max amount among all terminal report rows (for display / legacy checks). */
   latestCompletedAmount: number | null
 }
 
 /**
- * ₹3,999 full plan must appear as paid_reports.amount = 3999 when that purchase exists.
- * ₹39 personalised report rows use amount = 39. No completed row ⇒ no session booking.
+ * Session booking unlocks if:
+ * - Any terminal `paid_reports` row for this user has `amount = 3999`, OR
+ * - Any `appointments` row for their `clients` profile has `status = 'completed'`.
+ *
+ * We no longer look only at the single latest report (a later ₹39 regenerate would incorrectly lock the user out).
  */
 export async function getSessionBookingAccess(clerkUserId: string): Promise<SessionBookingAccess> {
-  const { data, error } = await supabaseAdmin
+  const { data: terminalRows, error: rErr } = await supabaseAdmin
     .from('paid_reports')
-    .select('amount')
+    .select('amount, status, created_at')
     .eq('user_id', clerkUserId)
     .in('status', [...COMPLETED_REPORT_STATUSES])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
-  if (error) {
-    console.error('[getSessionBookingAccess]', error)
+  if (rErr) {
+    console.error('[getSessionBookingAccess] paid_reports', rErr)
     return { allowed: false, reason: 'no_completed_report', latestCompletedAmount: null }
   }
 
-  const amt = data?.amount != null ? Number(data.amount) : null
-  if (amt === 3999) return { allowed: true, reason: 'full_plan', latestCompletedAmount: amt }
-  if (amt === 39) return { allowed: false, reason: 'report_only', latestCompletedAmount: amt }
-  if (amt == null)
-    return { allowed: false, reason: 'no_completed_report', latestCompletedAmount: null }
-  /* Other experimental amounts → treat as report-only tier */
-  return { allowed: false, reason: 'report_only', latestCompletedAmount: amt }
+  const rows = terminalRows || []
+  const amounts = rows.map((r) => Number((r as { amount?: unknown }).amount)).filter((n) => !Number.isNaN(n))
+  const latestCompletedAmount = amounts.length ? Math.max(...amounts) : null
+  const has3999Terminal = rows.some((r) => Number((r as { amount?: unknown }).amount) === 3999)
+
+  const { data: clientRow } = await supabaseAdmin
+    .from('clients')
+    .select('id')
+    .eq('clerk_user_id', clerkUserId)
+    .maybeSingle()
+
+  let completedAppointmentCount = 0
+  const clientId = clientRow?.id as string | undefined
+  if (clientId) {
+    const { count, error: cErr } = await supabaseAdmin
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId)
+      .eq('status', 'completed')
+    if (cErr) console.error('[getSessionBookingAccess] appointments count', cErr)
+    completedAppointmentCount = typeof count === 'number' ? count : 0
+  }
+
+  const allowed = has3999Terminal || completedAppointmentCount > 0
+
+  const reason: SessionBookingAccess['reason'] = allowed
+    ? 'full_plan'
+    : amounts.length > 0
+      ? 'report_only'
+      : 'no_completed_report'
+
+  console.log(
+    '[getSessionBookingAccess]',
+    JSON.stringify({
+      clerkUserId,
+      terminalReportCount: rows.length,
+      amounts,
+      has3999Terminal,
+      completedAppointmentCount,
+      allowed,
+      reason,
+    }),
+  )
+
+  return { allowed, reason, latestCompletedAmount }
 }

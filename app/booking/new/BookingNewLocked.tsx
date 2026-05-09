@@ -25,7 +25,7 @@ export function BookingNewLocked() {
             report only.
           </p>
           <Link
-            href="/booking"
+            href="/upgrade"
             className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-3.5 transition shadow-sm"
           >
             Upgrade to Full Plan
