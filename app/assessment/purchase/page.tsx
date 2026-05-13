@@ -8,6 +8,7 @@ import {
   ChevronLeft, CheckCircle, Leaf, Shield, Loader2,
   FileText, Utensils, Pill, Dumbbell, MessageCircle, ClipboardList, ArrowRight,
 } from 'lucide-react'
+import { UpgradePlanButton } from '@/components/payment/UpgradePlanButton'
 
 const PLAN_ITEMS = [
   { icon: Utensils, title: 'Personalized 90-day meal plan', desc: 'Built around your deficiencies and dietary type' },
@@ -150,12 +151,11 @@ export default function PurchasePage() {
             >
               Back to Home
             </a>
-            <a
-              href="/booking"
+            <UpgradePlanButton
               className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl py-4 text-center transition"
             >
               Book ₹3999 Plan →
-            </a>
+            </UpgradePlanButton>
           </div>
         </motion.div>
       </div>
@@ -307,12 +307,11 @@ export default function PurchasePage() {
 
               <div className="mt-5 pt-4 border-t border-gray-100 text-center">
                 <p className="text-gray-400 text-xs">Want real 1-on-1 sessions?</p>
-                <button
-                  onClick={() => router.push('/booking')}
+                <UpgradePlanButton
                   className="text-gray-700 font-semibold text-sm mt-1 hover:text-emerald-600 transition"
                 >
                   Book the Complete ₹3999 Plan →
-                </button>
+                </UpgradePlanButton>
               </div>
             </div>
           </motion.div>

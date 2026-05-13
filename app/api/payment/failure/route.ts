@@ -20,10 +20,26 @@ export async function POST(req: Request) {
 
   const p = parsePayUFormData(fd)
   const txnid = String(p.txnid ?? '').trim()
-  const rowPk = String(p.udf3 ?? '').trim()
-  const aid = String(p.udf2 ?? '').trim()
+  const udf2 = String(p.udf2 ?? '').trim()
+  const udf3 = String(p.udf3 ?? '').trim()
+  const udf4 = String(p.udf4 ?? '').trim()
+  const udf5 = String(p.udf5 ?? '').trim()
+  const mode = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2) ? udf2 : udf4
+  const rowPk = mode === udf4 ? udf3 : udf4
+  const aid = mode === udf4 ? udf2 : udf5
   const userId = String(p.udf1 ?? '').trim()
   const base = paymentAppBaseUrl()
+
+  if (mode === 'upgrade') {
+    if (txnid && userId) {
+      await supabaseAdmin
+        .from('purchases')
+        .update({ status: 'failed', updated_at: new Date().toISOString() })
+        .eq('txnid', txnid)
+        .eq('user_id', userId)
+    }
+    return NextResponse.redirect(new URL('/sessions?error=payment_failed', base), 303)
+  }
 
   if (rowPk && userId) {
     let q = supabaseAdmin.from('paid_reports').update({ status: 'failed' }).eq('id', rowPk).eq('user_id', userId)

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Leaf } from 'lucide-react'
+import { UpgradePlanButton } from '@/components/payment/UpgradePlanButton'
 
 export function BookingNewLocked() {
   return (
@@ -24,14 +25,13 @@ export function BookingNewLocked() {
             Session booking is included in the Full Recovery Plan (₹3,999). Your ₹39 plan includes your personalised
             report only.
           </p>
-          <Link
-            href="/upgrade"
+          <UpgradePlanButton
             className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-3.5 transition shadow-sm"
           >
             Upgrade to Full Plan
-          </Link>
+          </UpgradePlanButton>
           <p className="mt-4 text-xs text-gray-400">
-            After purchase, your account will show a ₹3,999 completed report and session booking will unlock.
+            After PayU confirms your payment, session booking will unlock automatically.
           </p>
         </div>
       </div>

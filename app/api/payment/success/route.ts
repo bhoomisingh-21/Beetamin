@@ -38,8 +38,13 @@ export async function POST(req: Request) {
   const txnid = String(p.txnid ?? '').trim()
   const mihpayid = String(p.mihpayid ?? '').trim()
   const userId = String(p.udf1 ?? '').trim()
-  const assessmentId = String(p.udf2 ?? '').trim()
-  const rowPk = String(p.udf3 ?? '').trim()
+  const udf2 = String(p.udf2 ?? '').trim()
+  const udf3 = String(p.udf3 ?? '').trim()
+  const udf4 = String(p.udf4 ?? '').trim()
+  const udf5 = String(p.udf5 ?? '').trim()
+  const mode = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2) ? udf2 : udf4
+  const assessmentId = mode === udf4 ? udf2 : udf5
+  const rowPk = mode === udf4 ? udf3 : udf4
 
   const failRedirect = (extra?: string) =>
     NextResponse.redirect(
@@ -47,7 +52,86 @@ export async function POST(req: Request) {
       303,
     )
 
-  if (!txnid || !userId || !assessmentId || !rowPk) {
+  if (!txnid || !userId || !mode) {
+    return failRedirect()
+  }
+
+  if (mode === 'upgrade') {
+    const sessionsRedirect = () => NextResponse.redirect(new URL('/sessions?error=payment_failed', baseUrl), 303)
+
+    if (statusRaw !== 'success') {
+      await supabaseAdmin
+        .from('purchases')
+        .update({ status: 'failed', payment_id: mihpayid || null, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('txnid', txnid)
+      return sessionsRedirect()
+    }
+
+    const now = new Date()
+    const endDate = new Date(now)
+    endDate.setMonth(endDate.getMonth() + 3)
+    const email = String(p.email ?? '').trim().toLowerCase() || `noemail_${userId.slice(-14)}@beetamin.internal`
+    const name = String(p.firstname ?? '').trim() || 'Patient'
+
+    const { error: purchaseErr } = await supabaseAdmin
+      .from('purchases')
+      .update({
+        status: 'active',
+        payment_id: mihpayid || null,
+        updated_at: now.toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('txnid', txnid)
+      .eq('plan', 'full')
+
+    if (purchaseErr) {
+      console.error('[payment/success] activate purchase', purchaseErr)
+      return NextResponse.json({ error: 'Could not activate purchase.' }, { status: 500 })
+    }
+
+    const { data: existingClient } = await supabaseAdmin
+      .from('clients')
+      .select('id')
+      .eq('clerk_user_id', userId)
+      .maybeSingle()
+
+    const clientPatch = {
+      clerk_user_id: userId,
+      name,
+      email,
+      phone: '',
+      plan_start_date: now.toISOString().split('T')[0],
+      plan_end_date: endDate.toISOString().split('T')[0],
+      status: 'active',
+      sessions_total: 6,
+      sessions_used: 0,
+      sessions_remaining: 6,
+    }
+
+    const clientResult = existingClient?.id
+      ? await supabaseAdmin
+          .from('clients')
+          .update({
+            plan_start_date: clientPatch.plan_start_date,
+            plan_end_date: clientPatch.plan_end_date,
+            status: clientPatch.status,
+            sessions_total: clientPatch.sessions_total,
+            sessions_used: clientPatch.sessions_used,
+            sessions_remaining: clientPatch.sessions_remaining,
+          })
+          .eq('id', existingClient.id)
+      : await supabaseAdmin.from('clients').upsert(clientPatch, { onConflict: 'email' })
+
+    if (clientResult.error) {
+      console.error('[payment/success] activate client', clientResult.error)
+      return NextResponse.json({ error: 'Could not activate session plan.' }, { status: 500 })
+    }
+
+    return NextResponse.redirect(new URL('/booking', baseUrl), 303)
+  }
+
+  if (!assessmentId || !rowPk) {
     return failRedirect()
   }
 

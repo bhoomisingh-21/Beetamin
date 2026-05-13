@@ -5,6 +5,7 @@ import { CheckCircle, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { getClientByClerkId } from "@/lib/booking-actions";
+import { UpgradePlanButton } from "@/components/payment/UpgradePlanButton";
 
 const CORE_FEATURES = [
   "6 Expert Nutrition Sessions",
@@ -95,13 +96,19 @@ export default function PricingSection() {
             ))}
           </ul>
 
-          <a
-            href={coreButtonHref}
-            className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
-          >
-            {isSignedIn && hasBooking && <LayoutDashboard size={16} />}
-            {coreButtonLabel}
-          </a>
+          {isSignedIn && !hasBooking ? (
+            <UpgradePlanButton className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+              {coreButtonLabel}
+            </UpgradePlanButton>
+          ) : (
+            <a
+              href={coreButtonHref}
+              className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
+            >
+              {isSignedIn && hasBooking && <LayoutDashboard size={16} />}
+              {coreButtonLabel}
+            </a>
+          )}
         </motion.div>
 
         {/* Booster Plan */}

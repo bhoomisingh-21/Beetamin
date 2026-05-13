@@ -24,6 +24,7 @@ import {
   type AppointmentRow,
   type PaidReportSummary,
 } from '@/lib/booking-actions'
+import { UpgradePlanButton } from '@/components/payment/UpgradePlanButton'
 import { submitToPayU } from '@/lib/payu-submit'
 import { requestRegeneratePaidReport } from '@/lib/report-dashboard-actions'
 
@@ -162,6 +163,8 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   const [openReportId, setOpenReportId] = useState<string | null>(null)
   const [regenBusy, setRegenBusy] = useState(false)
   const [regenError, setRegenError] = useState('')
+  const [upgradeError, setUpgradeError] = useState('')
+  const [paymentFailed, setPaymentFailed] = useState(false)
 
   useEffect(() => {
     setData({
@@ -193,6 +196,11 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
       router.replace('/sign-in?after=' + encodeURIComponent('/sessions'))
     }
   }, [isLoaded, user, router])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setPaymentFailed(params.get('error') === 'payment_failed')
+  }, [])
 
   const appointments = data.appointments
   const client = data.client
@@ -403,6 +411,20 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           </div>
         </motion.div>
 
+        {(paymentFailed || upgradeError) && (
+          <div className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-950/40 px-5 py-4 text-center">
+            <p className="text-amber-100 text-sm font-semibold">
+              {upgradeError || 'Payment was not completed. Please try again.'}
+            </p>
+            <UpgradePlanButton
+              onError={setUpgradeError}
+              className="mt-3 inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-black hover:bg-emerald-400 disabled:opacity-60"
+            >
+              Try Again
+            </UpgradePlanButton>
+          </div>
+        )}
+
         {sortedPaidReports.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 14 }}
@@ -544,12 +566,12 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
             <p className="text-emerald-300 font-black text-lg md:text-xl leading-snug">
               🎉 You&apos;ve completed all 6 sessions!
             </p>
-            <a
-              href="/booking/purchase"
+            <UpgradePlanButton
+              onError={setUpgradeError}
               className="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-black hover:bg-emerald-400 transition"
             >
               Start a New Plan
-            </a>
+            </UpgradePlanButton>
           </motion.div>
         )}
 
@@ -576,12 +598,12 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
             <div className="bg-white rounded-3xl p-8 shadow-2xl border border-white/10">
               <p className="text-gray-900 font-black text-4xl text-center">₹3,999</p>
               <p className="text-gray-500 text-center text-sm mt-1">One-time · 6 expert sessions</p>
-              <a
-                href="/booking/purchase"
+              <UpgradePlanButton
+                onError={setUpgradeError}
                 className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center"
               >
                 Get Started
-              </a>
+              </UpgradePlanButton>
             </div>
           </motion.div>
         )}
@@ -602,12 +624,12 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
                   Session booking is included in the Full Recovery Plan (₹3,999). Your ₹39 plan includes your
                   personalised report only.
                 </p>
-                <Link
-                  href="/upgrade"
+                <UpgradePlanButton
+                  onError={setUpgradeError}
                   className="mt-6 inline-flex items-center justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-8 py-3.5 text-black font-black text-sm transition"
                 >
                   Upgrade to Full Plan
-                </Link>
+                </UpgradePlanButton>
               </motion.div>
             ) : (
               <>

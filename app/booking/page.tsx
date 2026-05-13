@@ -8,7 +8,7 @@ import {
   CheckCircle, Loader2, Calendar, Clock,
   Shield, Star, ArrowRight, Leaf, User,
 } from 'lucide-react'
-import { getClientByClerkId, saveAssessmentToProfile } from '@/lib/booking-actions'
+import { getClientDashboard, saveAssessmentToProfile } from '@/lib/booking-actions'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
@@ -83,10 +83,10 @@ export default function BookingPage() {
         }
 
         // Regular users (Clerk) are NEVER nutritionists — nutritionists use Supabase auth
-        const client = await getClientByClerkId(user.id)
+        const dashboard = await getClientDashboard(user.id)
         clearTimeout(fallback)
-        if (client) {
-          router.push('/sessions')
+        if (dashboard.client) {
+          router.push(dashboard.sessionBooking.allowed ? '/booking/new' : '/sessions')
         } else {
           router.push('/booking/onboard')
         }

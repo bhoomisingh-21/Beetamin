@@ -5,8 +5,8 @@ const COMPLETED_REPORT_STATUSES = ['ready', 'generated', 'completed'] as const
 
 export type SessionBookingAccess = {
   /**
-   * True when ANY completed `paid_reports` row has amount ₹3,999 OR the user has ANY
-   * completed appointment row (full plan access may predate current report rows).
+   * True when an active full-plan purchase exists, a legacy completed ₹3,999 report exists,
+   * or the user has any completed appointment row.
    */
   allowed: boolean
   reason: 'full_plan' | 'report_only' | 'no_completed_report'
@@ -16,12 +16,25 @@ export type SessionBookingAccess = {
 
 /**
  * Session booking unlocks if:
+ * - Any active Full Recovery Plan purchase exists, OR
  * - Any terminal `paid_reports` row for this user has `amount = 3999`, OR
  * - Any `appointments` row for their `clients` profile has `status = 'completed'`.
  *
  * We no longer look only at the single latest report (a later ₹39 regenerate would incorrectly lock the user out).
  */
 export async function getSessionBookingAccess(clerkUserId: string): Promise<SessionBookingAccess> {
+  const { data: purchaseRows, error: pErr } = await supabaseAdmin
+    .from('purchases')
+    .select('amount, status')
+    .eq('user_id', clerkUserId)
+    .eq('plan', 'full')
+    .eq('amount', 3999)
+    .in('status', ['active', 'pending_booking'])
+
+  if (pErr) {
+    console.error('[getSessionBookingAccess] purchases', pErr)
+  }
+
   const { data: terminalRows, error: rErr } = await supabaseAdmin
     .from('paid_reports')
     .select('amount, status, created_at')
@@ -37,6 +50,7 @@ export async function getSessionBookingAccess(clerkUserId: string): Promise<Sess
   const amounts = rows.map((r) => Number((r as { amount?: unknown }).amount)).filter((n) => !Number.isNaN(n))
   const latestCompletedAmount = amounts.length ? Math.max(...amounts) : null
   const has3999Terminal = rows.some((r) => Number((r as { amount?: unknown }).amount) === 3999)
+  const hasFullPurchase = (purchaseRows || []).some((r) => Number((r as { amount?: unknown }).amount) === 3999)
 
   const { data: clientRow } = await supabaseAdmin
     .from('clients')
@@ -56,7 +70,7 @@ export async function getSessionBookingAccess(clerkUserId: string): Promise<Sess
     completedAppointmentCount = typeof count === 'number' ? count : 0
   }
 
-  const allowed = has3999Terminal || completedAppointmentCount > 0
+  const allowed = hasFullPurchase || has3999Terminal || completedAppointmentCount > 0
 
   const reason: SessionBookingAccess['reason'] = allowed
     ? 'full_plan'
@@ -70,6 +84,7 @@ export async function getSessionBookingAccess(clerkUserId: string): Promise<Sess
       clerkUserId,
       terminalReportCount: rows.length,
       amounts,
+      hasFullPurchase,
       has3999Terminal,
       completedAppointmentCount,
       allowed,
