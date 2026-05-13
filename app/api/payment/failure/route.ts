@@ -23,10 +23,10 @@ export async function POST(req: Request) {
   const udf2 = String(p.udf2 ?? '').trim()
   const udf3 = String(p.udf3 ?? '').trim()
   const udf4 = String(p.udf4 ?? '').trim()
-  const udf5 = String(p.udf5 ?? '').trim()
-  const mode = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2) ? udf2 : udf4
-  const rowPk = mode === udf4 ? udf3 : udf4
-  const aid = mode === udf4 ? udf2 : udf5
+  const usesCurrentContract = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2)
+  const mode = usesCurrentContract ? udf2 : udf4
+  const rowPk = udf3
+  const aid = usesCurrentContract ? udf4 : udf2
   const userId = String(p.udf1 ?? '').trim()
   const base = paymentAppBaseUrl()
 

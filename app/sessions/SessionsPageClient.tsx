@@ -164,7 +164,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   const [regenBusy, setRegenBusy] = useState(false)
   const [regenError, setRegenError] = useState('')
   const [upgradeError, setUpgradeError] = useState('')
-  const [paymentFailed, setPaymentFailed] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
 
   useEffect(() => {
     setData({
@@ -199,7 +199,12 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    setPaymentFailed(params.get('error') === 'payment_failed')
+    const error = params.get('error')
+    if (error === 'payment_failed') {
+      setPaymentError('Payment was not completed. Please try again.')
+    } else if (error === 'invalid') {
+      setPaymentError('Payment verification failed. Contact support.')
+    }
   }, [])
 
   const appointments = data.appointments
@@ -382,6 +387,12 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
       }}
     >
       <div className="max-w-4xl mx-auto">
+        {(paymentError || upgradeError) && (
+          <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-amber-500/30 bg-[#111820] px-5 py-2.5 text-sm font-semibold text-amber-100 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+            {upgradeError || paymentError}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-8">
           <a href="/" className="flex items-center gap-1.5 text-gray-400 text-sm hover:text-white transition">
             <span className="text-lg">←</span> TheBeetamin
@@ -411,10 +422,10 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           </div>
         </motion.div>
 
-        {(paymentFailed || upgradeError) && (
+        {(paymentError || upgradeError) && (
           <div className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-950/40 px-5 py-4 text-center">
             <p className="text-amber-100 text-sm font-semibold">
-              {upgradeError || 'Payment was not completed. Please try again.'}
+              {upgradeError || paymentError}
             </p>
             <UpgradePlanButton
               onError={setUpgradeError}

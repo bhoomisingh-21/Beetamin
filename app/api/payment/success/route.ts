@@ -31,7 +31,8 @@ export async function POST(req: Request) {
   const baseUrl = paymentAppBaseUrl()
 
   if (!verifyPayUResponseHash(p, salt)) {
-    return NextResponse.json({ error: 'Invalid PayU signature.' }, { status: 400 })
+    console.error('[payment/success] hash mismatch')
+    return NextResponse.redirect(new URL('/sessions?error=invalid', baseUrl), 303)
   }
 
   const statusRaw = String(p.status ?? '').toLowerCase()
@@ -42,9 +43,10 @@ export async function POST(req: Request) {
   const udf3 = String(p.udf3 ?? '').trim()
   const udf4 = String(p.udf4 ?? '').trim()
   const udf5 = String(p.udf5 ?? '').trim()
-  const mode = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2) ? udf2 : udf4
-  const assessmentId = mode === udf4 ? udf2 : udf5
-  const rowPk = mode === udf4 ? udf3 : udf4
+  const usesCurrentContract = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2)
+  const mode = usesCurrentContract ? udf2 : udf4
+  const rowPk = usesCurrentContract ? udf3 : udf3
+  const assessmentId = usesCurrentContract ? udf4 : udf2
 
   const failRedirect = (extra?: string) =>
     NextResponse.redirect(
@@ -58,6 +60,10 @@ export async function POST(req: Request) {
 
   if (mode === 'upgrade') {
     const sessionsRedirect = () => NextResponse.redirect(new URL('/sessions?error=payment_failed', baseUrl), 303)
+
+    if (!rowPk) {
+      return sessionsRedirect()
+    }
 
     if (statusRaw !== 'success') {
       await supabaseAdmin
@@ -83,6 +89,7 @@ export async function POST(req: Request) {
       })
       .eq('user_id', userId)
       .eq('txnid', txnid)
+      .eq('id', rowPk)
       .eq('plan', 'full')
 
     if (purchaseErr) {

@@ -98,20 +98,26 @@ export async function POST(req: Request) {
     const base = paymentAppBaseUrl()
     const productinfo = 'Beetamin Full Recovery Plan'
 
-    const { error: purchaseErr } = await supabaseAdmin.from('purchases').insert({
-      user_id: sessionUserId,
-      plan: 'full',
-      amount: rupeesServer,
-      status: 'pending',
-      payment_id: null,
-      txnid,
-    })
+    const { data: purchaseRow, error: purchaseErr } = await supabaseAdmin
+      .from('purchases')
+      .insert({
+        user_id: sessionUserId,
+        plan: 'full',
+        amount: rupeesServer,
+        txnid,
+        payment_id: null,
+        status: 'pending',
+        mode: 'upgrade',
+      })
+      .select('id')
+      .single()
 
-    if (purchaseErr) {
+    if (purchaseErr || !purchaseRow?.id) {
       console.error('[payment/initiate] insert purchases', purchaseErr)
       return NextResponse.json({ error: 'Could not reserve your checkout.' }, { status: 500 })
     }
 
+    const recordId = String(purchaseRow.id)
     const hashPayload = {
       key,
       txnid,
@@ -121,7 +127,7 @@ export async function POST(req: Request) {
       email: emailResolved.toLowerCase(),
       udf1: sessionUserId,
       udf2: 'upgrade',
-      udf3: '',
+      udf3: recordId,
       udf4: '',
       udf5: '',
     }
@@ -135,6 +141,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
+      ...params,
+      payuUrl,
       actionUrl: payuUrl,
       params,
       txnid,
@@ -217,9 +225,9 @@ export async function POST(req: Request) {
     email: emailResolved.toLowerCase(),
     udf1: sessionUserId,
     udf2: mode,
-    udf3: reportId,
-    udf4: rowPk,
-    udf5: assessmentId,
+    udf3: rowPk,
+    udf4: assessmentId,
+    udf5: '',
   }
 
   const hash = generatePayUHash(hashPayload, salt)
@@ -233,9 +241,9 @@ export async function POST(req: Request) {
     email: emailResolved.toLowerCase(),
     udf1: sessionUserId,
     udf2: mode,
-    udf3: reportId,
-    udf4: rowPk,
-    udf5: assessmentId,
+    udf3: rowPk,
+    udf4: assessmentId,
+    udf5: '',
     surl: `${base}/api/payment/success`,
     furl: `${base}/api/payment/failure`,
     hash,
@@ -243,6 +251,8 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
+    ...params,
+    payuUrl,
     actionUrl: payuUrl,
     params,
     reportSlug: reportId,

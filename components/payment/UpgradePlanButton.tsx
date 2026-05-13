@@ -41,13 +41,20 @@ export function UpgradePlanButton({ children, className, disabled, onError }: Up
         return
       }
 
-      const actionUrl = typeof body.actionUrl === 'string' ? body.actionUrl : ''
-      const params = flattenParams(body.params)
-      if (!res.ok || !actionUrl || !params) {
+      const payuUrl =
+        typeof body.payuUrl === 'string'
+          ? body.payuUrl
+          : typeof body.actionUrl === 'string'
+            ? body.actionUrl
+            : ''
+      const nestedParams = flattenParams(body.params)
+      const { payuUrl: _payuUrl, actionUrl: _actionUrl, params: _params, ...flatParams } = body
+      const params = nestedParams ?? flattenParams(flatParams)
+      if (!res.ok || !payuUrl || !params) {
         throw new Error(typeof body.error === 'string' ? body.error : 'Could not start checkout.')
       }
 
-      submitToPayU(params, actionUrl)
+      submitToPayU(params, payuUrl)
     } catch (error) {
       onError?.(error instanceof Error ? error.message : 'Could not start checkout.')
       setBusy(false)
