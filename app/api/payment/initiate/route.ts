@@ -9,6 +9,7 @@ import {
   payuHostedActionUrl,
   payuMerchantConfigured,
 } from '@/lib/payment-app-base-url'
+import { hasActiveFullPlanPurchase } from '@/lib/plan-access'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
@@ -27,7 +28,7 @@ function firstNameFrom(display: string) {
   return t.slice(0, 55)
 }
 
-const MODES = new Set<PaymentMode>(['new', 'retake', 'regenerate', 'upgrade'])
+const MODES = new Set<PaymentMode>(['new', 'retake', 'regenerate', 'upgrade', 'booster'])
 const REPORT_MODES = new Set<PaymentMode>(['new', 'retake', 'regenerate'])
 
 export async function GET() {
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
 
   if (!mode || !MODES.has(mode)) {
     return NextResponse.json(
-      { error: 'Required: mode ∈ {new, retake, regenerate, upgrade}.' },
+      { error: 'Required: mode ∈ {new, retake, regenerate, upgrade, booster}.' },
       { status: 400 },
     )
   }
@@ -108,6 +109,8 @@ export async function POST(req: Request) {
         payment_id: null,
         status: 'pending',
         mode: 'upgrade',
+        sessions_total: 6,
+        sessions_used: 0,
       })
       .select('id')
       .single()
@@ -127,6 +130,77 @@ export async function POST(req: Request) {
       email: emailResolved.toLowerCase(),
       udf1: sessionUserId,
       udf2: 'upgrade',
+      udf3: recordId,
+      udf4: '',
+      udf5: '',
+    }
+
+    const params: Record<string, string> = {
+      ...hashPayload,
+      surl: `${base}/api/payment/success`,
+      furl: `${base}/api/payment/failure`,
+      hash: generatePayUHash(hashPayload, salt),
+      service_provider: 'payu_paisa',
+    }
+
+    return NextResponse.json({
+      ...params,
+      payuUrl,
+      actionUrl: payuUrl,
+      params,
+      txnid,
+      rupees: rupeesServer,
+    })
+  }
+
+  if (mode === 'booster') {
+    const allowed = await hasActiveFullPlanPurchase(sessionUserId)
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          error: 'Booster is available only after purchasing the Core Transformation plan.',
+          code: 'BOOSTER_REQUIRES_FULL',
+        },
+        { status: 403 },
+      )
+    }
+
+    const txnid = makePayUTxnId()
+    const amountFormatted = `${rupeesServer.toFixed(2)}`
+    const base = paymentAppBaseUrl()
+    const productinfo = 'Beetamin Booster Session'
+
+    const { data: purchaseRow, error: purchaseErr } = await supabaseAdmin
+      .from('purchases')
+      .insert({
+        user_id: sessionUserId,
+        plan: 'booster',
+        amount: rupeesServer,
+        txnid,
+        payment_id: null,
+        status: 'pending',
+        mode: 'booster',
+        sessions_total: 1,
+        sessions_used: 0,
+      })
+      .select('id')
+      .single()
+
+    if (purchaseErr || !purchaseRow?.id) {
+      console.error('[payment/initiate] insert booster purchase', purchaseErr)
+      return NextResponse.json({ error: 'Could not reserve your checkout.' }, { status: 500 })
+    }
+
+    const recordId = String(purchaseRow.id)
+    const hashPayload = {
+      key,
+      txnid,
+      amount: amountFormatted,
+      productinfo,
+      firstname,
+      email: emailResolved.toLowerCase(),
+      udf1: sessionUserId,
+      udf2: 'booster',
       udf3: recordId,
       udf4: '',
       udf5: '',

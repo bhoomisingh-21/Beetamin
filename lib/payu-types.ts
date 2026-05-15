@@ -1,4 +1,4 @@
-export type PaymentMode = 'new' | 'retake' | 'regenerate' | 'upgrade'
+export type PaymentMode = 'new' | 'retake' | 'regenerate' | 'upgrade' | 'booster'
 
 /** Payload fields sent to `/api/payment/initiate`; amount is echoed for UX only — server derives the real ₹ value from `mode`. */
 export type PayUInitiateRequestBody = {

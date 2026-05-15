@@ -7,7 +7,6 @@ import {
   FileText,
   FlaskConical,
   LayoutDashboard,
-  Leaf,
   Target,
   TrendingUp,
 } from 'lucide-react'
@@ -84,13 +83,6 @@ export default function ProfileLayoutShell({ children, planStatus }: Props) {
           className={`relative z-30 hidden w-[260px] shrink-0 flex-col border-r border-white/[0.06] ${sidebarBg} md:flex`}
         >
           <div className="flex min-h-[calc(100vh-4rem)] flex-col px-4 py-8">
-            <Link href="/" className={`flex items-center gap-2 px-1 font-bold ${textPrimary}`}>
-              <Leaf className="shrink-0 text-emerald-500" size={22} aria-hidden />
-              <span className="text-[17px] tracking-tight">TheBeetamin</span>
-            </Link>
-
-            <div className="my-5 h-px w-full bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
-
             <div className="flex flex-col items-center px-1 text-center">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 text-[15px] font-black text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)]">
                 {isLoaded ? initials : '••'}

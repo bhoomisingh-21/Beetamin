@@ -1,0 +1,8 @@
+{
+  "name": "TheBeetamin",
+  "short_name": "Beetamin",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#010803",
+  "theme_color": "#010803"
+}

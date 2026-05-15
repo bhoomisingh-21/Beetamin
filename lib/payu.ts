@@ -93,8 +93,10 @@ export function makePayUTxnId(): string {
   return `BT-${Date.now()}-${randomBytes(4).toString('hex').toUpperCase()}`
 }
 
-export function rupeesForPaymentMode(mode: 'new' | 'retake' | 'regenerate' | 'upgrade'): 39 | 3999 {
-  return mode === 'upgrade' ? 3999 : 39
+export function rupeesForPaymentMode(mode: 'new' | 'retake' | 'regenerate' | 'upgrade' | 'booster'): number {
+  if (mode === 'upgrade') return 3999
+  if (mode === 'booster') return 499
+  return 39
 }
 
 export function parsePayUFormData(fd: FormData): PayUResponseParams {

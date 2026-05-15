@@ -6,11 +6,15 @@ import { Loader2 } from 'lucide-react'
 
 import { submitToPayU } from '@/lib/payu-submit'
 
+type PayuPlanMode = 'upgrade' | 'booster'
+
 type UpgradePlanButtonProps = {
   children: ReactNode
   className?: string
   disabled?: boolean
   onError?: (message: string) => void
+  /** Server derives amount from mode — never trust client price. */
+  mode?: PayuPlanMode
 }
 
 function flattenParams(raw: unknown): Record<string, string> | null {
@@ -22,17 +26,23 @@ function flattenParams(raw: unknown): Record<string, string> | null {
   return out.hash ? out : null
 }
 
-export function UpgradePlanButton({ children, className, disabled, onError }: UpgradePlanButtonProps) {
+export function UpgradePlanButton({
+  children,
+  className,
+  disabled,
+  onError,
+  mode = 'upgrade',
+}: UpgradePlanButtonProps) {
   const [busy, setBusy] = useState(false)
 
-  async function startUpgrade() {
+  async function startCheckout() {
     setBusy(true)
     onError?.('')
     try {
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: 3999, mode: 'upgrade' }),
+        body: JSON.stringify({ mode }),
       })
       const body = (await res.json().catch(() => ({}))) as Record<string, unknown>
 
@@ -65,7 +75,7 @@ export function UpgradePlanButton({ children, className, disabled, onError }: Up
     <button
       type="button"
       disabled={disabled || busy}
-      onClick={() => void startUpgrade()}
+      onClick={() => void startCheckout()}
       className={className}
     >
       {busy ? (

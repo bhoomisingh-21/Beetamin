@@ -31,6 +31,7 @@ import {
   textPrimary,
   textSecondary,
 } from '@/components/profile/profile-dark-styles'
+import { consumeRedirectAfterAuth } from '@/app/profile/redirect-actions'
 import { formatReportHeadingDate } from '@/components/profile/profile-helpers'
 
 const HERO_IMG =
@@ -46,9 +47,14 @@ function daysInPlan(client: ClientRow | null): number {
 
 type Props = {
   initialBundle: DashboardBundle
+  /** From `?onboarding=true` after sign-up. */
+  showOnboardingBanner?: boolean
 }
 
-export default function ProfilePersonalClient({ initialBundle }: Props) {
+export default function ProfilePersonalClient({
+  initialBundle,
+  showOnboardingBanner = false,
+}: Props) {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const [bundle, setBundle] = useState<DashboardBundle>(initialBundle)
@@ -102,6 +108,8 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
       setToast('Profile updated.')
       setTimeout(() => setToast(''), 3000)
       await reload()
+      const next = await consumeRedirectAfterAuth()
+      router.push(next ?? '/sessions')
     } catch {
       setToast('Could not save profile.')
     } finally {
@@ -144,8 +152,11 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
     client && client.status === 'active' ? String(daysInPlan(client)) : client ? '—' : '—'
 
   const stats = [
-    { label: 'Sessions Used', value: client ? String(client.sessions_used) : '—' },
-    { label: 'Sessions Remaining', value: client ? String(client.sessions_remaining) : '—' },
+    {
+      label: 'Sessions',
+      value: bundle.purchaseSessions?.shortLabel ?? '0 / 0',
+      sub: bundle.purchaseSessions?.detailLabel ?? 'No active plan',
+    },
     {
       label: 'Reports Generated',
       value: String(paidReports.filter((p) => p.status === 'ready' || p.status === 'generated').length),
@@ -180,6 +191,12 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
           <p className="mt-1 text-sm text-[#8B9AB0]">Your dashboard at a glance</p>
           <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
         </header>
+
+        {showOnboardingBanner ? (
+          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+            Complete your profile to get started — add your phone and goal, then explore your sessions.
+          </div>
+        ) : null}
 
         {!client ||
         !String(client.phone || '').trim() ||
@@ -278,7 +295,7 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {stats.map((s) => (
             <div key={s.label} className={`${profileCard} relative overflow-hidden px-4 py-5 sm:px-5 sm:py-6`}>
               <div className="absolute left-0 top-0 h-0.5 w-[30%] rounded-full bg-emerald-500/90" aria-hidden />
@@ -291,6 +308,9 @@ export default function ProfilePersonalClient({ initialBundle }: Props) {
               >
                 {s.value}
               </p>
+              {'sub' in s && s.sub ? (
+                <p className="mt-1 text-[11px] leading-snug text-[#8B9AB0]">{s.sub}</p>
+              ) : null}
             </div>
           ))}
         </div>

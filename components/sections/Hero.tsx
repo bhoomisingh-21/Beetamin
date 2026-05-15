@@ -99,7 +99,13 @@ export default function Hero() {
                 : "INDIA'S #1 PERSONALIZED NUTRITION SYSTEM"}
             </motion.span>
 
-            <h1 className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl">
+            <h1 className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.15] lg:leading-[1.05] tracking-tight mb-4 max-w-xl">
+              <span className="block text-white">
+                Personalised Deficiency Recovery for Indians
+              </span>
+            </h1>
+
+            <h2 className="font-extrabold text-3xl sm:text-4xl lg:text-5xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl">
               {HEADLINE_LINES.map((lineWords, li) => (
                 <span key={li} className="block">
                   {lineWords.map((word) => {
@@ -128,7 +134,7 @@ export default function Hero() {
                   90 Days.
                 </motion.span>
               </span>
-            </h1>
+            </h2>
 
             <motion.p
               initial={{ opacity: 0, y: 10 }}

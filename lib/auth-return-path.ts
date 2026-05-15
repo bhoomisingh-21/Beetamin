@@ -1,4 +1,4 @@
-const DEFAULT = '/booking'
+const DEFAULT = '/profile?onboarding=true'
 
 /** Safe in-app path after auth (blocks open redirects). */
 export function authReturnPath(raw: string | null | undefined, fallback = DEFAULT): string {

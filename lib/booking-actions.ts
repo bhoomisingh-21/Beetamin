@@ -1,6 +1,7 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { triggerReferralReward } from './referral-trigger'
+import { formatPurchaseSessionsLabel, getActivePurchaseForSessions } from './plan-access'
 import { getSessionBookingAccess, type SessionBookingAccess } from './session-booking-access'
 import { supabaseAdmin } from './supabase-admin'
 import { Resend } from 'resend'
@@ -445,6 +446,13 @@ export type DashboardBundle = {
   progressLogs: ProgressLogRow[]
   latestReadyReport: PaidReportSummary | null
   assessmentDates: Record<string, string>
+  /** From `purchases` — authoritative for “X / Y sessions” when no `clients` row yet. */
+  purchaseSessions?: {
+    used: number
+    total: number
+    shortLabel: string
+    detailLabel: string
+  }
 }
 
 export async function getClientAssessmentFlags(clerkUserId: string) {
@@ -679,6 +687,7 @@ const EMPTY_DASHBOARD_BUNDLE: DashboardBundle = {
   progressLogs: [],
   latestReadyReport: null,
   assessmentDates: {},
+  purchaseSessions: undefined,
 }
 
 export async function getDashboardBundle(clerkUserId: string): Promise<DashboardBundle> {
@@ -689,6 +698,9 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
     }
 
     const client = await getClientByClerkId(clerkUserId)
+
+    const activePurchase = await getActivePurchaseForSessions(clerkUserId)
+    const purchaseSessions = formatPurchaseSessionsLabel(activePurchase)
 
     const [{ data: paidRows }, { data: logRows }] = await Promise.all([
       supabaseAdmin
@@ -745,6 +757,7 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
       progressLogs: (logRows || []) as ProgressLogRow[],
       latestReadyReport,
       assessmentDates,
+      purchaseSessions,
     }
   } catch (e) {
     console.error('[getDashboardBundle]', e)

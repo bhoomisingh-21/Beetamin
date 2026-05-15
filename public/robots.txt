@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /report/
+Disallow: /profile
+Disallow: /booking/purchase
+
+Sitemap: https://thebeetamin.com/sitemap.xml

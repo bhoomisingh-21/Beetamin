@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const udf3 = (p.udf3 ?? '').trim()
   const udf4 = (p.udf4 ?? '').trim()
 
-  const usesCurrentContract = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2)
+  const usesCurrentContract = ['new', 'retake', 'regenerate', 'upgrade', 'booster'].includes(udf2)
   const mode = usesCurrentContract ? udf2 : udf4
   const rowPk = udf3
   const assessmentId = usesCurrentContract ? udf4 : udf2

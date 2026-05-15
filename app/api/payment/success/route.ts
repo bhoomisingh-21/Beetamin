@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   const udf3 = (p.udf3 ?? '').trim()
   const udf4 = (p.udf4 ?? '').trim()
 
-  const usesCurrentContract = ['new', 'retake', 'regenerate', 'upgrade'].includes(udf2)
+  const usesCurrentContract = ['new', 'retake', 'regenerate', 'upgrade', 'booster'].includes(udf2)
   const mode = usesCurrentContract ? udf2 : udf4
   const rowPk = udf3
   const assessmentId = usesCurrentContract ? udf4 : udf2
@@ -94,6 +94,8 @@ export async function POST(req: NextRequest) {
           status: 'active',
           payment_id: mihpayid || null,
           updated_at: now.toISOString(),
+          sessions_total: 6,
+          sessions_used: 0,
         })
         .eq('id', rowPk)
         .eq('user_id', userId)
@@ -140,6 +142,42 @@ export async function POST(req: NextRequest) {
 
       if (clientResult.error) {
         console.error('[payment/success] activate client', clientResult.error)
+      }
+
+      return NextResponse.redirect(`${base}/booking`, { status: 302 })
+    }
+
+    if (mode === 'booster') {
+      if (statusRaw !== 'success') {
+        await supabaseAdmin
+          .from('purchases')
+          .update({ status: 'failed', payment_id: mihpayid || null, updated_at: new Date().toISOString() })
+          .eq('user_id', userId)
+          .eq('txnid', txnid)
+        return NextResponse.redirect(`${base}/sessions?error=payment_failed`, { status: 302 })
+      }
+
+      if (!rowPk) {
+        return NextResponse.redirect(`${base}/sessions?error=payment_failed`, { status: 302 })
+      }
+
+      const { error: boosterErr } = await supabaseAdmin
+        .from('purchases')
+        .update({
+          status: 'active',
+          payment_id: mihpayid || null,
+          updated_at: new Date().toISOString(),
+          sessions_total: 1,
+          sessions_used: 0,
+        })
+        .eq('id', rowPk)
+        .eq('user_id', userId)
+        .eq('txnid', txnid)
+        .eq('plan', 'booster')
+
+      if (boosterErr) {
+        console.error('[payment/success] activate booster', boosterErr)
+        return NextResponse.redirect(`${base}/sessions?error=server_error`, { status: 302 })
       }
 
       return NextResponse.redirect(`${base}/booking`, { status: 302 })
