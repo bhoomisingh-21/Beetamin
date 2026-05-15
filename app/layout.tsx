@@ -92,7 +92,10 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+    ],
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
   },
@@ -100,7 +103,7 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
 
   verification: {
-    google: 'PASTE_YOUR_GOOGLE_SEARCH_CONSOLE_VERIFICATION_CODE_HERE',
+    google: '<meta name="google-site-verification" content="vocZ7ntJQnQy1wZGHbcNnCmxCMPrv-CchCUruZsYP_Q" />',
   },
 }
 

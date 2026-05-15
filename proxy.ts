@@ -45,7 +45,27 @@ function isNutritionistPortalRoute(path: string): boolean {
   return path.startsWith('/nutritionist') && !path.startsWith('/nutritionist-dashboard')
 }
 
+/** `?redirect_after_auth=/path` → strip query, set one-time cookie for post-profile redirect. */
+function redirectAfterAuthResponse(req: NextRequest): NextResponse | null {
+  const r = req.nextUrl.searchParams.get('redirect_after_auth')
+  if (!r || !r.startsWith('/') || r.startsWith('//')) return null
+
+  const url = req.nextUrl.clone()
+  url.searchParams.delete('redirect_after_auth')
+
+  const res = NextResponse.redirect(url)
+  res.cookies.set('redirect_after_auth', r, {
+    path: '/',
+    maxAge: 60 * 60 * 24,
+    sameSite: 'lax',
+  })
+  return res
+}
+
 export default clerkMiddleware(async (auth, req) => {
+  const redirectCookie = redirectAfterAuthResponse(req)
+  if (redirectCookie) return redirectCookie
+
   const path = req.nextUrl.pathname
 
   // ── Admin panel — Clerk account OR verified nut-session with admin email ────
