@@ -13,6 +13,11 @@ const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' 
 </svg>`;
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG)}`;
 
+const HEADLINE_LINES = [
+  ["Fix", "Your", "Nutrient"],
+  ["Deficiencies", "in"],
+];
+
 type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
 
 export default function Hero() {
@@ -62,6 +67,8 @@ export default function Hero() {
             ? "View My Free Report"
             : "Start Free Health Assessment";
 
+  let wordIndex = 0;
+
   return (
     <section
       className="relative bg-[#010d06] overflow-x-hidden min-h-screen flex items-center"
@@ -92,24 +99,36 @@ export default function Hero() {
                 : "INDIA'S #1 PERSONALIZED NUTRITION SYSTEM"}
             </motion.span>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.15] lg:leading-[1.05] tracking-tight mb-4 max-w-xl text-white"
-            >
-              Fix Your Nutrient Deficiencies in{' '}
-              <span className="text-[#00E676]">90 Days</span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-              className="text-lg sm:text-xl font-semibold text-emerald-100/90 mb-6 max-w-xl"
-            >
-              Personalised deficiency recovery for Indians
-            </motion.p>
+            <h1 className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl">
+              {HEADLINE_LINES.map((lineWords, li) => (
+                <span key={li} className="block">
+                  {lineWords.map((word) => {
+                    const delay = 0.1 + wordIndex++ * 0.08;
+                    return (
+                      <motion.span
+                        key={word + li}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay }}
+                        className="text-white inline-block mr-[0.25em]"
+                      >
+                        {word}
+                      </motion.span>
+                    );
+                  })}
+                </span>
+              ))}
+              <span className="block">
+                <motion.span
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 + wordIndex * 0.08 }}
+                  className="text-[#00E676]"
+                >
+                  90 Days.
+                </motion.span>
+              </span>
+            </h1>
 
             <motion.p
               initial={{ opacity: 0, y: 10 }}
