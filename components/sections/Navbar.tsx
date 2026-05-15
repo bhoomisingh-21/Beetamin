@@ -16,10 +16,7 @@ const NAV_LINKS = [
   { label: "Pricing", href: "#pricing" },
 ];
 
-const SITE_NAV_LINKS = [
-  { label: "Sessions", href: "/sessions" },
-  { label: "Plans", href: "/booking" },
-];
+
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
