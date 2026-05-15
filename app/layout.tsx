@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    'Get a personalised nutrient deficiency report and expert nutrition sessions with Dr. Priya Sharma. Trusted by Indians to fix Vitamin D, Iron, B12, Omega-3 deficiencies with real food and science.',
+    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
 
   keywords: [
     'nutrient deficiency test India',
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     siteName: 'TheBeetamin',
     title: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
     description:
-      'Fix your Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised report and expert nutritionist sessions. Built for India.',
+      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
     images: [
       {
         url: '/og-image.png',
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
     description:
-      'Fix your nutrient deficiencies with a personalised report and expert sessions. Built for India.',
+      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions. Built for India.',
     images: ['/og-image.png'],
     creator: '@thebeetamin',
   },
@@ -93,10 +93,12 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: '/favicon-16x16.png', sizes: '32x32', type: 'image/png' },
-      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico', sizes: '48x48' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
-    shortcut: '/favicon-16x16.png',
+    shortcut: '/favicon.ico',
     apple: '/apple-touch-icon.png',
   },
 

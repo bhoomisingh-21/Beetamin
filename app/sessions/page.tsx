@@ -9,7 +9,7 @@ import SessionsPageClient from './SessionsPageClient'
 export const metadata: Metadata = {
   title: 'Book a Nutrition Session',
   description:
-    'Book a 1-on-1 expert nutrition consultation with Dr. Priya Sharma at TheBeetamin. Get personalised guidance to fix your deficiencies.',
+    'Book a 1-on-1 expert nutrition consultation with Dr. Priya Sharma. Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with personalised sessions. Built for India.',
   alternates: { canonical: 'https://thebeetamin.com/sessions' },
 }
 

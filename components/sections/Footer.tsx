@@ -9,6 +9,14 @@ type FooterLinks = {
   [key: string]: string[];
 };
 
+const SITE_NAV = [
+  { label: "Book a Session", href: "/sessions" },
+  { label: "Our Plans", href: "/booking" },
+  { label: "Your Report", href: "/assessment" },
+  { label: "About", href: "/#experts" },
+  { label: "Profile", href: "/profile" },
+] as const;
+
 const Footer: React.FC = () => {
   const footerLinks: FooterLinks = {
     Services: [
@@ -42,13 +50,36 @@ const Footer: React.FC = () => {
             transition={{ duration: 0.6 }}
             className="lg:col-span-4 flex flex-col items-center sm:items-start"
           >
-            <h2 className="text-xl sm:text-2xl font-black tracking-tighter mb-4 sm:mb-6">
-              BEETAMIN<span className="text-blue-500">.</span>
-            </h2>
+            <p className="text-xl sm:text-2xl font-black tracking-tight mb-4 sm:mb-6 text-white">
+              TheBeetamin
+            </p>
+
+            <nav aria-label="Footer navigation" className="mb-6 sm:mb-8 w-full">
+              <ul className="flex flex-wrap justify-center sm:justify-start gap-x-5 gap-y-2 text-sm">
+                {SITE_NAV.map(({ label, href }) => (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className="text-slate-300 hover:text-emerald-400 transition-colors font-medium"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <a
+                    href="mailto:hi@thebeetamin.com"
+                    className="text-slate-300 hover:text-emerald-400 transition-colors font-medium"
+                  >
+                    Contact
+                  </a>
+                </li>
+              </ul>
+            </nav>
 
             <p className="text-slate-400 text-sm leading-relaxed mb-6 sm:mb-8 max-w-xs">
-              Bridging your nutrient gaps through science-backed discovery and
-              expert-led tracking.
+              Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with personalised
+              reports and expert nutrition sessions. Built for India.
             </p>
 
             {/* Social icons — centered on mobile */}
@@ -122,7 +153,7 @@ const Footer: React.FC = () => {
         {/* BOTTOM */}
         <div className="pt-6 sm:pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <p className="text-slate-500 text-xs">
-            © 2026 Beetamin Health. All rights reserved.
+            © 2026 TheBeetamin. All rights reserved.
           </p>
 
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-6 md:justify-end">

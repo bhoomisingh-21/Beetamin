@@ -187,10 +187,11 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
           🌿 THE CORE TRANSFORMATION PLAN
         </span>
         <h1 className="text-white font-black text-4xl md:text-5xl leading-tight">
-          Fix Your Deficiencies
-          <br />
-          <span className="text-[#00E676]">In 90 Days.</span>
+          Your Recovery Plan
         </h1>
+        <p className="mt-3 text-gray-400 text-base md:text-lg max-w-xl mx-auto">
+          Fix your deficiencies in 90 days with 6 expert nutrition sessions and WhatsApp support.
+        </p>
         <br />
         <br />
       </motion.div>

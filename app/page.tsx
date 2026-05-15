@@ -19,9 +19,11 @@ import ScrollProgress from "@/components/ScrollProgress";
 import { hasActiveFullPlanPurchase } from "@/lib/plan-access";
 
 export const metadata: Metadata = {
-  title: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
+  title: {
+    absolute: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
+  },
   description:
-    'Take a free deficiency assessment and get a personalised recovery report. Fix Vitamin D, Iron, B12, Omega-3 deficiencies with Indian food and expert sessions.',
+    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
   alternates: { canonical: 'https://thebeetamin.com' },
 };
 

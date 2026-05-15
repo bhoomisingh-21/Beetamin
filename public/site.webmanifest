@@ -2,21 +2,24 @@
   "name": "TheBeetamin",
   "short_name": "Beetamin",
   "start_url": "/",
-  "display": "browser",
-  "background_color": "#010803",
-  "theme_color": "#010803",
+  "display": "standalone",
+  "theme_color": "#00C16A",
+  "background_color": "#0a0a0a",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
     },
     {
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }

@@ -416,8 +416,11 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
         >
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-white font-black text-3xl md:text-4xl">
-              Welcome back, {welcomeName}
+              Book a Nutrition Session
             </h1>
+            <p className="mt-2 text-gray-400 text-sm md:text-base">
+              Welcome back, {welcomeName}
+            </p>
             {client && statusBadge(client.status)}
           </div>
         </motion.div>

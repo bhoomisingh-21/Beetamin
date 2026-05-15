@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const FAQS = [
   {
     q: "How is Beetamin different from other nutrition apps?",
-    a: "Beetamin pairs you with a real certified nutritionist — not an algorithm. Every plan is built from scratch for your body, goals, and medical history, then reviewed by a doctor before it reaches you.",
+    a: "TheBeetamin connects you with certified nutritionists who build plans from your assessment, goals, and medical history — reviewed by a doctor before delivery.",
   },
   {
     q: "Do I need to do blood tests before starting?",

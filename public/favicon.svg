@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="TheBeetamin">
+  <rect width="32" height="32" rx="6" fill="#010803"/>
+  <path
+    fill="#00E676"
+    d="M16 5c-4 6-7 10-7 14a7 7 0 0 0 14 0c0-4-3-8-7-14zm0 22a5 5 0 0 1-5-5c0-2.5 2-5.5 5-9.2 3 3.7 5 6.7 5 9.2a5 5 0 0 1-5 5z"
+  />
+</svg>

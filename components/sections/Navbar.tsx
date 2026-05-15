@@ -16,6 +16,11 @@ const NAV_LINKS = [
   { label: "Pricing", href: "#pricing" },
 ];
 
+const SITE_NAV_LINKS = [
+  { label: "Sessions", href: "/sessions" },
+  { label: "Plans", href: "/booking" },
+];
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -58,7 +63,7 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="relative z-50 overflow-x-hidden"
-        aria-label="Primary"
+        aria-label="Main navigation"
       >
         <div className="mx-auto max-w-7xl px-3 pt-3 pb-2 sm:px-4 md:px-6 lg:px-8 md:pt-4 md:pb-3">
           <div
@@ -93,6 +98,24 @@ export default function Navbar() {
 
             {/* Center nav links */}
             <ul className="hidden md:flex flex-1 items-center justify-center gap-0.5">
+              <li>
+                <Link
+                  href="/"
+                  className="group relative rounded-full px-4 py-2 text-base font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
+                >
+                  Home
+                </Link>
+              </li>
+              {SITE_NAV_LINKS.map(({ label, href }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="group relative rounded-full px-4 py-2 text-base font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
               {NAV_LINKS.map(({ label, href }) => (
                 <li key={href}>
                   <a
@@ -206,6 +229,32 @@ export default function Navbar() {
             <nav className="flex flex-1 flex-col justify-center px-5 pb-8" aria-label="Mobile menu">
               {/* Nav links */}
               <ul className="mb-8 space-y-0">
+                <motion.li
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0, ease: "easeOut" }}
+                >
+                  <Link
+                    href="/sessions"
+                    onClick={() => setMenuOpen(false)}
+                    className="block border-b border-white/[0.06] py-4 text-center text-xl font-semibold tracking-tight text-white transition-colors hover:text-emerald-300"
+                  >
+                    Sessions
+                  </Link>
+                </motion.li>
+                <motion.li
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.03, ease: "easeOut" }}
+                >
+                  <Link
+                    href="/booking"
+                    onClick={() => setMenuOpen(false)}
+                    className="block border-b border-white/[0.06] py-4 text-center text-xl font-semibold tracking-tight text-white transition-colors hover:text-emerald-300"
+                  >
+                    Plans
+                  </Link>
+                </motion.li>
                 {NAV_LINKS.map(({ label, href }, i) => (
                   <motion.li
                     key={href}

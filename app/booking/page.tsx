@@ -5,7 +5,7 @@ import BookingPageClient from '@/app/booking/BookingPageClient'
 import { getSessionBookingAccess } from '@/lib/session-booking-access'
 
 export const metadata: Metadata = {
-  title: 'Book Your Recovery Plan',
+  title: 'Your Recovery Plan',
   description:
     'Start your 3-month nutrition recovery with 6 expert sessions, WhatsApp support, and a personalised vitamin plan. ₹3,999 only.',
   alternates: { canonical: 'https://thebeetamin.com/booking' },
