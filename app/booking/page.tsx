@@ -7,7 +7,7 @@ import { getSessionBookingAccess } from '@/lib/session-booking-access'
 export const metadata: Metadata = {
   title: 'Your Recovery Plan',
   description:
-    'Start your 3-month nutrition recovery with 6 expert sessions, WhatsApp support, and a personalised vitamin plan. ₹3,999 only.',
+    'Core Transformation plan — 6 expert nutrition sessions over 3 months, WhatsApp support, and a personalised vitamin plan. ₹3,999. Built for India.',
   alternates: { canonical: 'https://thebeetamin.com/booking' },
 }
 

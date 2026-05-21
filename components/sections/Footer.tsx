@@ -4,18 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Camera, Play, Rss, MessageCircle } from "lucide-react";
+import { PRIMARY_SITE_LINKS } from "@/lib/site-navigation";
 
 type FooterLinks = {
   [key: string]: string[];
 };
-
-const SITE_NAV = [
-  { label: "Book a Session", href: "/sessions" },
-  { label: "Our Plans", href: "/booking" },
-  { label: "Your Report", href: "/assessment" },
-  { label: "About", href: "/#experts" },
-  { label: "Profile", href: "/profile" },
-] as const;
 
 const Footer: React.FC = () => {
   const footerLinks: FooterLinks = {
@@ -56,7 +49,7 @@ const Footer: React.FC = () => {
 
             <nav aria-label="Footer navigation" className="mb-6 sm:mb-8 w-full">
               <ul className="flex flex-wrap justify-center sm:justify-start gap-x-5 gap-y-2 text-sm">
-                {SITE_NAV.map(({ label, href }) => (
+                {PRIMARY_SITE_LINKS.map(({ label, href }) => (
                   <li key={href}>
                     <Link
                       href={href}

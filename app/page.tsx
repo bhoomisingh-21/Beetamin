@@ -2,7 +2,6 @@ import { auth } from '@clerk/nextjs/server'
 import type { Metadata } from 'next'
 import Navbar from "@/components/sections/Navbar";
 import Hero from "@/components/sections/Hero";
-import HomeSeoContent from "@/components/sections/HomeSeoContent";
 import Experts from "@/components/sections/Experts";
 import ProblemSection from "@/components/sections/ProblemSection";
 import BuiltForYou from "@/components/sections/BuiltForYou";
@@ -37,7 +36,6 @@ export default async function Home() {
       <ScrollProgress />
       <Navbar />
       <Hero />
-      <HomeSeoContent />
       <Experts />
       <BuiltForYou />
       <ProblemSection />

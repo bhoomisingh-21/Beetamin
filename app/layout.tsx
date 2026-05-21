@@ -1,7 +1,14 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
-import { FAQJsonLd, MedicalServiceJsonLd, OrganizationJsonLd } from '@/components/JsonLd'
+import {
+  FAQJsonLd,
+  MedicalServiceJsonLd,
+  OrganizationJsonLd,
+  SiteNavigationJsonLd,
+  WebSiteJsonLd,
+} from '@/components/JsonLd'
+import { CrawlableSiteNav } from '@/components/seo/CrawlableSiteNav'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -91,6 +98,8 @@ export const metadata: Metadata = {
     canonical: 'https://thebeetamin.com',
   },
 
+  applicationName: 'TheBeetamin',
+
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '48x48' },
@@ -118,9 +127,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <html lang="en" className="antialiased">
         <body className={`${inter.className} bg-[#010803] text-white overflow-x-hidden`}>
+          <WebSiteJsonLd />
           <OrganizationJsonLd />
           <MedicalServiceJsonLd />
+          <SiteNavigationJsonLd />
           <FAQJsonLd />
+          <CrawlableSiteNav />
           {children}
         </body>
       </html>

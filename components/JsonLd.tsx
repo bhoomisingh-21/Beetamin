@@ -1,3 +1,63 @@
+import { PRIMARY_SITE_LINKS } from '@/lib/site-navigation'
+
+const SITE_URL = 'https://thebeetamin.com'
+
+export function WebSiteJsonLd() {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE_URL}/#website`,
+    name: 'TheBeetamin',
+    alternateName: ['Beetamin', 'The Beetamin'],
+    url: SITE_URL,
+    description:
+      'Personalised nutrient deficiency recovery for Indians — expert nutrition sessions and deficiency reports with Dr. Priya Sharma.',
+    publisher: {
+      '@type': 'Organization',
+      name: 'TheBeetamin',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/logo.png`,
+      },
+    },
+    inLanguage: 'en-IN',
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  )
+}
+
+/** Hints key internal destinations for rich results / sitelinks (not guaranteed by Google). */
+export function SiteNavigationJsonLd() {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'TheBeetamin — main pages',
+    itemListElement: PRIMARY_SITE_LINKS.map((link, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'WebPage',
+        '@id': `${SITE_URL}${link.href === '/#experts' ? '/#experts' : link.href}`,
+        name: link.label,
+        description: link.description,
+        url: `${SITE_URL}${link.href}`,
+      },
+    })),
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  )
+}
+
 export function OrganizationJsonLd() {
   const schema = {
     '@context': 'https://schema.org',

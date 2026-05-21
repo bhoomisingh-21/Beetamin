@@ -95,24 +95,6 @@ export default function Navbar() {
 
             {/* Center nav links */}
             <ul className="hidden md:flex flex-1 items-center justify-center gap-0.5">
-              <li>
-                <Link
-                  href="/"
-                  className="group relative rounded-full px-4 py-2 text-base font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
-                >
-                  Home
-                </Link>
-              </li>
-              {SITE_NAV_LINKS.map(({ label, href }) => (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className="group relative rounded-full px-4 py-2 text-base font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
               {NAV_LINKS.map(({ label, href }) => (
                 <li key={href}>
                   <a
@@ -226,32 +208,6 @@ export default function Navbar() {
             <nav className="flex flex-1 flex-col justify-center px-5 pb-8" aria-label="Mobile menu">
               {/* Nav links */}
               <ul className="mb-8 space-y-0">
-                <motion.li
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0, ease: "easeOut" }}
-                >
-                  <Link
-                    href="/sessions"
-                    onClick={() => setMenuOpen(false)}
-                    className="block border-b border-white/[0.06] py-4 text-center text-xl font-semibold tracking-tight text-white transition-colors hover:text-emerald-300"
-                  >
-                    Sessions
-                  </Link>
-                </motion.li>
-                <motion.li
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.03, ease: "easeOut" }}
-                >
-                  <Link
-                    href="/booking"
-                    onClick={() => setMenuOpen(false)}
-                    className="block border-b border-white/[0.06] py-4 text-center text-xl font-semibold tracking-tight text-white transition-colors hover:text-emerald-300"
-                  >
-                    Plans
-                  </Link>
-                </motion.li>
                 {NAV_LINKS.map(({ label, href }, i) => (
                   <motion.li
                     key={href}
