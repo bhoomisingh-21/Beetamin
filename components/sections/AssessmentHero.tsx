@@ -47,11 +47,11 @@ export default function AssessmentHero() {
               FREE • 2 MINUTES • INSTANT RESULTS
             </div>
 
-            <h1 className="text-3xl font-black tracking-tight text-gray-900 leading-[1.15]">
+            <h2 className="text-3xl font-black tracking-tight text-gray-900 leading-[1.15]">
               Discover Your
               <br />
               <span className="text-[#00E676]">Nutrition Gaps</span>
-            </h1>
+            </h2>
 
             <p className="mt-4 text-gray-500 text-sm leading-relaxed">
               Answer 4 quick questions and get personalized vitamin insights — completely free.
@@ -222,11 +222,11 @@ export default function AssessmentHero() {
               FREE • 2 MINUTES • INSTANT RESULTS
             </div>
 
-            <h1 className="text-5xl font-black tracking-tight text-gray-900 leading-[1.15]">
+            <h2 className="text-5xl font-black tracking-tight text-gray-900 leading-[1.15]">
               Discover Your
               <br />
               <span className="text-[#00E676]">Nutrition Gaps</span>
-            </h1>
+            </h2>
 
             <p className="mt-5 text-gray-500 text-base leading-relaxed">
               Answer 4 quick questions and get personalized vitamin insights — completely free.

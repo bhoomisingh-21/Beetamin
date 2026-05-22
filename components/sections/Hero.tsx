@@ -99,12 +99,14 @@ export default function Hero() {
                 : "INDIA'S #1 PERSONALIZED NUTRITION SYSTEM"}
             </motion.span>
 
-            <h1 className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl">
-              <span className="sr-only">Fix Your Nutrient Deficiencies in 90 Days.</span>
-              <span aria-hidden="true">
+            <p
+              className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl"
+              aria-label="Fix Your Nutrient Deficiencies in 90 Days"
+            >
               {HEADLINE_LINES.map((lineWords, li) => (
                 <span key={li} className="block">
-                  {lineWords.map((word) => {
+                  {li > 0 ? "\u00A0" : null}
+                  {lineWords.map((word, wi) => {
                     const delay = 0.1 + wordIndex++ * 0.08;
                     return (
                       <motion.span
@@ -112,9 +114,10 @@ export default function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay }}
-                        className="text-white inline-block mr-[0.25em]"
+                        className="text-white inline-block"
                       >
                         {word}
+                        {wi < lineWords.length - 1 ? "\u00A0" : ""}
                       </motion.span>
                     );
                   })}
@@ -127,11 +130,10 @@ export default function Hero() {
                   transition={{ duration: 0.5, delay: 0.1 + wordIndex * 0.08 }}
                   className="text-[#00E676]"
                 >
-                  90 Days.
+                  {"\u00A0"}90 Days.
                 </motion.span>
               </span>
-              </span>
-            </h1>
+            </p>
 
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -139,10 +141,9 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 0.6 }}
               className="text-gray-400 text-sm sm:text-base leading-relaxed sm:leading-7 max-w-md"
             >
-              Personalized{" "}
-              <span className="text-white font-bold">Diet + Vitamin Plans</span>{" "}
-              designed by real nutritionists — based on your unique health
-              assessment, not generic templates.
+              Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a{" "}
+              <span className="text-white font-bold">personalised recovery report</span>, Indian
+              meal plan, and expert nutritionist sessions — built for India.
             </motion.p>
 
             {/* ✅ DESKTOP CTA (UNCHANGED) */}

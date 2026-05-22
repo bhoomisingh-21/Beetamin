@@ -13,6 +13,7 @@ import PricingSection from "@/components/sections/PricingSection";
 import ReferralBanner from "@/components/sections/ReferralBanner";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
+import { HomePageSeoHead } from "@/components/seo/HomePageSeoHead";
 import { SitelinkDiscovery } from "@/components/seo/SitelinkDiscovery";
 import PageLoader from "@/components/PageLoader";
 import ScrollProgress from "@/components/ScrollProgress";
@@ -33,6 +34,7 @@ export default async function Home() {
 
   return (
     <div className="bg-[#0A0F0A] min-h-screen">
+      <HomePageSeoHead />
       <PageLoader />
       <ScrollProgress />
       <Navbar />
