@@ -1,27 +1,52 @@
-/** Primary URLs Google may use as sitelinks — keep in sync with footer + JSON-LD. */
-export const PRIMARY_SITE_LINKS = [
+/** Sitelink targets for Google — keep in sync with footer, JSON-LD, sitemap, and CrawlableSiteNav. */
+export const SITE_SITELINKS = [
   {
-    label: 'Book a Session',
-    href: '/sessions',
+    slug: 'nutrient-deficiency',
+    label: 'Vitamin D, Iron, B12 and Omega-3 Deficiency',
+    href: '/nutrient-deficiency',
     description:
-      'Book 1-on-1 expert nutrition sessions with Dr. Priya Sharma. Personalised guidance for Vitamin D, Iron, B12 and Omega-3 recovery.',
+      'Nutrient deficiency test India can rely on online — a deficiency recovery report rooted in your symptoms and Indian eating patterns, not generic Western templates.',
+    ctaHref: '/assessment',
+    ctaLabel: 'Start Free Health Assessment',
   },
   {
-    label: 'Your Report',
-    href: '/assessment',
+    slug: 'personalised-meal-plan',
+    label: 'Personalised Indian Meal Plan',
+    href: '/personalised-meal-plan',
     description:
-      'Take a free deficiency assessment and get a personalised nutrient report with a 7-day Indian meal plan. From ₹39.',
+      'Foods you can buy locally, with practical swaps for vegetarian and non-vegetarian households. Lab-ready guidance when Vitamin D, Iron, B12, or Omega-3 gaps need confirmation.',
+    ctaHref: '/assessment',
+    ctaLabel: 'Get Your Meal Plan',
   },
   {
-    label: 'Our Plans',
-    href: '/booking',
+    slug: 'nutritionist-consultation',
+    label: 'Expert Nutritionist Consultation',
+    href: '/nutritionist-consultation',
     description:
-      'Core Transformation — 6 expert sessions over 3 months, WhatsApp support, and a personalised vitamin plan. ₹3,999.',
+      'Online nutrition sessions you can attend from home — structured follow-ups, WhatsApp support between calls, and a clear path from report to habit change.',
+    ctaHref: '/sessions',
+    ctaLabel: 'Book a Session',
   },
   {
-    label: 'About',
-    href: '/#experts',
+    slug: 'deficiency-recovery-report',
+    label: 'Deficiency Recovery Report',
+    href: '/deficiency-recovery-report',
     description:
-      'Meet certified nutritionists and doctors behind TheBeetamin — India’s personalised deficiency recovery platform.',
+      'Symptoms tied to likely gaps, affordable interventions prioritised, and week-by-week expectations — the same rigour whether you came from search or a referral.',
+    ctaHref: '/assessment',
+    ctaLabel: 'Get Your Report',
   },
 ] as const
+
+export type SiteSitelink = (typeof SITE_SITELINKS)[number]
+
+export function getSitelinkBySlug(slug: string): SiteSitelink | undefined {
+  return SITE_SITELINKS.find((s) => s.slug === slug)
+}
+
+/** @deprecated Use SITE_SITELINKS — alias for footer / crawl nav. */
+export const PRIMARY_SITE_LINKS = SITE_SITELINKS.map(({ label, href, description }) => ({
+  label,
+  href,
+  description,
+}))

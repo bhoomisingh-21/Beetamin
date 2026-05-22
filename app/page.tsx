@@ -13,16 +13,17 @@ import PricingSection from "@/components/sections/PricingSection";
 import ReferralBanner from "@/components/sections/ReferralBanner";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
+import { SitelinkDiscovery } from "@/components/seo/SitelinkDiscovery";
 import PageLoader from "@/components/PageLoader";
 import ScrollProgress from "@/components/ScrollProgress";
 import { hasActiveFullPlanPurchase } from "@/lib/plan-access";
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
+    absolute: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
   },
   description:
-    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
+    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
   alternates: { canonical: 'https://thebeetamin.com' },
 };
 
@@ -46,6 +47,7 @@ export default async function Home() {
       <PricingSection hasFullPlan={hasFullPlan} />
       <ReferralBanner />
       <FAQ />
+      <SitelinkDiscovery />
       <Footer />
     </div>
   );

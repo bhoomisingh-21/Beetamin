@@ -29,12 +29,12 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://thebeetamin.com'),
 
   title: {
-    default: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
+    default: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
     template: '%s | TheBeetamin',
   },
 
   description:
-    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
+    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
 
   keywords: [
     'nutrient deficiency test India',
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: 'https://thebeetamin.com',
     siteName: 'TheBeetamin',
-    title: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
+    title: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
     description:
-      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
+      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
     images: [
       {
         url: '/og-image.png',
@@ -75,9 +75,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: 'summary_large_image',
-    title: 'TheBeetamin — Personalised Nutrition & Deficiency Recovery',
+    title: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
     description:
-      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report and expert nutritionist sessions. Built for India.',
+      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions. Built for India.',
     images: ['/og-image.png'],
     creator: '@thebeetamin',
   },

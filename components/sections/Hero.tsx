@@ -100,6 +100,8 @@ export default function Hero() {
             </motion.span>
 
             <h1 className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl">
+              <span className="sr-only">Fix Your Nutrient Deficiencies in 90 Days.</span>
+              <span aria-hidden="true">
               {HEADLINE_LINES.map((lineWords, li) => (
                 <span key={li} className="block">
                   {lineWords.map((word) => {
@@ -127,6 +129,7 @@ export default function Hero() {
                 >
                   90 Days.
                 </motion.span>
+              </span>
               </span>
             </h1>
 

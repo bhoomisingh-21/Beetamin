@@ -1,4 +1,4 @@
-import { PRIMARY_SITE_LINKS } from '@/lib/site-navigation'
+import { SITE_SITELINKS } from '@/lib/site-navigation'
 
 const SITE_URL = 'https://thebeetamin.com'
 
@@ -11,7 +11,7 @@ export function WebSiteJsonLd() {
     alternateName: ['Beetamin', 'The Beetamin'],
     url: SITE_URL,
     description:
-      'Personalised nutrient deficiency recovery for Indians — expert nutrition sessions and deficiency reports with Dr. Priya Sharma.',
+      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — built for India. Starting at ₹39.',
     publisher: {
       '@type': 'Organization',
       name: 'TheBeetamin',
@@ -35,19 +35,35 @@ export function WebSiteJsonLd() {
 export function SiteNavigationJsonLd() {
   const schema = {
     '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: 'TheBeetamin — main pages',
-    itemListElement: PRIMARY_SITE_LINKS.map((link, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      item: {
-        '@type': 'WebPage',
-        '@id': `${SITE_URL}${link.href === '/#experts' ? '/#experts' : link.href}`,
-        name: link.label,
-        description: link.description,
-        url: `${SITE_URL}${link.href}`,
+    '@graph': [
+      {
+        '@type': 'SiteNavigationElement',
+        '@id': `${SITE_URL}/#site-navigation`,
+        name: 'TheBeetamin primary navigation',
+        hasPart: SITE_SITELINKS.map((link) => ({
+          '@type': 'WebPage',
+          '@id': `${SITE_URL}${link.href}`,
+          name: link.label,
+          description: link.description,
+          url: `${SITE_URL}${link.href}`,
+        })),
       },
-    })),
+      {
+        '@type': 'ItemList',
+        name: 'TheBeetamin — main pages',
+        itemListElement: SITE_SITELINKS.map((link, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          item: {
+            '@type': 'WebPage',
+            '@id': `${SITE_URL}${link.href}`,
+            name: link.label,
+            description: link.description,
+            url: `${SITE_URL}${link.href}`,
+          },
+        })),
+      },
+    ],
   }
 
   return (
