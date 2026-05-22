@@ -8,7 +8,11 @@ import { ChevronLeft, Loader2, Leaf } from 'lucide-react'
 import { ReportGeneratingLoader } from '@/components/ReportGeneratingLoader'
 import { saveAssessmentToProfile } from '@/lib/booking-actions'
 import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from '@/lib/recovery-report-types'
-import { submitToPayU } from '@/lib/payu-submit'
+import { trackEvent } from '@/lib/analytics'
+import {
+  applyPaymentInitiateResult,
+  handlePaymentInitiateResponse,
+} from '@/lib/payment-initiate-client'
 
 const FOOD_ROWS: { key: FoodFrequencyKey; label: string }[] = [
   { key: 'green_vegetables', label: 'Green vegetables (palak, methi, broccoli)' },
@@ -242,6 +246,8 @@ export default function DetailedAssessmentPage() {
         /* ignore */
       }
 
+      trackEvent('payment_initiated', { plan: 'report', amount: 39, mode: paymentMode })
+
       const payRes = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -254,19 +260,14 @@ export default function DetailedAssessmentPage() {
         payJson = {}
       }
 
-      if (payRes.ok && typeof payJson.actionUrl === 'string') {
-        const rawParams = payJson.params
-        if (rawParams && typeof rawParams === 'object' && !Array.isArray(rawParams)) {
-          const paramsObj = rawParams as Record<string, unknown>
-          const flattened: Record<string, string> = {}
-          for (const [k, v] of Object.entries(paramsObj)) {
-            flattened[k] = typeof v === 'string' ? v : String(v ?? '')
-          }
-          if (typeof flattened.hash === 'string' && flattened.hash.length > 0) {
-            submitToPayU(flattened, payJson.actionUrl)
-            return
-          }
-        }
+      const payResult = handlePaymentInitiateResponse(payJson, payRes.ok)
+      if (payResult.kind === 'redirect') {
+        window.location.href = payResult.url
+        return
+      }
+      if (payResult.kind === 'payu') {
+        applyPaymentInitiateResult(payResult)
+        return
       }
 
       if (payRes.status === 503 && payJson.code === 'PAYU_UNAVAILABLE') {

@@ -23,6 +23,16 @@ export type SessionBookingAccess = {
  * We no longer look only at the single latest report (a later ₹39 regenerate would incorrectly lock the user out).
  */
 export async function getSessionBookingAccess(clerkUserId: string): Promise<SessionBookingAccess> {
+  const { data: gifted } = await supabaseAdmin
+    .from('clients')
+    .select('is_gifted_access, gifted_plan')
+    .eq('clerk_user_id', clerkUserId)
+    .maybeSingle()
+
+  if (gifted?.is_gifted_access === true && gifted.gifted_plan === 'full_plan') {
+    return { allowed: true, reason: 'full_plan', latestCompletedAmount: 3999 }
+  }
+
   const { data: purchaseRows, error: pErr } = await supabaseAdmin
     .from('purchases')
     .select('amount, status')

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Zap, Shield, ChevronRight, ChevronLeft, Loader2, FlaskConical } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
   <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.18'/>
@@ -33,6 +34,7 @@ export default function AssessmentPage() {
   const router = useRouter()
 
   async function handleSubmit() {
+    trackEvent('quiz_completed')
     setIsLoading(true)
     try {
       const res = await fetch('/api/assessment', {
@@ -578,7 +580,11 @@ export default function AssessmentPage() {
 
                     {currentStep < TOTAL_STEPS ? (
                       <button
-                        onClick={() => { setDirection('next'); setCurrentStep(p => p + 1) }}
+                        onClick={() => {
+                          if (currentStep === 1) trackEvent('quiz_started')
+                          setDirection('next')
+                          setCurrentStep((p) => p + 1)
+                        }}
                         disabled={!isStepValid()}
                         className={`bg-emerald-500 text-black rounded-full px-6 md:px-8 py-2.5 md:py-3 font-bold text-sm flex items-center gap-2 transition-all flex-shrink-0 ${isStepValid()
                           ? 'hover:bg-emerald-400 hover:scale-105 cursor-pointer'

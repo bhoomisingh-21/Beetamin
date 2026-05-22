@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
         console.error('[payment/success] activate client', clientResult.error)
       }
 
-      return NextResponse.redirect(`${base}/booking`, { status: 302 })
+      return NextResponse.redirect(`${base}/booking?full_plan_payment_success=1`, { status: 302 })
     }
 
     if (mode === 'booster') {
@@ -228,7 +228,10 @@ export async function POST(req: NextRequest) {
     const currentStatus = String(row.status ?? '')
 
     if (currentStatus === 'ready' || currentStatus === 'generated') {
-      return NextResponse.redirect(`${base}/report/${encodeURIComponent(reportSlug)}`, { status: 302 })
+      return NextResponse.redirect(
+        `${base}/report/${encodeURIComponent(reportSlug)}?payment_success=1`,
+        { status: 302 },
+      )
     }
 
     if (currentStatus === 'failed') {
@@ -261,7 +264,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    return NextResponse.redirect(`${base}/report/${encodeURIComponent(reportSlug)}`, { status: 302 })
+    return NextResponse.redirect(
+      `${base}/report/${encodeURIComponent(reportSlug)}?payment_success=1`,
+      { status: 302 },
+    )
   } catch (err) {
     console.error('[payment/success] unexpected error', err)
     return NextResponse.redirect(`${base}/sessions?error=server_error`, { status: 302 })

@@ -13,6 +13,7 @@ import {
   checkClientEligibility,
   type NutritionistRow,
 } from '@/lib/booking-actions'
+import { trackEvent } from '@/lib/analytics'
 import CalendarPicker from '@/components/ui/CalendarPicker'
 
 function formatTime(t: string) {
@@ -79,6 +80,9 @@ export default function BookingNewClient() {
 
   async function handleSubmit() {
     if (!selectedNutritionist || !selectedDate || !selectedTime) return
+    trackEvent('session_booking_attempted', {
+      nutritionist_id: selectedNutritionist.id,
+    })
     setIsSubmitting(true)
     setError('')
     try {

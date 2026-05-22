@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { ReportAppHeader } from '@/components/report/ReportAppHeader'
 import Footer from '@/components/sections/Footer'
+import { trackEvent } from '@/lib/analytics'
 import { ReportReadyLayout } from './ReportReadyLayout'
 
 type PollStatus = 'generating' | 'ready' | 'failed' | 'generated' | string | null
@@ -131,7 +132,10 @@ function ReportExistingNoticeBanner() {
 function ReportPageInner() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isLoaded, isSignedIn, user } = useUser()
+  const paymentSuccessTrackedRef = useRef(false)
+  const reportViewedTrackedRef = useRef(false)
 
   const reportIdRaw = params?.reportId
   const reportId = typeof reportIdRaw === 'string' ? decodeURIComponent(reportIdRaw.trim()) : ''
@@ -218,6 +222,19 @@ function ReportPageInner() {
       setView('not_found')
     }
   }, [isLoaded, isSignedIn, reportId, router])
+
+  useEffect(() => {
+    if (paymentSuccessTrackedRef.current) return
+    if (searchParams.get('payment_success') !== '1') return
+    paymentSuccessTrackedRef.current = true
+    trackEvent('payment_success', { plan: 'report', amount: 39, report_id: reportId })
+  }, [searchParams, reportId])
+
+  useEffect(() => {
+    if (view !== 'ready' || reportViewedTrackedRef.current) return
+    reportViewedTrackedRef.current = true
+    trackEvent('report_viewed', { report_id: reportId })
+  }, [view, reportId])
 
   useEffect(() => {
     if (view !== 'loading' || !reportId || !isSignedIn) return

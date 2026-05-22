@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { FullPlanBookingLink } from '@/components/payment/FullPlanBookingLink'
+import { trackEvent } from '@/lib/analytics'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
   <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.25'/>
@@ -112,6 +113,7 @@ export default function ResultsPage() {
   async function generateAndSendReport(userEmail: string, userName: string) {
     void userName
     setGenerateError(null)
+    trackEvent('payment_initiated', { plan: 'report', amount: 39, source: 'results_page' })
     if (!isSignedIn) {
       sessionStorage.setItem('postLoginDest', '39-plan')
       router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))

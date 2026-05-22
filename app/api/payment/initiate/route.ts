@@ -9,6 +9,7 @@ import {
   payuHostedActionUrl,
   payuMerchantConfigured,
 } from '@/lib/payment-app-base-url'
+import { giftedPlanMatchesPayment, grantGiftedFullPlan, grantGiftedReport } from '@/lib/gifted-access'
 import { hasActiveFullPlanPurchase } from '@/lib/plan-access'
 import { reserveUpgradePurchase } from '@/lib/reserve-upgrade-purchase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -78,9 +79,14 @@ export async function POST(req: Request) {
 
   const { data: client } = await supabaseAdmin
     .from('clients')
-    .select('name, email, assessment_result')
+    .select('name, email, assessment_result, is_gifted_access, gifted_plan')
     .eq('clerk_user_id', sessionUserId)
     .maybeSingle()
+
+  const giftedActive =
+    client?.is_gifted_access === true &&
+    typeof client?.gifted_plan === 'string' &&
+    client.gifted_plan.length > 0
 
   const clerkUser = !client ? await currentUser() : null
   const emailResolved =
@@ -95,6 +101,16 @@ export async function POST(req: Request) {
   const firstname = firstNameFrom(displayName)
 
   if (mode === 'upgrade') {
+    if (giftedActive && giftedPlanMatchesPayment(client.gifted_plan, 'upgrade')) {
+      try {
+        const { redirectUrl } = await grantGiftedFullPlan(sessionUserId)
+        return NextResponse.json({ giftedBypass: true, redirectUrl })
+      } catch (err) {
+        console.error('[payment/initiate] gifted full plan', err)
+        return NextResponse.json({ error: 'Could not apply gifted plan access.' }, { status: 500 })
+      }
+    }
+
     const amountRupees = Math.round(rupeesServer)
     const amountFormatted = `${amountRupees.toFixed(2)}`
     const base = paymentAppBaseUrl()
@@ -252,6 +268,24 @@ export async function POST(req: Request) {
       },
       { status: 400 },
     )
+  }
+
+  if (
+    giftedActive &&
+    giftedPlanMatchesPayment(client.gifted_plan, mode as 'new' | 'retake' | 'regenerate')
+  ) {
+    try {
+      const { redirectUrl } = await grantGiftedReport({
+        clerkUserId: sessionUserId,
+        assessmentId,
+        email: emailResolved,
+        freeAssessmentSnapshot: freeAssessment,
+      })
+      return NextResponse.json({ giftedBypass: true, redirectUrl })
+    } catch (err) {
+      console.error('[payment/initiate] gifted report', err)
+      return NextResponse.json({ error: 'Could not apply gifted report access.' }, { status: 500 })
+    }
   }
 
   const txnid = makePayUTxnId()

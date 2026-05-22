@@ -2,6 +2,16 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 /** Active Core Transformation (full) purchase — used for booster gate and pricing CTAs. */
 export async function hasActiveFullPlanPurchase(userId: string): Promise<boolean> {
+  const { data: gifted } = await supabaseAdmin
+    .from('clients')
+    .select('is_gifted_access, gifted_plan')
+    .eq('clerk_user_id', userId)
+    .maybeSingle()
+
+  if (gifted?.is_gifted_access === true && gifted.gifted_plan === 'full_plan') {
+    return true
+  }
+
   const { data } = await supabaseAdmin
     .from('purchases')
     .select('id')

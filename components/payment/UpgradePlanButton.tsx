@@ -4,7 +4,11 @@ import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 
-import { submitToPayU } from '@/lib/payu-submit'
+import { trackEvent } from '@/lib/analytics'
+import {
+  applyPaymentInitiateResult,
+  handlePaymentInitiateResponse,
+} from '@/lib/payment-initiate-client'
 
 type PayuPlanMode = 'upgrade' | 'booster'
 
@@ -15,57 +19,6 @@ type UpgradePlanButtonProps = {
   onError?: (message: string) => void
   /** Server derives amount from mode — never trust client price. */
   mode?: PayuPlanMode
-}
-
-const PAYU_FIELD_KEYS = [
-  'key',
-  'txnid',
-  'amount',
-  'productinfo',
-  'firstname',
-  'email',
-  'udf1',
-  'udf2',
-  'udf3',
-  'udf4',
-  'udf5',
-  'surl',
-  'furl',
-  'hash',
-  'service_provider',
-] as const
-
-function flattenParams(raw: unknown): Record<string, string> | null {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
-  const out: Record<string, string> = {}
-  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    out[key] = typeof value === 'string' ? value : String(value ?? '')
-  }
-  return out.hash ? out : null
-}
-
-function extractPayUCheckout(body: Record<string, unknown>): {
-  payuUrl: string
-  params: Record<string, string>
-} | null {
-  const payuUrl =
-    typeof body.payuUrl === 'string'
-      ? body.payuUrl
-      : typeof body.actionUrl === 'string'
-        ? body.actionUrl
-        : ''
-  if (!payuUrl) return null
-
-  const nested = flattenParams(body.params)
-  if (nested) return { payuUrl, params: nested }
-
-  const flat: Record<string, string> = {}
-  for (const key of PAYU_FIELD_KEYS) {
-    const value = body[key]
-    if (value != null && value !== '') flat[key] = String(value)
-  }
-  if (!flat.hash) return null
-  return { payuUrl, params: flat }
 }
 
 export function UpgradePlanButton({
@@ -80,6 +33,9 @@ export function UpgradePlanButton({
   async function startCheckout() {
     setBusy(true)
     onError?.('')
+    if (mode === 'upgrade') {
+      trackEvent('payment_initiated', { plan: 'full_plan', amount: 3999 })
+    }
     try {
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
@@ -93,20 +49,13 @@ export function UpgradePlanButton({
         return
       }
 
-      if (!res.ok) {
-        const message =
-          typeof body.error === 'string' ? body.error : 'Could not start checkout.'
+      const result = handlePaymentInitiateResponse(body, res.ok)
+      if (result.kind === 'error') {
         console.error('[UpgradePlanButton] checkout failed', res.status, body.code, body)
-        throw new Error(message)
+        throw new Error(result.message)
       }
 
-      const checkout = extractPayUCheckout(body)
-      if (!checkout) {
-        console.error('[UpgradePlanButton] invalid PayU payload', body)
-        throw new Error('Could not start checkout — invalid payment response.')
-      }
-
-      submitToPayU(checkout.params, checkout.payuUrl)
+      applyPaymentInitiateResult(result)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not start checkout.'
       console.error('[UpgradePlanButton]', message, error)

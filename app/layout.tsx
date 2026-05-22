@@ -8,6 +8,7 @@ import {
   SiteNavigationJsonLd,
   WebSiteJsonLd,
 } from '@/components/JsonLd'
+import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
 import { CrawlableSiteNav } from '@/components/seo/CrawlableSiteNav'
 import './globals.css'
 
@@ -127,6 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <html lang="en" className="antialiased">
         <body className={`${inter.className} bg-[#010803] text-white overflow-x-hidden`}>
+          <AnalyticsScripts />
           <WebSiteJsonLd />
           <OrganizationJsonLd />
           <MedicalServiceJsonLd />

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { getClientDashboard, saveAssessmentToProfile } from '@/lib/booking-actions'
 import { UpgradePlanButton } from '@/components/payment/UpgradePlanButton'
+import { trackEvent } from '@/lib/analytics'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
@@ -47,6 +48,13 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
   const router = useRouter()
   const [showPaywall, setShowPaywall] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (new URLSearchParams(window.location.search).get('full_plan_payment_success') === '1') {
+      trackEvent('full_plan_payment_success', { amount: 3999 })
+    }
+  }, [])
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user || !canScheduleSessions) return
@@ -234,14 +242,14 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
             <div className="bg-white rounded-3xl p-8 shadow-2xl">
               <div className="flex items-center justify-center gap-3 mb-1">
                 <span className="text-gray-900 font-black text-5xl">₹3,999</span>
-                <span className="text-gray-400 text-xl line-through">₹6,999</span>
+                <span className="text-gray-400 text-xl line-through">₹9,999</span>
               </div>
               <p className="text-gray-500 text-center text-xs sm:text-sm whitespace-nowrap max-md:tracking-tight">
                 One-time · 3 months access · 6 sessions
               </p>
 
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-4 text-amber-700 text-xs sm:text-sm font-medium text-center whitespace-nowrap max-md:tracking-tight">
-                🔥 42% off — Limited spots available
+                🔥 60% off — Limited spots available
               </div>
 
               {checkoutError ? (

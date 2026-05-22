@@ -60,7 +60,7 @@ export default function PricingSection({ hasFullPlan }: Props) {
 
           <div className="flex items-baseline gap-3 mb-2">
             <span className="text-4xl sm:text-5xl font-black text-gray-900">₹3,999</span>
-            <span className="text-gray-400 text-lg sm:text-xl line-through">₹6,999</span>
+            <span className="text-gray-400 text-lg sm:text-xl line-through">₹9,999</span>
           </div>
 
           <p className="text-gray-500 text-sm mb-6 sm:mb-8">

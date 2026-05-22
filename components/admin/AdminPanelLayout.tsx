@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import {
   BarChart3,
   Calendar,
+  Gift,
   LayoutDashboard,
   Leaf,
   LogOut,
@@ -61,6 +62,7 @@ function SidebarNav({
     { href: '/admin/nutritionists', label: 'Nutritionists', icon: Users },
     { href: '/admin/clients', label: 'Clients', icon: UserCircle },
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/admin/gift-access', label: 'Gift access', icon: Gift },
   ]
 
   return (
