@@ -65,7 +65,7 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
         const assessmentMeta = localStorage.getItem('assessmentMeta')
 
         const postLoginDest = sessionStorage.getItem('postLoginDest')
-        if (postLoginDest === '29-plan') {
+        if (postLoginDest === '39-plan' || postLoginDest === '29-plan') {
           sessionStorage.removeItem('postLoginDest')
           if (assessmentResult && user?.id) {
             try {

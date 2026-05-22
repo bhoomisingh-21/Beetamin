@@ -75,7 +75,7 @@ function getOfferHeadline(score: number, name: string, deficiencies: any[]) {
     return {
       h2: `Protect What's Working.`,
       h2sub: `Build on It.`,
-      desc: `${firstName}'s profile is healthy — but optimal is different from average. Your ₹29 plan locks in your current status and builds the margins that prevent future gaps.`,
+      desc: `${firstName}'s profile is healthy — but optimal is different from average. Your ₹39 plan locks in your current status and builds the margins that prevent future gaps.`,
     }
   }
   const topNutrient = deficiencies?.[0]?.nutrient || 'your deficiencies'
@@ -83,7 +83,7 @@ function getOfferHeadline(score: number, name: string, deficiencies: any[]) {
     return {
       h2: `Catch It Early.`,
       h2sub: `Fix It Permanently.`,
-      desc: `${firstName}'s ${topNutrient} gap is early-stage — the easiest and cheapest time to fix it. Your ₹29 plan gives you the exact protocol before it becomes a real problem.`,
+      desc: `${firstName}'s ${topNutrient} gap is early-stage — the easiest and cheapest time to fix it. Your ₹39 plan gives you the exact protocol before it becomes a real problem.`,
     }
   }
   return {
@@ -113,7 +113,7 @@ export default function ResultsPage() {
     void userName
     setGenerateError(null)
     if (!isSignedIn) {
-      sessionStorage.setItem('postLoginDest', '29-plan')
+      sessionStorage.setItem('postLoginDest', '39-plan')
       router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))
       return
     }
@@ -516,7 +516,7 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* ===== SECTION 2 — PAID RECOVERY READY / GENERATING OR ₹29 OFFER ===== */}
+      {/* ===== SECTION 2 — PAID RECOVERY READY / GENERATING OR ₹39 OFFER ===== */}
       {readyReportId ? (
         <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
           <motion.div
@@ -598,7 +598,7 @@ export default function ResultsPage() {
                   <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Success rate</p>
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹29</p>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹39</p>
                   <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Recovery PDF</p>
                 </div>
               </div>
@@ -637,8 +637,8 @@ export default function ResultsPage() {
                   🔥 New User Offer — Expires Soon
                 </p>
 
-                <p className="line-through text-gray-400 text-sm md:text-lg">₹299</p>
-                <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹29</p>
+                <p className="line-through text-gray-400 text-sm md:text-lg">₹399</p>
+                <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹39</p>
                 <p className="text-emerald-600 text-xs sm:text-sm font-semibold mt-1.5">
                   {isHealthy
                     ? `Optimization plan for ${meta.name || 'you'}`
@@ -647,7 +647,7 @@ export default function ResultsPage() {
 
                 <div className="mt-4 md:mt-6 rounded-xl bg-emerald-50/80 border border-emerald-100 px-3 py-3 sm:px-4">
                   <p className="text-xs sm:text-sm text-emerald-900 font-medium leading-relaxed">
-                    Next: a short follow-up questionnaire (about 2 minutes). Your personalised PDF is prepared right after you confirm — secure payment will be added here soon.
+                    Next: a short follow-up questionnaire (about 2 minutes). Your personalised PDF is prepared right after you complete secure PayU checkout (₹39).
                   </p>
                 </div>
 
@@ -672,7 +672,7 @@ export default function ResultsPage() {
                       Starting your PDF…
                     </span>
                   ) : (
-                    'Get Paid Report — ₹29'
+                    'Get Paid Report — ₹39'
                   )}
                 </button>
                 {generateError ? (

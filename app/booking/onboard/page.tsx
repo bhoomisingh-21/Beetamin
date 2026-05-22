@@ -186,7 +186,7 @@ export default function OnboardPage() {
           /* ignore */
         }
       }
-      router.push('/sessions')
+      router.push('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsSubmitting(false)

@@ -708,16 +708,18 @@ function LabTestsSection({ data }: { data: RecoveryReportV2Data }) {
               </View>
             </View>
             <Text style={styles.labWhy}>{lab.whyNeeded}</Text>
-            <View style={styles.labMiniRow}>
-              <View style={styles.labMiniCol}>
+            <View style={styles.labGrid}>
+              <View style={styles.labGridCell}>
                 <Text style={styles.labMiniLbl}>Normal range</Text>
                 <Text style={styles.labMiniVal}>{lab.normalRange}</Text>
               </View>
-              <View style={styles.labMiniCol}>
+              <View style={styles.labGridCell}>
                 <Text style={styles.labMiniLbl}>Your est. level</Text>
-                <Text style={[styles.labMiniVal, { color: estColor }]}>{lab.theirEstimatedLevel}</Text>
+                <Text style={[styles.labMiniVal, styles.labEstVal, { color: estColor }]}>
+                  {lab.theirEstimatedLevel}
+                </Text>
               </View>
-              <View style={[styles.labMiniCol, { marginRight: 0 }]}>
+              <View style={[styles.labGridCell, styles.labGridCellLast]}>
                 <Text style={styles.labMiniLbl}>When to get</Text>
                 <Text style={styles.labMiniVal}>{lab.whenToGet}</Text>
               </View>

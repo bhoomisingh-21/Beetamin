@@ -168,13 +168,14 @@ export default function AssessmentPage() {
           }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/15 via-[#0A0F14]/70 to-[#0A0F14] pointer-events-none" />
-          <div className="relative z-10 max-w-md w-full">
-            {/* Back to home */}
-            <a href="/" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-sm mb-6 transition">
-              <ChevronLeft size={14} />
-              Back to home
-            </a>
-
+          <a
+            href="/"
+            className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0A0F14]/80 px-3 py-2 text-sm font-medium text-zinc-400 backdrop-blur-sm transition hover:border-white/20 hover:text-white sm:left-6 sm:top-6"
+          >
+            <ChevronLeft size={14} aria-hidden />
+            Back to home
+          </a>
+          <div className="relative z-10 max-w-md w-full pt-10 sm:pt-0">
             <span className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs tracking-widest uppercase rounded-full px-3 py-1 inline-flex items-center gap-2">
               <FlaskConical size={12} />
               CLINICAL DEFICIENCY ASSESSMENT

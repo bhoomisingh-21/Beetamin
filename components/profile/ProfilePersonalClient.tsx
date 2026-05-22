@@ -109,7 +109,7 @@ export default function ProfilePersonalClient({
       setTimeout(() => setToast(''), 3000)
       await reload()
       const next = await consumeRedirectAfterAuth()
-      router.push(next ?? '/sessions')
+      router.push(next ?? '/')
     } catch {
       setToast('Could not save profile.')
     } finally {

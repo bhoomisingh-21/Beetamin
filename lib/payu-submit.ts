@@ -19,5 +19,6 @@ export function submitToPayU(params: Record<string, string>, actionUrl: string):
   }
   document.body.appendChild(form)
   form.submit()
-  form.remove()
+  // Keep the form in the DOM until navigation starts — removing immediately can cancel PayU redirect in some browsers.
+  window.setTimeout(() => form.remove(), 2000)
 }

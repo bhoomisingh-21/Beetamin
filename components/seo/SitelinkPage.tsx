@@ -11,14 +11,19 @@ export function SitelinkPage({ link }: Props) {
 
   return (
     <main className="min-h-screen bg-[#0A0F0A] text-white">
-      <article className="mx-auto max-w-2xl px-4 py-14 sm:py-20 sm:px-6">
-        <Link
-          href="/"
-          className="text-sm font-medium text-emerald-400/90 transition-colors hover:text-emerald-300"
-        >
-          ← TheBeetamin
-        </Link>
-        <h1 className="mt-6 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+      <header className="sticky top-0 z-20 border-b border-white/[0.08] bg-[#0A0F0A]/95 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-2xl items-center px-4 sm:px-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
+          >
+            <span aria-hidden>←</span>
+            Back to home
+          </Link>
+        </div>
+      </header>
+      <article className="mx-auto max-w-2xl px-4 pb-14 pt-8 sm:px-6 sm:pb-20 sm:pt-10">
+        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
           {link.label}
         </h1>
         <p className="mt-5 text-base leading-relaxed text-zinc-400">{link.description}</p>

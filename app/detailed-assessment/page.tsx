@@ -216,10 +216,20 @@ export default function DetailedAssessmentPage() {
         /* ignore */
       }
 
+      let paymentMode: 'new' | 'retake' = 'new'
+      try {
+        if (sessionStorage.getItem('beetamin.retakePaidReportFlow') === '1') {
+          paymentMode = 'retake'
+          sessionStorage.removeItem('beetamin.retakePaidReportFlow')
+        }
+      } catch {
+        /* ignore */
+      }
+
       const payRes = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assessmentId: detailedAssessmentId, mode: 'new' }),
+        body: JSON.stringify({ assessmentId: detailedAssessmentId, mode: paymentMode }),
       })
       let payJson: Record<string, unknown> = {}
       try {
@@ -737,8 +747,7 @@ export default function DetailedAssessmentPage() {
                     Confirm &amp; get my PDF
                   </button>
                   <p className="mt-3 text-center sm:text-left text-xs text-gray-500">
-                    You&apos;ll complete payment on PayU&apos;s secure page. If checkout is unavailable in development,
-                    your report generates immediately instead.
+                    You&apos;ll complete secure payment on PayU (₹39) before your personalised PDF is generated.
                   </p>
                   <p className="mt-8 text-center sm:text-left text-xs text-gray-400">
                     Signed in as {user?.primaryEmailAddress?.emailAddress}

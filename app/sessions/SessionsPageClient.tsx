@@ -25,18 +25,9 @@ import {
   type PaidReportSummary,
 } from '@/lib/booking-actions'
 import { UpgradePlanButton } from '@/components/payment/UpgradePlanButton'
-import { submitToPayU } from '@/lib/payu-submit'
-import { requestRegeneratePaidReport } from '@/lib/report-dashboard-actions'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
-
-const PLAN_FEATURES = [
-  { label: '6 Expert Sessions', sub: '30 min each, over 3 months' },
-  { label: 'Flexible Scheduling', sub: 'Book at times that suit you' },
-  { label: 'Doctor-Reviewed Plans', sub: 'Clinically validated guidance' },
-  { label: 'Personalized Protocol', sub: 'Built around your deficiencies' },
-]
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
@@ -161,8 +152,6 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   })
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null)
   const [openReportId, setOpenReportId] = useState<string | null>(null)
-  const [regenBusy, setRegenBusy] = useState(false)
-  const [regenError, setRegenError] = useState('')
   const [upgradeError, setUpgradeError] = useState('')
   const [paymentError, setPaymentError] = useState('')
 
@@ -235,34 +224,9 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   const hasGeneratingReport = sortedPaidReports.some((r) => r.status === 'generating')
   const showWantUpdatedSection = hasTerminalReport && !hasGeneratingReport
 
-  const latestAssessmentForRegen = sortedPaidReports.find(
-    (r) => ['ready', 'generated', 'completed'].includes(r.status) && r.assessment_id,
-  )?.assessment_id
-
   const goBookingFlow = () => {
     if (!canUseSessionBooking) router.push('/booking')
     else router.push('/booking/new')
-  }
-
-  async function handleRegenerateReport() {
-    const aid = latestAssessmentForRegen
-    if (!aid) {
-      setRegenError('No assessment is linked to your latest report.')
-      return
-    }
-    setRegenBusy(true)
-    setRegenError('')
-    const res = await requestRegeneratePaidReport(aid)
-    setRegenBusy(false)
-    if (!res.ok) {
-      setRegenError(res.error)
-      return
-    }
-    if (res.flow === 'payu') {
-      submitToPayU(res.params, res.actionUrl)
-      return
-    }
-    router.push(`/report/${encodeURIComponent(res.reportId)}`)
   }
 
   const apptForSession = useCallback(
@@ -331,7 +295,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
     })[0]
   }, [confirmedAppts])
 
-  const showNoPlanPricing = !client || (client.status !== 'active' && !planComplete)
+  const showSessionLock = !canUseSessionBooking && !planComplete
 
   function downloadIcs() {
     if (!firstConfirmed) return
@@ -414,14 +378,16 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex flex-wrap items-center gap-2">
+          <div>
             <h1 className="text-white font-black text-3xl md:text-4xl">
               Book a Nutrition Session
             </h1>
-            <p className="mt-2 text-gray-400 text-sm md:text-base">
-              Welcome back, {welcomeName}
-            </p>
-            {client && statusBadge(client.status)}
+            {canUseSessionBooking && client ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <p className="text-gray-400 text-sm md:text-base">Welcome back, {welcomeName}</p>
+                {statusBadge(client.status)}
+              </div>
+            ) : null}
           </div>
         </motion.div>
 
@@ -524,48 +490,22 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
             {showWantUpdatedSection && (
               <div className="mt-8 pt-6 border-t border-white/10">
                 <p className="text-white font-bold text-base">Want an updated report?</p>
-                <p className="text-gray-500 text-sm mt-1">
-                  Retake the free quiz for a fresh run, or reuse your current answers — ₹39 checkout is a stub
-                  until payment is wired.
+                <p className="text-gray-500 text-sm mt-2 leading-relaxed">
+                  Complete the assessment again and pay ₹39 to generate a fresh personalised report.
                 </p>
-                {regenError ? (
-                  <p className="text-red-400 text-xs mt-3">{regenError}</p>
-                ) : null}
-                <div className="mt-5 flex flex-col sm:flex-row gap-3">
-                  <Link
-                    href="/assessment"
-                    onClick={() => {
-                      try {
-                        sessionStorage.setItem('beetamin.retakePaidReportFlow', '1')
-                      } catch {
-                        /* ignore */
-                      }
-                    }}
-                    className="inline-flex justify-center rounded-2xl border border-emerald-500/50 px-6 py-3 text-sm font-bold text-emerald-300 hover:bg-emerald-500/10 transition"
-                  >
-                    Retake assessment
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={regenBusy || !latestAssessmentForRegen}
-                    onClick={() => void handleRegenerateReport()}
-                    className="inline-flex justify-center items-center gap-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed px-6 py-3 text-sm font-black text-black transition"
-                  >
-                    {regenBusy ? (
-                      <>
-                        <Loader2 className="animate-spin" size={16} /> Starting…
-                      </>
-                    ) : (
-                      'Generate new report'
-                    )}
-                  </button>
-                </div>
-                {!latestAssessmentForRegen ? (
-                  <p className="text-amber-400/90 text-xs mt-3">
-                    Generate new report needs a linked assessment on your latest completed PDF — retake instead if this
-                    is missing.
-                  </p>
-                ) : null}
+                <Link
+                  href="/assessment"
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem('beetamin.retakePaidReportFlow', '1')
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                  className="mt-5 inline-flex w-full sm:w-auto justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-6 py-3.5 text-sm font-black text-black transition"
+                >
+                  Retake Assessment &amp; Pay ₹39
+                </Link>
               </div>
             )}
           </motion.div>
@@ -589,63 +529,36 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           </motion.div>
         )}
 
-        {showNoPlanPricing && !planComplete && (
+        {showSessionLock && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-8 grid gap-6 lg:grid-cols-2"
+            className="mt-10 flex justify-center px-2"
           >
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                {PLAN_FEATURES.map(({ label, sub }) => (
-                  <div key={label} className="bg-[#111820] border border-white/[0.08] rounded-2xl p-4">
-                    <p className="text-white font-bold text-sm">{label}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{sub}</p>
-                  </div>
-                ))}
+            <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#111820] px-8 py-10 text-center shadow-[0_24px_48px_rgba(0,0,0,0.35)]">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/10 text-2xl">
+                🔒
               </div>
-              <div className="bg-[#111820] border border-white/[0.08] rounded-2xl p-6">
-                <h3 className="text-white font-bold text-base mb-3">The Core Transformation</h3>
-                <p className="text-gray-400 text-sm">₹3,999 · 6 sessions · 3 months access</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-3xl p-8 shadow-2xl border border-white/10">
-              <p className="text-gray-900 font-black text-4xl text-center">₹3,999</p>
-              <p className="text-gray-500 text-center text-sm mt-1">One-time · 6 expert sessions</p>
+              <h2 className="text-white font-black text-xl leading-snug">
+                Sessions are part of the Full Recovery Plan
+              </h2>
+              <p className="text-gray-400 text-sm mt-4 leading-relaxed">
+                Nutrition sessions are included in the Full Recovery Plan (₹3,999). Your current plan includes
+                your personalised report only.
+              </p>
               <UpgradePlanButton
                 onError={setUpgradeError}
-                className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center"
+                className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-black text-black transition hover:bg-emerald-400"
               >
-                Get Started
+                Upgrade to Full Plan
               </UpgradePlanButton>
             </div>
           </motion.div>
         )}
 
-        {!showNoPlanPricing && client && (
+        {!showSessionLock && client && (
           <>
-            {!canUseSessionBooking ? (
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 rounded-3xl border border-amber-500/40 bg-amber-950/30 p-8 text-center"
-              >
-                <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-2xl">
-                  🔒
-                </div>
-                <h2 className="text-white font-black text-xl">Sessions are part of the Full Recovery Plan</h2>
-                <p className="text-gray-400 text-sm mt-3 leading-relaxed max-w-lg mx-auto">
-                  Session booking is included in the Full Recovery Plan (₹3,999). Your ₹39 plan includes your
-                  personalised report only.
-                </p>
-                <UpgradePlanButton
-                  onError={setUpgradeError}
-                  className="mt-6 inline-flex items-center justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-8 py-3.5 text-black font-black text-sm transition"
-                >
-                  Upgrade to Full Plan
-                </UpgradePlanButton>
-              </motion.div>
-            ) : (
+            {canUseSessionBooking ? (
               <>
                 {firstConfirmed && (
               <motion.div
@@ -885,7 +798,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
               </motion.div>
             )}
               </>
-            )}
+            ) : null}
           </>
         )}
       </div>

@@ -52,7 +52,7 @@ export default function PurchasePage() {
           email: meta.email,
           phone: meta.phone,
           goal: meta.goal,
-          plan: '₹29 Personalized Report Plan',
+          plan: '₹39 Personalized Report Plan',
           source: 'assessment-purchase',
         }),
       })
@@ -90,7 +90,7 @@ export default function PurchasePage() {
             </div>
             <h2 className="text-gray-900 font-black text-2xl">Almost there!</h2>
             <p className="text-gray-500 text-sm mt-2 leading-relaxed">
-              Sign in or create a free account to get your personalized ₹29 plan.
+              Sign in or create a free account to get your personalized ₹39 plan.
             </p>
             <a
               href="/sign-in?after=%2Fassessment%2Fpurchase"
@@ -126,7 +126,7 @@ export default function PurchasePage() {
           </div>
           <h1 className="text-white font-black text-3xl">Order Confirmed! 🎉</h1>
           <p className="text-gray-400 mt-3 leading-relaxed">
-            Your personalized ₹29 plan has been reserved. Our nutritionist will WhatsApp you at{' '}
+            Your personalized ₹39 plan has been reserved. Our nutritionist will WhatsApp you at{' '}
             <span className="text-white font-semibold">{meta.phone || 'your number'}</span> within 24 hours with your complete plan.
           </p>
 
@@ -244,7 +244,7 @@ export default function PurchasePage() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700 text-sm">Personalized 90-Day Plan</span>
-                  <span className="text-gray-400 text-sm line-through">₹299</span>
+                  <span className="text-gray-400 text-sm line-through">₹399</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-emerald-600 text-sm font-bold">New User Discount</span>
@@ -252,7 +252,7 @@ export default function PurchasePage() {
                 </div>
                 <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
                   <span className="text-gray-900 font-black text-lg">Total</span>
-                  <span className="text-gray-900 font-black text-4xl">₹29</span>
+                  <span className="text-gray-900 font-black text-4xl">₹39</span>
                 </div>
               </div>
 
@@ -275,7 +275,7 @@ export default function PurchasePage() {
 
               {/* Payment icons */}
               <div className="mb-5">
-                <p className="text-xs text-gray-500 font-medium text-center mb-2">Secure Payment via Razorpay</p>
+                <p className="text-xs text-gray-500 font-medium text-center mb-2">Secure Payment via PayU</p>
                 <div className="flex justify-center items-center gap-3 flex-wrap">
                   <img src="https://cdn.simpleicons.org/googlepay" className="h-5" alt="Google Pay" />
                   <img src="https://cdn.simpleicons.org/phonepe" className="h-5" alt="PhonePe" />
@@ -296,7 +296,7 @@ export default function PurchasePage() {
                     Processing...
                   </>
                 ) : (
-                  '🔒 CONFIRM & PAY ₹29'
+                  '🔒 CONFIRM & PAY ₹39'
                 )}
               </button>
 
