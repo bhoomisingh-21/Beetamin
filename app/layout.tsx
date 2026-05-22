@@ -26,7 +26,7 @@ const allowedRedirectOrigins = [
 ]
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://thebeetamin.com'),
+  metadataBase: new URL('https://www.thebeetamin.com'),
 
   title: {
     default: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: 'https://thebeetamin.com',
+    url: 'https://www.thebeetamin.com',
     siteName: 'TheBeetamin',
     title: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
     description:
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
   },
 
   alternates: {
-    canonical: 'https://thebeetamin.com',
+    canonical: 'https://www.thebeetamin.com',
   },
 
   applicationName: 'TheBeetamin',

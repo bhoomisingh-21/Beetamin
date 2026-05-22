@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   description:
     'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
-  alternates: { canonical: 'https://thebeetamin.com' },
+  alternates: { canonical: 'https://www.thebeetamin.com' },
 };
 
 export default async function Home() {

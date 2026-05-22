@@ -22,6 +22,13 @@ export function SitelinkPage({ link }: Props) {
           {link.label}
         </h1>
         <p className="mt-5 text-base leading-relaxed text-zinc-400">{link.description}</p>
+        {'sections' in link && link.sections?.length ? (
+          <ul className="mt-6 list-disc space-y-3 pl-5 text-base leading-relaxed text-zinc-400">
+            {link.sections.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ) : null}
         <Link
           href={link.ctaHref}
           className="mt-10 inline-flex items-center justify-center rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-[0_8px_24px_-4px_rgba(16,185,129,0.45)] transition-[filter,box-shadow] hover:from-emerald-300 hover:to-emerald-500"

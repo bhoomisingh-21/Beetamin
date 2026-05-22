@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { SitelinkPage } from '@/components/seo/SitelinkPage'
 import { SitelinkPageJsonLd } from '@/components/seo/SitelinkPageJsonLd'
+import { SITE_URL } from '@/lib/seo-site-url'
 import { getSitelinkBySlug } from '@/lib/site-navigation'
 
 const link = getSitelinkBySlug('nutrient-deficiency')!
@@ -8,7 +9,8 @@ const link = getSitelinkBySlug('nutrient-deficiency')!
 export const metadata: Metadata = {
   title: link.label,
   description: link.description,
-  alternates: { canonical: `https://thebeetamin.com${link.href}` },
+  alternates: { canonical: `${SITE_URL}${link.href}` },
+  robots: { index: true, follow: true },
 }
 
 export default function NutrientDeficiencyPage() {

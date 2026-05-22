@@ -1,6 +1,5 @@
+import { SITE_URL } from '@/lib/seo-site-url'
 import type { SiteSitelink } from '@/lib/site-navigation'
-
-const SITE_URL = 'https://thebeetamin.com'
 
 export function SitelinkPageJsonLd({ link }: { link: SiteSitelink }) {
   const schema = {

@@ -42,7 +42,9 @@ const isProtectedRoute = createRouteMatcher([
 ])
 
 function isNutritionistPortalRoute(path: string): boolean {
-  return path.startsWith('/nutritionist') && !path.startsWith('/nutritionist-dashboard')
+  if (path.startsWith('/nutritionist-dashboard')) return false
+  // Only /nutritionist and /nutritionist/* — not SEO pages like /expert-nutritionist-consultation
+  return path === '/nutritionist' || path.startsWith('/nutritionist/')
 }
 
 /** `?redirect_after_auth=/path` → strip query, set one-time cookie for post-profile redirect. */

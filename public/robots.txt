@@ -5,4 +5,4 @@ Disallow: /report/
 Disallow: /profile
 Disallow: /booking/purchase
 
-Sitemap: https://thebeetamin.com/sitemap.xml
+Sitemap: https://www.thebeetamin.com/sitemap.xml

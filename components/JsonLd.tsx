@@ -1,6 +1,5 @@
+import { SITE_URL } from '@/lib/seo-site-url'
 import { SITE_SITELINKS } from '@/lib/site-navigation'
-
-const SITE_URL = 'https://thebeetamin.com'
 
 export function WebSiteJsonLd() {
   const schema = {
@@ -79,8 +78,8 @@ export function OrganizationJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'TheBeetamin',
-    url: 'https://thebeetamin.com',
-    logo: 'https://thebeetamin.com/logo.png',
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
     description:
       'Personalised nutrient deficiency recovery platform for Indians. Expert nutrition sessions and AI-powered deficiency reports.',
     contactPoint: {
@@ -105,7 +104,7 @@ export function MedicalServiceJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'MedicalBusiness',
     name: 'TheBeetamin',
-    url: 'https://thebeetamin.com',
+    url: SITE_URL,
     description:
       'Online nutrition consultation and personalised deficiency recovery plans for Indians.',
     priceRange: '₹39 - ₹3,999',

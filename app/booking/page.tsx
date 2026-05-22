@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Personalised Recovery Plan',
   description:
     'Core Transformation — 6 expert nutrition sessions over 3 months, WhatsApp support, and a personalised vitamin plan with Indian meal guidance. ₹3,999.',
-  alternates: { canonical: 'https://thebeetamin.com/booking' },
+  alternates: { canonical: 'https://www.thebeetamin.com/booking' },
 }
 
 export default async function BookingPage() {
