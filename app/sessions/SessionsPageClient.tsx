@@ -24,7 +24,7 @@ import {
   type AppointmentRow,
   type PaidReportSummary,
 } from '@/lib/booking-actions'
-import { UpgradePlanButton } from '@/components/payment/UpgradePlanButton'
+import { FullPlanBookingLink } from '@/components/payment/FullPlanBookingLink'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
@@ -351,9 +351,9 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
       }}
     >
       <div className="max-w-4xl mx-auto">
-        {(paymentError || upgradeError) && (
+        {paymentError && (
           <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-amber-500/30 bg-[#111820] px-5 py-2.5 text-sm font-semibold text-amber-100 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
-            {upgradeError || paymentError}
+            {paymentError}
           </div>
         )}
 
@@ -391,17 +391,12 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           </div>
         </motion.div>
 
-        {(paymentError || upgradeError) && (
+        {paymentError && (
           <div className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-950/40 px-5 py-4 text-center">
-            <p className="text-amber-100 text-sm font-semibold">
-              {upgradeError || paymentError}
-            </p>
-            <UpgradePlanButton
-              onError={setUpgradeError}
-              className="mt-3 inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-black hover:bg-emerald-400 disabled:opacity-60"
-            >
-              Try Again
-            </UpgradePlanButton>
+            <p className="text-amber-100 text-sm font-semibold">{paymentError}</p>
+            <FullPlanBookingLink className="mt-3 inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-black text-black hover:bg-emerald-400">
+              Review plan &amp; pay again
+            </FullPlanBookingLink>
           </div>
         )}
 
@@ -513,12 +508,9 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
             <p className="text-emerald-300 font-black text-lg md:text-xl leading-snug">
               🎉 You&apos;ve completed all 6 sessions!
             </p>
-            <UpgradePlanButton
-              onError={setUpgradeError}
-              className="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-black hover:bg-emerald-400 transition"
-            >
+            <FullPlanBookingLink className="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-black hover:bg-emerald-400 transition">
               Start a New Plan
-            </UpgradePlanButton>
+            </FullPlanBookingLink>
           </motion.div>
         )}
 
@@ -539,12 +531,9 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
                 Nutrition sessions are included in the Full Recovery Plan (₹3,999). Your current plan includes
                 your personalised report only.
               </p>
-              <UpgradePlanButton
-                onError={setUpgradeError}
-                className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-black text-black transition hover:bg-emerald-400"
-              >
+              <FullPlanBookingLink className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-black text-black transition hover:bg-emerald-400">
                 Upgrade to Full Plan
-              </UpgradePlanButton>
+              </FullPlanBookingLink>
             </div>
           </motion.div>
         )}

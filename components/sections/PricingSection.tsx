@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { CheckCircle, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
+import { FullPlanBookingLink } from "@/components/payment/FullPlanBookingLink";
 import { UpgradePlanButton } from "@/components/payment/UpgradePlanButton";
 
 const CORE_FEATURES = [
@@ -28,7 +28,6 @@ type Props = {
 
 export default function PricingSection({ hasFullPlan }: Props) {
   const { isLoaded, isSignedIn } = useUser();
-  const [checkoutError, setCheckoutError] = useState("");
 
   return (
     <section className="bg-[#050B0D] py-16 sm:py-24 px-4 sm:px-6 overflow-x-hidden" id="pricing">
@@ -40,9 +39,6 @@ export default function PricingSection({ hasFullPlan }: Props) {
         <p className="text-gray-400 mt-3 sm:mt-4 text-sm sm:text-base md:text-lg">
           Transparent pricing. No hidden fees. Just results.
         </p>
-        {checkoutError ? (
-          <p className="mt-4 text-sm font-medium text-amber-300">{checkoutError}</p>
-        ) : null}
       </div>
 
       <div className="max-w-5xl mx-auto mt-12 sm:mt-20 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 items-stretch">
@@ -97,12 +93,9 @@ export default function PricingSection({ hasFullPlan }: Props) {
               Manage My Booking
             </Link>
           ) : isSignedIn && !hasFullPlan ? (
-            <UpgradePlanButton
-              onError={setCheckoutError}
-              className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
-            >
+            <FullPlanBookingLink className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
               Get Started — ₹3,999
-            </UpgradePlanButton>
+            </FullPlanBookingLink>
           ) : (
             <a
               href="/sign-up?redirect_after_auth=%2Fbooking"
