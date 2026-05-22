@@ -16,7 +16,9 @@ export function WebSiteJsonLd() {
       name: 'TheBeetamin',
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/logo.png`,
+        url: `${SITE_URL}/favicon-96.png`,
+        width: 96,
+        height: 96,
       },
     },
     inLanguage: 'en-IN',
@@ -79,7 +81,12 @@ export function OrganizationJsonLd() {
     '@type': 'Organization',
     name: 'TheBeetamin',
     url: SITE_URL,
-    logo: `${SITE_URL}/logo.png`,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${SITE_URL}/favicon-96.png`,
+      width: 96,
+      height: 96,
+    },
     description:
       'Personalised nutrient deficiency recovery platform for Indians. Expert nutrition sessions and AI-powered deficiency reports.',
     contactPoint: {
