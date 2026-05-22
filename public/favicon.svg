@@ -1,7 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="TheBeetamin">
-  <rect width="32" height="32" rx="6" fill="#010803"/>
+  <rect width="32" height="32" rx="8" fill="#010803"/>
+  <rect x="1.25" y="1.25" width="29.5" height="29.5" rx="6.75" fill="url(#bg)" stroke="#34d399" stroke-opacity="0.35" stroke-width="1"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
   <path
-    fill="#00E676"
-    d="M16 5c-4 6-7 10-7 14a7 7 0 0 0 14 0c0-4-3-8-7-14zm0 22a5 5 0 0 1-5-5c0-2.5 2-5.5 5-9.2 3 3.7 5 6.7 5 9.2a5 5 0 0 1-5 5z"
+    fill="#34d399"
+    d="M16 9.5c-3.2 4.8-5.8 8-5.8 11.2a5.8 5.8 0 0 0 11.6 0c0-3.2-2.6-6.4-5.8-11.2zm0 18.6a4.2 4.2 0 0 1-4.2-4.2c0-2.1 1.6-4.7 4.2-7.9 2.6 3.2 4.2 5.8 4.2 7.9a4.2 4.2 0 0 1-4.2 4.2z"
   />
 </svg>
