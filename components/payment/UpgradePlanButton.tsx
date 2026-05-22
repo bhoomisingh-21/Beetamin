@@ -96,7 +96,7 @@ export function UpgradePlanButton({
       if (!res.ok) {
         const message =
           typeof body.error === 'string' ? body.error : 'Could not start checkout.'
-        console.error('[UpgradePlanButton] checkout failed', res.status, body)
+        console.error('[UpgradePlanButton] checkout failed', res.status, body.code, body)
         throw new Error(message)
       }
 

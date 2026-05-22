@@ -124,6 +124,22 @@ export default function DetailedAssessmentPage() {
   const [menstrual, setMenstrual] = useState('')
 
   const [genError, setGenError] = useState('')
+  const [isRetakePaidFlow, setIsRetakePaidFlow] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('retake') === 'paid') {
+        sessionStorage.setItem('beetamin.retakePaidReportFlow', '1')
+        setIsRetakePaidFlow(true)
+      } else if (sessionStorage.getItem('beetamin.retakePaidReportFlow') === '1') {
+        setIsRetakePaidFlow(true)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   const currentKey = keys[index] ?? keys[keys.length - 1]
   const questionNumber = index + 1
@@ -363,9 +379,16 @@ export default function DetailedAssessmentPage() {
                 <div className="hidden lg:block mb-6 text-center lg:text-left">
                   <h2 className="text-2xl font-black text-gray-900">Personalised recovery intake</h2>
                   <p className="text-gray-500 text-sm mt-1">
-                    A few follow-up questions — same calm layout as your profile setup.
+                    {isRetakePaidFlow
+                      ? 'Answer the paid follow-up questionnaire, then complete ₹39 PayU checkout for a fresh PDF.'
+                      : 'A few follow-up questions — same calm layout as your profile setup.'}
                   </p>
                 </div>
+                {isRetakePaidFlow ? (
+                  <p className="lg:hidden mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                    Retake flow: complete this paid questionnaire, then pay ₹39 on PayU for an updated report.
+                  </p>
+                ) : null}
                 <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                   <div className="flex items-center gap-3 sm:gap-4 mb-5">
                     <button

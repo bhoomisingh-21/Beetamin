@@ -494,14 +494,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
                   Complete the assessment again and pay ₹39 to generate a fresh personalised report.
                 </p>
                 <Link
-                  href="/assessment"
-                  onClick={() => {
-                    try {
-                      sessionStorage.setItem('beetamin.retakePaidReportFlow', '1')
-                    } catch {
-                      /* ignore */
-                    }
-                  }}
+                  href="/detailed-assessment?retake=paid"
                   className="mt-5 inline-flex w-full sm:w-auto justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-6 py-3.5 text-sm font-black text-black transition"
                 >
                   Retake Assessment &amp; Pay ₹39

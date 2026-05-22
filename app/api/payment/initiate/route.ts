@@ -10,6 +10,7 @@ import {
   payuMerchantConfigured,
 } from '@/lib/payment-app-base-url'
 import { hasActiveFullPlanPurchase } from '@/lib/plan-access'
+import { reserveUpgradePurchase } from '@/lib/reserve-upgrade-purchase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
@@ -99,60 +100,23 @@ export async function POST(req: Request) {
     const base = paymentAppBaseUrl()
     const productinfo = 'Beetamin Full Recovery Plan'
 
-    const { data: pendingUpgrade } = await supabaseAdmin
-      .from('purchases')
-      .select('id, txnid')
-      .eq('user_id', sessionUserId)
-      .eq('plan', 'full')
-      .eq('status', 'pending')
-      .eq('mode', 'upgrade')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    let recordId: string
-    let txnid: string
-
-    if (pendingUpgrade?.id && pendingUpgrade?.txnid) {
-      recordId = String(pendingUpgrade.id)
-      txnid = String(pendingUpgrade.txnid)
-    } else {
-      txnid = makePayUTxnId()
-      const { data: purchaseRow, error: purchaseErr } = await supabaseAdmin
-        .from('purchases')
-        .insert({
-          user_id: sessionUserId,
-          plan: 'full',
-          amount: amountRupees,
-          txnid,
-          payment_id: null,
-          status: 'pending',
-          mode: 'upgrade',
-          sessions_total: 6,
-          sessions_used: 0,
-        })
-        .select('id, txnid')
-        .single()
-
-      if (purchaseErr || !purchaseRow?.id) {
-        console.error('[payment/initiate] insert purchases', {
-          message: purchaseErr?.message,
-          code: purchaseErr?.code,
-          details: purchaseErr?.details,
-          hint: purchaseErr?.hint,
-        })
-        return NextResponse.json(
-          {
-            error:
-              'Could not reserve your checkout. Please try again in a moment or contact hi@thebeetamin.com.',
-          },
-          { status: 500 },
-        )
-      }
-
-      recordId = String(purchaseRow.id)
-      txnid = String(purchaseRow.txnid ?? txnid)
+    const reserved = await reserveUpgradePurchase(sessionUserId, amountRupees)
+    if (!reserved.ok) {
+      console.error('[payment/initiate] reserve upgrade', reserved)
+      return NextResponse.json(
+        {
+          error:
+            reserved.detail ??
+            reserved.message ??
+            'Could not reserve your checkout. Please try again in a moment or contact hi@thebeetamin.com.',
+          code: reserved.code,
+        },
+        { status: reserved.code === 'TABLE_MISSING' ? 503 : 500 },
+      )
     }
+
+    const recordId = reserved.id
+    const txnid = reserved.txnid
     const hashPayload = {
       key,
       txnid,

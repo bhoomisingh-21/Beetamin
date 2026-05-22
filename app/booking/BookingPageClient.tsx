@@ -46,6 +46,7 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
   const { isLoaded, isSignedIn, user } = useUser()
   const router = useRouter()
   const [showPaywall, setShowPaywall] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user || !canScheduleSessions) return
@@ -243,8 +244,17 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
                 🔥 42% off — Limited spots available
               </div>
 
+              {checkoutError ? (
+                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-900">
+                  {checkoutError}
+                </p>
+              ) : null}
+
               {signedIn ? (
-                <UpgradePlanButton className="mt-5 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center gap-2">
+                <UpgradePlanButton
+                  onError={setCheckoutError}
+                  className="mt-5 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center gap-2"
+                >
                   Get Started — ₹3,999
                   <ArrowRight size={20} />
                 </UpgradePlanButton>
