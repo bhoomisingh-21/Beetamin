@@ -10,16 +10,11 @@ import { getWalletBalanceClerk } from "@/lib/referral";
 // Clerk users are ALWAYS regular patients.
 // Nutritionists use Supabase auth and have their own dashboard navbar — not this component.
 const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "Why TheBeetamin", href: "/#comparison" },
-  { label: "Our Experts", href: "/#experts" },
-  { label: "Pricing", href: "/#pricing" },
-  { label: "Sessions", href: "/sessions" },
-  { label: "Plans", href: "/booking" },
+  { label: "How it works", href: "#how-it-works" },
+  { label: "Why Us", href: "#comparison" },
+  { label: "Our Experts", href: "#experts" },
+  { label: "Pricing", href: "#pricing" },
 ];
-
-const FREE_ASSESSMENT_NAV = { label: "Free Assessment →", href: "/assessment" };
 
 
 
@@ -99,12 +94,12 @@ export default function Navbar() {
             </a>
 
             {/* Center nav links */}
-            <ul className="hidden lg:flex flex-1 items-center justify-center gap-0.5 flex-wrap">
+            <ul className="hidden md:flex flex-1 items-center justify-center gap-0.5">
               {NAV_LINKS.map(({ label, href }) => (
                 <li key={href}>
                   <a
                     href={href}
-                    className="group relative rounded-full px-3 py-2 text-sm font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
+                    className="group relative rounded-full px-4 py-2 text-base font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
                   >
                     <span className="relative z-10">{label}</span>
                     <span
@@ -114,14 +109,6 @@ export default function Navbar() {
                   </a>
                 </li>
               ))}
-              <li>
-                <a
-                  href={FREE_ASSESSMENT_NAV.href}
-                  className="rounded-full px-4 py-2 text-sm font-bold text-emerald-400 transition-colors duration-200 hover:text-emerald-300"
-                >
-                  {FREE_ASSESSMENT_NAV.label}
-                </a>
-              </li>
             </ul>
 
             {/* Right: auth buttons */}
@@ -237,19 +224,6 @@ export default function Navbar() {
                     </a>
                   </motion.li>
                 ))}
-                <motion.li
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: NAV_LINKS.length * 0.06, ease: "easeOut" }}
-                >
-                  <a
-                    href={FREE_ASSESSMENT_NAV.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="block border-b border-emerald-500/20 bg-emerald-500/10 py-4 text-center text-xl font-bold tracking-tight text-emerald-400"
-                  >
-                    {FREE_ASSESSMENT_NAV.label}
-                  </a>
-                </motion.li>
               </ul>
 
               <motion.div

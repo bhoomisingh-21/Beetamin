@@ -14,7 +14,6 @@ import ReferralBanner from "@/components/sections/ReferralBanner";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
 import { HomePageSeoHead } from "@/components/seo/HomePageSeoHead";
-import { HomeQuickLinks } from "@/components/seo/HomeQuickLinks";
 import { SitelinkDiscovery } from "@/components/seo/SitelinkDiscovery";
 import PageLoader from "@/components/PageLoader";
 import ScrollProgress from "@/components/ScrollProgress";
@@ -50,7 +49,6 @@ export default async function Home() {
       <PricingSection hasFullPlan={hasFullPlan} />
       <ReferralBanner />
       <FAQ />
-      <HomeQuickLinks />
       <SitelinkDiscovery />
       <Footer />
     </div>
