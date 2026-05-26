@@ -2,8 +2,6 @@
 
 import { X, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useUser } from "@clerk/nextjs";
-
 const ROWS = [
   {
     feature: "Consultation Type",
@@ -43,10 +41,12 @@ const ROWS = [
 ];
 
 export default function Comparison() {
-  const { isSignedIn } = useUser()
-
   return (
-    <section id="comparison" className="relative bg-white py-14 sm:py-24 overflow-x-hidden scroll-mt-28">
+    <section
+      id="comparison"
+      aria-label="Why TheBeetamin"
+      className="relative bg-white py-14 sm:py-24 overflow-x-hidden scroll-mt-28"
+    >
 
       {/* Background */}
       <div
@@ -64,7 +64,12 @@ export default function Comparison() {
             <X size={12} /> WHY BEETAMIN IS DIFFERENT
           </span>
 
-         <h2 className="font-bold text-3xl sm:text-4xl md:text-5xl tracking-tight text-[#050B0D] leading-[1.2] mb-4"> Not Another Diet App. <br /> <span className="text-[#2DD48F]">A Real Nutrition System.</span> </h2>
+          <h2 className="font-bold text-3xl sm:text-4xl md:text-5xl tracking-tight text-[#050B0D] leading-[1.2] mb-4">
+            Why TheBeetamin — Not Just Another Health App
+          </h2>
+          <p className="text-lg sm:text-xl font-semibold text-[#2DD48F] mb-2">
+            A real nutrition system, not a generic diet app.
+          </p>
 
           <p className="text-slate-500 text-sm sm:text-base mt-4">
             See exactly how we compare to typical diet apps and generic nutrition plans.
@@ -201,10 +206,10 @@ export default function Comparison() {
         {/* CTA */}
         <div className="text-center">
           <a
-            href={isSignedIn ? "/sessions" : "/booking"}
+            href="/assessment"
             className="inline-block bg-[#050B0D] text-white px-8 py-4 rounded-full font-bold w-full sm:w-auto hover:bg-[#1a2a1a] transition"
           >
-            {isSignedIn ? "Manage My Sessions →" : "Start 90-Day Transformation →"}
+            Start Your Free Assessment
           </a>
 
           {/* BADGES */}

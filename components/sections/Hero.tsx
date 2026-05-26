@@ -58,14 +58,14 @@ export default function Hero() {
 
   const assessmentLabel =
     !isSignedIn
-      ? "Start Free Health Assessment"
+      ? "Start Your Free Assessment"
       : flags === null
-        ? "Start Free Health Assessment"
+        ? "Start Your Free Assessment"
         : hasPaidReport
           ? "Open My PDF Report"
           : flags.hasFreeAssessment
             ? "View My Free Report"
-            : "Start Free Health Assessment";
+            : "Start Your Free Assessment";
 
   let wordIndex = 0;
 

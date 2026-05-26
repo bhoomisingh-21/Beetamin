@@ -4,11 +4,12 @@ import { SITE_SITELINKS } from '@/lib/site-navigation'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
+
   const sitelinkEntries: MetadataRoute.Sitemap = SITE_SITELINKS.map((link) => ({
     url: `${SITE_URL}${link.href}`,
     lastModified: now,
     changeFrequency: 'monthly' as const,
-    priority: 0.88,
+    priority: 0.75,
   }))
 
   return [
@@ -16,14 +17,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: SITE_URL,
       lastModified: now,
       changeFrequency: 'weekly',
-      priority: 1,
+      priority: 1.0,
     },
-    ...sitelinkEntries,
     {
       url: `${SITE_URL}/assessment`,
       lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.9,
+      changeFrequency: 'monthly',
+      priority: 0.95,
     },
     {
       url: `${SITE_URL}/sessions`,
@@ -37,5 +37,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.8,
     },
+    ...sitelinkEntries,
   ]
 }

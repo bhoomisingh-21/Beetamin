@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Camera, Play, Rss, MessageCircle } from "lucide-react";
-import { PRIMARY_SITE_LINKS } from "@/lib/site-navigation";
+import { CORE_SITE_NAV_LINKS } from "@/lib/site-navigation";
 
 type FooterLinks = {
   [key: string]: string[];
@@ -49,7 +49,7 @@ const Footer: React.FC = () => {
 
             <nav aria-label="Footer navigation" className="mb-6 sm:mb-8 w-full">
               <ul className="flex flex-wrap justify-center sm:justify-start gap-x-5 gap-y-2 text-sm">
-                {PRIMARY_SITE_LINKS.map(({ label, href }) => (
+                {CORE_SITE_NAV_LINKS.map(({ label, href }) => (
                   <li key={href}>
                     <Link
                       href={href}
@@ -75,7 +75,6 @@ const Footer: React.FC = () => {
               reports and expert nutrition sessions. Built for India.
             </p>
 
-            {/* Social icons — centered on mobile */}
             <div className="flex gap-3 sm:gap-4 justify-center sm:justify-start">
               {socialIcons.map((Icon, i) => (
                 <a
@@ -169,7 +168,6 @@ const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* BACKGROUND PATTERN */}
       <div
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{

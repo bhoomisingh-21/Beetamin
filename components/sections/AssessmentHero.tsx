@@ -146,7 +146,7 @@ export default function AssessmentHero() {
                   href={hasResults ? "/assessment/results" : "/assessment"}
                   className="inline-flex items-center justify-center w-full gap-2 bg-[#00E676] text-black font-semibold px-6 py-3 rounded-full text-sm"
                 >
-                  {hasResults ? 'See My Test Results' : 'Start Free Assessment'}
+                  {hasResults ? 'See My Test Results' : 'Start Your Free Assessment'}
                   <ArrowRight size={16} />
                 </a>
               </div>
@@ -203,7 +203,7 @@ export default function AssessmentHero() {
                   href={hasResults ? "/assessment/results" : "/assessment"}
                   className="inline-flex items-center justify-center w-full gap-2 bg-[#00E676] text-black font-semibold px-6 py-3 rounded-full"
                 >
-                  {hasResults ? 'See My Test Results' : 'Start Free Assessment'}
+                  {hasResults ? 'See My Test Results' : 'Start Your Free Assessment'}
                   <ArrowRight size={16} />
                 </a>
               </div>

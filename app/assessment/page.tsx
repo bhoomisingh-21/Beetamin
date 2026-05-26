@@ -183,9 +183,8 @@ export default function AssessmentPage() {
               CLINICAL DEFICIENCY ASSESSMENT
             </span>
 
-            <h1 className="mt-4 font-black text-3xl md:text-4xl lg:text-5xl xl:text-6xl max-w-5xl mx-auto leading-tight text-center">
-              <span className="text-white block">Uncover Your Hidden</span>
-              <span className="text-[#00E676] block">Nutrient Deficiencies</span>
+            <h1 className="mt-4 font-black text-2xl md:text-3xl lg:text-4xl max-w-5xl mx-auto leading-tight text-center text-white">
+              Find Your Nutrient Deficiencies — Free Assessment
             </h1>
             <p className="mt-4 text-gray-400 text-sm md:text-base lg:text-lg max-w-xl mx-auto">
               7 clinically-derived questions. AI-powered analysis. Personalized deficiency report in under 2 minutes.

@@ -1,4 +1,15 @@
-/** Sitelink targets for Google — keep in sync with footer, JSON-LD, sitemap, and CrawlableSiteNav. */
+/**
+ * Primary internal links for sitelinks — order and anchor text must stay consistent
+ * across footer, navbar, JSON-LD, and crawlable nav (/assessment first, /#comparison second).
+ */
+export const CORE_SITE_NAV_LINKS = [
+  { label: 'Free Deficiency Assessment', href: '/assessment' },
+  { label: 'Why TheBeetamin', href: '/#comparison' },
+  { label: 'Book a Session', href: '/sessions' },
+  { label: 'Our Plans', href: '/booking' },
+] as const
+
+/** Sitelink landing pages for Google — keep in sync with sitemap. */
 export const SITE_SITELINKS = [
   {
     slug: 'nutrient-deficiency',
@@ -7,7 +18,7 @@ export const SITE_SITELINKS = [
     description:
       'Nutrient deficiency test India can rely on online — a deficiency recovery report rooted in your symptoms and Indian eating patterns, not generic Western templates.',
     ctaHref: '/assessment',
-    ctaLabel: 'Start Free Health Assessment',
+    ctaLabel: 'Start Your Free Assessment',
     sections: [
       'Free assessment maps your symptoms to likely Vitamin D, Iron, B12, and Omega-3 gaps using Indian diet patterns.',
       'Reports explain what to eat locally, when to confirm with labs, and what to expect in the first 30 days.',
@@ -64,7 +75,7 @@ export function getSitelinkBySlug(slug: string): SiteSitelink | undefined {
   return SITE_SITELINKS.find((s) => s.slug === slug)
 }
 
-/** @deprecated Use SITE_SITELINKS — alias for footer / crawl nav. */
+/** @deprecated Use CORE_SITE_NAV_LINKS for footer; SITE_SITELINKS for landing pages. */
 export const PRIMARY_SITE_LINKS = SITE_SITELINKS.map(({ label, href, description }) => ({
   label,
   href,

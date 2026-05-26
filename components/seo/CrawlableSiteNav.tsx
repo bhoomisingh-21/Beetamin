@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { SITE_SITELINKS } from '@/lib/site-navigation'
+import { CORE_SITE_NAV_LINKS, SITE_SITELINKS } from '@/lib/site-navigation'
 
 /** Screen-reader + crawler navigation; does not change visible layout. */
 export function CrawlableSiteNav() {
@@ -9,6 +9,14 @@ export function CrawlableSiteNav() {
         <li>
           <Link href="/">TheBeetamin — Personalised Nutrition &amp; Deficiency Recovery for India</Link>
         </li>
+        {CORE_SITE_NAV_LINKS.map(({ label, href }) => (
+          <li key={href}>
+            <Link href={href}>{label}</Link>
+          </li>
+        ))}
+        <li>
+          <a href="mailto:hi@thebeetamin.com">Contact</a>
+        </li>
         {SITE_SITELINKS.map(({ label, href, description }) => (
           <li key={href}>
             <Link href={href}>
@@ -17,18 +25,6 @@ export function CrawlableSiteNav() {
             </Link>
           </li>
         ))}
-        <li>
-          <Link href="/assessment">Free health assessment</Link>
-        </li>
-        <li>
-          <Link href="/sessions">Book a nutrition session</Link>
-        </li>
-        <li>
-          <Link href="/booking">Recovery plans</Link>
-        </li>
-        <li>
-          <a href="mailto:hi@thebeetamin.com">Contact</a>
-        </li>
       </ul>
     </nav>
   )

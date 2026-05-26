@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Deficiency Recovery Report & Free Assessment',
+  title: 'Free Deficiency Assessment — TheBeetamin',
   description:
-    'Take a free health assessment and get a personalised nutrient deficiency report with a 7-day Indian meal plan. Fix Vitamin D, Iron, B12 and Omega-3 gaps. From ₹39.',
+    'Take the free 2-minute quiz to find out which nutrients you are deficient in. Get a personalised Indian meal plan and recovery report instantly.',
   alternates: { canonical: 'https://www.thebeetamin.com/assessment' },
 }
 

@@ -1,5 +1,5 @@
 import { SITE_URL } from '@/lib/seo-site-url'
-import { SITE_SITELINKS } from '@/lib/site-navigation'
+import { CORE_SITE_NAV_LINKS, SITE_SITELINKS } from '@/lib/site-navigation'
 
 export function WebSiteJsonLd() {
   const schema = {
@@ -34,6 +34,18 @@ export function WebSiteJsonLd() {
 
 /** Hints key internal destinations for rich results / sitelinks (not guaranteed by Google). */
 export function SiteNavigationJsonLd() {
+  const preferredNav = [
+    ...CORE_SITE_NAV_LINKS.map((link) => ({
+      name: link.label,
+      url: link.href.startsWith('/#') ? `${SITE_URL}${link.href}` : `${SITE_URL}${link.href}`,
+    })),
+    ...SITE_SITELINKS.map((link) => ({
+      name: link.label,
+      url: `${SITE_URL}${link.href}`,
+      description: link.description,
+    })),
+  ]
+
   const schema = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -41,26 +53,24 @@ export function SiteNavigationJsonLd() {
         '@type': 'SiteNavigationElement',
         '@id': `${SITE_URL}/#site-navigation`,
         name: 'TheBeetamin primary navigation',
-        hasPart: SITE_SITELINKS.map((link) => ({
+        hasPart: preferredNav.map((link) => ({
           '@type': 'WebPage',
-          '@id': `${SITE_URL}${link.href}`,
-          name: link.label,
-          description: link.description,
-          url: `${SITE_URL}${link.href}`,
+          '@id': link.url,
+          name: link.name,
+          url: link.url,
         })),
       },
       {
         '@type': 'ItemList',
         name: 'TheBeetamin — main pages',
-        itemListElement: SITE_SITELINKS.map((link, i) => ({
+        itemListElement: preferredNav.map((link, i) => ({
           '@type': 'ListItem',
           position: i + 1,
           item: {
             '@type': 'WebPage',
-            '@id': `${SITE_URL}${link.href}`,
-            name: link.label,
-            description: link.description,
-            url: `${SITE_URL}${link.href}`,
+            '@id': link.url,
+            name: link.name,
+            url: link.url,
           },
         })),
       },
@@ -96,6 +106,23 @@ export function OrganizationJsonLd() {
       availableLanguage: ['English', 'Hindi'],
     },
     sameAs: ['https://instagram.com/thebeetamin', 'https://twitter.com/thebeetamin'],
+    potentialAction: [
+      {
+        '@type': 'Action',
+        name: 'Free Deficiency Assessment',
+        target: `${SITE_URL}/assessment`,
+      },
+      {
+        '@type': 'Action',
+        name: 'Why TheBeetamin',
+        target: `${SITE_URL}/#comparison`,
+      },
+      {
+        '@type': 'Action',
+        name: 'Book a Session',
+        target: `${SITE_URL}/sessions`,
+      },
+    ],
   }
 
   return (
