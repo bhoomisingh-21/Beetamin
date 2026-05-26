@@ -100,23 +100,22 @@ export function DeficiencyPopup() {
 
   const handleClose = useCallback(() => {
     setShow(false)
-    try {
-      localStorage.setItem('bt_popup_seen', '1')
-    } catch {
-      /* private mode */
-    }
   }, [])
 
   useEffect(() => {
     if (!isLoaded) return
-    if (isSignedIn) return
-    if (BLOCKED_PATHS.some((p) => pathname.startsWith(p))) return
-    try {
-      if (localStorage.getItem('bt_popup_seen')) return
-    } catch {
+
+    if (isSignedIn) {
+      setShow(false)
       return
     }
 
+    if (BLOCKED_PATHS.some((p) => pathname.startsWith(p))) {
+      setShow(false)
+      return
+    }
+
+    setShow(false)
     const timer = setTimeout(() => setShow(true), 2000)
     return () => clearTimeout(timer)
   }, [isLoaded, isSignedIn, pathname])
