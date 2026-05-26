@@ -9,6 +9,7 @@ import {
   WebSiteJsonLd,
 } from '@/components/JsonLd'
 import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
+import { DeficiencyPopup } from '@/components/DeficiencyPopup'
 import { CrawlableSiteNav } from '@/components/seo/CrawlableSiteNav'
 import './globals.css'
 
@@ -135,6 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteNavigationJsonLd />
           <FAQJsonLd />
           <CrawlableSiteNav />
+          <DeficiencyPopup />
           {children}
         </body>
       </html>
