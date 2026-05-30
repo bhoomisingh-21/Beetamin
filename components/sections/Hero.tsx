@@ -2,340 +2,501 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Sparkles, ClipboardList, ArrowRight, Activity, CheckCircle2, ChevronRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { ClipboardList, ArrowRight, Activity, Zap, Shield, ChevronRight } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { getClientAssessmentFlags } from "@/lib/booking-actions";
 
-const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
-  <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.27'/>
-</svg>`;
-const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG)}`;
-
-const HEADLINE_LINES = [
-  ["Know", "Your"],
-  ["Deficiencies."],
-];
-
 type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
+
+const DEFICIENCIES = ["Vitamin D", "Iron", "B12", "Omega-3"];
+
+const STAT_PILLS = [
+  { value: "50K+", label: "Indians assessed" },
+  { value: "₹39", label: "to start" },
+  { value: "12 pg", label: "personalised PDF" },
+];
 
 export default function Hero() {
   const { isSignedIn, user } = useUser();
   const [flags, setFlags] = useState<AssessmentFlags | null>(null);
+  const [activeDeficiency, setActiveDeficiency] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const imageY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
 
   useEffect(() => {
-    if (!isSignedIn || !user?.id) {
-      setFlags(null);
-      return;
-    }
+    const timer = setInterval(() => {
+      setActiveDeficiency((prev) => (prev + 1) % DEFICIENCIES.length);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) { setFlags(null); return; }
     let cancelled = false;
     getClientAssessmentFlags(user.id)
-      .then((f) => {
-        if (!cancelled) setFlags(f);
-      })
-      .catch(() => {
-        if (!cancelled) setFlags(null);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then((f) => { if (!cancelled) setFlags(f); })
+      .catch(() => { if (!cancelled) setFlags(null); });
+    return () => { cancelled = true; };
   }, [isSignedIn, user?.id]);
 
   const assessmentHref =
-    !isSignedIn
-      ? "/assessment"
-      : flags?.recoveryReportReady
-        ? `/report/${encodeURIComponent(flags.recoveryReportReady.report_id)}`
-        : flags?.recoveryReportGenerating
-          ? `/report/${encodeURIComponent(flags.recoveryReportGenerating.report_id)}`
-          : flags?.hasFreeAssessment
-            ? "/assessment/results"
-            : "/assessment";
+    !isSignedIn ? "/assessment"
+    : flags?.recoveryReportReady ? `/report/${encodeURIComponent(flags.recoveryReportReady.report_id)}`
+    : flags?.recoveryReportGenerating ? `/report/${encodeURIComponent(flags.recoveryReportGenerating.report_id)}`
+    : flags?.hasFreeAssessment ? "/assessment/results"
+    : "/assessment";
 
-  const hasPaidReport =
-    Boolean(flags?.recoveryReportReady) || Boolean(flags?.recoveryReportGenerating);
+  const hasPaidReport = Boolean(flags?.recoveryReportReady) || Boolean(flags?.recoveryReportGenerating);
 
   const assessmentLabel =
-    !isSignedIn
-      ? "Start Your Free Assessment"
-      : flags === null
-        ? "Start Your Free Assessment"
-        : hasPaidReport
-          ? "Open My PDF Report"
-          : flags.hasFreeAssessment
-            ? "View My Free Report"
-            : "Start Your Free Assessment";
-
-  let wordIndex = 0;
+    !isSignedIn || flags === null ? "Start Free Assessment"
+    : hasPaidReport ? "Open My PDF Report"
+    : flags.hasFreeAssessment ? "View My Free Report"
+    : "Start Free Assessment";
 
   return (
     <section
-      className="relative bg-[#010d06] overflow-x-hidden min-h-screen flex items-center"
-      style={{
-        backgroundImage: `url("${HEX_URL}")`,
-        backgroundSize: "60px 70px",
-        backgroundRepeat: "repeat",
-      }}
+      ref={sectionRef}
+      className="relative bg-[#050f07] min-h-screen flex items-center overflow-hidden"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/10 via-[#010d06]/80 to-[#010d06] pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#010d06]/90 pointer-events-none" />
+      {/* ── ARCHITECTURAL GRID LINES ── */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        {/* Vertical lines */}
+        {[20, 50, 80].map((pct) => (
+          <div
+            key={pct}
+            className="absolute top-0 bottom-0 w-px"
+            style={{ left: `${pct}%`, background: "rgba(255,255,255,0.03)" }}
+          />
+        ))}
+        {/* Horizontal lines */}
+        {[25, 50, 75].map((pct) => (
+          <div
+            key={pct}
+            className="absolute left-0 right-0 h-px"
+            style={{ top: `${pct}%`, background: "rgba(255,255,255,0.03)" }}
+          />
+        ))}
+        {/* Top accent bar */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(0,230,118,0.4), transparent)" }}
+        />
+        {/* Large ambient circle */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 900,
+            height: 900,
+            top: "50%",
+            left: "55%",
+            transform: "translate(-50%, -50%)",
+            background: "radial-gradient(circle, rgba(0,230,118,0.04) 0%, transparent 70%)",
+          }}
+        />
+      </div>
 
-      <div className="relative w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 py-12 sm:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-0 lg:gap-16 items-center w-full">
+      <div className="relative w-full max-w-[1400px] mx-auto px-6 lg:px-12 py-16 lg:py-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-screen lg:min-h-0 items-center">
 
-          {/* ── TEXT COLUMN ── */}
-          <div className="flex flex-col z-10 items-center text-center lg:items-start lg:text-left">
+          {/* ── LEFT COLUMN ── */}
+          <div className="flex flex-col justify-center py-20 lg:py-24 z-10 lg:pr-12">
 
-            <motion.span
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/5 text-emerald-400 text-[10px] font-bold tracking-[0.2em] uppercase rounded-full px-4 py-1.5 mb-6"
-            >
-              <Sparkles size={10} className="fill-emerald-400" />
-              {isSignedIn && user?.firstName
-                ? `👋 WELCOME BACK, ${user.firstName.toUpperCase()}!`
-                : "INDIA'S DEFICIENCY RECOVERY PLATFORM"}
-            </motion.span>
-
-            <p
-              className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-4 max-w-xl"
-              aria-label="Know Your Deficiencies. Fix Them Fast."
-            >
-              {HEADLINE_LINES.map((lineWords, li) => (
-                <span key={li} className="block">
-                  {lineWords.map((word, wi) => {
-                    const delay = 0.1 + wordIndex++ * 0.08;
-                    return (
-                      <motion.span
-                        key={word + li}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay }}
-                        className="text-white inline-block"
-                      >
-                        {word}
-                        {wi < lineWords.length - 1 ? "\u00A0" : ""}
-                      </motion.span>
-                    );
-                  })}
-                </span>
-              ))}
-              <span className="block">
-                <motion.span
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 + wordIndex * 0.08 }}
-                  className="text-[#00E676]"
-                >
-                  Fix Them Fast.
-                </motion.span>
-              </span>
-            </p>
-
-            {/* Two-offer value proposition */}
+            {/* Eyebrow */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.55 }}
-              className="flex flex-col sm:flex-row gap-3 mb-6 max-w-md mx-auto lg:mx-0 lg:justify-start justify-center"
+              transition={{ duration: 0.6 }}
+              className="flex items-center gap-3 mb-8"
             >
-              <div className="flex items-start gap-2.5 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-left">
-                <span className="text-[#00E676] text-lg leading-none mt-0.5">✓</span>
-                <div>
-                  <p className="text-white text-sm font-bold">Free Assessment</p>
-                  <p className="text-gray-400 text-xs leading-snug">7 questions · instant results</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5 bg-white/5 border border-emerald-500/20 rounded-xl px-4 py-3 text-left">
-                <span className="text-[#00E676] text-lg leading-none mt-0.5">✓</span>
-                <div>
-                  <p className="text-white text-sm font-bold">₹39 PDF Report</p>
-                  <p className="text-gray-400 text-xs leading-snug">12-page guide · Indian foods</p>
-                </div>
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.18em] uppercase"
+                style={{
+                  background: "rgba(0,230,118,0.08)",
+                  border: "1px solid rgba(0,230,118,0.2)",
+                  color: "#00E676",
+                }}
+              >
+                <span
+                  className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: "#00E676" }}
+                />
+                {isSignedIn && user?.firstName
+                  ? `Welcome back, ${user.firstName}`
+                  : "India's deficiency recovery platform"}
               </div>
             </motion.div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
+            {/* Headline */}
+            <div className="mb-6 overflow-hidden">
+              <motion.h1
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.1 }}
+                className="font-black tracking-tight leading-[0.95]"
+                style={{ fontSize: "clamp(3rem, 6vw, 5.5rem)" }}
+              >
+                <span className="block text-white">You're eating</span>
+                <span className="block text-white">right. Still</span>
+                <span
+                  className="block"
+                  style={{ color: "#00E676" }}
+                >
+                  exhausted?
+                </span>
+              </motion.h1>
+            </div>
+
+            {/* Animated deficiency ticker */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="text-gray-400 text-sm sm:text-base leading-relaxed sm:leading-7 max-w-md"
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex items-center gap-3 mb-8"
             >
-              Take a free 7-question assessment. We identify your Vitamin D, Iron, B12 and Omega-3 gaps — then give you a{" "}
-              <span className="text-white font-bold">12-page personalised PDF</span> with Indian foods and a meal plan to fix them — for just ₹39.
+              <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
+                We find your
+              </span>
+              <div
+                className="relative overflow-hidden rounded-lg px-3 py-1.5"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  minWidth: 110,
+                  height: 32,
+                }}
+              >
+                {DEFICIENCIES.map((d, i) => (
+                  <motion.span
+                    key={d}
+                    animate={{
+                      y: i === activeDeficiency ? 0 : i < activeDeficiency ? -32 : 32,
+                      opacity: i === activeDeficiency ? 1 : 0,
+                    }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="absolute inset-0 flex items-center justify-center text-sm font-bold"
+                    style={{ color: "#00E676" }}
+                  >
+                    {d}
+                  </motion.span>
+                ))}
+              </div>
+              <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
+                gap
+              </span>
+            </motion.div>
+
+            {/* Body copy */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-base leading-relaxed max-w-sm mb-10"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
+              Answer 7 questions. We identify your exact Vitamin D, Iron, B12 and Omega-3
+              gaps and deliver a{" "}
+              <span className="font-semibold" style={{ color: "rgba(255,255,255,0.9)" }}>
+                personalised 12-page PDF
+              </span>{" "}
+              with Indian foods and a meal plan — for just ₹39.
             </motion.p>
 
-            {/* DESKTOP CTA */}
+            {/* CTAs */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.72 }}
-              className="hidden lg:flex flex-col gap-3 sm:flex-row sm:items-center mt-8 sm:mt-10 w-full"
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex flex-col sm:flex-row gap-3 mb-8"
             >
               <a
                 href={assessmentHref}
-                className="flex items-center justify-center gap-2 sm:gap-3 bg-[#00E676] text-black font-bold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-[#00c864] transition-all shadow-lg shadow-emerald-500/10 w-full sm:w-auto text-sm sm:text-base"
+                className="group flex items-center justify-center gap-2.5 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: "#00E676",
+                  color: "#050f07",
+                  boxShadow: "0 0 0 0 rgba(0,230,118,0.4)",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+                    "0 0 32px 0 rgba(0,230,118,0.25)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+                    "0 0 0 0 rgba(0,230,118,0.4)";
+                }}
               >
-                <ClipboardList size={17} strokeWidth={2.5} />
+                <ClipboardList size={16} strokeWidth={2.5} />
                 {assessmentLabel}
               </a>
 
               {isSignedIn ? (
                 <a
                   href="/sessions"
-                  className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-white/10 transition-all w-full sm:w-auto text-sm sm:text-base"
+                  className="flex items-center justify-center gap-2 font-semibold rounded-2xl px-7 py-4 text-sm transition-all duration-200"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.8)",
+                  }}
                 >
                   My Sessions
-                  <ArrowRight size={17} />
+                  <ArrowRight size={15} />
                 </a>
               ) : (
                 <a
                   href="/assessment"
-                  className="flex items-center justify-center gap-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-semibold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-emerald-500/20 transition-all w-full sm:w-auto text-sm sm:text-base"
+                  className="flex items-center justify-center gap-2 font-semibold rounded-2xl px-7 py-4 text-sm transition-all duration-200"
+                  style={{
+                    background: "rgba(0,230,118,0.06)",
+                    border: "1px solid rgba(0,230,118,0.2)",
+                    color: "rgba(0,230,118,0.85)",
+                  }}
                 >
                   Get PDF Report — ₹39
-                  <ArrowRight size={17} />
+                  <ArrowRight size={15} />
                 </a>
               )}
             </motion.div>
 
-            <motion.p
+            {/* Trust row */}
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.45, delay: 0.82 }}
-              className="mt-4 hidden text-center text-sm text-gray-400 lg:block"
+              transition={{ delay: 0.65 }}
+              className="flex flex-wrap items-center gap-x-6 gap-y-3"
+            >
+              {[
+                { icon: <Shield size={13} />, text: "Free assessment — no card" },
+                { icon: <Zap size={13} />, text: "₹39 PDF — instant delivery" },
+                { icon: <Activity size={13} />, text: "Doctor-reviewed protocol" },
+              ].map(({ icon, text }) => (
+                <div
+                  key={text}
+                  className="flex items-center gap-2 text-xs font-medium"
+                  style={{ color: "rgba(255,255,255,0.4)" }}
+                >
+                  <span style={{ color: "#00E676" }}>{icon}</span>
+                  {text}
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Referral */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.78 }}
+              className="mt-6"
             >
               <Link
                 href="/dashboard/referral"
-                className="text-emerald-400/90 underline-offset-2 transition hover:text-emerald-300 hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs transition-colors"
+                style={{ color: "rgba(0,230,118,0.6)" }}
               >
-                🎁 Refer friends — earn ₹300 per successful booking
+                <span>🎁</span>
+                <span className="underline underline-offset-2">
+                  Refer friends — earn ₹300 per booking
+                </span>
+                <ChevronRight size={12} />
               </Link>
-            </motion.p>
-
-            {/* ✅ BADGES — horizontal scroll on mobile */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="relative mt-6 w-full max-w-full lg:max-w-xl"
-            >
-              <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto px-4 pb-2 pr-10 lg:mx-0 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-0 lg:pb-0 lg:pr-0">
-                {[
-                  "Free Assessment — No Card Needed",
-                  "₹39 PDF — Instant Delivery",
-                  "Doctor-Reviewed Protocol",
-                ].map((text, i) => (
-                  <div
-                    key={i}
-                    className="flex shrink-0 snap-start items-center gap-2 rounded-full border border-white/5 bg-white/[0.03] px-3 py-1.5 whitespace-nowrap lg:shrink"
-                  >
-                    <CheckCircle2 size={12} className="text-[#00E676]" />
-                    <span className="text-[11px] font-medium text-gray-300">
-                      {text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div
-                className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-[#010d06] to-transparent lg:hidden"
-                aria-hidden
-              >
-                <ChevronRight className="text-emerald-500/70" size={20} strokeWidth={2.5} />
-              </div>
             </motion.div>
           </div>
 
-          {/* ── IMAGE COLUMN ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative flex flex-col items-center lg:justify-end mt-10 lg:mt-0"
-          >
-            {/* IMAGE */}
-            <div className="relative rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl w-full max-w-md lg:max-w-[500px]">
-              <Image
-                src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800"
-                alt="Healthy nutrition bowl"
-                width={600}
-                height={700}
-                className="object-cover w-full h-64 sm:h-80 lg:h-[450px]"
-                priority
-              />
+          {/* ── RIGHT COLUMN ── */}
+          <div className="relative hidden lg:flex flex-col items-center justify-center min-h-screen">
+
+            {/* Stat pills — left side */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">
+              {STAT_PILLS.map(({ value, label }, i) => (
+                <motion.div
+                  key={label}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  className="flex flex-col rounded-xl px-4 py-3"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    backdropFilter: "blur(10px)",
+                  }}
+                >
+                  <span className="text-xl font-black" style={{ color: "#00E676" }}>
+                    {value}
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.4)" }}>
+                    {label}
+                  </span>
+                </motion.div>
+              ))}
             </div>
 
-            {/* MOBILE CTA BELOW IMAGE */}
-            <div className="flex flex-col gap-3 w-full max-w-md mt-6 lg:hidden">
-              <a
-                href={assessmentHref}
-                className="flex items-center justify-center gap-2 bg-[#00E676] text-black font-bold rounded-full px-6 py-4 text-sm"
+            {/* Image */}
+            <motion.div
+              style={{ y: imageY }}
+              className="relative w-full max-w-[440px] mx-auto"
+            >
+              {/* Outer frame */}
+              <div
+                className="relative rounded-[2.5rem] overflow-hidden"
+                style={{
+                  border: "1px solid rgba(0,230,118,0.12)",
+                  boxShadow: "0 0 80px rgba(0,230,118,0.06), inset 0 0 0 1px rgba(255,255,255,0.04)",
+                }}
               >
-                <ClipboardList size={16} />
-                {assessmentLabel}
-              </a>
+                {/* Tinted overlay on image */}
+                <div
+                  className="absolute inset-0 z-10 pointer-events-none"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, rgba(5,15,7,0.1) 0%, rgba(5,15,7,0.5) 100%)",
+                  }}
+                />
+                <Image
+                  src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800"
+                  alt="Personalised Indian nutrition bowl"
+                  width={600}
+                  height={700}
+                  className="object-cover w-full"
+                  style={{ height: 520 }}
+                  priority
+                />
 
-              {isSignedIn ? (
-                <a
-                  href="/sessions"
-                  className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 py-4 text-sm"
+                {/* Bottom label inside image */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 z-20 px-6 py-5"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(5,15,7,0.96) 0%, transparent 100%)",
+                  }}
                 >
-                  My Sessions
-                  <ArrowRight size={16} />
-                </a>
-              ) : (
-                <a
-                  href="/assessment"
-                  className="flex items-center justify-center gap-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-semibold rounded-full px-6 py-4 text-sm"
-                >
-                  Get PDF Report — ₹39
-                  <ArrowRight size={16} />
-                </a>
-              )}
-              <p className="text-center text-xs text-gray-400">
-                <Link
-                  href="/dashboard/referral"
-                  className="text-emerald-400/90 underline-offset-2 hover:text-emerald-300 hover:underline"
-                >
-                  🎁 Refer friends — earn ₹300 per successful booking
-                </Link>
-              </p>
-            </div>
+                  <p
+                    className="text-xs font-bold uppercase tracking-widest mb-1"
+                    style={{ color: "#00E676" }}
+                  >
+                    Built for India
+                  </p>
+                  <p className="text-sm font-medium text-white">
+                    Dals, millets, greens & local foods — not Western templates
+                  </p>
+                </div>
+              </div>
 
-            {/* FLOATING CARDS (DESKTOP ONLY — UNTOUCHED) */}
-            <motion.div
-              animate={{ y: [0, -10, 0], rotate: [-1, 1, -1] }}
-              transition={{ duration: 4, repeat: Infinity }}
-              className="absolute -left-8 top-12 bg-[#121212]/95 border border-white/10 rounded-xl shadow-2xl p-4 hidden lg:flex items-center gap-4"
-            >
-              <div className="bg-red-500/20 p-2 rounded-lg">
-                <Activity size={18} className="text-red-500" />
-              </div>
-              <div>
-                <p className="text-red-500 text-[9px] font-black uppercase tracking-widest">Alert</p>
-                <p className="text-white text-xs font-semibold">Oxygen transport declining</p>
-              </div>
+              {/* Floating alert card — top left */}
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -left-14 top-10 flex items-center gap-3 rounded-2xl px-4 py-3 z-30"
+                style={{
+                  background: "rgba(10,10,12,0.92)",
+                  border: "1px solid rgba(255,80,80,0.25)",
+                  backdropFilter: "blur(16px)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                  minWidth: 210,
+                }}
+              >
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(255,80,80,0.15)" }}
+                >
+                  <Activity size={16} style={{ color: "#ff5050" }} />
+                </div>
+                <div>
+                  <p
+                    className="text-[10px] font-black uppercase tracking-widest"
+                    style={{ color: "#ff5050" }}
+                  >
+                    Deficiency Alert
+                  </p>
+                  <p className="text-xs font-semibold text-white leading-tight">
+                    Iron &amp; B12 levels low
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Floating success card — bottom right */}
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 4, repeat: Infinity, delay: 1.5, ease: "easeInOut" }}
+                className="absolute -right-10 bottom-20 flex items-center gap-3 rounded-2xl px-4 py-3 z-30"
+                style={{
+                  background: "rgba(10,10,12,0.92)",
+                  border: "1px solid rgba(0,230,118,0.25)",
+                  backdropFilter: "blur(16px)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                  minWidth: 220,
+                }}
+              >
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(0,230,118,0.12)" }}
+                >
+                  <Activity size={16} style={{ color: "#00E676" }} />
+                </div>
+                <div>
+                  <p
+                    className="text-[10px] font-black uppercase tracking-widest"
+                    style={{ color: "#00E676" }}
+                  >
+                    PDF Ready
+                  </p>
+                  <p className="text-xs font-semibold text-white leading-tight">
+                    Your personalised plan is here
+                  </p>
+                </div>
+              </motion.div>
             </motion.div>
-
-            <motion.div
-              animate={{ y: [0, -10, 0], rotate: [1, -1, 1] }}
-              transition={{ duration: 4, repeat: Infinity, delay: 1 }}
-              className="absolute -right-3 bottom-10 bg-[#121212]/95 border border-white/10 rounded-xl shadow-2xl p-4 hidden lg:flex items-center gap-4"
-            >
-              <div className="bg-emerald-500/20 p-2 rounded-lg">
-                <Activity size={18} className="text-[#00E676]" />
-              </div>
-              <div>
-                <p className="text-[#00E676] text-[9px] font-black uppercase tracking-widest">Plan Created</p>
-                <p className="text-white text-xs font-semibold">Your personalized plan is ready</p>
-              </div>
-            </motion.div>
-          </motion.div>
-
+          </div>
         </div>
       </div>
+
+      {/* ── MOBILE CTA BAR — sticky on scroll ── */}
+      <MobileStickyBar assessmentHref={assessmentHref} assessmentLabel={assessmentLabel} />
     </section>
+  );
+}
+
+function MobileStickyBar({
+  assessmentHref,
+  assessmentLabel,
+}: {
+  assessmentHref: string;
+  assessmentLabel: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 300);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <div
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ${
+        visible ? "translate-y-0" : "translate-y-full"
+      }`}
+      style={{
+        background: "rgba(5,15,7,0.97)",
+        borderTop: "1px solid rgba(0,230,118,0.15)",
+        padding: "12px 16px",
+        paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+      }}
+    >
+      <a
+        href={assessmentHref}
+        className="flex items-center justify-center gap-2 w-full font-bold rounded-2xl py-4 text-sm"
+        style={{ background: "#00E676", color: "#050f07" }}
+      >
+        <ClipboardList size={16} strokeWidth={2.5} />
+        {assessmentLabel}
+      </a>
+    </div>
   );
 }
