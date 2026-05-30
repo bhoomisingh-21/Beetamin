@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
+    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India.',
 
   keywords: [
     'nutrient deficiency test India',
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     siteName: 'TheBeetamin',
     title: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
     description:
-      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India. Starting at ₹39.',
+      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India.',
     images: [
       {
         url: '/og-image.png',

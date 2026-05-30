@@ -56,6 +56,10 @@ const PrecisionBento: React.FC = () => {
               ))}
             </div>
 
+            <p className="text-[11px] text-gray-400 mt-2 leading-snug max-w-xs text-center lg:text-left">
+              * Figures based on internal data since launch. Success rate defined as clients reporting measurable improvement in primary symptoms at 90-day check-in. Individual results vary.
+            </p>
+
             {/* Guarantee Card */}
             <div className="bg-[#f0f7ff]/80 backdrop-blur-sm rounded-3xl sm:rounded-4xl p-6 sm:p-8 border border-blue-50 relative overflow-hidden shadow-sm">
               <h4 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">

@@ -6,20 +6,29 @@ import { motion } from "framer-motion";
 import { Camera, Play, Rss, MessageCircle } from "lucide-react";
 import { CORE_SITE_NAV_LINKS } from "@/lib/site-navigation";
 
-type FooterLinks = {
-  [key: string]: string[];
-};
+type FooterLink = { label: string; href: string };
+type FooterLinks = { [section: string]: FooterLink[] };
 
 const Footer: React.FC = () => {
   const footerLinks: FooterLinks = {
     Services: [
-      "Deep Discovery",
-      "Expert Strategy",
-      "Active Tracking",
-      "My Profile",
+      { label: "Deep Discovery", href: "/sessions" },
+      { label: "Expert Strategy", href: "/booking" },
+      { label: "Active Tracking", href: "/sessions" },
+      { label: "My Profile", href: "/profile" },
     ],
-    Company: ["About Us", "Careers", "Contact Us", "Privacy Policy"],
-    Support: ["FAQs", "Help Center", "Community", "Referral Program"],
+    Company: [
+      { label: "About Us", href: "/about" },
+      { label: "Careers", href: "/careers" },
+      { label: "Contact Us", href: "/contact" },
+      { label: "Privacy Policy", href: "/privacy" },
+    ],
+    Support: [
+      { label: "FAQs", href: "/faq" },
+      { label: "Help Center", href: "/contact" },
+      { label: "Community", href: "/contact" },
+      { label: "Referral Program", href: "/dashboard/referral" },
+    ],
   };
 
   const socialIcons = [Camera, Play, Rss, MessageCircle];
@@ -102,14 +111,14 @@ const Footer: React.FC = () => {
                   {title}
                 </h4>
                 <ul className="space-y-3">
-                  {links.map((link: string) => (
-                    <li key={link}>
-                      <a
-                        href="#"
+                  {links.map(({ label, href }) => (
+                    <li key={label}>
+                      <Link
+                        href={href}
                         className="text-slate-400 text-sm hover:text-blue-400 transition-colors"
                       >
-                        {link}
-                      </a>
+                        {label}
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -149,20 +158,14 @@ const Footer: React.FC = () => {
           </p>
 
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-6 md:justify-end">
-            <Link
-              href="/login?redirect=/admin"
-              className="text-slate-500 text-xs hover:text-emerald-400 transition-colors"
-            >
-              Admin login / sign up
-            </Link>
-            {["Terms", "Privacy", "Cookies"].map((item) => (
-              <a
-                key={item}
-                href="#"
+            {([["Terms", "/terms"], ["Privacy", "/privacy"], ["Cookies", "/cookies"]] as const).map(([label, href]) => (
+              <Link
+                key={label}
+                href={href}
                 className="text-slate-500 text-xs hover:text-white transition-colors"
               >
-                {item}
-              </a>
+                {label}
+              </Link>
             ))}
           </div>
         </div>

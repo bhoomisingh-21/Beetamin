@@ -9,7 +9,7 @@ export function SitelinkDiscovery() {
       <p>
         Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report,
         Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India.
-        Starting at ₹39.
+        Plans start at ₹499 per session.
       </p>
       <ul>
         {SITE_SITELINKS.map(({ label, href, description }) => (

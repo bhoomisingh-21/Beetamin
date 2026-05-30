@@ -18,7 +18,7 @@ const BOOSTER_FEATURES = [
   "1 Expert Session",
   "30 Min Duration",
   "Doctor-reviewed guidance",
-  "Available only after main plan purchase",
+  "Try one session before committing to the full plan.",
 ];
 
 type Props = {
@@ -34,8 +34,11 @@ export default function PricingSection({ hasFullPlan }: Props) {
 
       <div className="text-center">
         <h2 className="text-white font-black text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.2]">
-          Investment In Your Future Self
+          Your 90-Day Recovery Plan
         </h2>
+        <p className="text-white font-semibold text-lg sm:text-xl mt-1">
+          One Price, No Subscription
+        </p>
         <p className="text-gray-400 mt-3 sm:mt-4 text-sm sm:text-base md:text-lg">
           Transparent pricing. No hidden fees. Just results.
         </p>
@@ -54,9 +57,14 @@ export default function PricingSection({ hasFullPlan }: Props) {
             Most Popular
           </div>
 
-          <p className="text-xl sm:text-2xl font-black text-gray-900 mb-4 sm:mb-6">
+          <p className="text-xl sm:text-2xl font-black text-gray-900 mb-2">
             The Core Transformation
           </p>
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+            <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-200">
+              ⏳ Limited slots — <strong>4 spots remaining this month</strong>
+            </span>
+          </div>
 
           <div className="flex items-baseline gap-3 mb-2">
             <span className="text-4xl sm:text-5xl font-black text-gray-900">₹3,999</span>
@@ -104,6 +112,33 @@ export default function PricingSection({ hasFullPlan }: Props) {
               Get Started Now
             </a>
           )}
+
+          {/* Trust badges */}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4">
+            {[
+              "🔒 Secure Payment",
+              "📱 UPI, Cards, Net Banking",
+              "🔄 No auto-renewal",
+            ].map((badge) => (
+              <span
+                key={badge}
+                className="text-[11px] text-gray-400 bg-gray-100 rounded-full px-3 py-1 font-medium"
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+
+          {/* Guarantee badge */}
+          <div className="mt-5 flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <span className="text-xl shrink-0">🛡️</span>
+            <div>
+              <p className="font-bold text-emerald-800 text-sm">7-Day Satisfaction Guarantee</p>
+              <p className="text-emerald-700 text-xs mt-0.5 leading-snug">
+                If you&apos;re not satisfied after your first session, we&apos;ll refund your full payment. No questions asked.
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -111,9 +146,7 @@ export default function PricingSection({ hasFullPlan }: Props) {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className={`relative bg-white border border-gray-200 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 flex flex-col shadow-lg transition-all duration-300 ${
-            isLoaded && isSignedIn && !hasFullPlan ? "opacity-60" : "opacity-90 hover:-translate-y-1"
-          }`}
+          className="relative bg-white border border-gray-200 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 flex flex-col shadow-lg transition-all duration-300 hover:-translate-y-1"
         >
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#00E676] to-green-300 rounded-t-full" />
 
@@ -127,35 +160,29 @@ export default function PricingSection({ hasFullPlan }: Props) {
             Individual focused consultation session.
           </p>
 
-          <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-grow opacity-80">
+          <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-grow">
             {BOOSTER_FEATURES.map((item) => (
               <li key={item} className="flex items-center gap-3">
-                <CheckCircle size={18} className="text-gray-300 shrink-0" />
+                <CheckCircle size={18} className="text-emerald-400 shrink-0" />
                 <span className="text-gray-700 text-sm">{item}</span>
               </li>
             ))}
           </ul>
 
-          {isLoaded && isSignedIn && hasFullPlan ? (
+          {isLoaded && isSignedIn ? (
             <UpgradePlanButton
               mode="booster"
               className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
             >
-              Buy Booster — ₹499
+              Book a Single Session — ₹499
             </UpgradePlanButton>
           ) : (
-            <>
-              <button
-                type="button"
-                disabled
-                className="w-full bg-gray-100 text-gray-400 font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl cursor-not-allowed text-sm sm:text-base"
-              >
-                Buy Booster
-              </button>
-              <p className="text-center text-[11px] text-gray-500 mt-3 leading-snug">
-                Available after purchasing Core Transformation plan
-              </p>
-            </>
+            <Link
+              href="/sessions"
+              className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2 text-center"
+            >
+              Book a Single Session — ₹499
+            </Link>
           )}
         </motion.div>
       </div>

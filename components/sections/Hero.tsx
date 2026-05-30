@@ -96,7 +96,7 @@ export default function Hero() {
               <Sparkles size={10} className="fill-emerald-400" />
               {isSignedIn && user?.firstName
                 ? `👋 WELCOME BACK, ${user.firstName.toUpperCase()}!`
-                : "INDIA'S #1 PERSONALIZED NUTRITION SYSTEM"}
+                : "INDIA'S DEFICIENCY RECOVERY PLATFORM"}
             </motion.span>
 
             <p

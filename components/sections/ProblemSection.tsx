@@ -19,33 +19,33 @@ const CARDS: ProblemCard[] = [
     image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&q=80",
     icon: User,
     title: "Skin & Hair",
-    stat: "2.4X COLLAGEN SYNTHESIS",
+    stat: "COLLAGEN SUPPORT",
     risk: "Premature dermal thinning",
-    restore: "Structural elasticity restore",
+    restore: "Vitamin C + zinc pathway",
   },
   {
     image: "https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80",
     icon: Battery,
     title: "Mood & Mental",
-    stat: "60% SEROTONIN PRECURSOR LINK",
-    risk: "Neuro-chemical burnout",
-    restore: "Emotional baseline stability",
+    stat: "MOOD & SEROTONIN",
+    risk: "Neuro-chemical imbalance",
+    restore: "Tryptophan + B6 pathway",
   },
   {
     image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80",
     icon: Zap,
     title: "Energy Levels",
-    stat: "88% OF FATIGUE IS CELLULAR",
-    risk: "Mitochondrial decay",
-    restore: "Rapid ATP regeneration",
+    stat: "FATIGUE STARTS AT THE CELL",
+    risk: "Mitochondrial + iron dysfunction",
+    restore: "Cellular energy restoration",
   },
   {
     image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80",
     icon: Brain,
     title: "Focus & Memory",
-    stat: "32% FASTER NEURAL FIRING",
-    risk: "Cognitive erosion",
-    restore: "Synaptic clarity",
+    stat: "COGNITIVE PERFORMANCE",
+    risk: "B12 + Omega-3 impact",
+    restore: "Clinically documented",
   },
 ];
 
@@ -143,7 +143,7 @@ export default function ProblemSection() {
         </div>
 
         {/* ✅ DESKTOP GRID (UNCHANGED) */}
-        <div className="hidden lg:grid grid-cols-4 gap-6 mt-10 sm:mt-16">
+        <div className="hidden lg:grid grid-cols-4 gap-6 mt-10 sm:mt-16" id="science">
           {CARDS.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -197,6 +197,10 @@ export default function ProblemSection() {
         </div>
 
       </div>
+
+      <p className="text-center text-gray-400 text-xs mt-8 sm:mt-12 max-w-2xl mx-auto px-4">
+        ¹ Based on peer-reviewed nutritional research. Individual results vary. This platform does not provide medical diagnoses.
+      </p>
     </section>
   );
 }

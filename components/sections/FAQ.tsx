@@ -4,6 +4,22 @@ import { useState } from "react";
 import { MessageCircle, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+function InitialsAvatar({ initials, color }: { initials: string; color: string }) {
+  return (
+    <span
+      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white flex items-center justify-center text-xs font-black text-white shrink-0 ${color}`}
+    >
+      {initials}
+    </span>
+  );
+}
+
+const SUPPORT_AVATARS = [
+  { initials: "AK", color: "bg-emerald-500" },
+  { initials: "PS", color: "bg-purple-500" },
+  { initials: "RM", color: "bg-amber-500" },
+];
+
 const FAQS = [
   {
     q: "How is Beetamin different from other nutrition apps?",
@@ -18,16 +34,19 @@ const FAQS = [
     a: "You'll receive an instant summary of your likely nutrient gaps. A nutritionist will then reach out within 24 hours to schedule your 1-on-1 consultation call.",
   },
   {
-    q: "Is the ₹2,999 plan a one-time payment or a subscription?",
+    q: "Is the ₹3,999 plan a one-time payment or a subscription?",
     a: "It's a one-time payment that covers 3 full months — including all expert sessions, your personalised plan, fortnightly check-ins, and WhatsApp support. No recurring charges.",
+  },
+  {
+    q: "What is your refund policy?",
+    a: "If you're unsatisfied after your first session, contact us at hi@thebeetamin.com within 7 days of purchase for a full refund. No questions asked.",
+  },
+  {
+    q: "Who exactly will be my nutritionist?",
+    a: "After purchase, you'll be matched with one of our certified nutritionists based on your assessment results and health goals. You'll see their full profile — including their specialty, experience, and credentials — before your first session.",
   },
 ];
 
-const AVATARS = [
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
-];
 
 export default function FAQ() {
   const [open, setOpen] = useState<number | null>(0);
@@ -50,13 +69,8 @@ export default function FAQ() {
           {/* Support Card */}
           <div className="mt-6 sm:mt-8 bg-white border border-gray-100 shadow-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-auto lg:mx-0">
             <div className="flex justify-center -space-x-3">
-              {AVATARS.map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  alt="Support"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover"
-                />
+              {SUPPORT_AVATARS.map(({ initials, color }) => (
+                <InitialsAvatar key={initials} initials={initials} color={color} />
               ))}
             </div>
 

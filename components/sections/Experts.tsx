@@ -1,8 +1,33 @@
 "use client";
 
-import Image from "next/image";
 import { Medal, ShieldCheck, CheckCircle2, Users, Star, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
+
+const SPECIALTY_COLORS: Record<string, { bg: string; text: string }> = {
+  hormonal: { bg: "bg-purple-100", text: "text-purple-700" },
+  energy: { bg: "bg-amber-100", text: "text-amber-700" },
+  gut: { bg: "bg-teal-100", text: "text-teal-700" },
+};
+
+function ExpertAvatar({ name, specialtyKey }: { name: string; specialtyKey: string }) {
+  const initials = name
+    .split(" ")
+    .filter((w) => w.length > 0)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+  const colors = SPECIALTY_COLORS[specialtyKey] ?? { bg: "bg-emerald-100", text: "text-emerald-700" };
+  return (
+    <div className={`h-[280px] w-full flex flex-col items-center justify-center ${colors.bg} relative`}>
+      <div className={`w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black ${colors.bg} border-4 border-white shadow-lg`}>
+        <span className={colors.text}>{initials}</span>
+      </div>
+      <span className="mt-4 text-[10px] font-semibold text-gray-500 bg-white/80 border border-gray-200 rounded-full px-3 py-1">
+        Photo pending verification
+      </span>
+    </div>
+  );
+}
 
 const EXPERTS = [
   {
@@ -10,7 +35,7 @@ const EXPERTS = [
     title: "Chief Clinical Nutritionist",
     experience: "11 Years Experience",
     specialty: "HORMONAL & WOMEN'S HEALTH",
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600",
+    specialtyKey: "hormonal",
     credentials: ["M.Sc Clinical Nutrition", "DNCC Certified"],
   },
   {
@@ -18,7 +43,7 @@ const EXPERTS = [
     title: "Sports & Metabolic Nutritionist",
     experience: "9 Years Experience",
     specialty: "ENERGY & PERFORMANCE",
-    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600",
+    specialtyKey: "energy",
     credentials: ["M.Sc Dietetics", "DNCC Certified"],
   },
   {
@@ -26,7 +51,7 @@ const EXPERTS = [
     title: "Integrative Medicine Nutritionist",
     experience: "8 Years Experience",
     specialty: "GUT HEALTH & IMMUNITY",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=600",
+    specialtyKey: "gut",
     credentials: ["Ph.D Nutritional Science", "DNCC Certified"],
   },
 ];
@@ -146,14 +171,8 @@ export default function Experts() {
 function ExpertCardContent({ expert }: { expert: (typeof EXPERTS)[number] }) {
   return (
     <>
-      <div className="relative h-[280px] w-full overflow-hidden group">
-        <Image
-          src={expert.image}
-          alt={expert.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 80vw, 33vw"
-        />
+      <div className="relative overflow-hidden group">
+        <ExpertAvatar name={expert.name} specialtyKey={expert.specialtyKey} />
         <span className="absolute bottom-4 left-4 bg-[#00E676] text-black text-[10px] font-extrabold px-3.5 py-1.5 rounded-md z-10 uppercase tracking-tight shadow-[0_4px_12px_rgba(0,230,118,0.25)] transition-transform duration-300 group-hover:-translate-y-1">
           {expert.specialty}
         </span>

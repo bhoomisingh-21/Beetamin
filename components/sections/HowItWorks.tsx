@@ -34,7 +34,7 @@ const STEPS = [
   },
 ];
 
-const PILLS = ["Calorie Quality Index", "Sleep Analytics"];
+const PILLS = ["Doctor-Reviewed Protocol", "Personalised Plan"];
 
 export default function TransformationJourney() {
   return (

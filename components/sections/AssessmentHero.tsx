@@ -5,6 +5,12 @@ import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
+const PROOF_AVATARS = [
+  { initials: "AK", bg: "bg-emerald-500" },
+  { initials: "PS", bg: "bg-purple-500" },
+  { initials: "RM", bg: "bg-amber-500" },
+];
+
 const TAGS = [
   { emoji: "⏱️", label: "Takes 2 minutes" },
   { emoji: "🔒", label: "100% Private" },
@@ -60,13 +66,10 @@ export default function AssessmentHero() {
             {/* Social Proof */}
             <div className="mt-5 flex flex-col items-center gap-2 text-sm text-slate-500">
               <div className="flex -space-x-2">
-                {[1, 2, 3].map((n) => (
-                  <img
-                    key={n}
-                    src={`https://i.pravatar.cc/40?img=${n}`}
-                    alt="User avatar"
-                    className="w-8 h-8 rounded-full border-2 border-white object-cover"
-                  />
+                {PROOF_AVATARS.map(({ initials, bg }) => (
+                  <span key={initials} className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black text-white ${bg}`}>
+                    {initials}
+                  </span>
                 ))}
               </div>
               <span className="text-xs">Trusted by 50,000+ users</span>
@@ -234,13 +237,10 @@ export default function AssessmentHero() {
 
             <div className="mt-6 flex items-center gap-3 text-sm text-slate-500">
               <div className="flex -space-x-2">
-                {[1, 2, 3].map((n) => (
-                  <img
-                    key={n}
-                    src={`https://i.pravatar.cc/40?img=${n}`}
-                    alt="User avatar"
-                    className="w-8 h-8 rounded-full border-2 border-white object-cover"
-                  />
+                {PROOF_AVATARS.map(({ initials, bg }) => (
+                  <span key={initials} className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black text-white ${bg}`}>
+                    {initials}
+                  </span>
                 ))}
               </div>
               <span>Trusted by 50,000+ users</span>

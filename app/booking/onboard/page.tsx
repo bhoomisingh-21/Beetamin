@@ -576,9 +576,12 @@ export default function OnboardPage() {
             </ul>
             <div className="mt-10 flex items-center gap-3">
               <div className="flex -space-x-2">
-                {[1, 2, 3].map((n) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={n} src={`https://i.pravatar.cc/40?img=${n + 10}`} alt="" className="w-8 h-8 rounded-full border-2 border-white/20 object-cover" />
+                {[
+                  { i: "AK", bg: "bg-emerald-500" },
+                  { i: "PS", bg: "bg-purple-500" },
+                  { i: "RM", bg: "bg-amber-500" },
+                ].map(({ i, bg }) => (
+                  <span key={i} className={`w-8 h-8 rounded-full border-2 border-white/20 flex items-center justify-center text-[10px] font-black text-white ${bg}`}>{i}</span>
                 ))}
               </div>
               <p className="text-gray-400 text-xs">Trusted by <span className="text-white font-bold">50,000+</span> Indians</p>

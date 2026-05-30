@@ -187,13 +187,13 @@ export default function AssessmentPage() {
               Find Your Nutrient Deficiencies — Free Assessment
             </h1>
             <p className="mt-4 text-gray-400 text-sm md:text-base lg:text-lg max-w-xl mx-auto">
-              7 clinically-derived questions. AI-powered analysis. Personalized deficiency report in under 2 minutes.
+              7 clinically-derived questions. Expert-reviewed analysis. Personalized deficiency report in under 2 minutes.
             </p>
 
             <div className="mt-6 flex flex-wrap justify-center gap-3 md:gap-8">
               {[
                 { Icon: Lock, label: '100% Private' },
-                { Icon: Zap, label: 'Instant AI Results' },
+                { Icon: Zap, label: 'Instant Results' },
                 { Icon: Shield, label: 'Nutritionist-Reviewed' },
               ].map(({ Icon, label }) => (
                 <div key={label} className="flex items-center gap-2 text-gray-400 text-xs md:text-sm">

@@ -10,7 +10,7 @@ export function WebSiteJsonLd() {
     alternateName: ['Beetamin', 'The Beetamin'],
     url: SITE_URL,
     description:
-      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — built for India. Starting at ₹39.',
+      'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — built for India.',
     publisher: {
       '@type': 'Organization',
       name: 'TheBeetamin',
@@ -98,7 +98,7 @@ export function OrganizationJsonLd() {
       height: 96,
     },
     description:
-      'Personalised nutrient deficiency recovery platform for Indians. Expert nutrition sessions and AI-powered deficiency reports.',
+      'Personalised nutrient deficiency recovery platform for Indians. Expert nutrition sessions and clinician-reviewed deficiency reports.',
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer support',
@@ -149,7 +149,7 @@ export function MedicalServiceJsonLd() {
       {
         '@type': 'MedicalTherapy',
         name: 'Personalised Deficiency Recovery Report',
-        description: 'AI-powered nutrient deficiency analysis with 7-day Indian meal plan.',
+        description: 'Expert-reviewed nutrient deficiency analysis with 7-day Indian meal plan.',
         offers: {
           '@type': 'Offer',
           price: '39',
