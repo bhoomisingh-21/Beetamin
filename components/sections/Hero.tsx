@@ -14,8 +14,8 @@ const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' 
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG)}`;
 
 const HEADLINE_LINES = [
-  ["Fix", "Your", "Nutrient"],
-  ["Deficiencies", "in"],
+  ["Know", "Your"],
+  ["Deficiencies."],
 ];
 
 type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
@@ -100,12 +100,11 @@ export default function Hero() {
             </motion.span>
 
             <p
-              className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-6 max-w-xl"
-              aria-label="Fix Your Nutrient Deficiencies in 90 Days"
+              className="font-extrabold text-4xl sm:text-5xl lg:text-6xl leading-[1.2] lg:leading-[1.05] tracking-tight mb-4 max-w-xl"
+              aria-label="Know Your Deficiencies. Fix Them Fast."
             >
               {HEADLINE_LINES.map((lineWords, li) => (
                 <span key={li} className="block">
-                  {li > 0 ? "\u00A0" : null}
                   {lineWords.map((word, wi) => {
                     const delay = 0.1 + wordIndex++ * 0.08;
                     return (
@@ -130,10 +129,33 @@ export default function Hero() {
                   transition={{ duration: 0.5, delay: 0.1 + wordIndex * 0.08 }}
                   className="text-[#00E676]"
                 >
-                  {"\u00A0"}90 Days.
+                  Fix Them Fast.
                 </motion.span>
               </span>
             </p>
+
+            {/* Two-offer value proposition */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.55 }}
+              className="flex flex-col sm:flex-row gap-3 mb-6 max-w-md mx-auto lg:mx-0 lg:justify-start justify-center"
+            >
+              <div className="flex items-start gap-2.5 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-left">
+                <span className="text-[#00E676] text-lg leading-none mt-0.5">✓</span>
+                <div>
+                  <p className="text-white text-sm font-bold">Free Assessment</p>
+                  <p className="text-gray-400 text-xs leading-snug">7 questions · instant results</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 bg-white/5 border border-emerald-500/20 rounded-xl px-4 py-3 text-left">
+                <span className="text-[#00E676] text-lg leading-none mt-0.5">✓</span>
+                <div>
+                  <p className="text-white text-sm font-bold">₹39 PDF Report</p>
+                  <p className="text-gray-400 text-xs leading-snug">12-page guide · Indian foods</p>
+                </div>
+              </div>
+            </motion.div>
 
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -141,12 +163,11 @@ export default function Hero() {
               transition={{ duration: 0.5, delay: 0.6 }}
               className="text-gray-400 text-sm sm:text-base leading-relaxed sm:leading-7 max-w-md"
             >
-              Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a{" "}
-              <span className="text-white font-bold">personalised recovery report</span>, Indian
-              meal plan, and expert nutritionist sessions — built for India.
+              Take a free 7-question assessment. We identify your Vitamin D, Iron, B12 and Omega-3 gaps — then give you a{" "}
+              <span className="text-white font-bold">12-page personalised PDF</span> with Indian foods and a meal plan to fix them — for just ₹39.
             </motion.p>
 
-            {/* ✅ DESKTOP CTA (UNCHANGED) */}
+            {/* DESKTOP CTA */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -161,13 +182,23 @@ export default function Hero() {
                 {assessmentLabel}
               </a>
 
-              <a
-                href={isSignedIn ? "/sessions" : "/booking"}
-                className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-white/10 transition-all w-full sm:w-auto text-sm sm:text-base"
-              >
-                {isSignedIn ? "My Sessions" : "Book a Nutritionist"}
-                <ArrowRight size={17} />
-              </a>
+              {isSignedIn ? (
+                <a
+                  href="/sessions"
+                  className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-white/10 transition-all w-full sm:w-auto text-sm sm:text-base"
+                >
+                  My Sessions
+                  <ArrowRight size={17} />
+                </a>
+              ) : (
+                <a
+                  href="/assessment"
+                  className="flex items-center justify-center gap-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-semibold rounded-full px-6 sm:px-8 py-4 h-13 sm:h-14 hover:bg-emerald-500/20 transition-all w-full sm:w-auto text-sm sm:text-base"
+                >
+                  Get PDF Report — ₹39
+                  <ArrowRight size={17} />
+                </a>
+              )}
             </motion.div>
 
             <motion.p
@@ -193,9 +224,9 @@ export default function Hero() {
             >
               <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto px-4 pb-2 pr-10 lg:mx-0 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-0 lg:pb-0 lg:pr-0">
                 {[
+                  "Free Assessment — No Card Needed",
+                  "₹39 PDF — Instant Delivery",
                   "Doctor-Reviewed Protocol",
-                  "50,000+ Lives Transformed",
-                  "Real 1-on-1 Consultations",
                 ].map((text, i) => (
                   <div
                     key={i}
@@ -236,7 +267,7 @@ export default function Hero() {
               />
             </div>
 
-            {/* ✅ MOBILE CTA BELOW IMAGE */}
+            {/* MOBILE CTA BELOW IMAGE */}
             <div className="flex flex-col gap-3 w-full max-w-md mt-6 lg:hidden">
               <a
                 href={assessmentHref}
@@ -246,13 +277,23 @@ export default function Hero() {
                 {assessmentLabel}
               </a>
 
-              <a
-                href={isSignedIn ? "/sessions" : "/booking"}
-                className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 py-4 text-sm"
-              >
-                {isSignedIn ? "My Sessions" : "Book a Nutritionist"}
-                <ArrowRight size={16} />
-              </a>
+              {isSignedIn ? (
+                <a
+                  href="/sessions"
+                  className="flex items-center justify-center gap-2 border border-white/10 bg-white/5 text-white font-semibold rounded-full px-6 py-4 text-sm"
+                >
+                  My Sessions
+                  <ArrowRight size={16} />
+                </a>
+              ) : (
+                <a
+                  href="/assessment"
+                  className="flex items-center justify-center gap-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-semibold rounded-full px-6 py-4 text-sm"
+                >
+                  Get PDF Report — ₹39
+                  <ArrowRight size={16} />
+                </a>
+              )}
               <p className="text-center text-xs text-gray-400">
                 <Link
                   href="/dashboard/referral"

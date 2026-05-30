@@ -2,16 +2,16 @@ import { auth } from '@clerk/nextjs/server'
 import type { Metadata } from 'next'
 import Navbar from "@/components/sections/Navbar";
 import Hero from "@/components/sections/Hero";
-import ProblemSection from "@/components/sections/ProblemSection";
-import BuiltForYou from "@/components/sections/BuiltForYou";
-import HowItWorks from "@/components/sections/HowItWorks";
 import Experts from "@/components/sections/Experts";
+import BuiltForYou from "@/components/sections/BuiltForYou";
+import ProblemSection from "@/components/sections/ProblemSection";
 import Comparison from "@/components/sections/Comparison";
+import HowItWorks from "@/components/sections/HowItWorks";
 import StatsSection from "@/components/sections/StatsSection";
 import LeadMagnet from "@/components/sections/LeadMagnet";
 import PricingSection from "@/components/sections/PricingSection";
-import FAQ from "@/components/sections/FAQ";
 import ReferralBanner from "@/components/sections/ReferralBanner";
+import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
 import { HomePageSeoHead } from "@/components/seo/HomePageSeoHead";
 import { SitelinkDiscovery } from "@/components/seo/SitelinkDiscovery";
@@ -22,10 +22,10 @@ import { hasActiveFullPlanPurchase } from "@/lib/plan-access";
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'TheBeetamin — Your Personalised Deficiency Recovery Platform for India',
+    absolute: 'TheBeetamin — Free Deficiency Assessment + ₹39 PDF Report for India',
   },
   description:
-    'Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with a personalised recovery report, Indian meal plan, and expert nutritionist sessions — Dr. Priya Sharma. Built for India.',
+    'Take a free 7-question deficiency assessment. Get a 12-page personalised PDF report covering Vitamin D, Iron, B12 & Omega-3 — with Indian meal plan — for just ₹39. Built for India.',
   alternates: { canonical: 'https://www.thebeetamin.com' },
 };
 
@@ -39,18 +39,17 @@ export default async function Home() {
       <PageLoader />
       <ScrollProgress />
       <Navbar />
-      {/* Section order: Hero → Problem recognition → Science/cells → How it works → Experts → Why Us → Stats → Lead magnet → Pricing → FAQ → Referral → Footer */}
       <Hero />
+      <Experts />
       <BuiltForYou />
       <ProblemSection />
-      <HowItWorks />
-      <Experts />
       <Comparison />
+      <HowItWorks />
       <StatsSection />
       <LeadMagnet />
       <PricingSection hasFullPlan={hasFullPlan} />
-      <FAQ />
       <ReferralBanner />
+      <FAQ />
       <SitelinkDiscovery />
       <Footer />
       <StickyMobileCTA />
