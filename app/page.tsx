@@ -8,7 +8,6 @@ import ProblemSection from "@/components/sections/ProblemSection";
 import Comparison from "@/components/sections/Comparison";
 import HowItWorks from "@/components/sections/HowItWorks";
 import StatsSection from "@/components/sections/StatsSection";
-import LeadMagnet from "@/components/sections/LeadMagnet";
 import PricingSection from "@/components/sections/PricingSection";
 import ReferralBanner from "@/components/sections/ReferralBanner";
 import FAQ from "@/components/sections/FAQ";
@@ -46,7 +45,6 @@ export default async function Home() {
       <Comparison />
       <HowItWorks />
       <StatsSection />
-      <LeadMagnet />
       <PricingSection hasFullPlan={hasFullPlan} />
       <ReferralBanner />
       <FAQ />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Zap, User, Brain, Heart, FlaskConical, Scale, ChevronRight } from "lucide-react";
+import { Users, Zap, User, Brain, Heart, FlaskConical, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
@@ -106,9 +106,8 @@ export default function BuiltForYou() {
           </p>
         </div>
 
-        {/* ✅ MOBILE: HORIZONTAL SCROLL */}
-        <div className="relative mt-12">
-          <div className="flex lg:hidden overflow-x-auto gap-4 pb-4 pl-2 pr-8 scrollbar-hide">
+        {/* Mobile — stacked vertically */}
+        <div className="lg:hidden mt-12 flex flex-col gap-4 max-w-md mx-auto w-full px-2">
           {CARDS.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -119,7 +118,7 @@ export default function BuiltForYou() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={cardVariant}
-                className="bg-[#0a1219] border border-[#1a2329] rounded-2xl p-5 flex flex-col min-w-[85vw] max-w-[85vw] flex-shrink-0"
+                className="bg-[#0a1219] border border-[#1a2329] rounded-2xl p-5 flex flex-col w-full"
               >
                 <div className="flex items-center justify-between mb-5">
                   <div className={`${card.iconBg} ${card.iconColor} rounded-xl p-2`}>
@@ -131,9 +130,7 @@ export default function BuiltForYou() {
                 </div>
 
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-lg mb-2">
-                    {card.title}
-                  </h3>
+                  <h3 className="text-white font-bold text-lg mb-2">{card.title}</h3>
                   <p className="text-gray-400 text-xs leading-[1.5]">{card.desc}</p>
                 </div>
 
@@ -149,13 +146,6 @@ export default function BuiltForYou() {
               </motion.div>
             );
           })}
-          </div>
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-[#060a0e] pr-1 lg:hidden"
-            aria-hidden
-          >
-            <ChevronRight className="text-emerald-500/60" size={22} strokeWidth={2} />
-          </div>
         </div>
 
         {/* ✅ DESKTOP GRID (UNCHANGED) */}

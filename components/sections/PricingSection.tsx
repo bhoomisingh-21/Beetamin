@@ -143,17 +143,6 @@ export default function PricingSection({ hasFullPlan }: Props) {
               </span>
             ))}
           </div>
-
-          {/* Guarantee badge */}
-          <div className="mt-5 flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <span className="text-xl shrink-0">🛡️</span>
-            <div>
-              <p className="font-bold text-emerald-800 text-sm">7-Day Satisfaction Guarantee</p>
-              <p className="text-emerald-700 text-xs mt-0.5 leading-snug">
-                If you&apos;re not satisfied after your first session, we&apos;ll refund your full payment. No questions asked.
-              </p>
-            </div>
-          </div>
         </motion.div>
 
         <motion.div
