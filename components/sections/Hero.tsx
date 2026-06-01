@@ -270,34 +270,34 @@ export default function Hero() {
                 )}
               </motion.div>
 
-              {/* Trust micro-row */}
-              <motion.div
+              {/* Trust micro-row — single line */}
+              <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.56 }}
-                className="mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center lg:justify-start"
+                className="mt-6 flex flex-nowrap items-center justify-center lg:justify-start gap-x-2 sm:gap-x-3 w-full overflow-x-auto scrollbar-hide text-[11px] sm:text-xs font-medium text-white/75 whitespace-nowrap"
               >
                 {[
                   "Free assessment — no card",
                   "₹39 PDF — instant delivery",
                   "Doctor-reviewed protocol",
-                ].map((t) => (
-                  <span
-                    key={t}
-                    className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs sm:text-sm font-semibold text-white/90"
-                    style={{
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                    }}
-                  >
-                    <span
-                      className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ background: "#00E676" }}
-                    />
-                    {t}
+                ].map((t, i) => (
+                  <span key={t} className="inline-flex shrink-0 items-center gap-x-2 sm:gap-x-3">
+                    {i > 0 && (
+                      <span className="text-emerald-500/50 shrink-0" aria-hidden>
+                        ·
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-1 h-1 rounded-full shrink-0"
+                        style={{ background: "#00E676" }}
+                      />
+                      {t}
+                    </span>
                   </span>
                 ))}
-              </motion.div>
+              </motion.p>
 
               {/* Referral */}
               <motion.div

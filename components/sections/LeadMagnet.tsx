@@ -5,7 +5,6 @@ import { ArrowRight, CheckCircle2, Zap, FileText, Star } from "lucide-react";
 import Link from "next/link";
 
 const FEATURES = [
-  "Top 4 deficiencies in India — Vitamin D, Iron, B12, Omega-3",
   "Exact symptoms to watch for each deficiency",
   "Best Indian foods to fix each gap — dals, greens, millets & more",
   "A 7-day starter meal plan using Indian ingredients",
@@ -289,20 +288,23 @@ export default function LeadMagnet() {
               className="font-black leading-[0.93] tracking-tight mb-6"
               style={{ fontSize: "clamp(2.8rem, 4.2vw, 4.2rem)" }}
             >
-              <span className="text-white block">Find what's</span>
+              <span className="text-white block">Find what&apos;s actually</span>
               <span style={{ color: "#00E676" }} className="block">
-                actually
+                draining you.
               </span>
-              <span className="text-white block">draining you.</span>
             </h2>
 
             <p
               className="text-base leading-relaxed mb-10 max-w-[380px]"
               style={{ color: "rgba(255,255,255,0.42)" }}
             >
-              A 12-page PDF built directly from your assessment answers — the
-              exact Indian foods and meal plan to close your gaps. Not a
-              generic template.
+              <span className="block">
+                A 12-page PDF built directly from your assessment answers — the
+              </span>
+              <span className="block">
+                exact Indian foods and meal plan to close your gaps. Not a
+                generic template.
+              </span>
             </p>
 
             {/* Feature list */}
@@ -356,53 +358,6 @@ export default function LeadMagnet() {
                 Get PDF — ₹39
                 <ArrowRight size={14} />
               </Link>
-            </div>
-
-            <p
-              className="text-xs mb-10"
-              style={{ color: "rgba(255,255,255,0.22)" }}
-            >
-              Take the free assessment first — your PDF is generated from your answers.
-            </p>
-
-            {/* Social proof strip */}
-            <div
-              className="flex items-center gap-4 pt-8"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              {/* Initials stack */}
-              <div className="flex -space-x-2.5">
-                {[
-                  { i: "A", opacity: 0.95 },
-                  { i: "P", opacity: 0.75 },
-                  { i: "R", opacity: 0.55 },
-                  { i: "M", opacity: 0.38 },
-                ].map(({ i, opacity }, idx) => (
-                  <div
-                    key={idx}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black"
-                    style={{
-                      background: `rgba(0,230,118,${opacity * 0.18})`,
-                      border: "2px solid #040d05",
-                      color: `rgba(0,230,118,${opacity})`,
-                      zIndex: 4 - idx,
-                    }}
-                  >
-                    {i}
-                  </div>
-                ))}
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-white leading-snug">
-                  50,000+ Indians assessed
-                </p>
-                <p
-                  className="text-[11px] mt-0.5"
-                  style={{ color: "rgba(255,255,255,0.28)" }}
-                >
-                  Initials shown for privacy
-                </p>
-              </div>
             </div>
           </motion.div>
         </div>
