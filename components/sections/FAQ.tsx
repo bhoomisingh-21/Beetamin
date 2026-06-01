@@ -1,24 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-function InitialsAvatar({ initials, color }: { initials: string; color: string }) {
-  return (
-    <span
-      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-white flex items-center justify-center text-xs font-black text-white shrink-0 ${color}`}
-    >
-      {initials}
-    </span>
-  );
-}
-
-const SUPPORT_AVATARS = [
-  { initials: "AK", color: "bg-emerald-500" },
-  { initials: "PS", color: "bg-purple-500" },
-  { initials: "RM", color: "bg-amber-500" },
-];
 
 const FAQS = [
   {
@@ -53,42 +37,23 @@ export default function FAQ() {
 
   return (
     <section className="bg-gradient-to-b from-white to-gray-50 py-14 sm:py-16 px-4 sm:px-6 overflow-x-hidden">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 items-start">
+      <div className="max-w-3xl mx-auto">
 
-        {/* LEFT */}
-        <div className="text-center lg:text-left flex flex-col items-center lg:items-start">
+        {/* Heading */}
+        <div className="text-center mb-8 sm:mb-10">
           <h2 className="text-gray-900 font-black text-3xl sm:text-4xl md:text-5xl leading-tight">
-            Common <br />
+            Common{" "}
             <span className="text-[#00E676]">Questions</span>
           </h2>
-
-          <p className="text-gray-500 mt-3 text-sm sm:text-base max-w-md mx-auto lg:mx-0">
-            Everything you need to know about your journey.
+          <p className="text-gray-500 mt-3 text-sm sm:text-base">
+            Everything you need to know about your journey. Still unsure?{" "}
+            <a href="mailto:hi@thebeetamin.com" className="text-emerald-600 hover:underline font-medium">
+              Email us
+            </a>
           </p>
-
-          {/* Support Card */}
-          <div className="mt-6 sm:mt-8 bg-white border border-gray-100 shadow-sm rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-auto lg:mx-0">
-            <div className="flex justify-center -space-x-3">
-              {SUPPORT_AVATARS.map(({ initials, color }) => (
-                <InitialsAvatar key={initials} initials={initials} color={color} />
-              ))}
-            </div>
-
-            <p className="text-gray-900 font-semibold text-base sm:text-lg mt-4 sm:mt-5 text-center">
-              Still have questions?
-            </p>
-            <p className="text-gray-500 text-sm mt-1 mb-4 sm:mb-5 text-center">
-              Talk to our team anytime.
-            </p>
-
-            <button className="w-full bg-[#010810] text-white rounded-full py-3 font-semibold flex items-center justify-center gap-2 hover:bg-black transition text-sm sm:text-base">
-              <MessageCircle size={17} />
-              Chat with Us
-            </button>
-          </div>
         </div>
 
-        {/* RIGHT */}
+        {/* Accordion */}
         <div className="space-y-3">
           {FAQS.map((faq, i) => (
             <div
@@ -116,7 +81,7 @@ export default function FAQ() {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.25 }}
                   >
-                    <p className="px-4 sm:px-5 pb-4 sm:pb-5 text-gray-500 text-sm leading-relaxed text-center lg:text-left">
+                    <p className="px-4 sm:px-5 pb-4 sm:pb-5 text-gray-500 text-sm leading-relaxed">
                       {faq.a}
                     </p>
                   </motion.div>

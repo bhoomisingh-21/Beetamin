@@ -209,16 +209,16 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.44 }}
-                className="lg:hidden mt-7 relative rounded-2xl overflow-hidden"
+                className="lg:hidden mt-7 relative rounded-2xl overflow-hidden w-full"
                 style={{ border: "1px solid rgba(0,230,118,0.14)" }}
               >
                 <Image
                   src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800"
                   alt="Personalised Indian nutrition bowl"
                   width={800}
-                  height={400}
+                  height={500}
                   className="w-full object-cover"
-                  style={{ height: 200 }}
+                  style={{ height: 260 }}
                   priority
                 />
                 {/* Floating tag inside image */}
@@ -330,17 +330,17 @@ export default function Hero() {
             {/* RIGHT — image + floating cards */}
             <div className="relative hidden lg:flex flex-col items-center justify-center">
 
-              {/* Stat pills — left edge */}
+              {/* Stat pills — right edge */}
               <motion.div
-                initial={{ opacity: 0, x: -16 }}
+                initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 }}
-                className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20"
+                className="absolute -right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20"
               >
                 {STATS.map((s, i) => (
                   <motion.div
                     key={s.label}
-                    initial={{ opacity: 0, x: -12 }}
+                    initial={{ opacity: 0, x: 12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 + i * 0.08 }}
                     className="flex flex-col rounded-xl px-4 py-3"
@@ -370,7 +370,7 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="relative w-full max-w-[440px] mx-auto"
+                className="relative w-full max-w-[440px] mx-auto mr-16"
               >
                 <div
                   className="relative rounded-[2.5rem] overflow-hidden"

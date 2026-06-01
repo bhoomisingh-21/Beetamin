@@ -30,7 +30,7 @@ export default function PricingSection({ hasFullPlan }: Props) {
   const { isLoaded, isSignedIn } = useUser();
 
   return (
-    <section className="bg-[#050B0D] py-16 sm:py-24 px-4 sm:px-6 overflow-x-hidden" id="pricing">
+    <section className="bg-[#050B0D] py-12 sm:py-24 px-4 sm:px-6 overflow-x-hidden" id="pricing">
 
       <div className="text-center">
         <h2 className="text-white font-black text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.2]">
@@ -45,20 +45,21 @@ export default function PricingSection({ hasFullPlan }: Props) {
       </div>
 
       {/* ₹39 starter banner */}
-      <div className="max-w-5xl mx-auto mt-10 sm:mt-12">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-emerald-900/40 to-emerald-800/20 border border-emerald-500/20 rounded-2xl px-6 py-4">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <span className="text-2xl">📄</span>
-            <div>
-              <p className="text-white font-bold text-sm">Just want to know your deficiencies?</p>
-              <p className="text-gray-400 text-xs mt-0.5">Take the free assessment → get your 12-page personalised PDF report for <span className="text-emerald-400 font-bold">₹39</span></p>
-            </div>
+      <div className="max-w-5xl mx-auto mt-8 sm:mt-12 px-1">
+        <div className="flex flex-row items-center justify-between gap-3 bg-gradient-to-r from-emerald-900/40 to-emerald-800/20 border border-emerald-500/20 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xl shrink-0">📄</span>
+            <p className="text-white font-medium text-xs sm:text-sm leading-snug">
+              Just want the PDF?{" "}
+              <span className="text-gray-400 font-normal hidden sm:inline">Free assessment → personalised PDF for</span>{" "}
+              <span className="text-emerald-400 font-bold">₹39</span>
+            </p>
           </div>
           <a
             href="/assessment"
-            className="shrink-0 bg-[#00E676] text-black font-bold rounded-full px-5 py-2.5 text-sm hover:bg-[#00c864] transition-all whitespace-nowrap"
+            className="shrink-0 bg-[#00E676] text-black font-bold rounded-full px-4 py-2 text-xs sm:text-sm hover:bg-[#00c864] transition-all whitespace-nowrap"
           >
-            Start Free Assessment →
+            Start Free →
           </a>
         </div>
       </div>
