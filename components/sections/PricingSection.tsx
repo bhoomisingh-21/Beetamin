@@ -127,16 +127,16 @@ export default function PricingSection({ hasFullPlan }: Props) {
             </a>
           )}
 
-          {/* Trust badges */}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4">
+          {/* Trust badges — single row */}
+          <div className="flex flex-nowrap items-center justify-center gap-2 mt-4 overflow-x-auto scrollbar-hide">
             {[
-              "🔒 Secure Payment",
+              "🔒 Secure",
               "📱 UPI, Cards, Net Banking",
               "🔄 No auto-renewal",
             ].map((badge) => (
               <span
                 key={badge}
-                className="text-[11px] text-gray-400 bg-gray-100 rounded-full px-3 py-1 font-medium"
+                className="shrink-0 text-[11px] text-gray-500 bg-gray-100 rounded-full px-3 py-1 font-medium whitespace-nowrap"
               >
                 {badge}
               </span>

@@ -92,20 +92,20 @@ export default function Hero() {
           aria-hidden
         />
 
-        <div className="relative mx-auto max-w-[1320px] px-6 lg:px-12 min-h-screen flex flex-col justify-center py-20 lg:py-0">
+        <div className="relative mx-auto max-w-[1320px] px-6 lg:px-12 min-h-screen flex flex-col justify-center pt-24 pb-16 lg:py-0">
 
           {/* TWO-COL GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-10 lg:gap-14 items-center">
 
             {/* LEFT — text & actions */}
-            <div className="flex flex-col">
+            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
 
               {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="mb-7 self-start"
+                className="mb-7"
               >
                 <span
                   className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black tracking-[0.18em] uppercase"
@@ -149,7 +149,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="mt-5 flex items-center gap-3"
+                className="mt-5 flex items-center justify-center lg:justify-start gap-3"
               >
                 <span
                   className="text-sm font-medium"
@@ -193,7 +193,7 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.38 }}
-                className="mt-5 text-[15px] leading-relaxed max-w-[420px]"
+                className="mt-5 text-[15px] leading-relaxed max-w-[420px] mx-auto lg:mx-0"
                 style={{ color: "rgba(255,255,255,0.48)" }}
               >
                 Answer 7 questions. We pinpoint your Vitamin D, Iron, B12 and Omega-3
@@ -242,7 +242,7 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.46 }}
-                className="mt-8 flex flex-wrap gap-3"
+                className="mt-8 flex flex-wrap gap-3 justify-center lg:justify-start"
               >
                 <a
                   href={assessmentHref}
@@ -289,7 +289,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.56 }}
-                className="mt-6 flex flex-wrap gap-x-5 gap-y-2"
+                className="mt-6 flex flex-wrap gap-x-5 gap-y-2 justify-center lg:justify-start"
               >
                 {[
                   "Free assessment — no card",
@@ -315,7 +315,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.64 }}
-                className="mt-5"
+                className="mt-5 text-center lg:text-left"
               >
                 <Link
                   href="/dashboard/referral"

@@ -198,9 +198,6 @@ export default function ProblemSection() {
 
       </div>
 
-      <p className="text-center text-gray-400 text-xs mt-8 sm:mt-12 max-w-2xl mx-auto px-4">
-        ¹ Based on peer-reviewed nutritional research. Individual results vary. This platform does not provide medical diagnoses.
-      </p>
     </section>
   );
 }

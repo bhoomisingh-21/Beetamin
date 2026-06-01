@@ -39,7 +39,7 @@ const CARDS: Card[] = [
     iconColor: "text-blue-400",
     badge: "COGNITIVE",
     title: "Brain Fog & Low Focus",
-    desc: "Can't concentrate? Research links B12 and Omega-3 deficiency to measurable reductions in cognitive processing speed.¹ We fix the root cause.",
+    desc: "Can't concentrate? B12 and Omega-3 deficiency are directly linked to cognitive slowdown. We fix the root cause.",
   },
   {
     icon: Heart,
@@ -205,9 +205,6 @@ export default function BuiltForYou() {
 
       </div>
 
-      <p className="text-center text-gray-500 text-xs mt-6 max-w-2xl mx-auto px-4">
-        ¹ Based on peer-reviewed nutritional research. Individual results vary. This platform does not provide medical diagnoses.
-      </p>
       <div className="pb-12 sm:pb-20" />
     </section>
   );
