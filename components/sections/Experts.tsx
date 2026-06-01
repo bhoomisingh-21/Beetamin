@@ -10,7 +10,8 @@ const EXPERTS = [
     title: "Chief Clinical Nutritionist",
     experience: "11 Years Experience",
     specialty: "HORMONAL & WOMEN'S HEALTH",
-    image: "https://images.unsplash.com/photo-1643297654416-05795d62e39c?w=600&q=85",
+    // Unsplash: "Portrait of a female Doctor of Indian origin"
+    image: "https://plus.unsplash.com/premium_photo-1682089872205-dbbae3e4ba32?w=600&q=85",
     credentials: ["M.Sc Clinical Nutrition", "DNCC Certified"],
   },
   {
@@ -18,7 +19,8 @@ const EXPERTS = [
     title: "Sports & Metabolic Nutritionist",
     experience: "9 Years Experience",
     specialty: "ENERGY & PERFORMANCE",
-    image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&q=85",
+    // Unsplash: Indian male doctor in white coat and tie
+    image: "https://images.unsplash.com/photo-1642975967602-653d378f3b5b?w=600&q=85",
     credentials: ["M.Sc Dietetics", "DNCC Certified"],
   },
   {
@@ -26,7 +28,8 @@ const EXPERTS = [
     title: "Integrative Medicine Nutritionist",
     experience: "8 Years Experience",
     specialty: "GUT HEALTH & IMMUNITY",
-    image: "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?w=600&q=85",
+    // Unsplash: "Portrait of a female Doctor of Indian origin"
+    image: "https://plus.unsplash.com/premium_photo-1682089874677-3eee554feb19?w=600&q=85",
     credentials: ["Ph.D Nutritional Science", "DNCC Certified"],
   },
 ];
