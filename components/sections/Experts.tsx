@@ -19,8 +19,8 @@ const EXPERTS = [
     title: "Sports & Metabolic Nutritionist",
     experience: "9 Years Experience",
     specialty: "ENERGY & PERFORMANCE",
-    // Unsplash: Indian male doctor in white coat and tie
-    image: "https://images.unsplash.com/photo-1642975967602-653d378f3b5b?w=600&q=85",
+    // Unsplash: Indian male doctor, arms crossed with stethoscope
+    image: "https://images.unsplash.com/photo-1637059824899-a441006a6875?w=600&q=85",
     credentials: ["M.Sc Dietetics", "DNCC Certified"],
   },
   {
@@ -28,8 +28,8 @@ const EXPERTS = [
     title: "Integrative Medicine Nutritionist",
     experience: "8 Years Experience",
     specialty: "GUT HEALTH & IMMUNITY",
-    // Unsplash: "Portrait of a female Doctor of Indian origin"
-    image: "https://plus.unsplash.com/premium_photo-1682089874677-3eee554feb19?w=600&q=85",
+    // Unsplash: Indian female doctor in white coat (different series from Dr. Priya)
+    image: "https://images.unsplash.com/photo-1659353888906-adb3e0041693?w=600&q=85",
     credentials: ["Ph.D Nutritional Science", "DNCC Certified"],
   },
 ];
