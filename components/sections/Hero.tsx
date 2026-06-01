@@ -221,20 +221,6 @@ export default function Hero() {
                   style={{ height: 260 }}
                   priority
                 />
-                {/* Floating tag inside image */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 px-4 py-3"
-                  style={{
-                    background: "linear-gradient(to top, rgba(3,10,4,0.92) 0%, transparent 100%)",
-                  }}
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#00E676" }}>
-                    Built for India
-                  </p>
-                  <p className="text-xs text-white font-medium">
-                    Dals, millets, greens &amp; local foods — not Western templates
-                  </p>
-                </div>
               </motion.div>
 
               {/* CTA row */}
@@ -289,7 +275,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.56 }}
-                className="mt-6 flex flex-wrap gap-x-5 gap-y-2 justify-center lg:justify-start"
+                className="mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center lg:justify-start"
               >
                 {[
                   "Free assessment — no card",
@@ -298,11 +284,14 @@ export default function Hero() {
                 ].map((t) => (
                   <span
                     key={t}
-                    className="flex items-center gap-1.5 text-xs font-medium"
-                    style={{ color: "rgba(255,255,255,0.32)" }}
+                    className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs sm:text-sm font-semibold text-white/90"
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                    }}
                   >
                     <span
-                      className="inline-block w-1 h-1 rounded-full"
+                      className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
                       style={{ background: "#00E676" }}
                     />
                     {t}
@@ -315,12 +304,15 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.64 }}
-                className="mt-5 text-center lg:text-left"
+                className="mt-4 text-center lg:text-left"
               >
                 <Link
                   href="/dashboard/referral"
-                  className="text-xs transition-colors"
-                  style={{ color: "rgba(0,230,118,0.5)" }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold text-emerald-300 hover:text-emerald-200 transition-colors"
+                  style={{
+                    background: "rgba(0,230,118,0.12)",
+                    border: "1px solid rgba(0,230,118,0.35)",
+                  }}
                 >
                   🎁 Refer friends — earn ₹300 per booking
                 </Link>
@@ -395,24 +387,6 @@ export default function Hero() {
                     style={{ height: 520 }}
                     priority
                   />
-                  {/* Bottom label inside image */}
-                  <div
-                    className="absolute bottom-0 left-0 right-0 z-20 px-6 py-5"
-                    style={{
-                      background:
-                        "linear-gradient(to top, rgba(3,10,4,0.96) 0%, transparent 100%)",
-                    }}
-                  >
-                    <p
-                      className="text-xs font-bold uppercase tracking-widest mb-1"
-                      style={{ color: "#00E676" }}
-                    >
-                      Built for India
-                    </p>
-                    <p className="text-sm font-medium text-white">
-                      Dals, millets, greens &amp; local foods — not Western templates
-                    </p>
-                  </div>
                 </div>
 
                 {/* Floating alert card */}
