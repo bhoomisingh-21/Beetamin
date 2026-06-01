@@ -6,7 +6,6 @@ import { CheckCircle, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { FullPlanBookingLink } from "@/components/payment/FullPlanBookingLink";
 import { UpgradePlanButton } from "@/components/payment/UpgradePlanButton";
-import { PaymentTrustBlock } from "@/components/sections/PaymentTrustBlock";
 
 const CORE_FEATURES = [
   "6 Expert Nutrition Sessions",
@@ -19,7 +18,7 @@ const BOOSTER_FEATURES = [
   "1 Expert Session",
   "30 Min Duration",
   "Doctor-reviewed guidance",
-  "Unlocked after you purchase The Core Transformation plan.",
+  "Try one session before committing to the full plan.",
 ];
 
 type Props = {
@@ -129,7 +128,32 @@ export default function PricingSection({ hasFullPlan }: Props) {
             </a>
           )}
 
-          <PaymentTrustBlock variant="light" className="mt-4" />
+          {/* Trust badges — single row */}
+          <div className="flex flex-nowrap items-center justify-center gap-2 mt-4 overflow-x-auto scrollbar-hide">
+            {[
+              "🔒 Secure",
+              "📱 UPI, Cards, Net Banking",
+              "🔄 No auto-renewal",
+            ].map((badge) => (
+              <span
+                key={badge}
+                className="shrink-0 text-[11px] text-gray-500 bg-gray-100 rounded-full px-3 py-1 font-medium whitespace-nowrap"
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+
+          {/* Guarantee badge */}
+          <div className="mt-5 flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <span className="text-xl shrink-0">🛡️</span>
+            <div>
+              <p className="font-bold text-emerald-800 text-sm">7-Day Satisfaction Guarantee</p>
+              <p className="text-emerald-700 text-xs mt-0.5 leading-snug">
+                If you&apos;re not satisfied after your first session, we&apos;ll refund your full payment. No questions asked.
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -160,7 +184,7 @@ export default function PricingSection({ hasFullPlan }: Props) {
             ))}
           </ul>
 
-          {hasFullPlan && isLoaded && isSignedIn ? (
+          {isLoaded && isSignedIn ? (
             <UpgradePlanButton
               mode="booster"
               className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
@@ -168,22 +192,13 @@ export default function PricingSection({ hasFullPlan }: Props) {
               Book a Single Session — ₹499
             </UpgradePlanButton>
           ) : (
-            <button
-              type="button"
-              disabled
-              className="w-full bg-gray-200 text-gray-500 font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl text-sm sm:text-base cursor-not-allowed"
+            <Link
+              href="/sessions"
+              className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2 text-center"
             >
               Book a Single Session — ₹499
-            </button>
+            </Link>
           )}
-
-          <p className="text-gray-500 text-xs mt-3 text-center leading-snug">
-            {hasFullPlan
-              ? "Add-on sessions for your 90-day plan."
-              : "Purchase The Core Transformation (₹3,999) to unlock booster sessions."}
-          </p>
-
-          <PaymentTrustBlock variant="light" className="mt-4" />
         </motion.div>
       </div>
     </section>

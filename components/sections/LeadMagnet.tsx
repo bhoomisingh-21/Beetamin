@@ -347,7 +347,7 @@ export default function LeadMagnet() {
                 Start Free Assessment
               </Link>
               <Link
-                href="/sign-up?redirect_after_auth=%2Fbooking"
+                href="/assessment"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl px-7 py-4 text-sm font-bold transition-all duration-200"
                 style={{
                   background: "rgba(0,230,118,0.07)",
@@ -355,7 +355,7 @@ export default function LeadMagnet() {
                   color: "rgba(0,230,118,0.82)",
                 }}
               >
-                Book ₹3,999 Session
+                Get PDF — ₹39
                 <ArrowRight size={14} />
               </Link>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Zap, User, Brain, Heart, FlaskConical, Scale } from "lucide-react";
+import { Users, Zap, User, Brain, Heart, FlaskConical, Scale, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
@@ -106,8 +106,9 @@ export default function BuiltForYou() {
           </p>
         </div>
 
-        {/* Symptom cards — stacked vertically */}
-        <div className="mt-12 sm:mt-16 flex flex-col gap-4 max-w-md mx-auto w-full">
+        {/* ✅ MOBILE: HORIZONTAL SCROLL */}
+        <div className="relative mt-12">
+          <div className="flex lg:hidden overflow-x-auto gap-4 pb-4 pl-2 pr-8 scrollbar-hide">
           {CARDS.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -118,7 +119,7 @@ export default function BuiltForYou() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={cardVariant}
-                className="bg-[#0a1219] border border-[#1a2329] rounded-2xl p-5 sm:p-7 flex flex-col w-full"
+                className="bg-[#0a1219] border border-[#1a2329] rounded-2xl p-5 flex flex-col min-w-[85vw] max-w-[85vw] flex-shrink-0"
               >
                 <div className="flex items-center justify-between mb-5">
                   <div className={`${card.iconBg} ${card.iconColor} rounded-xl p-2`}>
@@ -130,14 +131,68 @@ export default function BuiltForYou() {
                 </div>
 
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-lg mb-2">{card.title}</h3>
-                  <p className="text-gray-400 text-xs sm:text-sm leading-[1.5]">{card.desc}</p>
+                  <h3 className="text-white font-bold text-lg mb-2">
+                    {card.title}
+                  </h3>
+                  <p className="text-gray-400 text-xs leading-[1.5]">{card.desc}</p>
                 </div>
 
                 <div className="mt-5 pt-4 border-t border-white/5">
                   <a
                     href="/assessment"
                     className="inline-flex items-center text-[#00E676] text-xs font-bold"
+                  >
+                    Get a personalized plan
+                    <span className="ml-2">→</span>
+                  </a>
+                </div>
+              </motion.div>
+            );
+          })}
+          </div>
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-[#060a0e] pr-1 lg:hidden"
+            aria-hidden
+          >
+            <ChevronRight className="text-emerald-500/60" size={22} strokeWidth={2} />
+          </div>
+        </div>
+
+        {/* ✅ DESKTOP GRID (UNCHANGED) */}
+        <div className="hidden lg:grid grid-cols-3 gap-4 sm:gap-5 mt-12 sm:mt-20">
+          {CARDS.map((card, i) => {
+            const Icon = card.icon;
+            return (
+              <motion.div
+                key={card.title}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-80px" }}
+                variants={cardVariant}
+                whileHover={{ boxShadow: "0 0 30px rgba(16,185,129,0.15)", borderColor: "#2a363f" }}
+                className="bg-[#0a1219] border border-[#1a2329] rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-7 flex flex-col min-h-[240px] sm:min-h-[280px] transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-5 sm:mb-6">
+                  <div className={`${card.iconBg} ${card.iconColor} rounded-xl p-2 sm:p-2.5`}>
+                    <Icon size={18} strokeWidth={2.5} />
+                  </div>
+                  <span className="bg-[#11181f] border border-white/5 text-gray-500 text-[9px] font-black tracking-widest uppercase rounded-md px-2 sm:px-2.5 py-1">
+                    {card.badge}
+                  </span>
+                </div>
+
+                <div className="flex-1">
+                  <h3 className="text-white font-bold text-lg sm:text-xl mb-2">
+                    {card.title}
+                  </h3>
+                  <p className="text-gray-400 text-xs sm:text-[14px] leading-[1.5]">{card.desc}</p>
+                </div>
+
+                <div className="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-white/5">
+                  <a
+                    href="/assessment"
+                    className="inline-flex items-center text-[#00E676] text-xs sm:text-[13px] font-bold"
                   >
                     Get a personalized plan
                     <span className="ml-2">→</span>

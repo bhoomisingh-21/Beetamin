@@ -1,19 +1,23 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ClipboardList, ArrowRight } from "lucide-react";
+import { ClipboardList, ArrowRight, Activity } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { getClientAssessmentFlags } from "@/lib/booking-actions";
-import { FullPlanBookingLink } from "@/components/payment/FullPlanBookingLink";
-import { PaymentTrustBlock } from "@/components/sections/PaymentTrustBlock";
 
 type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
 
 const TICKER = ["Vitamin D", "Iron", "B12", "Omega-3"];
 
-const BOOKING_SIGN_UP = "/sign-up?redirect_after_auth=%2Fbooking";
+const STATS = [
+  { val: "50K+", label: "Indians assessed" },
+  { val: "₹39", label: "to start" },
+  { val: "12 pg", label: "personalised PDF" },
+  { val: "94%", label: "success rate" },
+];
 
 export default function Hero() {
   const { isSignedIn, user } = useUser();
@@ -240,12 +244,20 @@ export default function Hero() {
                 </a>
 
                 {isSignedIn ? (
-                  <FullPlanBookingLink className="inline-flex items-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/15">
-                    Book ₹3,999 Session <ArrowRight size={14} />
-                  </FullPlanBookingLink>
+                  <a
+                    href="/sessions"
+                    className="inline-flex items-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.09)",
+                      color: "rgba(255,255,255,0.72)",
+                    }}
+                  >
+                    My Sessions <ArrowRight size={14} />
+                  </a>
                 ) : (
                   <a
-                    href={BOOKING_SIGN_UP}
+                    href="/assessment"
                     className="inline-flex items-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200"
                     style={{
                       background: "rgba(0,230,118,0.07)",
@@ -253,21 +265,104 @@ export default function Hero() {
                       color: "rgba(0,230,118,0.85)",
                     }}
                   >
-                    Book ₹3,999 Session <ArrowRight size={14} />
+                    Get PDF — ₹39 <ArrowRight size={14} />
                   </a>
                 )}
               </motion.div>
 
-              <PaymentTrustBlock variant="dark" className="mt-6 max-w-lg" />
+              {/* Trust micro-row */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.56 }}
+                className="mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center lg:justify-start"
+              >
+                {[
+                  "Free assessment — no card",
+                  "₹39 PDF — instant delivery",
+                  "Doctor-reviewed protocol",
+                ].map((t) => (
+                  <span
+                    key={t}
+                    className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs sm:text-sm font-semibold text-white/90"
+                    style={{
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                    }}
+                  >
+                    <span
+                      className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ background: "#00E676" }}
+                    />
+                    {t}
+                  </span>
+                ))}
+              </motion.div>
+
+              {/* Referral */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.64 }}
+                className="mt-4 text-center lg:text-left"
+              >
+                <Link
+                  href="/dashboard/referral"
+                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs sm:text-sm font-semibold text-emerald-300 hover:text-emerald-200 transition-colors"
+                  style={{
+                    background: "rgba(0,230,118,0.12)",
+                    border: "1px solid rgba(0,230,118,0.35)",
+                  }}
+                >
+                  🎁 Refer friends — earn ₹300 per booking
+                </Link>
+              </motion.div>
             </div>
 
-            {/* RIGHT — hero image */}
+            {/* RIGHT — image + floating cards */}
             <div className="relative hidden lg:flex flex-col items-center justify-center">
+
+              {/* Stat pills — right edge */}
+              <motion.div
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                className="absolute -right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20"
+              >
+                {STATS.map((s, i) => (
+                  <motion.div
+                    key={s.label}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + i * 0.08 }}
+                    className="flex flex-col rounded-xl px-4 py-3"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                    }}
+                  >
+                    <span
+                      className="text-xl font-black"
+                      style={{ color: "#00E676" }}
+                    >
+                      {s.val}
+                    </span>
+                    <span
+                      className="mt-1 text-[10px] font-medium leading-tight"
+                      style={{ color: "rgba(255,255,255,0.35)" }}
+                    >
+                      {s.label}
+                    </span>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Main image */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="relative w-full max-w-[440px] mx-auto"
+                className="relative w-full max-w-[440px] mx-auto mr-16"
               >
                 <div
                   className="relative rounded-[2.5rem] overflow-hidden"
@@ -293,6 +388,70 @@ export default function Hero() {
                     priority
                   />
                 </div>
+
+                {/* Floating alert card */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -left-14 top-10 flex items-center gap-3 rounded-2xl px-4 py-3 z-30"
+                  style={{
+                    background: "rgba(10,10,12,0.92)",
+                    border: "1px solid rgba(255,80,80,0.25)",
+                    backdropFilter: "blur(16px)",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                    minWidth: 210,
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(255,80,80,0.15)" }}
+                  >
+                    <Activity size={16} style={{ color: "#ff5050" }} />
+                  </div>
+                  <div>
+                    <p
+                      className="text-[10px] font-black uppercase tracking-widest"
+                      style={{ color: "#ff5050" }}
+                    >
+                      Deficiency Alert
+                    </p>
+                    <p className="text-xs font-semibold text-white leading-tight">
+                      Iron &amp; B12 levels low
+                    </p>
+                  </div>
+                </motion.div>
+
+                {/* Floating success card */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: 1.5, ease: "easeInOut" }}
+                  className="absolute -right-10 bottom-20 flex items-center gap-3 rounded-2xl px-4 py-3 z-30"
+                  style={{
+                    background: "rgba(10,10,12,0.92)",
+                    border: "1px solid rgba(0,230,118,0.25)",
+                    backdropFilter: "blur(16px)",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                    minWidth: 220,
+                  }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(0,230,118,0.12)" }}
+                  >
+                    <Activity size={16} style={{ color: "#00E676" }} />
+                  </div>
+                  <div>
+                    <p
+                      className="text-[10px] font-black uppercase tracking-widest"
+                      style={{ color: "#00E676" }}
+                    >
+                      PDF Ready
+                    </p>
+                    <p className="text-xs font-semibold text-white leading-tight">
+                      Your personalised plan is here
+                    </p>
+                  </div>
+                </motion.div>
               </motion.div>
             </div>
 
