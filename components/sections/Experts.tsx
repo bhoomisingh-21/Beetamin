@@ -151,7 +151,7 @@ function ExpertCardContent({ expert }: { expert: (typeof EXPERTS)[number] }) {
           src={expert.image}
           alt={expert.name}
           fill
-          className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+          className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 80vw, 33vw"
         />
         {/* Subtle gradient at the bottom only — keeps face fully visible */}
