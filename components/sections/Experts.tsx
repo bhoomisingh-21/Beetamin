@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Medal, ShieldCheck, CheckCircle2, Users, Star, ChevronRight } from "lucide-react";
+import { Medal, ShieldCheck, CheckCircle2, Users, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
 const EXPERTS = [
@@ -10,8 +10,7 @@ const EXPERTS = [
     title: "Chief Clinical Nutritionist",
     experience: "11 Years Experience",
     specialty: "HORMONAL & WOMEN'S HEALTH",
-    // Unsplash: "Portrait of a female Doctor of Indian origin"
-    image: "https://plus.unsplash.com/premium_photo-1682089872205-dbbae3e4ba32?w=600&q=85",
+    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=600&q=85",
     credentials: ["M.Sc Clinical Nutrition", "DNCC Certified"],
   },
   {
@@ -19,8 +18,7 @@ const EXPERTS = [
     title: "Sports & Metabolic Nutritionist",
     experience: "9 Years Experience",
     specialty: "ENERGY & PERFORMANCE",
-    // Unsplash: Indian male doctor, arms crossed with stethoscope
-    image: "https://images.unsplash.com/photo-1637059824899-a441006a6875?w=600&q=85",
+    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&q=85",
     credentials: ["M.Sc Dietetics", "DNCC Certified"],
   },
   {
@@ -98,9 +96,8 @@ export default function Experts() {
           </div>
         </div>
 
-        {/* ✅ MOBILE SCROLL */}
-        <div className="relative">
-          <div className="flex md:hidden overflow-x-auto gap-5 mt-16 pb-4 pl-6 pr-10 scrollbar-hide">
+        {/* Expert cards — stacked vertically */}
+        <div className="mt-12 sm:mt-16 flex flex-col gap-6 max-w-md mx-auto w-full">
           {EXPERTS.map((expert, i) => (
             <motion.div
               key={expert.name}
@@ -109,32 +106,7 @@ export default function Experts() {
               whileInView="visible"
               viewport={{ once: true }}
               variants={cardVariant}
-              className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-white flex flex-col min-w-[80vw] max-w-[80vw] flex-shrink-0"
-            >
-              <ExpertCardContent expert={expert} />
-            </motion.div>
-          ))}
-          </div>
-          <div
-            className="pointer-events-none absolute right-0 top-0 bottom-4 flex w-10 items-center justify-end bg-gradient-to-l from-white pr-2 md:hidden"
-            aria-hidden
-          >
-            <ChevronRight className="text-gray-400" size={22} strokeWidth={2} />
-          </div>
-        </div>
-
-        {/* ✅ DESKTOP GRID (UNCHANGED) */}
-        <div className="hidden md:grid grid-cols-3 gap-8 mt-16">
-          {EXPERTS.map((expert, i) => (
-            <motion.div
-              key={expert.name}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={cardVariant}
-              whileHover={{ scale: 1.02 }}
-              className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-white flex flex-col hover:shadow-xl transition-shadow cursor-pointer"
+              className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-white flex flex-col w-full"
             >
               <ExpertCardContent expert={expert} />
             </motion.div>
