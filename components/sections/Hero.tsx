@@ -204,6 +204,39 @@ export default function Hero() {
                 with Indian foods and a meal plan — for just ₹39.
               </motion.p>
 
+              {/* MOBILE IMAGE — shown only on small screens */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.44 }}
+                className="lg:hidden mt-7 relative rounded-2xl overflow-hidden"
+                style={{ border: "1px solid rgba(0,230,118,0.14)" }}
+              >
+                <Image
+                  src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800"
+                  alt="Personalised Indian nutrition bowl"
+                  width={800}
+                  height={400}
+                  className="w-full object-cover"
+                  style={{ height: 200 }}
+                  priority
+                />
+                {/* Floating tag inside image */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 px-4 py-3"
+                  style={{
+                    background: "linear-gradient(to top, rgba(3,10,4,0.92) 0%, transparent 100%)",
+                  }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#00E676" }}>
+                    Built for India
+                  </p>
+                  <p className="text-xs text-white font-medium">
+                    Dals, millets, greens &amp; local foods — not Western templates
+                  </p>
+                </div>
+              </motion.div>
+
               {/* CTA row */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
