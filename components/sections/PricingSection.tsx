@@ -39,10 +39,10 @@ export default function PricingSection({ hasFullPlan }: Props) {
         <p className="text-white font-semibold text-lg sm:text-xl mt-1">
           One Price, No Subscription
         </p>
-        <p className="text-gray-400 mt-3 sm:mt-4 text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
+        <p className="text-gray-400 mt-4 sm:mt-5 px-2 text-sm sm:text-base leading-relaxed md:leading-[1.85] max-w-5xl mx-auto md:whitespace-nowrap">
           Most clients choose the full programme —{" "}
-          <span className="text-emerald-400 font-semibold">₹3,999 one-time</span>, 6 sessions,
-          90 days. No subscription.
+          <span className="text-emerald-400 font-semibold">₹3,999 one-time</span>, 6 sessions, 90
+          days. No subscription.
         </p>
       </div>
 

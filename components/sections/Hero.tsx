@@ -267,20 +267,6 @@ export default function Hero() {
                 )}
               </motion.div>
 
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.56 }}
-                className="mt-5 text-xs sm:text-sm text-center lg:text-left max-w-md"
-                style={{ color: "rgba(255,255,255,0.38)" }}
-              >
-                Start free — then unlock your{" "}
-                <strong className="text-emerald-400/90 font-semibold">
-                  90-day plan with 6 expert sessions (₹3,999)
-                </strong>
-                . One payment, no subscription.
-              </motion.p>
-
               {/* Referral */}
               <motion.div
                 initial={{ opacity: 0 }}
