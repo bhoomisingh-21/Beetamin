@@ -225,44 +225,41 @@ export default function Hero() {
                 />
               </motion.div>
 
-              {/* CTA row */}
+              {/* CTA row — side by side on all screen sizes */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.46 }}
-                className="mt-8 flex flex-wrap gap-3 justify-center lg:justify-start"
+                className="mt-8 flex w-full max-w-md lg:max-w-none flex-row flex-nowrap gap-2 sm:gap-3 justify-center lg:justify-start"
               >
                 <a
                   href={assessmentHref}
-                  className="inline-flex items-center gap-2.5 font-black rounded-2xl px-7 py-4 text-sm transition-all duration-200 active:scale-[0.97]"
+                  className="inline-flex flex-1 min-w-0 items-center justify-center gap-1.5 sm:gap-2.5 font-black rounded-2xl px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-sm whitespace-nowrap transition-all duration-200 active:scale-[0.97]"
                   style={{
                     background: "#00E676",
                     color: "#030a04",
                     boxShadow: "0 0 24px rgba(0,230,118,0.2)",
                   }}
                 >
-                  <ClipboardList size={15} strokeWidth={2.8} />
-                  {primaryLabel}
+                  <ClipboardList size={15} strokeWidth={2.8} className="shrink-0 hidden sm:block" />
+                  <span className="truncate">{primaryLabel}</span>
                 </a>
 
                 {isSignedIn ? (
                   <a
                     href="/sessions"
-                    className="inline-flex items-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200"
-                    style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.09)",
-                      color: "rgba(255,255,255,0.72)",
-                    }}
+                    className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 sm:gap-2 font-bold rounded-2xl px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-sm whitespace-nowrap transition-all duration-200 border border-white/10 bg-white/5 text-white/72"
                   >
-                    My Sessions <ArrowRight size={14} />
+                    <span className="truncate">My Sessions</span>
+                    <ArrowRight size={14} className="shrink-0" />
                   </a>
                 ) : (
                   <a
                     href={BOOKING_SIGN_UP}
-                    className="inline-flex items-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15"
+                    className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 sm:gap-2 font-bold rounded-2xl px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-sm whitespace-nowrap transition-all duration-200 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15"
                   >
-                    Book ₹3,999 Consultation <ArrowRight size={14} />
+                    <span className="truncate">Book ₹3,999 Consultation</span>
+                    <ArrowRight size={14} className="shrink-0" />
                   </a>
                 )}
               </motion.div>
