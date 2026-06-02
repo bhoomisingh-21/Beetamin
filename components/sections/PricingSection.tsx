@@ -39,32 +39,14 @@ export default function PricingSection({ hasFullPlan }: Props) {
         <p className="text-white font-semibold text-lg sm:text-xl mt-1">
           One Price, No Subscription
         </p>
-        <p className="text-gray-400 mt-3 sm:mt-4 text-sm sm:text-base md:text-lg">
-          Transparent pricing. No hidden fees. Just results.
+        <p className="text-gray-400 mt-3 sm:mt-4 text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
+          Most clients choose the full programme —{" "}
+          <span className="text-emerald-400 font-semibold">₹3,999 one-time</span>, 6 sessions,
+          90 days. No subscription.
         </p>
       </div>
 
-      {/* ₹39 starter banner */}
-      <div className="max-w-5xl mx-auto mt-8 sm:mt-12 px-1">
-        <div className="flex flex-row items-center justify-between gap-3 bg-gradient-to-r from-emerald-900/40 to-emerald-800/20 border border-emerald-500/20 rounded-2xl px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xl shrink-0">📄</span>
-            <p className="text-white font-medium text-xs sm:text-sm leading-snug">
-              Just want the PDF?{" "}
-              <span className="text-gray-400 font-normal hidden sm:inline">Free assessment → personalised PDF for</span>{" "}
-              <span className="text-emerald-400 font-bold">₹39</span>
-            </p>
-          </div>
-          <a
-            href="/assessment"
-            className="shrink-0 bg-[#00E676] text-black font-bold rounded-full px-4 py-2 text-xs sm:text-sm hover:bg-[#00c864] transition-all whitespace-nowrap"
-          >
-            Start Free →
-          </a>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto mt-8 sm:mt-10 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 items-stretch">
+      <div className="max-w-5xl mx-auto mt-10 sm:mt-12 grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 items-stretch">
 
         <motion.div
           initial={{ opacity: 0, x: -30 }}
@@ -86,8 +68,11 @@ export default function PricingSection({ hasFullPlan }: Props) {
             <span className="text-gray-400 text-lg sm:text-xl line-through">₹9,999</span>
           </div>
 
-          <p className="text-gray-500 text-sm mb-6 sm:mb-8">
-            Comprehensive 3-month metabolic reset.
+          <p className="text-gray-500 text-sm mb-2">
+            Our flagship programme — 6 live sessions over 90 days.
+          </p>
+          <p className="text-emerald-700 text-xs font-semibold mb-6 sm:mb-8">
+            Best value · One-time payment · Doctor-reviewed plan
           </p>
 
           <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-grow">
@@ -117,14 +102,14 @@ export default function PricingSection({ hasFullPlan }: Props) {
             </Link>
           ) : isSignedIn && !hasFullPlan ? (
             <FullPlanBookingLink className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              Get Started — ₹3,999
+              Book 90-Day Plan — ₹3,999
             </FullPlanBookingLink>
           ) : (
             <a
               href="/sign-up?redirect_after_auth=%2Fbooking"
               className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2 text-center"
             >
-              Get Started Now
+              Book 90-Day Plan — ₹3,999
             </a>
           )}
 

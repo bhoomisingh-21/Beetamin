@@ -8,13 +8,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { getClientAssessmentFlags } from "@/lib/booking-actions";
 
+const BOOKING_SIGN_UP = "/sign-up?redirect_after_auth=%2Fbooking";
+
 type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
 
 const TICKER = ["Vitamin D", "Iron", "B12", "Omega-3"];
 
 const STATS = [
   { val: "50K+", label: "Indians assessed" },
-  { val: "₹39", label: "to start" },
+  { val: "₹3,999", label: "90-day plan" },
   { val: "12 pg", label: "personalised PDF" },
   { val: "94%", label: "success rate" },
 ];
@@ -257,47 +259,27 @@ export default function Hero() {
                   </a>
                 ) : (
                   <a
-                    href="/assessment"
-                    className="inline-flex items-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200"
-                    style={{
-                      background: "rgba(0,230,118,0.07)",
-                      border: "1px solid rgba(0,230,118,0.18)",
-                      color: "rgba(0,230,118,0.85)",
-                    }}
+                    href={BOOKING_SIGN_UP}
+                    className="inline-flex items-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm transition-all duration-200 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15"
                   >
-                    Get PDF — ₹39 <ArrowRight size={14} />
+                    Book ₹3,999 Consultation <ArrowRight size={14} />
                   </a>
                 )}
               </motion.div>
 
-              {/* Trust micro-row */}
-              <motion.div
+              <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.56 }}
-                className="mt-6 flex flex-wrap gap-2 sm:gap-3 justify-center lg:justify-start"
+                className="mt-5 text-xs sm:text-sm text-center lg:text-left max-w-md"
+                style={{ color: "rgba(255,255,255,0.38)" }}
               >
-                {[
-                  "Free assessment — no card",
-                  "₹39 PDF — instant delivery",
-                  "Doctor-reviewed protocol",
-                ].map((t) => (
-                  <span
-                    key={t}
-                    className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs sm:text-sm font-semibold text-white/90"
-                    style={{
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                    }}
-                  >
-                    <span
-                      className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ background: "#00E676" }}
-                    />
-                    {t}
-                  </span>
-                ))}
-              </motion.div>
+                Start free — then unlock your{" "}
+                <strong className="text-emerald-400/90 font-semibold">
+                  90-day plan with 6 expert sessions (₹3,999)
+                </strong>
+                . One payment, no subscription.
+              </motion.p>
 
               {/* Referral */}
               <motion.div

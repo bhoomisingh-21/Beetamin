@@ -10,7 +10,7 @@ const EXPERTS = [
     title: "Chief Clinical Nutritionist",
     experience: "11 Years Experience",
     specialty: "HORMONAL & WOMEN'S HEALTH",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=600&q=85",
+    image: "https://plus.unsplash.com/premium_photo-1682089872205-dbbae3e4ba32?w=600&q=85",
     credentials: ["M.Sc Clinical Nutrition", "DNCC Certified"],
   },
   {
