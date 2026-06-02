@@ -10,7 +10,7 @@ const EXPERTS = [
     title: "Chief Clinical Nutritionist",
     experience: "11 Years Experience",
     specialty: "HORMONAL & WOMEN'S HEALTH",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=600&q=85&fit=crop&crop=faces",
+    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=85&fit=crop&crop=faces",
     credentials: ["M.Sc Clinical Nutrition", "DNCC Certified"],
   },
   {
@@ -26,7 +26,7 @@ const EXPERTS = [
     title: "Integrative Medicine Nutritionist",
     experience: "8 Years Experience",
     specialty: "GUT HEALTH & IMMUNITY",
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=85&fit=crop&crop=faces",
+    image: "https://images.unsplash.com/photo-1659353888906-adb3e0041693?w=600&q=85&fit=crop&crop=faces",
     credentials: ["Ph.D Nutritional Science", "DNCC Certified"],
   },
 ];
