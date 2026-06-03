@@ -1,11 +1,29 @@
 'use client'
 
 import Image from 'next/image'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { usePathname, useRouter } from 'next/navigation'
 
 const BLOCKED_PATHS = ['/assessment', '/report', '/sessions', '/booking', '/profile', '/detailed-assessment']
+/** Once per browser tab session; cleared when the tab/window is closed */
+const SESSION_POPUP_KEY = 'beetamin.deficiencyPopupShown'
+
+function popupAlreadyShownThisSession(): boolean {
+  try {
+    return sessionStorage.getItem(SESSION_POPUP_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function markPopupShownThisSession(): void {
+  try {
+    sessionStorage.setItem(SESSION_POPUP_KEY, '1')
+  } catch {
+    /* private mode / blocked storage */
+  }
+}
 
 const POPUP_ITEMS = [
   { icon: '📋', text: 'Personalised deficiency report' },
@@ -97,27 +115,39 @@ export function DeficiencyPopup() {
   const { isSignedIn, isLoaded } = useUser()
   const pathname = usePathname()
   const router = useRouter()
+  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleClose = useCallback(() => {
+    markPopupShownThisSession()
     setShow(false)
   }, [])
 
+  // One delayed show per tab session; timer is not reset on client-side route changes.
+  useEffect(() => {
+    if (!isLoaded || isSignedIn) {
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current)
+        popupTimerRef.current = null
+      }
+      return
+    }
+    if (popupAlreadyShownThisSession()) return
+    if (popupTimerRef.current) return
+
+    popupTimerRef.current = setTimeout(() => {
+      popupTimerRef.current = null
+      if (BLOCKED_PATHS.some((p) => window.location.pathname.startsWith(p))) return
+      markPopupShownThisSession()
+      setShow(true)
+    }, 2000)
+  }, [isLoaded, isSignedIn])
+
+  // Hide on blocked routes or after login; do not re-open when pathname changes.
   useEffect(() => {
     if (!isLoaded) return
-
-    if (isSignedIn) {
+    if (isSignedIn || BLOCKED_PATHS.some((p) => pathname.startsWith(p))) {
       setShow(false)
-      return
     }
-
-    if (BLOCKED_PATHS.some((p) => pathname.startsWith(p))) {
-      setShow(false)
-      return
-    }
-
-    setShow(false)
-    const timer = setTimeout(() => setShow(true), 2000)
-    return () => clearTimeout(timer)
   }, [isLoaded, isSignedIn, pathname])
 
   useEffect(() => {
@@ -135,7 +165,8 @@ export function DeficiencyPopup() {
   }, [show, handleClose])
 
   function handleCTA() {
-    handleClose()
+    markPopupShownThisSession()
+    setShow(false)
     router.push('/assessment')
   }
 
