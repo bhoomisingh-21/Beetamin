@@ -6,6 +6,7 @@ import { SignUp } from '@clerk/nextjs'
 import { useSearchParams } from 'next/navigation'
 import { Leaf, CheckCircle, Shield, Clock, Star, Loader2 } from 'lucide-react'
 import { patientClerkAppearance } from '@/components/auth/patient-clerk-appearance'
+import { consumeAssessmentAuthReturn } from '@/lib/assessment-local-storage'
 import { authReturnPath } from '@/lib/auth-return-path'
 
 const BENEFITS = [
@@ -22,7 +23,7 @@ const TESTIMONIALS = [
 
 function PatientSignUpForm() {
   const sp = useSearchParams()
-  const after = authReturnPath(sp.get('after'))
+  const after = authReturnPath(sp.get('after') ?? consumeAssessmentAuthReturn())
   const signInHref = `/sign-in?after=${encodeURIComponent(after)}`
 
   const refParam = sp.get('ref')

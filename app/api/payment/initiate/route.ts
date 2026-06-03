@@ -11,6 +11,8 @@ import {
 } from '@/lib/payment-app-base-url'
 import { giftedPlanMatchesPayment, grantGiftedFullPlan, grantGiftedReport } from '@/lib/gifted-access'
 import { hasActiveFullPlanPurchase } from '@/lib/plan-access'
+import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
+import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
 import { reserveUpgradePurchase } from '@/lib/reserve-upgrade-purchase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -55,7 +57,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Please sign in to continue.' }, { status: 401 })
   }
 
-  let body: { userId?: string; assessmentId?: string; mode?: PaymentMode; amount?: number }
+  let body: {
+    userId?: string
+    assessmentId?: string
+    mode?: PaymentMode
+    amount?: number
+    /** Optional snapshot from localStorage when DB sync has not run yet */
+    freeAssessmentSnapshot?: unknown
+  }
   try {
     body = await req.json()
   } catch {
@@ -254,16 +263,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Assessment not found or access denied.' }, { status: 404 })
   }
 
-  const freeAssessment = client?.assessment_result
-  if (
-    !freeAssessment ||
-    typeof freeAssessment !== 'object' ||
-    Array.isArray(freeAssessment)
-  ) {
+  let freeAssessment: Record<string, unknown> | null = isPersistableFreeAssessment(
+    client?.assessment_result,
+  )
+    ? (client?.assessment_result as Record<string, unknown>)
+    : null
+
+  if (!freeAssessment && isPersistableFreeAssessment(body.freeAssessmentSnapshot)) {
+    try {
+      await persistFreeAssessmentForClerkUser({
+        clerkUserId: sessionUserId,
+        freeAssessment: body.freeAssessmentSnapshot,
+      })
+      freeAssessment = body.freeAssessmentSnapshot
+    } catch (err) {
+      console.error('[payment/initiate] persist free assessment snapshot', err)
+    }
+  }
+
+  if (!freeAssessment) {
     return NextResponse.json(
       {
         error:
-          'We could not find your free quiz on file. Finish the quiz or open results while signed in, then retry.',
+          'We could not find your free quiz on file. Finish the quiz, then open your results page once while signed in, and retry.',
         code: 'MISSING_FREE_ASSESSMENT',
       },
       { status: 400 },

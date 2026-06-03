@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { SignIn, useUser } from '@clerk/nextjs'
 import { patientClerkAppearance } from '@/components/auth/patient-clerk-appearance'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { consumeAssessmentAuthReturn } from '@/lib/assessment-local-storage'
 import { authReturnPath } from '@/lib/auth-return-path'
 import { Leaf, CheckCircle, Shield, Clock, Star, AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { ALLOWED_NUTRITIONIST_EMAILS } from '@/lib/nutritionist-config'
@@ -326,7 +327,7 @@ function NutritionistLogin({ onSwitchToUser }: { onSwitchToUser: () => void }) {
 // ── Patient Clerk (embedded) — must read `after` via Suspense for Next.js ───────
 function PatientClerkSignInContent() {
   const sp = useSearchParams()
-  const after = authReturnPath(sp.get('after'))
+  const after = authReturnPath(sp.get('after') ?? consumeAssessmentAuthReturn())
   const msg = sp.get('message')
   const signUpHref = `/sign-up?after=${encodeURIComponent(after)}`
 

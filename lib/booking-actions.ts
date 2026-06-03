@@ -1,5 +1,9 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
+import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
+
+export { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
 import { triggerReferralReward } from './referral-trigger'
 import { formatPurchaseSessionsLabel, getActivePurchaseForSessions } from './plan-access'
 import { getSessionBookingAccess, type SessionBookingAccess } from './session-booking-access'
@@ -121,42 +125,15 @@ export async function saveAssessmentToProfile(input: {
 }) {
   const { userId } = await auth()
   if (!userId || userId !== input.clerkUserId) throw new Error('Not authenticated')
-
-  const existing = await getClientByClerkId(userId)
-  const patch = {
-    assessment_result: input.assessmentResult,
-    assessment_meta: input.assessmentMeta,
+  if (!isPersistableFreeAssessment(input.assessmentResult)) {
+    throw new Error('Invalid assessment result')
   }
 
-  if (existing) {
-    const { error } = await supabaseAdmin.from('clients').update(patch).eq('clerk_user_id', userId)
-    if (error) throw new Error(error.message)
-    return
-  }
-
-  const clerkUser = await currentUser()
-  const email = clerkUser?.primaryEmailAddress?.emailAddress ?? `noemail_${userId}@beetamin.internal`
-  const startDate = new Date()
-  const endDate = new Date()
-  endDate.setMonth(endDate.getMonth() + 3)
-
-  const { error } = await supabaseAdmin.from('clients').upsert(
-    {
-      clerk_user_id: userId,
-      name: clerkUser?.fullName || clerkUser?.firstName || 'User',
-      email,
-      phone: '',
-      ...patch,
-      plan_start_date: startDate.toISOString().split('T')[0],
-      plan_end_date: endDate.toISOString().split('T')[0],
-      status: 'active',
-      sessions_total: 6,
-      sessions_used: 0,
-      sessions_remaining: 6,
-    },
-    { onConflict: 'email' },
-  )
-  if (error) throw new Error(error.message)
+  await persistFreeAssessmentForClerkUser({
+    clerkUserId: userId,
+    freeAssessment: input.assessmentResult,
+    assessmentMeta: input.assessmentMeta,
+  })
 }
 
 export async function createClientProfile(data: {

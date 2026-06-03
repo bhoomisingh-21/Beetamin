@@ -33,6 +33,8 @@ import {
 } from '@/components/profile/profile-dark-styles'
 import { consumeRedirectAfterAuth } from '@/app/profile/redirect-actions'
 import { formatReportHeadingDate } from '@/components/profile/profile-helpers'
+import { clientProfileContactComplete } from '@/lib/assessment-profile-fields'
+import { syncLocalAssessmentToProfile } from '@/lib/sync-local-assessment-client'
 
 const HERO_IMG =
   'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80'
@@ -99,6 +101,13 @@ export default function ProfilePersonalClient({
     }
   }, [isLoaded, user, router])
 
+  useEffect(() => {
+    if (!user?.id) return
+    void syncLocalAssessmentToProfile(user.id).then((synced) => {
+      if (synced) void reload()
+    })
+  }, [user?.id, reload])
+
   async function handleSaveProfile() {
     if (!user?.id || !bundle.client) return
     setIsSavingProfile(true)
@@ -128,6 +137,8 @@ export default function ProfilePersonalClient({
   if (!user) return null
 
   const { client, paidReports } = bundle
+  const profileContactComplete = clientProfileContactComplete(client)
+
   const displayName =
     user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'
   const initials = displayName
@@ -192,15 +203,13 @@ export default function ProfilePersonalClient({
           <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
         </header>
 
-        {showOnboardingBanner ? (
+        {showOnboardingBanner && !profileContactComplete ? (
           <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
             Complete your profile to get started — add your phone and goal, then explore your sessions.
           </div>
         ) : null}
 
-        {!client ||
-        !String(client.phone || '').trim() ||
-        !String(client.assessment_goal || '').trim() ? (
+        {!profileContactComplete ? (
           <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-400/25 bg-amber-500/[0.09] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm leading-snug text-amber-100/95">
               {!client

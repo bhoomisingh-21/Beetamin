@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
-import { getClientAssessmentFlags, saveAssessmentToProfile } from '@/lib/booking-actions'
+import { getClientAssessmentFlags } from '@/lib/booking-actions'
+import { markAssessmentAuthReturn } from '@/lib/assessment-local-storage'
+import {
+  fetchRestoredAssessmentBundle,
+  syncLocalAssessmentToProfile,
+} from '@/lib/sync-local-assessment-client'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -104,8 +109,9 @@ export default function ResultsPage() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
   const assessmentSyncedRef = useRef(false)
+  const [resultsLoading, setResultsLoading] = useState(true)
   const router = useRouter()
-  const { isSignedIn, user } = useUser()
+  const { isLoaded, isSignedIn, user } = useUser()
 
   /**
    * Queues `/api/generate-report` → `runPaidReportGeneration` (new Groq JSON + react-pdf, storage + inbox).
@@ -115,14 +121,20 @@ export default function ResultsPage() {
     setGenerateError(null)
     trackEvent('payment_initiated', { plan: 'report', amount: 39, source: 'results_page' })
     if (!isSignedIn) {
-      sessionStorage.setItem('postLoginDest', '39-plan')
-      router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))
+      try {
+        sessionStorage.setItem('beetamin.continue39', '1')
+      } catch {
+        /* ignore */
+      }
+      router.push('/sign-in?after=' + encodeURIComponent('/assessment/results'))
       return
     }
 
-    const primary = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase() ?? ''
-    if (!primary || primary !== userEmail.trim().toLowerCase()) {
-      setGenerateError('Sign in with the email you want us to deliver the PDF to.')
+    const synced = await syncLocalAssessmentToProfile(user?.id)
+    if (!synced) {
+      setGenerateError(
+        'We could not find your free quiz on this device. Open your results right after the free assessment (same browser), or retake the free quiz below.',
+      )
       return
     }
 
@@ -180,58 +192,77 @@ export default function ResultsPage() {
     }
   }, [isSignedIn, user?.id])
 
-  /** Latest free assessment overwrites `clients.assessment_result` so report generation & CTAs use new answers. */
+  /** Save free quiz to Supabase as soon as the user is signed in on this page. */
   useEffect(() => {
     if (!result || !isSignedIn || !user?.id || assessmentSyncedRef.current) return
     assessmentSyncedRef.current = true
-    const metaRaw = localStorage.getItem('assessmentMeta')
-    let metaParsed: unknown = null
-    if (metaRaw) {
-      try {
-        metaParsed = JSON.parse(metaRaw) as unknown
-      } catch {
-        metaParsed = null
-      }
-    }
-    void saveAssessmentToProfile({
-      clerkUserId: user.id,
-      assessmentResult: result,
-      assessmentMeta: metaParsed,
-    }).catch((err) => {
-      console.error('[assessment/results] saveAssessmentToProfile', err)
+    void syncLocalAssessmentToProfile(user.id).catch(() => {
       assessmentSyncedRef.current = false
     })
   }, [result, isSignedIn, user?.id])
 
   useEffect(() => {
-    const stored = localStorage.getItem('assessmentResult')
-    const storedMeta = localStorage.getItem('assessmentMeta')
-
-    if (!stored) {
-      router.push('/assessment')
-      return
-    }
-
-    const parsed = JSON.parse(stored)
-    setResult(parsed)
-    setMeta(storedMeta ? JSON.parse(storedMeta) : {})
-
-    let start = 0
-    const target = parsed.deficiencyScore
-    const interval = setInterval(() => {
-      start += 2
-      setScoreAnimated(Math.min(start, target))
-      if (start >= target) clearInterval(interval)
-    }, 25)
-
-    return () => clearInterval(interval)
+    markAssessmentAuthReturn()
   }, [])
 
-  if (!result) return (
-    <div className="min-h-screen bg-[#0B0F14] flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
-    </div>
-  )
+  useEffect(() => {
+    if (!isLoaded) return
+
+    let cancelled = false
+    let scoreInterval: ReturnType<typeof setInterval> | null = null
+
+    async function loadResults() {
+      setResultsLoading(true)
+      let bundle = await fetchRestoredAssessmentBundle()
+
+      if (!bundle && isSignedIn && user?.id) {
+        await syncLocalAssessmentToProfile(user.id)
+        bundle = await fetchRestoredAssessmentBundle()
+      }
+
+      if (cancelled) return
+
+      if (!bundle) {
+        setResultsLoading(false)
+        router.push('/assessment')
+        return
+      }
+
+      const parsed = bundle.assessmentResult
+      setResult(parsed)
+      setMeta(bundle.assessmentMeta ?? {})
+
+      let start = 0
+      const target = typeof parsed.deficiencyScore === 'number' ? parsed.deficiencyScore : 0
+      setScoreAnimated(0)
+      scoreInterval = setInterval(() => {
+        start += 2
+        const next = Math.min(start, target)
+        setScoreAnimated(next)
+        if (next >= target && scoreInterval) clearInterval(scoreInterval)
+      }, 25)
+
+      setResultsLoading(false)
+    }
+
+    void loadResults()
+
+    return () => {
+      cancelled = true
+      if (scoreInterval) clearInterval(scoreInterval)
+    }
+  }, [isLoaded, isSignedIn, user?.id, router])
+
+  if (resultsLoading || !result) {
+    return (
+      <div className="min-h-screen bg-[#0B0F14] flex flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+        {isSignedIn ? (
+          <p className="text-sm text-slate-400">Restoring your assessment results…</p>
+        ) : null}
+      </div>
+    )
+  }
 
   const scoreInfo = getScoreLabel(result.deficiencyScore)
   const headline = getPersonalizedHeadline(result.deficiencyScore, meta.name, result.primaryDeficiencies)

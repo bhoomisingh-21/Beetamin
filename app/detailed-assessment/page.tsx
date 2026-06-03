@@ -6,7 +6,11 @@ import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Loader2, Leaf } from 'lucide-react'
 import { ReportGeneratingLoader } from '@/components/ReportGeneratingLoader'
-import { saveAssessmentToProfile } from '@/lib/booking-actions'
+import {
+  hasLocalFreeAssessment,
+  readLocalFreeAssessmentSnapshot,
+  syncLocalAssessmentToProfile,
+} from '@/lib/sync-local-assessment-client'
 import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from '@/lib/recovery-report-types'
 import { trackEvent } from '@/lib/analytics'
 import {
@@ -83,35 +87,19 @@ export default function DetailedAssessmentPage() {
   }, [index])
 
   const [phase, setPhase] = useState<'quiz' | 'summary' | 'generating'>('quiz')
+  const [freeQuizOnFile, setFreeQuizOnFile] = useState<boolean | null>(null)
   const assessmentSyncRef = useRef(false)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
     if (!isLoaded || !isSignedIn || !user?.id || assessmentSyncRef.current) return
-    const raw = localStorage.getItem('assessmentResult')
-    if (!raw) return
     assessmentSyncRef.current = true
-    const metaRaw = localStorage.getItem('assessmentMeta')
-    let metaParsed: unknown = null
-    if (metaRaw) {
-      try {
-        metaParsed = JSON.parse(metaRaw) as unknown
-      } catch {
-        metaParsed = null
-      }
-    }
-    try {
-      const parsed = JSON.parse(raw) as unknown
-      void saveAssessmentToProfile({
-        clerkUserId: user.id,
-        assessmentResult: parsed,
-        assessmentMeta: metaParsed,
-      }).catch(() => {
-        assessmentSyncRef.current = false
-      })
-    } catch {
+    void (async () => {
+      const ok = await syncLocalAssessmentToProfile(user.id)
+      setFreeQuizOnFile(ok || hasLocalFreeAssessment())
+    })().catch(() => {
       assessmentSyncRef.current = false
-    }
+      setFreeQuizOnFile(hasLocalFreeAssessment())
+    })
   }, [isLoaded, isSignedIn, user?.id])
 
   const [direction, setDirection] = useState<'next' | 'back'>('next')
@@ -212,9 +200,20 @@ export default function DetailedAssessmentPage() {
   async function handleGenerateReport() {
     setGenError('')
     if (!isSignedIn) {
-      router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))
+      router.push('/sign-in?after=' + encodeURIComponent('/assessment/results'))
       return
     }
+
+    const quizReady = await syncLocalAssessmentToProfile(user?.id)
+    if (!quizReady) {
+      setGenError(
+        'Your free quiz is missing on this device. Complete the free assessment first (same browser), open your results page, then return here.',
+      )
+      setFreeQuizOnFile(false)
+      return
+    }
+    setFreeQuizOnFile(true)
+
     setPhase('generating')
     try {
       const saveRes = await fetch('/api/save-detailed-assessment', {
@@ -248,10 +247,16 @@ export default function DetailedAssessmentPage() {
 
       trackEvent('payment_initiated', { plan: 'report', amount: 39, mode: paymentMode })
 
+      const freeAssessmentSnapshot = readLocalFreeAssessmentSnapshot()
+
       const payRes = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assessmentId: detailedAssessmentId, mode: paymentMode }),
+        body: JSON.stringify({
+          assessmentId: detailedAssessmentId,
+          mode: paymentMode,
+          ...(freeAssessmentSnapshot ? { freeAssessmentSnapshot } : {}),
+        }),
       })
       let payJson: Record<string, unknown> = {}
       try {
@@ -762,13 +767,30 @@ export default function DetailedAssessmentPage() {
                       ))}
                     </div>
                   )}
+                  {freeQuizOnFile === false && !genError ? (
+                    <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                      <p className="font-semibold">Free quiz not found</p>
+                      <p className="mt-1 text-amber-900/90">
+                        Finish the{' '}
+                        <button
+                          type="button"
+                          className="font-bold underline"
+                          onClick={() => router.push('/assessment')}
+                        >
+                          free assessment
+                        </button>{' '}
+                        on this browser, view your results, then come back to pay ₹39.
+                      </p>
+                    </div>
+                  ) : null}
                   {genError && <p className="mt-6 text-center sm:text-left text-sm text-red-600">{genError}</p>}
                   <button
                     type="button"
                     onClick={handleGenerateReport}
-                    className="mt-10 w-full rounded-2xl bg-[#14532d] py-4 text-base font-bold text-white shadow-lg"
+                    disabled={freeQuizOnFile === false}
+                    className="mt-10 w-full rounded-2xl bg-[#14532d] py-4 text-base font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Confirm &amp; get my PDF
+                    Confirm &amp; pay ₹39 (PayU)
                   </button>
                   <p className="mt-3 text-center sm:text-left text-xs text-gray-500">
                     You&apos;ll complete secure payment on PayU (₹39) before your personalised PDF is generated.

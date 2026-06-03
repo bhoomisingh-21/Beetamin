@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Zap, Shield, ChevronRight, ChevronLeft, Loader2, FlaskConical } from 'lucide-react'
+import { writeAssessmentBundle } from '@/lib/assessment-local-storage'
 import { trackEvent } from '@/lib/analytics'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
@@ -56,13 +57,30 @@ export default function AssessmentPage() {
         }),
       })
       const result = await res.json()
-      localStorage.setItem('assessmentResult', JSON.stringify(result))
-      localStorage.setItem('assessmentMeta', JSON.stringify({ name: answers.name, email: answers.email, phone: answers.phone, goal: answers.goal }))
+      const meta = {
+        name: answers.name,
+        email: answers.email,
+        phone: answers.phone,
+        goal: answers.goal,
+      }
+      writeAssessmentBundle({
+        assessmentResult: result as Record<string, unknown>,
+        assessmentMeta: meta,
+      })
       if (answers.email) {
         fetch('/api/save-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: answers.name, email: answers.email, phone: answers.phone, source: 'assessment' }),
+        }).catch(() => {})
+        fetch('/api/guest-free-assessment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: answers.email,
+            assessmentResult: result,
+            assessmentMeta: meta,
+          }),
         }).catch(() => {})
       }
       router.push('/assessment/results')

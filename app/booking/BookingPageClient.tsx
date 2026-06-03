@@ -83,10 +83,8 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
                 assessmentResult: JSON.parse(assessmentResult) as unknown,
                 assessmentMeta: assessmentMeta ? (JSON.parse(assessmentMeta) as unknown) : null,
               })
-              localStorage.removeItem('assessmentResult')
-              localStorage.removeItem('assessmentMeta')
             } catch {
-              /* keep localStorage */
+              /* keep localStorage for retry on detailed-assessment */
             }
           }
           clearTimeout(fallback)
@@ -101,8 +99,6 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
               assessmentResult: JSON.parse(assessmentResult) as unknown,
               assessmentMeta: assessmentMeta ? (JSON.parse(assessmentMeta) as unknown) : null,
             })
-            localStorage.removeItem('assessmentResult')
-            localStorage.removeItem('assessmentMeta')
           } catch {
             /* offline */
           }
