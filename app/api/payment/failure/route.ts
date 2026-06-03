@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const assessmentId = usesCurrentContract ? udf4 : udf2
 
   try {
-    if (mode === 'upgrade') {
+    if (mode === 'upgrade' || mode === 'booster') {
       if (txnid && userId) {
         await supabaseAdmin
           .from('purchases')

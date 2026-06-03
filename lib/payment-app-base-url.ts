@@ -10,9 +10,16 @@ export function paymentAppBaseUrl(): string {
   return 'http://localhost:3000'
 }
 
+/** Hosted checkout POST target. Override with PAYU_BASE_URL or set PAYU_ENV=live. */
 export function payuHostedActionUrl(): string | null {
-  const u = process.env.PAYU_BASE_URL?.trim()
-  return u?.length ? u : null
+  const explicit = process.env.PAYU_BASE_URL?.trim()
+  if (explicit) return explicit
+
+  const env = (process.env.PAYU_ENV ?? 'test').trim().toLowerCase()
+  if (env === 'live' || env === 'production' || env === 'prod') {
+    return 'https://secure.payu.in/_payment'
+  }
+  return 'https://test.payu.in/_payment'
 }
 
 export function payuMerchantConfigured(): boolean {
