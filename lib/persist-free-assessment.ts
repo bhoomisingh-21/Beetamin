@@ -2,7 +2,7 @@ import { currentUser } from '@clerk/nextjs/server'
 
 import {
   assessmentMetaString,
-  isPersistableFreeAssessment,
+  normalizeFreeAssessment,
 } from '@/lib/assessment-profile-fields'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -46,13 +46,14 @@ export async function persistFreeAssessmentForClerkUser(input: {
   freeAssessment: Record<string, unknown>
   assessmentMeta?: unknown | null
 }) {
-  if (!isPersistableFreeAssessment(input.freeAssessment)) {
+  const normalized = normalizeFreeAssessment(input.freeAssessment)
+  if (!normalized) {
     throw new Error('Invalid free assessment payload')
   }
 
   const existing = await getClientRowByClerkId(input.clerkUserId)
   const patch = assessmentProfilePatch(
-    { assessmentResult: input.freeAssessment, assessmentMeta: input.assessmentMeta ?? null },
+    { assessmentResult: normalized, assessmentMeta: input.assessmentMeta ?? null },
     existing,
   )
 
@@ -88,17 +89,32 @@ export async function persistFreeAssessmentForClerkUser(input: {
   })
 
   if (insErr?.code === '23505') {
+    const emailLower = email.toLowerCase()
     const { data: byEmail } = await supabaseAdmin
       .from('clients')
       .select('id, clerk_user_id')
-      .eq('email', email.toLowerCase())
+      .eq('email', emailLower)
       .maybeSingle()
     const match = byEmail as { id: string; clerk_user_id: string | null } | null
-    if (match?.id && (!match.clerk_user_id || match.clerk_user_id === input.clerkUserId)) {
+    if (match?.id) {
       const { error: fixErr } = await supabaseAdmin
         .from('clients')
         .update({ clerk_user_id: input.clerkUserId, ...patch })
         .eq('id', match.id)
+      if (fixErr) throw new Error(fixErr.message)
+      return
+    }
+
+    const { data: byClerk } = await supabaseAdmin
+      .from('clients')
+      .select('id')
+      .eq('clerk_user_id', input.clerkUserId)
+      .maybeSingle()
+    if (byClerk?.id) {
+      const { error: fixErr } = await supabaseAdmin
+        .from('clients')
+        .update(patch)
+        .eq('clerk_user_id', input.clerkUserId)
       if (fixErr) throw new Error(fixErr.message)
       return
     }

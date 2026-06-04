@@ -1,6 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server'
 
-import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
+import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
 import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -20,9 +20,10 @@ export async function restoreFreeAssessmentForClerkUser(
     .eq('clerk_user_id', clerkUserId)
     .maybeSingle()
 
-  if (isPersistableFreeAssessment(client?.assessment_result)) {
+  const fromClient = normalizeFreeAssessment(client?.assessment_result)
+  if (fromClient) {
     return {
-      assessmentResult: client.assessment_result as Record<string, unknown>,
+      assessmentResult: fromClient,
       assessmentMeta: client?.assessment_meta ?? null,
       source: 'client',
     }
@@ -39,13 +40,17 @@ export async function restoreFreeAssessmentForClerkUser(
     .maybeSingle()
 
   if (guestErr) {
-    console.error('[restore-free-assessment] guest lookup', guestErr)
+    // Table may not exist until migration is applied — do not block checkout.
+    if (guestErr.code !== '42P01') {
+      console.error('[restore-free-assessment] guest lookup', guestErr)
+    }
     return null
   }
 
-  if (!isPersistableFreeAssessment(guest?.assessment_result)) return null
+  if (!guest) return null
 
-  const assessmentResult = guest.assessment_result as Record<string, unknown>
+  const assessmentResult = normalizeFreeAssessment(guest.assessment_result)
+  if (!assessmentResult) return null
   const assessmentMeta = guest.assessment_meta ?? null
 
   try {

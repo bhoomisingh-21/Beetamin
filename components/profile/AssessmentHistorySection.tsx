@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, FileText, Loader2 } from 'lucide-react'
-import { type PaidReportSummary } from '@/lib/booking-actions'
+import type { PaidReportSummary } from '@/lib/booking-types'
 import { parseDeficiencySummaryPayload, type DeficiencyItem } from '@/lib/deficiency-profile-parse'
 import { heading, profileCard, subheading, textSecondary } from '@/components/profile/profile-dark-styles'
 import { displayReportStatus, formatReportHeadingDate, isReportReady } from '@/components/profile/profile-helpers'

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import type { ClientRow } from '@/lib/booking-actions'
+import type { ClientRow } from '@/lib/booking-types'
 import type { PortalClientListRow, SessionDotState } from '@/lib/nutritionist-types'
 import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
 import { Search, ChevronLeft } from 'lucide-react'

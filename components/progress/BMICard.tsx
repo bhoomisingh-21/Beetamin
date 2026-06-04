@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { type ClientRow, type ProgressLogRow } from '@/lib/booking-actions'
+import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import { cardSubtitle, cardTitle, profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
 
 type Props = {

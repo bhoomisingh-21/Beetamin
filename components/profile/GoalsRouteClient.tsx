@@ -4,11 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
-import {
-  getDashboardBundle,
-  updateClientGoalsProgress,
-  type DashboardBundle,
-} from '@/lib/booking-actions'
+import { getDashboardBundle, updateClientGoalsProgress } from '@/lib/booking-actions'
+import type { DashboardBundle } from '@/lib/booking-types'
 import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
 import { profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
 

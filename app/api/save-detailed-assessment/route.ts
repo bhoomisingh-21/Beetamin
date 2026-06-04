@@ -1,5 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
+import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import type { DetailedAssessmentPayload, FoodFrequencyKey } from '@/lib/recovery-report-types'
 
@@ -93,34 +95,88 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Could not determine your email. Please update your account.' }, { status: 400 })
     }
 
+    const bodyObj = json as Record<string, unknown>
+    const freeSnapshot = normalizeFreeAssessment(bodyObj.freeAssessmentResult)
+    const freeMeta =
+      bodyObj.assessmentMeta != null &&
+      typeof bodyObj.assessmentMeta === 'object' &&
+      !Array.isArray(bodyObj.assessmentMeta)
+        ? bodyObj.assessmentMeta
+        : null
+
+    if (freeSnapshot) {
+      try {
+        await persistFreeAssessmentForClerkUser({
+          clerkUserId: userId,
+          freeAssessment: freeSnapshot,
+          assessmentMeta: freeMeta,
+        })
+      } catch (persistErr) {
+        console.error('[save-detailed-assessment] persist free quiz', persistErr)
+      }
+    }
+
+    const insertRow: Record<string, unknown> = {
+      user_id: userId,
+      email,
+      diet_type: validated.data.diet_type,
+      food_frequency: validated.data.food_frequency,
+      sun_exposure: validated.data.sun_exposure,
+      physical_symptoms: validated.data.physical_symptoms,
+      energy_mood: validated.data.energy_mood,
+      sleep_quality: validated.data.sleep_quality,
+      digestion: validated.data.digestion,
+      exercise_level: validated.data.exercise_level,
+      water_intake: validated.data.water_intake,
+      menstrual_health: validated.data.menstrual_health,
+    }
+    if (freeSnapshot) {
+      insertRow.free_assessment_snapshot = freeSnapshot
+      insertRow.free_assessment_meta = freeMeta
+    }
+
     const { data, error } = await supabaseAdmin
       .from('detailed_assessments')
-      .insert({
-        user_id: userId,
-        email,
-        diet_type: validated.data.diet_type,
-        food_frequency: validated.data.food_frequency,
-        sun_exposure: validated.data.sun_exposure,
-        physical_symptoms: validated.data.physical_symptoms,
-        energy_mood: validated.data.energy_mood,
-        sleep_quality: validated.data.sleep_quality,
-        digestion: validated.data.digestion,
-        exercise_level: validated.data.exercise_level,
-        water_intake: validated.data.water_intake,
-        menstrual_health: validated.data.menstrual_health,
-      })
+      .insert(insertRow)
       .select('id')
       .single()
 
     if (error) {
       console.error('[save-detailed-assessment]', error)
+      if (error.code === '42703' && freeSnapshot) {
+        const { data: fallback, error: fallbackErr } = await supabaseAdmin
+          .from('detailed_assessments')
+          .insert({
+            user_id: userId,
+            email,
+            diet_type: validated.data.diet_type,
+            food_frequency: validated.data.food_frequency,
+            sun_exposure: validated.data.sun_exposure,
+            physical_symptoms: validated.data.physical_symptoms,
+            energy_mood: validated.data.energy_mood,
+            sleep_quality: validated.data.sleep_quality,
+            digestion: validated.data.digestion,
+            exercise_level: validated.data.exercise_level,
+            water_intake: validated.data.water_intake,
+            menstrual_health: validated.data.menstrual_health,
+          })
+          .select('id')
+          .single()
+        if (fallbackErr || !fallback?.id) {
+          return NextResponse.json(
+            { error: 'We could not save your assessment. Please try again shortly.' },
+            { status: 500 },
+          )
+        }
+        return NextResponse.json({ id: fallback.id, freeQuizStored: false })
+      }
       return NextResponse.json(
         { error: 'We could not save your assessment. Please try again shortly.' },
         { status: 500 },
       )
     }
 
-    return NextResponse.json({ id: data.id })
+    return NextResponse.json({ id: data.id, freeQuizStored: Boolean(freeSnapshot) })
   } catch (e) {
     console.error('[save-detailed-assessment]', e)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })

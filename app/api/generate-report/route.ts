@@ -2,8 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { waitUntil } from '@vercel/functions'
 import { randomBytes } from 'crypto'
 import { NextResponse } from 'next/server'
-import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
-import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
+import { resolveFreeAssessmentForCheckout } from '@/lib/resolve-free-assessment'
 import { runPaidReportGeneration } from '@/lib/run-paid-report-generation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -143,23 +142,11 @@ export async function POST(req: Request) {
       .eq('clerk_user_id', userId)
       .maybeSingle()
 
-    let freeAssessment: Record<string, unknown> | null = isPersistableFreeAssessment(
-      client?.assessment_result,
-    )
-      ? (client?.assessment_result as Record<string, unknown>)
-      : null
-
-    if (!freeAssessment && isPersistableFreeAssessment(body.freeAssessmentResult)) {
-      try {
-        await persistFreeAssessmentForClerkUser({
-          clerkUserId: userId,
-          freeAssessment: body.freeAssessmentResult,
-        })
-        freeAssessment = body.freeAssessmentResult
-      } catch (err) {
-        console.error('[generate-report] persist free assessment snapshot', err)
-      }
-    }
+    const freeAssessment = await resolveFreeAssessmentForCheckout({
+      clerkUserId: userId,
+      detailedAssessmentId: detailedId,
+      snapshot: body.freeAssessmentResult,
+    })
 
     if (!freeAssessment) {
       return NextResponse.json(

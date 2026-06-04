@@ -1,4 +1,4 @@
-import type { ClientRow, ProgressLogRow } from '@/lib/booking-actions'
+import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 
 export type SlotStatus = 'Completed' | 'In Progress' | 'Upcoming'

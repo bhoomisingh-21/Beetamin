@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
-import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
+import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
 import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
 import { restoreFreeAssessmentForClerkUser } from '@/lib/restore-free-assessment'
 
@@ -39,7 +39,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 })
   }
 
-  if (!isPersistableFreeAssessment(body.assessmentResult)) {
+  const normalized = normalizeFreeAssessment(body.assessmentResult)
+  if (!normalized) {
     return NextResponse.json(
       {
         error:
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
   try {
     await persistFreeAssessmentForClerkUser({
       clerkUserId: userId,
-      freeAssessment: body.assessmentResult,
+      freeAssessment: normalized,
       assessmentMeta: body.assessmentMeta ?? null,
     })
     return NextResponse.json({ ok: true, hasOnFile: true })

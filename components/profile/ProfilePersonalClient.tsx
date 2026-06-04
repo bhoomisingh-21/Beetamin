@@ -18,12 +18,8 @@ import {
   Zap,
   CalendarDays,
 } from 'lucide-react'
-import {
-  getDashboardBundle,
-  updateClientProfile,
-  type ClientRow,
-  type DashboardBundle,
-} from '@/lib/booking-actions'
+import { getDashboardBundle, updateClientProfile } from '@/lib/booking-actions'
+import type { ClientRow, DashboardBundle } from '@/lib/booking-types'
 import {
   cardSubtitle,
   cardTitle,

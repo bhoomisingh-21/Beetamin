@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
+import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
@@ -37,14 +37,15 @@ export async function POST(req: NextRequest) {
   if (!email || !email.includes('@')) {
     return NextResponse.json({ error: 'Valid email is required.' }, { status: 400 })
   }
-  if (!isPersistableFreeAssessment(body.assessmentResult)) {
+  const normalized = normalizeFreeAssessment(body.assessmentResult)
+  if (!normalized) {
     return NextResponse.json({ error: 'Invalid assessment.' }, { status: 400 })
   }
 
   const { error } = await supabaseAdmin.from('guest_free_assessments').upsert(
     {
       email,
-      assessment_result: body.assessmentResult,
+      assessment_result: normalized,
       assessment_meta: body.assessmentMeta ?? null,
       updated_at: new Date().toISOString(),
     },
@@ -53,6 +54,12 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error('[guest-free-assessment]', error)
+    if (error.code === '42P01') {
+      return NextResponse.json({
+        ok: true,
+        warning: 'guest_free_assessments table missing — run Supabase migration',
+      })
+    }
     return NextResponse.json({ error: 'Could not save assessment.' }, { status: 500 })
   }
 

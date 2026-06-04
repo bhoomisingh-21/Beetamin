@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { upsertProgressLog, type ProgressLogRow } from '@/lib/booking-actions'
+import { upsertProgressLog } from '@/lib/booking-actions'
+import type { ProgressLogRow } from '@/lib/booking-types'
 import { cardSubtitle, cardTitle, profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
 
 type Props = {

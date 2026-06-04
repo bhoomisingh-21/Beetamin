@@ -1,4 +1,4 @@
-import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
+import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
 
 const LS_RESULT = 'assessmentResult'
 const LS_META = 'assessmentMeta'
@@ -53,10 +53,11 @@ export function readAssessmentBundle(): AssessmentBundle | null {
       const raw = localStorage.getItem(resultKey) ?? sessionStorage.getItem(resultKey)
       if (!raw) continue
       const parsed: unknown = JSON.parse(raw)
-      if (!isPersistableFreeAssessment(parsed)) continue
+      const normalized = normalizeFreeAssessment(parsed)
+      if (!normalized) continue
       const metaRaw = localStorage.getItem(metaKey) ?? sessionStorage.getItem(metaKey)
       return {
-        assessmentResult: parsed,
+        assessmentResult: normalized,
         assessmentMeta: parseMeta(metaRaw),
       }
     } catch {

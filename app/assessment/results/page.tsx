@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { getClientAssessmentFlags } from '@/lib/booking-actions'
+import { signInReturnForPaidReport } from '@/lib/assessment-auth-links'
 import { markAssessmentAuthReturn } from '@/lib/assessment-local-storage'
 import {
   fetchRestoredAssessmentBundle,
@@ -126,7 +127,7 @@ export default function ResultsPage() {
       } catch {
         /* ignore */
       }
-      router.push('/sign-in?after=' + encodeURIComponent('/assessment/results'))
+      router.push(signInReturnForPaidReport())
       return
     }
 

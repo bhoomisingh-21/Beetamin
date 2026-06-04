@@ -11,8 +11,8 @@ import {
   getAvailabilityDays,
   requestAppointment,
   checkClientEligibility,
-  type NutritionistRow,
 } from '@/lib/booking-actions'
+import type { NutritionistRow } from '@/lib/booking-types'
 import { trackEvent } from '@/lib/analytics'
 import CalendarPicker from '@/components/ui/CalendarPicker'
 

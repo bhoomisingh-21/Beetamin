@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AssessmentHistorySection } from '@/components/profile/AssessmentHistorySection'
 import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
-import type { PaidReportSummary } from '@/lib/booking-actions'
+import type { PaidReportSummary } from '@/lib/booking-types'
 
 type Props = {
   paidReports: PaidReportSummary[]

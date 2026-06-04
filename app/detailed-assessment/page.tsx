@@ -6,8 +6,10 @@ import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Loader2, Leaf } from 'lucide-react'
 import { ReportGeneratingLoader } from '@/components/ReportGeneratingLoader'
+import { signInReturnForPaidReport } from '@/lib/assessment-auth-links'
 import {
   hasLocalFreeAssessment,
+  readLocalAssessmentMeta,
   readLocalFreeAssessmentSnapshot,
   syncLocalAssessmentToProfile,
 } from '@/lib/sync-local-assessment-client'
@@ -200,26 +202,37 @@ export default function DetailedAssessmentPage() {
   async function handleGenerateReport() {
     setGenError('')
     if (!isSignedIn) {
-      router.push('/sign-in?after=' + encodeURIComponent('/assessment/results'))
+      router.push(signInReturnForPaidReport())
       return
     }
 
-    const quizReady = await syncLocalAssessmentToProfile(user?.id)
-    if (!quizReady) {
+    const localSnapshot = readLocalFreeAssessmentSnapshot()
+    if (!localSnapshot && !(await syncLocalAssessmentToProfile(user?.id))) {
       setGenError(
         'Your free quiz is missing on this device. Complete the free assessment first (same browser), open your results page, then return here.',
       )
       setFreeQuizOnFile(false)
       return
     }
+    if (!localSnapshot) {
+      await syncLocalAssessmentToProfile(user?.id)
+    }
     setFreeQuizOnFile(true)
 
     setPhase('generating')
     try {
+      const freeAssessmentSnapshot = readLocalFreeAssessmentSnapshot()
+      const assessmentMeta = readLocalAssessmentMeta()
+
       const saveRes = await fetch('/api/save-detailed-assessment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload()),
+        body: JSON.stringify({
+          ...buildPayload(),
+          ...(freeAssessmentSnapshot
+            ? { freeAssessmentResult: freeAssessmentSnapshot, assessmentMeta }
+            : {}),
+        }),
       })
       const saveJson = await saveRes.json().catch(() => ({}))
       if (!saveRes.ok) {
@@ -247,15 +260,13 @@ export default function DetailedAssessmentPage() {
 
       trackEvent('payment_initiated', { plan: 'report', amount: 39, mode: paymentMode })
 
-      const freeAssessmentSnapshot = readLocalFreeAssessmentSnapshot()
-
       const payRes = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           assessmentId: detailedAssessmentId,
           mode: paymentMode,
-          ...(freeAssessmentSnapshot ? { freeAssessmentSnapshot } : {}),
+          ...(freeAssessmentSnapshot ? { freeAssessmentSnapshot, assessmentMeta } : {}),
         }),
       })
       let payJson: Record<string, unknown> = {}
@@ -335,7 +346,7 @@ export default function DetailedAssessmentPage() {
           </p>
           <button
             type="button"
-            onClick={() => router.push('/sign-in?after=' + encodeURIComponent('/detailed-assessment'))}
+            onClick={() => router.push(signInReturnForPaidReport())}
             className="mt-6 rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm"
           >
             Sign in

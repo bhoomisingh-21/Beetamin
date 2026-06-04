@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { ProgressLogRow } from '@/lib/booking-actions'
+import type { ProgressLogRow } from '@/lib/booking-types'
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', {

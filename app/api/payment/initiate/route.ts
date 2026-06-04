@@ -11,8 +11,7 @@ import {
 } from '@/lib/payment-app-base-url'
 import { giftedPlanMatchesPayment, grantGiftedFullPlan, grantGiftedReport } from '@/lib/gifted-access'
 import { hasActiveFullPlanPurchase } from '@/lib/plan-access'
-import { isPersistableFreeAssessment } from '@/lib/assessment-profile-fields'
-import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
+import { resolveFreeAssessmentForCheckout } from '@/lib/resolve-free-assessment'
 import { reserveUpgradePurchase } from '@/lib/reserve-upgrade-purchase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -64,6 +63,7 @@ export async function POST(req: Request) {
     amount?: number
     /** Optional snapshot from localStorage when DB sync has not run yet */
     freeAssessmentSnapshot?: unknown
+    assessmentMeta?: unknown
   }
   try {
     body = await req.json()
@@ -263,23 +263,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Assessment not found or access denied.' }, { status: 404 })
   }
 
-  let freeAssessment: Record<string, unknown> | null = isPersistableFreeAssessment(
-    client?.assessment_result,
-  )
-    ? (client?.assessment_result as Record<string, unknown>)
-    : null
-
-  if (!freeAssessment && isPersistableFreeAssessment(body.freeAssessmentSnapshot)) {
-    try {
-      await persistFreeAssessmentForClerkUser({
-        clerkUserId: sessionUserId,
-        freeAssessment: body.freeAssessmentSnapshot,
-      })
-      freeAssessment = body.freeAssessmentSnapshot
-    } catch (err) {
-      console.error('[payment/initiate] persist free assessment snapshot', err)
-    }
-  }
+  const freeAssessment = await resolveFreeAssessmentForCheckout({
+    clerkUserId: sessionUserId,
+    detailedAssessmentId: assessmentId,
+    snapshot: body.freeAssessmentSnapshot,
+    assessmentMeta: body.assessmentMeta ?? null,
+  })
 
   if (!freeAssessment) {
     return NextResponse.json(

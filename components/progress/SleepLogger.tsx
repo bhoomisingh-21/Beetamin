@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { Moon } from 'lucide-react'
-import { upsertProgressLog, type ProgressLogRow } from '@/lib/booking-actions'
+import { upsertProgressLog } from '@/lib/booking-actions'
+import type { ProgressLogRow } from '@/lib/booking-types'
 import { cardSubtitle, cardTitle, profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
 
 const QUALITIES = ['Poor', 'Fair', 'Good', 'Great'] as const

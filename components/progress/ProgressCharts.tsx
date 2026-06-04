@@ -16,7 +16,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { type ProgressLogRow } from '@/lib/booking-actions'
+import type { ProgressLogRow } from '@/lib/booking-types'
 import {
   cardSubtitle,
   cardTitle,

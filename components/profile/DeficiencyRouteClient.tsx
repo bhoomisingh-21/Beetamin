@@ -9,7 +9,7 @@ import {
 import { FreeAssessmentDeficiencyBlock } from '@/components/profile/FreeAssessmentDeficiencyBlock'
 import { hasFreeAssessmentContent } from '@/components/profile/deficiency-free-storage'
 import { ProfilePageBanner } from '@/components/profile/ProfilePageBanner'
-import type { PaidReportSummary } from '@/lib/booking-actions'
+import type { PaidReportSummary } from '@/lib/booking-types'
 
 function paidReportIsComplete(status: string) {
   return status === 'ready' || status === 'generated'

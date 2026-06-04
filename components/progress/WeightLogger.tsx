@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Scale } from 'lucide-react'
-import { upsertProgressLog, type ClientRow, type ProgressLogRow } from '@/lib/booking-actions'
+import { upsertProgressLog } from '@/lib/booking-actions'
+import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import { cardSubtitle, cardTitle, profileCard, textSecondary } from '@/components/profile/profile-dark-styles'
 
 type Props = {

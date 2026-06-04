@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { FlaskConical, Pill } from 'lucide-react'
-import { type PaidReportSummary } from '@/lib/booking-actions'
+import type { PaidReportSummary } from '@/lib/booking-types'
 import { parseDeficiencySummaryPayload, type DeficiencyItem } from '@/lib/deficiency-profile-parse'
 import { DeficiencyScoreGauge } from '@/components/profile/DeficiencyScoreGauge'
 import {
