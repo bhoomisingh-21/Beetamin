@@ -215,13 +215,14 @@ export async function POST(req: Request) {
 
     if (!forceNewPaidReport) {
       const existingActive = rows.find((r) =>
-        ['ready', 'generated', 'generating'].includes(String(r.status)),
+        ['ready', 'generated', 'generating', 'pending'].includes(String(r.status)),
       )
       if (existingActive?.report_id) {
         return NextResponse.json({
           reportId: existingActive.report_id,
           alreadyExists: true,
           status: existingActive.status,
+          resumePayment: String(existingActive.status) === 'pending',
         })
       }
 
@@ -299,7 +300,7 @@ export async function POST(req: Request) {
           .limit(8)
         const againList = againRows || []
         const active = againList.find((r) =>
-          ['ready', 'generated', 'generating'].includes(String(r.status)),
+          ['ready', 'generated', 'generating', 'pending'].includes(String(r.status)),
         )
         if (active?.report_id) {
           return NextResponse.json({

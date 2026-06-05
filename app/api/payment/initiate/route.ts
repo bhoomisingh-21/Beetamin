@@ -299,35 +299,72 @@ export async function POST(req: Request) {
     }
   }
 
-  const txnid = makePayUTxnId()
-  const reportId = makeReportSlug()
-  const pdfPath = `${sessionUserId}/${reportId}.pdf`
   const amountFormatted = `${rupeesServer.toFixed(2)}`
+  const txnid = makePayUTxnId()
 
-  const { data: insertRow, error: insErr } = await supabaseAdmin
+  const { data: reusableRow } = await supabaseAdmin
     .from('paid_reports')
-    .insert({
-      user_id: sessionUserId,
-      email: emailResolved.toLowerCase(),
-      report_id: reportId,
-      pdf_url: pdfPath,
-      amount: Math.round(rupeesServer),
-      status: 'pending',
-      assessment_id: assessmentId,
-      payment_id: null,
-      txnid,
-      free_assessment_snapshot: freeAssessment,
-      deficiency_summary: null,
-    })
-    .select('id')
-    .single()
+    .select('id, report_id, pdf_url')
+    .eq('user_id', sessionUserId)
+    .eq('assessment_id', assessmentId)
+    .in('status', ['pending', 'failed'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-  if (insErr || !insertRow?.id) {
-    console.error('[payment/initiate] insert paid_reports', insErr)
-    return NextResponse.json({ error: 'Could not reserve your checkout.' }, { status: 500 })
+  let rowPk: string
+  let reportId: string
+
+  if (reusableRow?.id && reusableRow.report_id) {
+    rowPk = String(reusableRow.id)
+    reportId = String(reusableRow.report_id)
+    const pdfPath =
+      typeof reusableRow.pdf_url === 'string' && reusableRow.pdf_url
+        ? reusableRow.pdf_url
+        : `${sessionUserId}/${reportId}.pdf`
+    const { error: updErr } = await supabaseAdmin
+      .from('paid_reports')
+      .update({
+        status: 'pending',
+        txnid,
+        email: emailResolved.toLowerCase(),
+        free_assessment_snapshot: freeAssessment,
+        amount: Math.round(rupeesServer),
+        pdf_url: pdfPath,
+      })
+      .eq('id', rowPk)
+      .eq('user_id', sessionUserId)
+    if (updErr) {
+      console.error('[payment/initiate] resume pending checkout', updErr)
+      return NextResponse.json({ error: 'Could not resume your checkout.' }, { status: 500 })
+    }
+  } else {
+    reportId = makeReportSlug()
+    const pdfPath = `${sessionUserId}/${reportId}.pdf`
+    const { data: insertRow, error: insErr } = await supabaseAdmin
+      .from('paid_reports')
+      .insert({
+        user_id: sessionUserId,
+        email: emailResolved.toLowerCase(),
+        report_id: reportId,
+        pdf_url: pdfPath,
+        amount: Math.round(rupeesServer),
+        status: 'pending',
+        assessment_id: assessmentId,
+        payment_id: null,
+        txnid,
+        free_assessment_snapshot: freeAssessment,
+        deficiency_summary: null,
+      })
+      .select('id')
+      .single()
+
+    if (insErr || !insertRow?.id) {
+      console.error('[payment/initiate] insert paid_reports', insErr)
+      return NextResponse.json({ error: 'Could not reserve your checkout.' }, { status: 500 })
+    }
+    rowPk = insertRow.id as string
   }
-
-  const rowPk = insertRow.id as string
   const base = paymentAppBaseUrl()
   const productinfo = 'Beetamin Recovery Report'
 

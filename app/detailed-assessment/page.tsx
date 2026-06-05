@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Loader2, Leaf } from 'lucide-react'
-import { ReportGeneratingLoader } from '@/components/ReportGeneratingLoader'
 import { signInReturnForPaidReport } from '@/lib/assessment-auth-links'
 import {
   hasLocalFreeAssessment,
@@ -15,10 +14,7 @@ import {
 } from '@/lib/sync-local-assessment-client'
 import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from '@/lib/recovery-report-types'
 import { trackEvent } from '@/lib/analytics'
-import {
-  applyPaymentInitiateResult,
-  handlePaymentInitiateResponse,
-} from '@/lib/payment-initiate-client'
+import { startReport39Payment } from '@/lib/start-report-payment-client'
 
 const FOOD_ROWS: { key: FoodFrequencyKey; label: string }[] = [
   { key: 'green_vegetables', label: 'Green vegetables (palak, methi, broccoli)' },
@@ -118,6 +114,7 @@ export default function DetailedAssessmentPage() {
   const [menstrual, setMenstrual] = useState('')
 
   const [genError, setGenError] = useState('')
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
   const [isRetakePaidFlow, setIsRetakePaidFlow] = useState(false)
 
   useEffect(() => {
@@ -218,8 +215,8 @@ export default function DetailedAssessmentPage() {
       await syncLocalAssessmentToProfile(user?.id)
     }
     setFreeQuizOnFile(true)
+    setIsCheckoutLoading(true)
 
-    setPhase('generating')
     try {
       const freeAssessmentSnapshot = readLocalFreeAssessmentSnapshot()
       const assessmentMeta = readLocalAssessmentMeta()
@@ -240,14 +237,6 @@ export default function DetailedAssessmentPage() {
       }
       const detailedAssessmentId = saveJson.id as string
 
-      let freeAssessmentResult: unknown = null
-      try {
-        const raw = localStorage.getItem('assessmentResult')
-        if (raw) freeAssessmentResult = JSON.parse(raw)
-      } catch {
-        /* ignore */
-      }
-
       let paymentMode: 'new' | 'retake' = 'new'
       try {
         if (sessionStorage.getItem('beetamin.retakePaidReportFlow') === '1') {
@@ -260,65 +249,19 @@ export default function DetailedAssessmentPage() {
 
       trackEvent('payment_initiated', { plan: 'report', amount: 39, mode: paymentMode })
 
-      const payRes = await fetch('/api/payment/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assessmentId: detailedAssessmentId,
-          mode: paymentMode,
-          ...(freeAssessmentSnapshot ? { freeAssessmentSnapshot, assessmentMeta } : {}),
-        }),
+      const paymentError = await startReport39Payment({
+        detailedAssessmentId,
+        mode: paymentMode,
+        freeAssessmentSnapshot,
+        assessmentMeta,
       })
-      let payJson: Record<string, unknown> = {}
-      try {
-        payJson = (await payRes.json()) as Record<string, unknown>
-      } catch {
-        payJson = {}
+      if (paymentError) {
+        throw new Error(paymentError)
       }
-
-      const payResult = handlePaymentInitiateResponse(payJson, payRes.ok)
-      if (payResult.kind === 'redirect') {
-        window.location.href = payResult.url
-        return
-      }
-      if (payResult.kind === 'payu') {
-        applyPaymentInitiateResult(payResult)
-        return
-      }
-
-      if (payRes.status === 503 && payJson.code === 'PAYU_UNAVAILABLE') {
-        const genRes = await fetch('/api/generate-report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ detailedAssessmentId, freeAssessmentResult }),
-        })
-        const genJson = (await genRes.json().catch(() => ({}))) as {
-          reportId?: string
-          alreadyExists?: boolean
-          error?: string
-        }
-        if (!genRes.ok) {
-          throw new Error(genJson.error || 'Could not generate your report')
-        }
-        const rid = genJson.reportId
-        if (!rid) {
-          throw new Error('Could not generate your report')
-        }
-        const q = genJson.alreadyExists ? '?notice=already-have-report' : ''
-        router.push(`/report/${encodeURIComponent(rid)}${q}`)
-        return
-      }
-
-      throw new Error(
-        typeof payJson.error === 'string'
-          ? payJson.error
-          : payRes.ok
-            ? 'Invalid checkout payload from server.'
-            : 'Checkout could not start.',
-      )
     } catch (e) {
-      setPhase('summary')
       setGenError(e instanceof Error ? e.message : 'Something went wrong')
+    } finally {
+      setIsCheckoutLoading(false)
     }
   }
 
@@ -354,10 +297,6 @@ export default function DetailedAssessmentPage() {
         </div>
       </div>
     )
-  }
-
-  if (phase === 'generating') {
-    return <ReportGeneratingLoader />
   }
 
   const variants = {
@@ -798,10 +737,10 @@ export default function DetailedAssessmentPage() {
                   <button
                     type="button"
                     onClick={handleGenerateReport}
-                    disabled={freeQuizOnFile === false}
+                    disabled={freeQuizOnFile === false || isCheckoutLoading}
                     className="mt-10 w-full rounded-2xl bg-[#14532d] py-4 text-base font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Confirm &amp; pay ₹39 (PayU)
+                    {isCheckoutLoading ? 'Opening secure payment…' : 'Confirm & pay ₹39 (PayU)'}
                   </button>
                   <p className="mt-3 text-center sm:text-left text-xs text-gray-500">
                     You&apos;ll complete secure payment on PayU (₹39) before your personalised PDF is generated.

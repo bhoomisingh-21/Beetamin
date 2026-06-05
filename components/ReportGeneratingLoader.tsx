@@ -24,15 +24,6 @@ export function ReportGeneratingLoader() {
     return () => clearInterval(t)
   }, [])
 
-  useEffect(() => {
-    const beforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = ''
-    }
-    window.addEventListener('beforeunload', beforeUnload)
-    return () => window.removeEventListener('beforeunload', beforeUnload)
-  }, [])
-
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-50 px-6">
       <div className="mb-10 flex flex-col items-center">

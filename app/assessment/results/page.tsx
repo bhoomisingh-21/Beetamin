@@ -6,8 +6,11 @@ import { useUser } from '@clerk/nextjs'
 import { getClientAssessmentFlags } from '@/lib/booking-actions'
 import { signInReturnForPaidReport } from '@/lib/assessment-auth-links'
 import { markAssessmentAuthReturn } from '@/lib/assessment-local-storage'
+import { startReport39Payment } from '@/lib/start-report-payment-client'
 import {
   fetchRestoredAssessmentBundle,
+  readLocalAssessmentMeta,
+  readLocalFreeAssessmentSnapshot,
   syncLocalAssessmentToProfile,
 } from '@/lib/sync-local-assessment-client'
 import { motion } from 'framer-motion'
@@ -114,10 +117,9 @@ export default function ResultsPage() {
   const router = useRouter()
   const { isLoaded, isSignedIn, user } = useUser()
 
-  /**
-   * Queues `/api/generate-report` → `runPaidReportGeneration` (new Groq JSON + react-pdf, storage + inbox).
-   */
+  /** ₹39 — opens PayU directly (no leave-site popup). */
   async function generateAndSendReport(userEmail: string, userName: string) {
+    void userEmail
     void userName
     setGenerateError(null)
     trackEvent('payment_initiated', { plan: 'report', amount: 39, source: 'results_page' })
@@ -157,19 +159,18 @@ export default function ResultsPage() {
 
     setIsGeneratingReport(true)
     try {
-      const res = await fetch('/api/generate-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ detailedAssessmentId: detailedId, freeAssessmentResult: result }),
+      const paymentError = await startReport39Payment({
+        detailedAssessmentId: detailedId,
+        mode: 'new',
+        freeAssessmentSnapshot: readLocalFreeAssessmentSnapshot() ?? result,
+        assessmentMeta: readLocalAssessmentMeta(),
       })
-      const j = await res.json()
-      if (!res.ok) throw new Error(typeof j.error === 'string' ? j.error : 'Could not start report generation')
-      if (j.reportId) {
-        router.push(`/report/${encodeURIComponent(j.reportId)}`)
+      if (paymentError) {
+        setGenerateError(paymentError)
       }
     } catch (e) {
       console.error('[assessment/results] generateAndSendReport', e)
-      setGenerateError(e instanceof Error ? e.message : 'Could not start your report.')
+      setGenerateError(e instanceof Error ? e.message : 'Could not start checkout.')
     } finally {
       setIsGeneratingReport(false)
     }
@@ -703,7 +704,7 @@ export default function ResultsPage() {
                   {isGeneratingReport ? (
                     <span className="inline-flex items-center justify-center gap-2">
                       <Loader2 className="h-5 w-5 animate-spin shrink-0" />
-                      Starting your PDF…
+                      Opening secure payment…
                     </span>
                   ) : (
                     'Get Paid Report — ₹39'
