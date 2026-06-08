@@ -148,6 +148,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
     client: initialDashboard.client,
     appointments: initialDashboard.appointments ?? [],
     paidReports: initialDashboard.paidReports ?? [],
+    dietPlans: initialDashboard.dietPlans ?? [],
     sessionBooking: initialDashboard.sessionBooking,
   })
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null)
@@ -160,6 +161,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
       client: initialDashboard.client,
       appointments: initialDashboard.appointments ?? [],
       paidReports: initialDashboard.paidReports ?? [],
+      dietPlans: initialDashboard.dietPlans ?? [],
       sessionBooking: initialDashboard.sessionBooking,
     })
   }, [initialDashboard])
@@ -172,6 +174,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           client: result.client,
           appointments: result.appointments ?? [],
           paidReports: result.paidReports ?? [],
+          dietPlans: result.dietPlans ?? [],
           sessionBooking: result.sessionBooking,
         })
       })
@@ -200,6 +203,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   const client = data.client
 
   const paidReports = data.paidReports
+  const dietPlans = data.dietPlans
   const sessionBooking = data.sessionBooking
   const canUseSessionBooking = sessionBooking?.allowed === true
 
@@ -496,6 +500,48 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
                 </Link>
               </div>
             )}
+          </motion.div>
+        )}
+
+        {dietPlans.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 bg-[#111820] border border-emerald-500/20 rounded-3xl p-6 md:p-8"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <FileText className="text-emerald-400 shrink-0 mt-1" size={22} />
+              <div className="min-w-0">
+                <h2 className="text-white font-black text-xl">Your diet plans</h2>
+                <p className="text-gray-500 text-xs mt-1">
+                  Personalised plans prepared by your nutritionist
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {dietPlans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0A0F14] px-4 py-4"
+                >
+                  <div className="min-w-0">
+                    <p className="text-white font-bold text-sm sm:text-base">{plan.title}</p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      {formatReportDay(plan.published_at)}
+                      {plan.nutritionistName ? ` · ${plan.nutritionistName}` : ''}
+                    </p>
+                  </div>
+                  <a
+                    href={`/api/diet-plan/download?id=${encodeURIComponent(plan.id)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-5 py-2.5 text-xs font-black text-black"
+                  >
+                    Download
+                  </a>
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
 

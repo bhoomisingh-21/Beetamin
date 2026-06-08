@@ -190,6 +190,7 @@ export async function getNutritionists(): Promise<NutritionistRow[]> {
   const { data } = await supabaseAdmin
     .from('nutritionists')
     .select('id, clerk_user_id, name, email, bio')
+    .eq('is_active', true)
     .order('name')
   return data || []
 }
@@ -400,6 +401,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
     paidReports: [],
     recoveryReportReady: null,
     recoveryReportGenerating: null,
+    dietPlans: [],
     sessionBooking,
   }
   try {
@@ -435,6 +437,25 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
       amount: r.amount != null ? Number(r.amount) : undefined,
     }))
 
+    const { data: dietRows } = await supabaseAdmin
+      .from('diet_plans')
+      .select('id, title, file_name, published_at, nutritionists(name)')
+      .eq('client_id', client.id)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+
+    const dietPlans = (dietRows || []).map((d) => {
+      const raw = (d as { nutritionists?: unknown }).nutritionists
+      const n = (Array.isArray(raw) ? raw[0] : raw) as { name?: string } | null
+      return {
+        id: String(d.id),
+        title: String(d.title),
+        file_name: String(d.file_name),
+        published_at: String(d.published_at),
+        nutritionistName: n?.name ? String(n.name) : null,
+      }
+    })
+
     return {
       client,
       appointments: appointments || [],
@@ -445,6 +466,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
       recoveryReportGenerating: recoveryReportGenerating
         ? { report_id: String(recoveryReportGenerating.report_id) }
         : null,
+      dietPlans,
       sessionBooking,
     }
   } catch (e) {

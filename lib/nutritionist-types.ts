@@ -31,6 +31,21 @@ export type ClientDocumentDTO = {
   uploaded_at: string
 }
 
+export type DietPlanDTO = {
+  id: string
+  nutritionist_id: string
+  client_id: string
+  client_email: string
+  title: string
+  storage_path: string
+  file_name: string
+  file_size_kb: number | null
+  status: string
+  version: number
+  published_at: string
+  created_at: string
+}
+
 export type PortalHomePayload = {
   nutritionist: { id: string; name: string; email: string }
   stats: {
@@ -64,6 +79,7 @@ export type PortalClientBundle = {
   appointments: AppointmentWithClient[]
   notes: NutritionistNoteDTO[]
   documents: ClientDocumentDTO[]
+  dietPlans: DietPlanDTO[]
   paidReports: { report_id: string; status: string; deficiency_summary?: unknown; created_at?: string }[]
   latestReadyReport: { report_id: string; status: string; deficiency_summary?: unknown } | null
   detailedAssessment: {

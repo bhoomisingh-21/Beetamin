@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { paymentAppBaseUrl } from '@/lib/payment-app-base-url'
 import { verifyPayUResponseHash } from '@/lib/payu'
 import { runPaidReportGeneration } from '@/lib/run-paid-report-generation'
+import { sendFullPlanConfirmationEmail } from '@/lib/send-plan-confirmation-email'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
@@ -87,6 +88,20 @@ export async function POST(req: NextRequest) {
         (p.email ?? '').trim().toLowerCase() ||
         `noemail_${userId.slice(-14)}@beetamin.internal`
       const name = (p.firstname ?? '').trim() || 'Patient'
+      const phone = (p.phone ?? '').trim()
+      const hasRealEmail = !email.endsWith('@beetamin.internal')
+
+      // Guard so the confirmation email is sent only on the first activation,
+      // even if PayU POSTs the success callback more than once.
+      const { data: priorPurchase } = await supabaseAdmin
+        .from('purchases')
+        .select('status')
+        .eq('id', rowPk)
+        .eq('user_id', userId)
+        .eq('txnid', txnid)
+        .eq('plan', 'full')
+        .maybeSingle()
+      const wasAlreadyActive = priorPurchase?.status === 'active'
 
       const { error: purchaseErr } = await supabaseAdmin
         .from('purchases')
@@ -117,7 +132,7 @@ export async function POST(req: NextRequest) {
         clerk_user_id: userId,
         name,
         email,
-        phone: '',
+        phone,
         plan_start_date: now.toISOString().split('T')[0],
         plan_end_date: endDate.toISOString().split('T')[0],
         status: 'active',
@@ -136,12 +151,29 @@ export async function POST(req: NextRequest) {
               sessions_total: clientPatch.sessions_total,
               sessions_used: clientPatch.sessions_used,
               sessions_remaining: clientPatch.sessions_remaining,
+              // Only overwrite phone when PayU actually returned one.
+              ...(phone ? { phone } : {}),
             })
             .eq('id', existingClient.id)
         : await supabaseAdmin.from('clients').upsert(clientPatch, { onConflict: 'email' })
 
       if (clientResult.error) {
         console.error('[payment/success] activate client', clientResult.error)
+      }
+
+      // Send the welcome / confirmation email once, on first activation only.
+      if (!wasAlreadyActive && hasRealEmail) {
+        waitUntil(
+          sendFullPlanConfirmationEmail({
+            to: email,
+            name,
+            sessionsTotal: 6,
+            planEndDate: clientPatch.plan_end_date,
+            bookingUrl: `${base}/booking/new`,
+          }).then((res) => {
+            if (!res.ok) console.error('[payment/success] confirmation email', res.error)
+          }),
+        )
       }
 
       return NextResponse.redirect(`${base}/booking?full_plan_payment_success=1`, { status: 302 })

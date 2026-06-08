@@ -1,4 +1,9 @@
 import Groq from 'groq-sdk'
+import {
+  FORBIDDEN_WESTERN_MEAL_TERMS,
+  resolvePatientDiet,
+  sanitizeMealPlanForPatient,
+} from '@/lib/patient-diet'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
 import type {
   GutHealthV2,
@@ -21,11 +26,11 @@ VOICE: Smart wellness coach—warm, precise, never textbook. Short paragraphs. Z
 
 ANTI-GENERIC: Every block must tie to THIS patient's JSON (symptoms, sleep, stress, meals, goal). If data missing, infer once, label lightly—never long lectures.
 
-STRICT MEAL PLAN — output is WRONG if any rule breaks.
+STRICT MEAL PLAN — output is WRONG if any rule breaks. Every dish must be everyday Indian home/kitchen food (North + South + regional staples).
 
-FORBIDDEN WORDS (case-insensitive, never in mealPlan.food/deficiencyTarget/focus/reason or any meal text): quinoa, citrus vinaigrette, smoked salmon, shrimp, asparagus, greek yogurt, caesar salad.
+INDIAN ONLY — NEVER use western-coded meals or ingredients. Forbidden in mealPlan (any field): ${FORBIDDEN_WESTERN_MEAL_TERMS.slice(0, 12).join(', ')}, and similar western items. Use dal, roti, paratha, idli, dosa, khichdi, sabzi, chawal, rajma, chana, upma, poha, thepla, dhokla, murabba, ladoo, chikki, ragi, bajra, jowar, til, alsi, methi, palak — NOT quinoa, avocado, kale, bagels, granola, smoothie bowls, protein shakes.
 
-DIET TYPE — before recommending any non‑veg meal, read patient payload "diet" (and detailed diet_type if echoed there). Only suggest fish or other meat if that field clearly allows non‑vegetarian eating. If diet is vegetarian or vegan, use only plant sources from the maps above (no fish/meat/poultry; vegan: also no eggs, dairy, or honey).
+DIET CATEGORY (payload dietCategory + dietRules) is AUTHORITATIVE — obey dietRules exactly. If dietCategory is pure_vegetarian or lacto_ovo_vegetarian, ZERO chicken/fish/meat/seafood in mealPlan; pure_vegetarian also ZERO eggs/anda. Only non_vegetarian may include Indian fish (rohu/katla/bangda) or chicken — still Indian-style, never western.
 
 DEFICIENCY-TO-FOOD — days 1–7: each day "focus" and all 5 meals must pull from the nutrient that day targets. Stack days in patient primaryDeficiencies order: highest severity first (High → Moderate → Mild); only repeat lower tiers after higher ones are covered.
 
@@ -132,10 +137,24 @@ function shrinkForGroqInput(data: unknown, maxStringLen: number, maxArrayItems: 
 }
 
 function buildUserPayloadForGroq(input: GenerateRecoveryReportV2Input, stringCap: number) {
+  const free = input.freeAssessment
+  const dietSummary =
+    free && typeof free === 'object' && !Array.isArray(free) && typeof (free as Record<string, unknown>).dietSummary === 'string'
+      ? ((free as Record<string, unknown>).dietSummary as string)
+      : undefined
+
+  const resolved = resolvePatientDiet({
+    detailedDietType: input.detailed?.diet_type,
+    freeQuizDiet: input.diet,
+    dietSummary,
+  })
+
   return {
     patientName: input.patientName,
     age: input.age ?? undefined,
-    diet: input.diet ?? undefined,
+    diet: resolved.label,
+    dietCategory: resolved.category,
+    dietRules: resolved.groqRules,
     goal: input.goal ?? undefined,
     freeAssessment: shrinkForGroqInput(input.freeAssessment, stringCap, 48),
     detailedLifestyleAssessment: input.detailed
@@ -554,25 +573,33 @@ export function coerceRecoveryReportV2(
       reason: asStr(r.reason, ''),
     }))
 
+  const dietResolved = resolvePatientDiet({
+    detailedDietType: envelope.diet,
+    freeQuizDiet: envelope.diet,
+  })
+
   const mealPlanRaw = Array.isArray(data.mealPlan) ? data.mealPlan : []
-  const mealPlan = mealPlanRaw
-    .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
-    .map((d) => {
-      const mealsRaw = Array.isArray(d.meals) ? d.meals : []
-      const meals = mealsRaw
-        .filter((m): m is Record<string, unknown> => !!m && typeof m === 'object')
-        .map((m) => ({
-          timing: asStr(m.timing, ''),
-          food: asStr(m.food, ''),
-          deficiencyTarget: asStr(m.deficiencyTarget, ''),
-          reason: asStr(m.reason, ''),
-        }))
-      return {
-        day: num(d.day, 1, 1, 14),
-        focus: asStr(d.focus, ''),
-        meals,
-      }
-    })
+  const mealPlan = sanitizeMealPlanForPatient(
+    mealPlanRaw
+      .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
+      .map((d) => {
+        const mealsRaw = Array.isArray(d.meals) ? d.meals : []
+        const meals = mealsRaw
+          .filter((m): m is Record<string, unknown> => !!m && typeof m === 'object')
+          .map((m) => ({
+            timing: asStr(m.timing, ''),
+            food: asStr(m.food, ''),
+            deficiencyTarget: asStr(m.deficiencyTarget, ''),
+            reason: asStr(m.reason, ''),
+          }))
+        return {
+          day: num(d.day, 1, 1, 14),
+          focus: asStr(d.focus, ''),
+          meals,
+        }
+      }),
+    dietResolved.category,
+  )
 
   const supplementsRaw = Array.isArray(data.supplements) ? data.supplements : []
   const supplements = supplementsRaw
@@ -649,7 +676,7 @@ export function coerceRecoveryReportV2(
     shoppingList: coerceShoppingList(data.shoppingList),
     name: envelope.name,
     age: envelope.age,
-    diet: envelope.diet,
+    diet: dietResolved.label,
     goal: envelope.goal,
     reportId: envelope.reportId,
     generatedAt: envelope.generatedAt,
@@ -668,7 +695,7 @@ export type GenerateRecoveryReportV2Input = {
 }
 
 const USER_PAYLOAD_INSTRUCTION_PREFIX =
-  'Generate the complete recovery report JSON for this patient. Use BOTH freeAssessment and detailedLifestyleAssessment when present; infer carefully only where data is missing.\nPatient payload (JSON):\n'
+  'Generate the complete recovery report JSON for this patient. Use BOTH freeAssessment and detailedLifestyleAssessment when present; infer carefully only where data is missing. Obey dietCategory and dietRules — mealPlan must be 100% Indian dishes matching the patient diet.\nPatient payload (JSON):\n'
 
 /** Completion budget so estimated prompt tokens + max_tokens stays under Groq TPM per request (often 12k). */
 function maxCompletionTokensForPrompt(promptCharLength: number): number {

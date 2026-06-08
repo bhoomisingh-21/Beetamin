@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
+import { resolvePatientDiet } from '@/lib/patient-diet'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
 import { coerceRecoveryReportV2, generateRecoveryReportV2Payload } from '@/lib/recovery-report-v2-groq'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -84,6 +85,18 @@ export async function POST(req: Request) {
   }
 
   const patientName = name || clerkFallbackName || 'Patient'
+  const dietSummary =
+    assessmentResult &&
+    typeof assessmentResult === 'object' &&
+    !Array.isArray(assessmentResult) &&
+    typeof (assessmentResult as Record<string, unknown>).dietSummary === 'string'
+      ? ((assessmentResult as Record<string, unknown>).dietSummary as string)
+      : undefined
+  const resolvedDiet = resolvePatientDiet({
+    detailedDietType: detailed?.diet_type,
+    freeQuizDiet: diet,
+    dietSummary,
+  })
 
   try {
     const raw = await generateRecoveryReportV2Payload({
@@ -91,7 +104,7 @@ export async function POST(req: Request) {
       freeAssessment: assessmentResult,
       detailed,
       age,
-      diet: detailed?.diet_type ?? diet,
+      diet: resolvedDiet.label,
       goal,
     })
 
@@ -99,7 +112,7 @@ export async function POST(req: Request) {
     const reportData = coerceRecoveryReportV2(raw, {
       name: patientName,
       age,
-      diet,
+      diet: resolvedDiet.label,
       goal,
       reportId,
       generatedAt: new Date().toISOString(),

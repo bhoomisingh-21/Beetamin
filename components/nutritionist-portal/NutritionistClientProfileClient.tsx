@@ -17,6 +17,7 @@ import type { PortalClientBundle } from '@/lib/nutritionist-types'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { NutritionistNotesTab } from '@/components/nutritionist-portal/NutritionistNotesTab'
 import { NutritionistDocumentsTab } from '@/components/nutritionist-portal/NutritionistDocumentsTab'
+import { NutritionistDietPlanTab } from '@/components/nutritionist-portal/NutritionistDietPlanTab'
 import { NutritionistProgressCharts } from '@/components/nutritionist/NutritionistProgressCharts'
 import { NutritionistWeightSparkline } from '@/components/nutritionist/NutritionistWeightSparkline'
 import { toggleNutritionistNotePin } from '@/lib/nutritionist-portal-actions'
@@ -115,7 +116,7 @@ function deriveProgressStats(bundle: PortalClientBundle) {
   }
 }
 
-type Tab = 'overview' | 'notes' | 'documents' | 'progress'
+type Tab = 'overview' | 'notes' | 'dietPlan' | 'documents' | 'progress'
 
 export default function NutritionistClientProfileClient({
   bundle,
@@ -134,7 +135,7 @@ export default function NutritionistClientProfileClient({
     session: 'all',
   })
 
-  const { client, appointments, notes, documents, latestReadyReport } = bundle
+  const { client, appointments, notes, documents, dietPlans, latestReadyReport } = bundle
 
   const pinned = notes.find((n) => n.is_pinned)
   const firstSessionEmpty = notes.length === 0 && documents.length === 0
@@ -162,6 +163,7 @@ export default function NutritionistClientProfileClient({
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'notes', label: 'Notes' },
+    { id: 'dietPlan', label: 'Diet Plan' },
     { id: 'documents', label: 'Documents' },
     { id: 'progress', label: 'Progress' },
   ]
@@ -607,6 +609,15 @@ export default function NutritionistClientProfileClient({
               notes={notes}
               tagFilter={tagFilter}
               onTagFilter={setTagFilter}
+            />
+          )}
+
+          {tab === 'dietPlan' && (
+            <NutritionistDietPlanTab
+              clientId={clientId}
+              clientEmail={client.email.toLowerCase()}
+              clientName={client.name}
+              dietPlans={dietPlans}
             />
           )}
 

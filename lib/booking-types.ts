@@ -92,11 +92,20 @@ export type DashboardBundle = {
   }
 }
 
+export type DietPlanCustomerDTO = {
+  id: string
+  title: string
+  file_name: string
+  published_at: string
+  nutritionistName: string | null
+}
+
 export type ClientSessionsDashboard = {
   client: ClientRow | null
   appointments: AppointmentRow[]
   paidReports: PaidReportSummary[]
   recoveryReportReady: { report_id: string; status: string } | null
   recoveryReportGenerating: { report_id: string } | null
+  dietPlans: DietPlanCustomerDTO[]
   sessionBooking: SessionBookingAccess
 }

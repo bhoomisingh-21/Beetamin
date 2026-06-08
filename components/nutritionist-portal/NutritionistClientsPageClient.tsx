@@ -90,8 +90,8 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
       </div>
 
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">All Clients</h1>
-        <p className="mt-1 text-sm text-[#8B9AB0]">Everyone on file — search and filter by status</p>
+        <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">My Clients</h1>
+        <p className="mt-1 text-sm text-[#8B9AB0]">Clients you have sessions with — search and filter by status</p>
         <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
       </div>
 

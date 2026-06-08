@@ -1,4 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server'
+import { resolvePatientDiet } from '@/lib/patient-diet'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
 import {
   coerceRecoveryReportV2,
@@ -92,6 +93,17 @@ export async function runPaidReportGeneration(args: {
     }
 
     const meta = readAssessmentMeta(client?.assessment_meta)
+    const dietSummary =
+      freeAssessment && typeof freeAssessment === 'object' && !Array.isArray(freeAssessment)
+        ? typeof (freeAssessment as Record<string, unknown>).dietSummary === 'string'
+          ? ((freeAssessment as Record<string, unknown>).dietSummary as string)
+          : undefined
+        : undefined
+    const resolvedDiet = resolvePatientDiet({
+      detailedDietType: detailed.diet_type as string | undefined,
+      freeQuizDiet: meta.diet,
+      dietSummary,
+    })
     const goalFromClient =
       client && typeof client.assessment_goal === 'string' && client.assessment_goal.trim()
         ? client.assessment_goal.trim()
@@ -138,7 +150,7 @@ export async function runPaidReportGeneration(args: {
         freeAssessment,
         detailed: detailedPayload,
         age: meta.age ?? 'Not specified',
-        diet: meta.diet ?? detailed.diet_type ?? 'Mixed',
+        diet: resolvedDiet.label,
         goal: meta.goal ?? goalFromClient ?? 'Personalised nutrient recovery',
       })
     } catch (e) {
@@ -151,7 +163,7 @@ export async function runPaidReportGeneration(args: {
     const reportData = coerceRecoveryReportV2(raw, {
       name: patientName,
       age: meta.age,
-      diet: meta.diet ?? detailed.diet_type,
+      diet: resolvedDiet.label,
       goal: meta.goal ?? goalFromClient,
       reportId,
       generatedAt,

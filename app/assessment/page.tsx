@@ -62,6 +62,8 @@ export default function AssessmentPage() {
         email: answers.email,
         phone: answers.phone,
         goal: answers.goal,
+        diet: answers.diet,
+        age: answers.age,
       }
       writeAssessmentBundle({
         assessmentResult: result as Record<string, unknown>,

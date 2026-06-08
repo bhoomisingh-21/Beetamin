@@ -10,11 +10,13 @@ import { getOrCreateNutritionist, type AppointmentWithClient } from '@/lib/nutri
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
 import type {
   ClientDocumentDTO,
+  DietPlanDTO,
   NutritionistNoteDTO,
   PortalClientBundle,
   PortalClientListRow,
   PortalHomePayload,
 } from '@/lib/nutritionist-types'
+import { sendDietPlanReadyEmail } from '@/lib/send-diet-plan-email'
 import {
   computeSlotStatus,
   isoTodayLocal,
@@ -60,8 +62,15 @@ async function assertAppointmentOwnedByNutritionist(
   return !!data
 }
 
-async function assertClientExists(clientId: string): Promise<boolean> {
-  const { data } = await supabaseAdmin.from('clients').select('id').eq('id', clientId).maybeSingle()
+/** A nutritionist "owns" a client only if they have at least one appointment together. */
+async function nutritionistOwnsClient(nutritionistId: string, clientId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from('appointments')
+    .select('id')
+    .eq('nutritionist_id', nutritionistId)
+    .eq('client_id', clientId)
+    .limit(1)
+    .maybeSingle()
   return !!data
 }
 
@@ -165,17 +174,22 @@ export async function getNutritionistPortalClients(): Promise<PortalClientListRo
     const nutritionist = await portalNutritionist()
     if (!nutritionist) return []
 
-    const { data: allClients } = await supabaseAdmin
-      .from('clients')
-      .select('*')
-      .order('name', { ascending: true })
-
     const { data: appts } = await supabaseAdmin
       .from('appointments')
       .select('client_id, session_number, scheduled_date, scheduled_time, status')
       .eq('nutritionist_id', nutritionist.id)
 
     const rows = appts || []
+
+    // Only clients this nutritionist has booked (self-pick model: no account-level assignment).
+    const myClientIds = [...new Set(rows.map((r) => r.client_id as string).filter(Boolean))]
+    if (myClientIds.length === 0) return []
+
+    const { data: allClients } = await supabaseAdmin
+      .from('clients')
+      .select('*')
+      .in('id', myClientIds)
+      .order('name', { ascending: true })
     const byClient = new Map<string, { session_number: number; status: string }[]>()
     for (const r of rows) {
       const cid = r.client_id as string
@@ -237,6 +251,10 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
     const nutritionist = await portalNutritionist()
     if (!nutritionist) return null
 
+    // Access control: nutritionists can only open clients they have an appointment with.
+    const owns = await nutritionistOwnsClient(nutritionist.id, clientId)
+    if (!owns) return null
+
     const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', clientId).maybeSingle()
     if (!client) return null
 
@@ -268,6 +286,12 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
       .eq('nutritionist_id', nutritionist.id)
       .eq('client_email', email)
       .order('uploaded_at', { ascending: false })
+
+    const { data: dietPlansRaw } = await supabaseAdmin
+      .from('diet_plans')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false })
 
     const clerkUid = String(client.clerk_user_id || '')
 
@@ -355,6 +379,7 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
       appointments: apList,
       notes: noteRows,
       documents: (documents || []) as ClientDocumentDTO[],
+      dietPlans: (dietPlansRaw || []) as DietPlanDTO[],
       paidReports,
       latestReadyReport,
       detailedAssessment,
@@ -433,7 +458,7 @@ export async function createNutritionistNote(input: {
   try {
     const nutritionist = await portalNutritionist()
     if (!nutritionist) return { ok: false, error: 'Unauthorized' }
-    const okClient = await assertClientExists(input.clientId)
+    const okClient = await nutritionistOwnsClient(nutritionist.id, input.clientId)
     if (!okClient) return { ok: false, error: 'Client not found' }
 
     if (input.isPinned) {
@@ -678,7 +703,7 @@ export async function uploadClientDocument(formData: FormData): Promise<{ ok: bo
       return { ok: false, error: 'Missing file or client' }
     }
 
-    const okClient = await assertClientExists(clientId)
+    const okClient = await nutritionistOwnsClient(nutritionist.id, clientId)
     if (!okClient) return { ok: false, error: 'Client not found' }
 
     const max = 10 * 1024 * 1024
@@ -726,6 +751,166 @@ export async function uploadClientDocument(formData: FormData): Promise<{ ok: bo
     return { ok: true }
   } catch (e) {
     console.error('[uploadClientDocument]', e)
+    return { ok: false, error: 'failed' }
+  }
+}
+
+export async function uploadDietPlan(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const nutritionist = await portalNutritionist()
+    if (!nutritionist) return { ok: false, error: 'Unauthorized' }
+
+    const clientId = String(formData.get('clientId') || '')
+    const clientEmail = String(formData.get('clientEmail') || '').toLowerCase()
+    const title = String(formData.get('title') || '').trim() || 'Personalised Diet Plan'
+    const file = formData.get('file') as File | null
+    if (!clientId || !clientEmail || !file || file.size <= 0) {
+      return { ok: false, error: 'Missing file or client' }
+    }
+
+    const okClient = await nutritionistOwnsClient(nutritionist.id, clientId)
+    if (!okClient) return { ok: false, error: 'Client not found' }
+
+    const ext = (file.name.split('.').pop() || '').toLowerCase()
+    if (ext !== 'pdf') return { ok: false, error: 'Diet plan must be a PDF' }
+    const max = 10 * 1024 * 1024
+    if (file.size > max) return { ok: false, error: 'Max 10MB' }
+
+    const safeEmail = clientEmail.replace(/[^a-zA-Z0-9.@_-]/g, '_')
+    const origName = file.name.replace(/[^\w.\- ]+/g, '_').slice(0, 180)
+    const storagePath = `${nutritionist.id}/${safeEmail}/${Date.now()}_${origName}`
+
+    const buf = Buffer.from(await file.arrayBuffer())
+    const { error: upErr } = await supabaseAdmin.storage.from('diet-plans').upload(storagePath, buf, {
+      contentType: 'application/pdf',
+      upsert: false,
+    })
+    if (upErr) {
+      console.error('[uploadDietPlan] storage', upErr)
+      return { ok: false, error: upErr.message }
+    }
+
+    const { count } = await supabaseAdmin
+      .from('diet_plans')
+      .select('*', { count: 'exact', head: true })
+      .eq('client_id', clientId)
+    const version = (count ?? 0) + 1
+
+    const { data: inserted, error: insErr } = await supabaseAdmin
+      .from('diet_plans')
+      .insert({
+        client_id: clientId,
+        nutritionist_id: nutritionist.id,
+        client_email: clientEmail,
+        title,
+        storage_path: storagePath,
+        file_name: file.name,
+        file_size_kb: Math.round(file.size / 1024),
+        status: 'published',
+        version,
+        published_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single()
+
+    if (insErr) {
+      await supabaseAdmin.storage.from('diet-plans').remove([storagePath])
+      console.error('[uploadDietPlan] insert', insErr)
+      return { ok: false, error: insErr.message }
+    }
+
+    // Notify the customer their plan is ready (best-effort, does not block upload).
+    if (!clientEmail.endsWith('@beetamin.internal')) {
+      try {
+        const { data: signed } = await supabaseAdmin.storage
+          .from('diet-plans')
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+        const { data: clientRow } = await supabaseAdmin
+          .from('clients')
+          .select('name')
+          .eq('id', clientId)
+          .maybeSingle()
+        if (signed?.signedUrl) {
+          const res = await sendDietPlanReadyEmail({
+            to: clientEmail,
+            name: (clientRow?.name as string) || 'there',
+            nutritionistName: nutritionist.name,
+            planTitle: title,
+            downloadUrl: signed.signedUrl,
+          })
+          if (res.ok && inserted?.id) {
+            await supabaseAdmin
+              .from('diet_plans')
+              .update({ notified_at: new Date().toISOString() })
+              .eq('id', inserted.id)
+          } else if (!res.ok) {
+            console.error('[uploadDietPlan] email', res.error)
+          }
+        }
+      } catch (notifyErr) {
+        console.error('[uploadDietPlan] notify', notifyErr)
+      }
+    }
+
+    revalidatePath(`/nutritionist/clients/${clientId}`)
+    return { ok: true }
+  } catch (e) {
+    console.error('[uploadDietPlan]', e)
+    return { ok: false, error: 'failed' }
+  }
+}
+
+export async function getSignedDietPlanUrl(planId: string): Promise<{ url: string | null; error?: string }> {
+  try {
+    const nutritionist = await portalNutritionist()
+    if (!nutritionist) return { url: null, error: 'Unauthorized' }
+
+    const { data: row } = await supabaseAdmin
+      .from('diet_plans')
+      .select('storage_path')
+      .eq('id', planId)
+      .eq('nutritionist_id', nutritionist.id)
+      .maybeSingle()
+    if (!row?.storage_path) return { url: null, error: 'Not found' }
+
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from('diet-plans')
+      .createSignedUrl(row.storage_path, 60)
+    if (error || !signed?.signedUrl) return { url: null, error: error?.message || 'sign_failed' }
+    return { url: signed.signedUrl }
+  } catch (e) {
+    console.error('[getSignedDietPlanUrl]', e)
+    return { url: null, error: 'failed' }
+  }
+}
+
+export async function deleteDietPlan(
+  planId: string,
+  clientId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const nutritionist = await portalNutritionist()
+    if (!nutritionist) return { ok: false, error: 'Unauthorized' }
+
+    const { data: row } = await supabaseAdmin
+      .from('diet_plans')
+      .select('storage_path')
+      .eq('id', planId)
+      .eq('nutritionist_id', nutritionist.id)
+      .maybeSingle()
+    if (!row?.storage_path) return { ok: false, error: 'Not found' }
+
+    await supabaseAdmin.storage.from('diet-plans').remove([row.storage_path])
+    const { error } = await supabaseAdmin
+      .from('diet_plans')
+      .delete()
+      .eq('id', planId)
+      .eq('nutritionist_id', nutritionist.id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath(`/nutritionist/clients/${clientId}`)
+    return { ok: true }
+  } catch (e) {
+    console.error('[deleteDietPlan]', e)
     return { ok: false, error: 'failed' }
   }
 }
