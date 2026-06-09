@@ -1,6 +1,6 @@
 export const ALLOWED_NUTRITIONIST_EMAILS: string[] = [
-  'bhoomisingh2109@gmail.com',
-  'sbhoomi23bca@student.mes.ac.in',
+  'dtjyotidahiya@gmail.com',
+  'nausheen1shaikh@gmail.com',
 ]
 
 export function isNutritionistEmail(email: string): boolean {
