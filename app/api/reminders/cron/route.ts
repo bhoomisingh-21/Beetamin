@@ -40,6 +40,22 @@ function isRealEmail(email?: string | null): email is string {
   return !!email && !email.endsWith('@beetamin.internal')
 }
 
+/** YYYY-MM-DD in Asia/Kolkata (matches how appointment dates are stored). */
+function istDateString(d: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d)
+}
+
+function istTomorrowString(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return istDateString(d)
+}
+
 function shell(title: string, bodyHtml: string) {
   return `
     <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
@@ -69,6 +85,8 @@ export async function GET(req: NextRequest) {
   }
 
   const now = Date.now()
+  const todayIst = istDateString()
+  const tomorrowIst = istTomorrowString()
 
   const { data: appointments, error } = await supabaseAdmin
     .from('appointments')
@@ -94,10 +112,14 @@ export async function GET(req: NextRequest) {
     const apptDt = apptInstant(appt.scheduled_date, appt.scheduled_time)
     const minutesUntil = Math.round((apptDt.getTime() - now) / 60000)
 
-    // Resilient windows (cron runs every 15 min; window width tolerates a missed run).
-    const due24h = !appt.reminder_24h_sent && minutesUntil >= 1380 && minutesUntil <= 1455
-    const due1h = !appt.reminder_1h_sent && minutesUntil >= 1 && minutesUntil <= 75
-    if (!due24h && !due1h) continue
+    // Vercel Hobby: cron runs once per day (see vercel.json). Use calendar-day rules in IST:
+    // - reminder_24h_sent → session is tomorrow
+    // - reminder_1h_sent    → session is later today (morning digest, not a true 1h ping)
+    const due24h =
+      !appt.reminder_24h_sent && appt.scheduled_date === tomorrowIst && minutesUntil > 0
+    const dueToday =
+      !appt.reminder_1h_sent && appt.scheduled_date === todayIst && minutesUntil > 0
+    if (!due24h && !dueToday) continue
 
     const formattedDate = apptDt.toLocaleDateString('en-IN', {
       weekday: 'long',
@@ -153,14 +175,15 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      if (due1h) {
+      if (dueToday) {
         if (isRealEmail(clientEmail)) {
           messages.push({
             to: clientEmail,
-            subject: `Session ${appt.session_number} starts in 1 hour ⏰`,
+            subject: `Reminder: Session ${appt.session_number} is Today ⏰`,
             html: shell(
-              'Your session starts soon! ⏰',
+              'Your session is today! ⏰',
               detailCard([
+                `📅 Date: <strong>${formattedDate}</strong>`,
                 `⏰ Time: <strong>${formattedTime}</strong>`,
                 `👤 Nutritionist: <strong>${nutritionistName}</strong>`,
                 `⏱️ Duration: <strong>30 minutes</strong>`,
@@ -171,9 +194,9 @@ export async function GET(req: NextRequest) {
         if (isRealEmail(nutritionistEmail)) {
           messages.push({
             to: nutritionistEmail,
-            subject: `Session ${appt.session_number} with ${clientName} starts in 1 hour ⏰`,
+            subject: `Reminder: Session ${appt.session_number} with ${clientName} is today`,
             html: shell(
-              'Your next session starts soon ⏰',
+              'You have a session today ⏰',
               detailCard([
                 `👤 Client: <strong>${clientName}</strong>`,
                 `⏰ Time: <strong>${formattedTime}</strong>`,
@@ -194,7 +217,7 @@ export async function GET(req: NextRequest) {
         await supabaseAdmin.from('appointments').update({ reminder_24h_sent: true }).eq('id', appt.id)
         sent24h++
       }
-      if (due1h) {
+      if (dueToday) {
         await supabaseAdmin.from('appointments').update({ reminder_1h_sent: true }).eq('id', appt.id)
         sent1h++
       }
