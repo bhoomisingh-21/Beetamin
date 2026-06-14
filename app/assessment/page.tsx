@@ -12,7 +12,7 @@ const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' 
 </svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG)}`
 
-const TOTAL_STEPS = 7
+const TOTAL_STEPS = 8
 
 export default function AssessmentPage() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -93,13 +93,14 @@ export default function AssessmentPage() {
   }
 
   const isStepValid = () => {
-    if (currentStep === 1) return answers.diet !== '' && answers.goal !== ''
-    if (currentStep === 2) return answers.metabolicRhythm !== ''
-    if (currentStep === 3) return answers.sleepArchitecture !== ''
-    if (currentStep === 4) return answers.dermalMarkers.length > 0
-    if (currentStep === 5) return answers.cognitiveClarity !== ''
-    if (currentStep === 6) return answers.muscleRecovery !== '' && answers.immuneResilience !== ''
-    if (currentStep === 7) return answers.name !== '' && answers.email !== '' && answers.phone !== '' && answers.age !== ''
+    if (currentStep === 1) return answers.diet !== ''
+    if (currentStep === 2) return answers.goal !== ''
+    if (currentStep === 3) return answers.metabolicRhythm !== ''
+    if (currentStep === 4) return answers.sleepArchitecture !== ''
+    if (currentStep === 5) return answers.dermalMarkers.length > 0
+    if (currentStep === 6) return answers.cognitiveClarity !== ''
+    if (currentStep === 7) return answers.muscleRecovery !== '' && answers.immuneResilience !== ''
+    if (currentStep === 8) return answers.name !== '' && answers.email !== '' && answers.phone !== '' && answers.age !== ''
     return false
   }
 
@@ -115,6 +116,31 @@ export default function AssessmentPage() {
       return { ...prev, dermalMarkers: [...without, value] }
     })
   }
+
+  function scheduleAdvance() {
+    window.setTimeout(() => {
+      setDirection('next')
+      setCurrentStep((p) => p + 1)
+    }, 280)
+  }
+
+  const dietOptions = [
+    { emoji: '🥗', title: 'Pure Vegetarian', subtitle: 'No eggs, no meat', value: 'vegetarian' },
+    { emoji: '🥚', title: 'Vegetarian + Eggs', subtitle: 'Eggs are okay', value: 'lacto_ovo' },
+    { emoji: '🍖', title: 'Non-Vegetarian', subtitle: 'Includes chicken, fish, meat', value: 'non_veg' },
+    { emoji: '🌱', title: 'Vegan', subtitle: 'No dairy, eggs, or meat', value: 'vegan' },
+    { emoji: '⏰', title: 'Irregular', subtitle: 'Often skip meals or eat randomly', value: 'irregular' },
+  ]
+
+  const goalOptions = [
+    { emoji: '⚡', title: 'More energy', subtitle: 'Fix fatigue, beat afternoon crashes', value: 'energy' },
+    { emoji: '🧠', title: 'Better focus', subtitle: 'Improve mental clarity and memory', value: 'focus' },
+    { emoji: '💇', title: 'Skin, hair & nails', subtitle: 'Reduce hair fall, improve glow', value: 'skin_hair' },
+    { emoji: '💪', title: 'Strength & recovery', subtitle: 'Faster muscle recovery, performance', value: 'recovery' },
+    { emoji: '🛡️', title: 'Build immunity', subtitle: 'Fewer colds, stronger defenses', value: 'immunity' },
+    { emoji: '⚖️', title: 'Hormonal balance', subtitle: 'Better mood, cycle health', value: 'hormones' },
+    { emoji: '🌿', title: 'Overall wellness', subtitle: 'General health improvement', value: 'wellness' },
+  ]
 
   const stepVariants = {
     enter: (dir: 'next' | 'back') => ({ opacity: 0, x: dir === 'next' ? 60 : -60 }),
@@ -280,54 +306,74 @@ export default function AssessmentPage() {
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                       >
 
-                        {/* Step 1 — Diet & Health Goal */}
+                        {/* Step 1 — Diet type */}
                         {currentStep === 1 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 DIETARY PATTERN ANALYSIS
                             </span>
                             <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5">
-                              Your diet &amp; health goal
+                              What best describes your diet?
                             </h2>
-                            <div className="flex flex-col gap-4">
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Diet type *</label>
-                                <select
-                                  value={answers.diet}
-                                  onChange={e => setAnswers(prev => ({ ...prev, diet: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                            <div className="grid grid-cols-1 gap-2 md:gap-3">
+                              {dietOptions.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => {
+                                    setAnswers(prev => ({ ...prev, diet: opt.value }))
+                                    scheduleAdvance()
+                                  }}
+                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-center gap-3 text-left w-full ${answers.diet === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                    }`}
                                 >
-                                  <option value="" disabled>Select your diet...</option>
-                                  <option value="vegetarian">🥗 Vegetarian</option>
-                                  <option value="vegan">🌱 Vegan</option>
-                                  <option value="mixed">🍱 Mixed (veg + non-veg)</option>
-                                  <option value="non_veg">🍖 Non-vegetarian</option>
-                                  <option value="irregular">⏰ Irregular / skip meals often</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-2">Primary health goal *</label>
-                                <select
-                                  value={answers.goal}
-                                  onChange={e => setAnswers(prev => ({ ...prev, goal: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 md:py-3 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                >
-                                  <option value="" disabled>Select your goal...</option>
-                                  <option value="energy">⚡ Fix fatigue &amp; get more energy</option>
-                                  <option value="focus">🧠 Improve focus &amp; mental clarity</option>
-                                  <option value="skin_hair">💇 Better skin, hair &amp; nails</option>
-                                  <option value="recovery">💪 Faster recovery &amp; performance</option>
-                                  <option value="immunity">🛡️ Strengthen immunity</option>
-                                  <option value="hormones">⚖️ Hormonal balance &amp; mood</option>
-                                  <option value="wellness">🌿 Overall wellness</option>
-                                </select>
-                              </div>
+                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
+                                  <div>
+                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
+                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                  </div>
+                                </button>
+                              ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Step 2 — Energy */}
+                        {/* Step 2 — Health goal */}
                         {currentStep === 2 && (
+                          <div>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                              🎯 YOUR PRIMARY GOAL
+                            </span>
+                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5">
+                              What&apos;s your #1 health goal right now?
+                            </h2>
+                            <div className="grid grid-cols-1 gap-2 md:gap-3">
+                              {goalOptions.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => {
+                                    setAnswers(prev => ({ ...prev, goal: opt.value }))
+                                    scheduleAdvance()
+                                  }}
+                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-center gap-3 text-left w-full ${answers.goal === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                    }`}
+                                >
+                                  <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
+                                  <div>
+                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
+                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step 3 — Energy */}
+                        {currentStep === 3 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: B-VITAMINS · IRON · ADRENAL FUNCTION
@@ -356,8 +402,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 3 — Sleep */}
-                        {currentStep === 3 && (
+                        {/* Step 4 — Sleep */}
+                        {currentStep === 4 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: MAGNESIUM · CORTISOL BALANCE · MELATONIN
@@ -386,8 +432,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 4 — Physical symptoms */}
-                        {currentStep === 4 && (
+                        {/* Step 5 — Physical symptoms */}
+                        {currentStep === 5 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: ZINC · BIOTIN · OMEGA-3 · COLLAGEN · VITAMIN C
@@ -422,8 +468,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 5 — Mental clarity */}
-                        {currentStep === 5 && (
+                        {/* Step 6 — Mental clarity */}
+                        {currentStep === 6 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: VITAMIN D3 · B12 · OMEGA-3 FATTY ACIDS
@@ -452,8 +498,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 6 — Recovery & immunity */}
-                        {currentStep === 6 && (
+                        {/* Step 7 — Recovery & immunity */}
+                        {currentStep === 7 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 TESTING: VITAMIN C · D · AMINO ACIDS · ELECTROLYTES
@@ -506,8 +552,8 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 7 — Personal info (last, before report) */}
-                        {currentStep === 7 && (
+                        {/* Step 8 — Personal info (last, before report) */}
+                        {currentStep === 8 && (
                           <div>
                             <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
                               🔬 PERSONALIZING YOUR ANALYSIS

@@ -181,10 +181,11 @@ type Props = {
 }
 
 export function RecoveryPlanDocument({ patientName, reportId, preparedOn, sections }: Props) {
-  const headerCenter = `Personalised Recovery Report — ${patientName}`
+  const firstName = patientName.split(' ')[0] ?? patientName
+  const headerCenter = `${firstName}'s Personalised Nutrient Recovery Plan`
 
   return (
-    <Document title={`Recovery Plan — ${reportId}`} author="The Beetamin" subject="Wellness report">
+    <Document title={`${patientName} — Personalised Nutrient Recovery Plan`} author="The Beetamin" subject="Personalised nutrient recovery plan">
       <Page size="A4" style={styles.coverPage}>
         <Text style={{ fontSize: 14, color: GREEN, textAlign: 'center', fontFamily: 'Helvetica-Bold' }}>
           The Beetamin

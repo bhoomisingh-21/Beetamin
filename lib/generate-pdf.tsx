@@ -858,7 +858,8 @@ function RecoveryPlanDocument({
   deficiencyScore,
   urgencyPreview,
 }: DocProps) {
-  const headerCenter = `Personalised Recovery Report — ${patientName}`
+  const firstName = patientName.split(' ')[0] ?? patientName
+  const headerCenter = `${firstName}'s Personalised Nutrient Recovery Plan`
   const showSnapshot = Boolean(
     sections.premiumValueStatement?.trim() ||
       sections.healthScoreSummary?.trim() ||
@@ -867,7 +868,7 @@ function RecoveryPlanDocument({
   )
 
   return (
-    <Document title={`Recovery Plan — ${reportId}`} author="The Beetamin" subject="Wellness report">
+    <Document title={`${patientName} — Personalised Nutrient Recovery Plan`} author="The Beetamin" subject="Personalised nutrient recovery plan">
       <Page size="A4" style={styles.coverPage}>
         <Text style={styles.coverBrand}>The Beetamin</Text>
         <View style={styles.coverLine} />

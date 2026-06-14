@@ -16,12 +16,12 @@ import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from 
 import { trackEvent } from '@/lib/analytics'
 import { startReport39Payment } from '@/lib/start-report-payment-client'
 
-const FOOD_ROWS: { key: FoodFrequencyKey; label: string }[] = [
-  { key: 'green_vegetables', label: 'Green vegetables (palak, methi, broccoli)' },
-  { key: 'dairy', label: 'Dairy products (milk, curd, paneer)' },
-  { key: 'eggs_or_nonveg', label: 'Eggs or non-veg (chicken, fish)' },
-  { key: 'nuts_seeds', label: 'Nuts and seeds (almonds, walnuts, seeds)' },
-  { key: 'fresh_fruits', label: 'Fresh fruits' },
+const ALL_FOOD_ROWS: { key: FoodFrequencyKey; label: string; dietFilter?: 'eggs_ok' | 'nonveg_only' | 'any' }[] = [
+  { key: 'green_vegetables', label: 'Green vegetables (palak, methi, broccoli)', dietFilter: 'any' },
+  { key: 'dairy', label: 'Dairy products (milk, curd, paneer)', dietFilter: 'any' },
+  { key: 'eggs_or_nonveg', label: 'Eggs or non-veg (chicken, fish)', dietFilter: 'nonveg_only' },
+  { key: 'nuts_seeds', label: 'Nuts and seeds (almonds, walnuts, seeds)', dietFilter: 'any' },
+  { key: 'fresh_fruits', label: 'Fresh fruits', dietFilter: 'any' },
 ]
 
 const SYMPTOM_OPTIONS: { id: string; label: string }[] = [
@@ -104,6 +104,32 @@ export default function DetailedAssessmentPage() {
 
   const [diet, setDiet] = useState('')
   const [foodFreq, setFoodFreq] = useState<FoodFrequency>(emptyFoodFreq)
+
+  /** Rows shown in the food-frequency question — filtered by diet choice. */
+  const visibleFoodRows = useMemo(() => {
+    const isVeg = diet === 'Pure Vegetarian (no eggs, no meat)'
+    const isVegan = diet.toLowerCase().startsWith('vegan')
+    const isLactoOvo = diet === 'Vegetarian (eggs are okay)'
+    const isNonVeg = diet === 'Non-Vegetarian (chicken/fish/meat)'
+    return ALL_FOOD_ROWS
+      .filter((row) => {
+        if (row.dietFilter === 'any') return true
+        if (row.key === 'eggs_or_nonveg') {
+          if (isVeg || isVegan) return false
+          return true
+        }
+        return true
+      })
+      .map((row) => {
+        if (row.key === 'eggs_or_nonveg' && isLactoOvo) {
+          return { ...row, label: 'Eggs (boiled, omelette, anda bhurji)' }
+        }
+        if (row.key === 'eggs_or_nonveg' && isNonVeg) {
+          return { ...row, label: 'Non-veg (chicken, fish, eggs)' }
+        }
+        return row
+      })
+  }, [diet])
   const [sun, setSun] = useState('')
   const [symptoms, setSymptoms] = useState<string[]>([])
   const [energy, setEnergy] = useState('')
@@ -170,7 +196,7 @@ export default function DetailedAssessmentPage() {
   }
 
   function foodComplete() {
-    return FOOD_ROWS.every((r) => foodFreq[r.key] === 'daily' || foodFreq[r.key] === 'sometimes' || foodFreq[r.key] === 'rarely')
+    return visibleFoodRows.every((r) => foodFreq[r.key] === 'daily' || foodFreq[r.key] === 'sometimes' || foodFreq[r.key] === 'rarely')
   }
 
   function buildPayload(): DetailedAssessmentPayload {
@@ -415,7 +441,7 @@ export default function DetailedAssessmentPage() {
                     <h1 className="text-xl font-bold text-gray-900 leading-snug">How often do you eat these foods?</h1>
                     <p className="mt-2 text-sm text-gray-500">Choose Daily, Sometimes, or Rarely for each row.</p>
                     <div className="mt-6 space-y-4">
-                      {FOOD_ROWS.map((row) => (
+                      {visibleFoodRows.map((row) => (
                         <div key={row.key} className="rounded-2xl border border-gray-100 bg-gray-50/80 p-3">
                           <p className="text-xs font-semibold text-gray-800 leading-snug">{row.label}</p>
                           <div className="mt-2 grid grid-cols-3 gap-2">
