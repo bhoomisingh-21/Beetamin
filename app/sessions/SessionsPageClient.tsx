@@ -16,6 +16,9 @@ import {
   User,
   ChevronDown,
   FileText,
+  ChevronLeft,
+  ChevronRight,
+  UtensilsCrossed,
 } from 'lucide-react'
 import { getClientDashboard } from '@/lib/booking-actions'
 import type {
@@ -24,6 +27,8 @@ import type {
   ClientSessionsDashboard,
   PaidReportSummary,
 } from '@/lib/booking-types'
+import type { MealPlanCustomerDTO, MealPlanDay } from '@/lib/meal-plan-types'
+import { MEAL_SLOT_META } from '@/lib/meal-plan-types'
 import { FullPlanBookingLink } from '@/components/payment/FullPlanBookingLink'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
@@ -149,6 +154,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
     appointments: initialDashboard.appointments ?? [],
     paidReports: initialDashboard.paidReports ?? [],
     dietPlans: initialDashboard.dietPlans ?? [],
+    mealPlans: initialDashboard.mealPlans ?? [],
     sessionBooking: initialDashboard.sessionBooking,
   })
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null)
@@ -162,6 +168,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
       appointments: initialDashboard.appointments ?? [],
       paidReports: initialDashboard.paidReports ?? [],
       dietPlans: initialDashboard.dietPlans ?? [],
+      mealPlans: initialDashboard.mealPlans ?? [],
       sessionBooking: initialDashboard.sessionBooking,
     })
   }, [initialDashboard])
@@ -175,6 +182,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           appointments: result.appointments ?? [],
           paidReports: result.paidReports ?? [],
           dietPlans: result.dietPlans ?? [],
+          mealPlans: result.mealPlans ?? [],
           sessionBooking: result.sessionBooking,
         })
       })
@@ -204,6 +212,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
 
   const paidReports = data.paidReports
   const dietPlans = data.dietPlans
+  const mealPlans = data.mealPlans
   const sessionBooking = data.sessionBooking
   const canUseSessionBooking = sessionBooking?.allowed === true
 
@@ -545,6 +554,8 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           </motion.div>
         )}
 
+        {mealPlans.length > 0 && <ClientMealPlanSection mealPlans={mealPlans} />}
+
         {planComplete && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -831,5 +842,153 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
         )}
       </div>
     </div>
+  )
+}
+
+// ─── Client Meal Plan Section ──────────────────────────────────────────────────
+
+function ClientMealPlanSection({ mealPlans }: { mealPlans: MealPlanCustomerDTO[] }) {
+  const [activePlanIdx, setActivePlanIdx] = useState(0)
+  const [activeDayIdx, setActiveDayIdx] = useState(0)
+
+  const plan = mealPlans[activePlanIdx]
+  if (!plan) return null
+
+  const days: MealPlanDay[] = plan.days ?? []
+  const currentDay = days[activeDayIdx]
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-8 rounded-3xl border border-emerald-500/20 bg-[#0A0F14] overflow-hidden"
+    >
+      {/* Header */}
+      <div className="bg-emerald-500/10 border-b border-emerald-500/15 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <UtensilsCrossed className="text-emerald-400 shrink-0" size={20} />
+          <div>
+            <h2 className="text-white font-black text-lg leading-tight">{plan.title}</h2>
+            <p className="text-gray-400 text-xs mt-0.5">
+              {plan.nutritionist_name ? `By ${plan.nutritionist_name}` : 'Your nutritionist'} · Published {fmtDate(plan.published_at)}
+            </p>
+          </div>
+        </div>
+        {mealPlans.length > 1 && (
+          <div className="flex items-center gap-1">
+            {mealPlans.map((p, i) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => { setActivePlanIdx(i); setActiveDayIdx(0) }}
+                className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                  i === activePlanIdx
+                    ? 'bg-emerald-500 text-black'
+                    : 'border border-white/10 text-gray-400 hover:text-white'
+                }`}
+              >
+                Plan {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {plan.nutritionist_notes && (
+        <div className="px-6 py-3 border-b border-white/5 bg-[#111820]">
+          <p className="text-gray-400 text-sm italic">📌 {plan.nutritionist_notes}</p>
+        </div>
+      )}
+
+      {/* Day tabs */}
+      {days.length > 0 && (
+        <div className="px-6 py-3 border-b border-white/5 flex gap-1.5 flex-wrap">
+          {days.map((d, idx) => (
+            <button
+              key={d.day}
+              type="button"
+              onClick={() => setActiveDayIdx(idx)}
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                idx === activeDayIdx
+                  ? 'bg-emerald-500 text-black'
+                  : 'border border-white/10 text-gray-500 hover:text-white hover:border-white/20'
+              }`}
+            >
+              Day {d.day}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Day content */}
+      {currentDay ? (
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-bold">Day {currentDay.day}</h3>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setActiveDayIdx((p) => Math.max(0, p - 1))}
+                disabled={activeDayIdx === 0}
+                className="rounded-lg border border-white/10 p-1.5 text-gray-500 hover:text-white disabled:opacity-30 transition"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDayIdx((p) => Math.min(days.length - 1, p + 1))}
+                disabled={activeDayIdx === days.length - 1}
+                className="rounded-lg border border-white/10 p-1.5 text-gray-500 hover:text-white disabled:opacity-30 transition"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {MEAL_SLOT_META.map((slot) => {
+              const text = currentDay.meals[slot.key]
+              if (!text) return null
+              return (
+                <div key={slot.key} className="flex gap-3 rounded-2xl border border-white/8 bg-[#111820] px-4 py-3">
+                  <span className="text-xl shrink-0 mt-0.5">{slot.emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-gray-400 text-[11px] font-bold uppercase tracking-widest">
+                      {slot.label} <span className="font-normal normal-case tracking-normal text-gray-600">({slot.time})</span>
+                    </p>
+                    <p className="text-white text-sm mt-1 leading-relaxed">{text}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {(currentDay.water_target || currentDay.day_notes) && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {currentDay.water_target && (
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
+                  <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">💧 Water Target</p>
+                  <p className="text-white text-sm">{currentDay.water_target}</p>
+                </div>
+              )}
+              {currentDay.day_notes && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                  <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">📌 Day Note</p>
+                  <p className="text-white text-sm">{currentDay.day_notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="px-6 py-8 text-center text-gray-500 text-sm">
+          Your nutritionist is preparing your meal plan. Check back soon.
+        </div>
+      )}
+    </motion.div>
   )
 }

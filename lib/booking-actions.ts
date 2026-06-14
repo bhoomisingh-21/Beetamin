@@ -402,6 +402,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
     recoveryReportReady: null,
     recoveryReportGenerating: null,
     dietPlans: [],
+    mealPlans: [],
     sessionBooking,
   }
   try {
@@ -456,6 +457,34 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
       }
     })
 
+    const { data: mealRows } = await supabaseAdmin
+      .from('meal_plans')
+      .select('id, title, nutritionist_notes, days, published_at, nutritionist_id')
+      .eq('client_id', client.id)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+
+    const mealNutIds = [...new Set((mealRows ?? []).map((r) => String(r.nutritionist_id)))]
+    let nutNameMap: Record<string, string> = {}
+    if (mealNutIds.length > 0) {
+      const { data: nutRows } = await supabaseAdmin
+        .from('nutritionists')
+        .select('id, name')
+        .in('id', mealNutIds)
+      for (const n of nutRows ?? []) {
+        nutNameMap[String(n.id)] = String(n.name)
+      }
+    }
+
+    const mealPlans = (mealRows ?? []).map((r) => ({
+      id: String(r.id),
+      title: String(r.title),
+      nutritionist_notes: r.nutritionist_notes ? String(r.nutritionist_notes) : null,
+      days: (r.days ?? []) as import('@/lib/meal-plan-types').MealPlanCustomerDTO['days'],
+      published_at: String(r.published_at),
+      nutritionist_name: nutNameMap[String(r.nutritionist_id)] ?? null,
+    }))
+
     return {
       client,
       appointments: appointments || [],
@@ -467,6 +496,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
         ? { report_id: String(recoveryReportGenerating.report_id) }
         : null,
       dietPlans,
+      mealPlans,
       sessionBooking,
     }
   } catch (e) {

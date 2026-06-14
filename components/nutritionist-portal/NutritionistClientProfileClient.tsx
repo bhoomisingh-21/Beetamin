@@ -18,6 +18,7 @@ import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { NutritionistNotesTab } from '@/components/nutritionist-portal/NutritionistNotesTab'
 import { NutritionistDocumentsTab } from '@/components/nutritionist-portal/NutritionistDocumentsTab'
 import { NutritionistDietPlanTab } from '@/components/nutritionist-portal/NutritionistDietPlanTab'
+import { NutritionistMealPlanTab } from '@/components/nutritionist-portal/NutritionistMealPlanTab'
 import { NutritionistProgressCharts } from '@/components/nutritionist/NutritionistProgressCharts'
 import { NutritionistWeightSparkline } from '@/components/nutritionist/NutritionistWeightSparkline'
 import { toggleNutritionistNotePin } from '@/lib/nutritionist-portal-actions'
@@ -116,7 +117,7 @@ function deriveProgressStats(bundle: PortalClientBundle) {
   }
 }
 
-type Tab = 'overview' | 'notes' | 'dietPlan' | 'documents' | 'progress'
+type Tab = 'overview' | 'notes' | 'mealPlan' | 'dietPlan' | 'documents' | 'progress'
 
 export default function NutritionistClientProfileClient({
   bundle,
@@ -163,7 +164,8 @@ export default function NutritionistClientProfileClient({
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'notes', label: 'Notes' },
-    { id: 'dietPlan', label: 'Diet Plan' },
+    { id: 'mealPlan', label: '🥗 Meal Plan' },
+    { id: 'dietPlan', label: 'PDF Plans' },
     { id: 'documents', label: 'Documents' },
     { id: 'progress', label: 'Progress' },
   ]
@@ -609,6 +611,14 @@ export default function NutritionistClientProfileClient({
               notes={notes}
               tagFilter={tagFilter}
               onTagFilter={setTagFilter}
+            />
+          )}
+
+          {tab === 'mealPlan' && (
+            <NutritionistMealPlanTab
+              clientId={clientId}
+              clientEmail={client.email.toLowerCase()}
+              clientName={client.name}
             />
           )}
 

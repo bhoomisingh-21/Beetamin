@@ -107,5 +107,6 @@ export type ClientSessionsDashboard = {
   recoveryReportReady: { report_id: string; status: string } | null
   recoveryReportGenerating: { report_id: string } | null
   dietPlans: DietPlanCustomerDTO[]
+  mealPlans: import('@/lib/meal-plan-types').MealPlanCustomerDTO[]
   sessionBooking: SessionBookingAccess
 }
