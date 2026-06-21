@@ -14,6 +14,10 @@ export type MealPlanDay = {
   meals: MealSlots
   water_target: string
   day_notes: string
+  /** ISO date (YYYY-MM-DD) for calendar column header */
+  plan_date?: string
+  /** When true, this day is off — no meals required */
+  skipped?: boolean
 }
 
 export function emptyMealSlots(): MealSlots {
@@ -28,13 +32,33 @@ export function emptyMealSlots(): MealSlots {
   }
 }
 
-export function emptyDay(dayNumber: number): MealPlanDay {
+export function emptyDay(dayNumber: number, planDate?: string, skipped = false): MealPlanDay {
   return {
     day: dayNumber,
     meals: emptyMealSlots(),
     water_target: '',
     day_notes: '',
+    ...(planDate ? { plan_date: planDate } : {}),
+    ...(skipped ? { skipped: true } : {}),
   }
+}
+
+export function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export function nextIsoDate(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`)
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+export function renumberPlanDays(dayList: MealPlanDay[]): MealPlanDay[] {
+  return dayList.map((d, i) => ({ ...d, day: i + 1 }))
+}
+
+export function activePlanDayCount(days: MealPlanDay[]): number {
+  return days.filter((d) => !d.skipped).length
 }
 
 export const MEAL_SLOT_META: { key: keyof MealSlots; label: string; time: string; emoji: string }[] = [

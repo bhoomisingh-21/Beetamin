@@ -3,42 +3,108 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
+  ArrowLeft,
   BookOpen,
-  ChevronDown,
-  ChevronUp,
+  CheckCircle2,
+  Copy,
   Loader2,
   Plus,
-  Send,
+  Save,
   Trash2,
   X,
-  CheckCircle2,
-  Edit3,
-  AlertCircle,
 } from 'lucide-react'
 import {
   createMealPlan,
   deleteMealPlan,
+  duplicateMealPlan,
   getMealPlan,
   listMealPlansForClient,
   publishMealPlan,
   updateMealPlan,
 } from '@/lib/meal-plan-actions'
+import {
+  datesForPlanDays,
+  estimateDailyMacros,
+  formatGridDayHeader,
+  formatHeight,
+  parseMealPlanMeta,
+  serializeMealPlanMeta,
+  shortClientId,
+} from '@/lib/meal-plan-meta'
 import type { MealPlan, MealPlanDay, MealPlanListItem } from '@/lib/meal-plan-types'
-import { MEAL_SLOT_META, emptyDay } from '@/lib/meal-plan-types'
+import {
+  MEAL_SLOT_META,
+  activePlanDayCount,
+  emptyDay,
+  nextIsoDate,
+  renumberPlanDays,
+  todayIsoDate,
+} from '@/lib/meal-plan-types'
+import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
+import type { PortalClientBundle } from '@/lib/nutritionist-types'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+export type MealPlanClientContext = {
+  clientId: string
+  client: ClientRow
+  progressLogs: ProgressLogRow[]
+  detailedAssessment: PortalClientBundle['detailedAssessment']
 }
 
 type Props = {
   clientId: string
   clientEmail: string
   clientName: string
+  clientContext: MealPlanClientContext
 }
 
 type ViewState = 'list' | 'builder'
 
-export function NutritionistMealPlanTab({ clientId, clientEmail, clientName }: Props) {
+function extractClientProfile(ctx: MealPlanClientContext) {
+  const { client, progressLogs, detailedAssessment } = ctx
+  const latestWeight = progressLogs.find((l) => l.weight_kg != null)?.weight_kg
+  const height =
+    client.height_cm ?? progressLogs.find((l) => l.height_cm != null)?.height_cm ?? null
+
+  const meta =
+    client.assessment_meta && typeof client.assessment_meta === 'object' && !Array.isArray(client.assessment_meta)
+      ? (client.assessment_meta as Record<string, unknown>)
+      : null
+  const result =
+    client.assessment_result && typeof client.assessment_result === 'object' && !Array.isArray(client.assessment_result)
+      ? (client.assessment_result as Record<string, unknown>)
+      : null
+
+  const activity =
+    (typeof meta?.activity === 'string' && meta.activity) ||
+    (typeof meta?.activityLevel === 'string' && meta.activityLevel) ||
+    (typeof result?.activityLevel === 'string' && result.activityLevel) ||
+    '—'
+
+  const diet =
+    detailedAssessment?.diet_type ||
+    (typeof result?.diet === 'string' && result.diet) ||
+    (typeof result?.dietSummary === 'string' && result.dietSummary) ||
+    '—'
+
+  return {
+    id: shortClientId(client.id),
+    weight: latestWeight != null ? `${Number(latestWeight).toFixed(0)} kg` : '—',
+    height: formatHeight(height),
+    activity,
+    goal: client.assessment_goal || '—',
+    foodPreference: diet,
+    country: 'India',
+    community: '—',
+    allergy: 'No Allergy',
+    diseases: 'No Diseases',
+  }
+}
+
+export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, clientContext }: Props) {
   const router = useRouter()
   const [view, setView] = useState<ViewState>('list')
   const [plans, setPlans] = useState<MealPlanListItem[]>([])
@@ -49,8 +115,9 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName }: P
   const [loadingPlan, setLoadingPlan] = useState(false)
 
   const [newTitle, setNewTitle] = useState('')
-  const [newNumDays, setNewNumDays] = useState(7)
   const [creating, startCreating] = useTransition()
+
+  const profile = extractClientProfile(clientContext)
 
   const refreshList = useCallback(async () => {
     setLoadingList(true)
@@ -85,8 +152,8 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName }: P
       const res = await createMealPlan({
         clientId,
         clientEmail,
-        title: newTitle.trim() || `${clientName}'s ${newNumDays}-Day Plan`,
-        numDays: newNumDays,
+        title: newTitle.trim() || `${clientName}'s Diet Plan`,
+        numDays: 1,
       })
       if (res.ok) {
         setNewTitle('')
@@ -116,6 +183,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName }: P
         plan={activePlan}
         clientName={clientName}
         clientEmail={clientEmail}
+        profile={profile}
         onBack={() => {
           setView('list')
           void refreshList()
@@ -126,87 +194,75 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName }: P
   }
 
   return (
-    <div className="space-y-6">
-      {/* Create new plan */}
-      <div className="rounded-2xl border border-white/10 bg-[#0A0F14] p-5">
-        <h3 className="text-white font-bold text-sm flex items-center gap-2 mb-4">
-          <Plus size={16} className="text-emerald-400" />
-          Create New Meal Plan
+    <div className="space-y-5">
+      <div className="rounded-xl border border-sky-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-sky-900">
+          <Plus size={16} className="text-sky-600" />
+          Create New Diet Plan
         </h3>
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[180px]">
-            <label className="block text-gray-400 text-xs mb-1">Plan title</label>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[200px] flex-1">
+            <label className="mb-1 block text-xs font-medium text-slate-500">Plan title</label>
             <input
               type="text"
               placeholder={`${clientName}'s Diet Plan`}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full rounded-xl bg-[#111810] border border-white/10 text-white text-sm px-3 py-2 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50"
+              className="w-full rounded-lg border border-sky-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
-          </div>
-          <div>
-            <label className="block text-gray-400 text-xs mb-1">Duration</label>
-            <select
-              value={newNumDays}
-              onChange={(e) => setNewNumDays(Number(e.target.value))}
-              className="rounded-xl bg-[#111810] border border-white/10 text-white text-sm px-3 py-2 focus:outline-none focus:border-emerald-500/50"
-            >
-              <option value={7}>7 days</option>
-              <option value={14}>14 days</option>
-              <option value={21}>21 days</option>
-              <option value={28}>28 days</option>
-            </select>
           </div>
           <button
             type="button"
             onClick={handleCreate}
             disabled={creating}
-            className="rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm px-5 py-2 transition disabled:opacity-50 flex items-center gap-2"
+            className="flex items-center gap-2 rounded-lg bg-sky-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-sky-700 disabled:opacity-50"
           >
             {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-            Create Plan
+            Create Diet Plan
           </button>
         </div>
+        <p className="mt-3 text-xs text-slate-500">
+          Starts with one day — add or skip days in the builder. Plan only the days you need.
+        </p>
       </div>
 
-      {/* Existing plans */}
-      <div className="rounded-2xl border border-white/10 bg-[#0A0F14] p-5">
-        <h3 className="text-white font-bold text-sm flex items-center gap-2 mb-4">
-          <BookOpen size={16} className="text-emerald-400" />
-          Meal Plans for {clientName}
+      <div className="rounded-xl border border-sky-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-sky-900">
+          <BookOpen size={16} className="text-sky-600" />
+          Diet Plans for {clientName}
         </h3>
 
         {loadingList || loadingPlan ? (
-          <div className="flex items-center gap-2 text-gray-500 text-sm py-4">
+          <div className="flex items-center gap-2 py-4 text-sm text-slate-500">
             <Loader2 size={16} className="animate-spin" />
             Loading…
           </div>
         ) : listError ? (
-          <p className="text-red-400 text-sm">{listError}</p>
+          <p className="text-sm text-red-600">{listError}</p>
         ) : plans.length === 0 ? (
-          <p className="text-gray-500 text-sm py-2">No plans created yet. Create one above.</p>
+          <p className="py-2 text-sm text-slate-500">No plans created yet. Create one above.</p>
         ) : (
           <div className="space-y-2">
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/8 bg-[#111810] px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-100 bg-slate-50 px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="text-white font-semibold text-sm truncate">{plan.title}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">
-                    {plan.num_days} days
+                  <p className="truncate text-sm font-semibold text-slate-800">{plan.title}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {plan.num_days} day{plan.num_days === 1 ? '' : 's'} in plan
                     {plan.status === 'published' && plan.published_at
                       ? ` · Published ${formatDate(plan.published_at)}`
                       : ` · Draft — ${formatDate(plan.created_at)}`}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                       plan.status === 'published'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border border-amber-200 bg-amber-50 text-amber-700'
                     }`}
                   >
                     {plan.status === 'published' ? 'Published' : 'Draft'}
@@ -214,16 +270,15 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName }: P
                   <button
                     type="button"
                     onClick={() => openPlan(plan.id)}
-                    className="rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs text-white font-semibold transition flex items-center gap-1"
+                    className="rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
                   >
-                    <Edit3 size={12} />
                     {plan.status === 'published' ? 'View' : 'Edit'}
                   </button>
                   {plan.status !== 'published' && (
                     <button
                       type="button"
                       onClick={() => handleDelete(plan.id)}
-                      className="rounded-lg border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 px-2 py-1.5 text-red-400 transition"
+                      className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-red-600 transition hover:bg-red-100"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -238,276 +293,530 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName }: P
   )
 }
 
-// ─── Plan Builder ──────────────────────────────────────────────────────────────
+// ─── CRM Plan Builder ─────────────────────────────────────────────────────────
+
+type ClientProfile = ReturnType<typeof extractClientProfile>
 
 function PlanBuilder({
   plan: initialPlan,
   clientName,
   clientEmail,
+  profile,
   onBack,
 }: {
   plan: MealPlan
   clientName: string
   clientEmail: string
+  profile: ClientProfile
   onBack: () => void
 }) {
+  const parsedMeta = parseMealPlanMeta(initialPlan.nutritionist_notes)
   const [title, setTitle] = useState(initialPlan.title)
-  const [notes, setNotes] = useState(initialPlan.nutritionist_notes ?? '')
-  const [days, setDays] = useState<MealPlanDay[]>(
-    initialPlan.days.length > 0 ? initialPlan.days : [emptyDay(1)],
-  )
-  const [activeDay, setActiveDay] = useState(0)
+  const [targetCalories, setTargetCalories] = useState(parsedMeta.targetCalories ?? 1800)
+  const [days, setDays] = useState<MealPlanDay[]>(() => {
+    if (initialPlan.days.length > 0) return initialPlan.days
+    return [emptyDay(1, todayIsoDate())]
+  })
   const [status, setStatus] = useState<'draft' | 'published'>(
     initialPlan.status === 'published' ? 'published' : 'draft',
   )
 
   const [saving, startSave] = useTransition()
   const [publishing, startPublish] = useTransition()
+  const [templating, startTemplate] = useTransition()
   const [saveMsg, setSaveMsg] = useState('')
-  const [publishError, setPublishError] = useState('')
+  const [actionError, setActionError] = useState('')
 
   const isPublished = status === 'published'
+  const planDates = datesForPlanDays(days, new Date(initialPlan.created_at))
+  const dailyMacros = estimateDailyMacros(targetCalories)
+  const activeDays = activePlanDayCount(days)
 
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function scheduleAutoSave(updatedDays: MealPlanDay[], updatedTitle: string, updatedNotes: string) {
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    saveTimeoutRef.current = setTimeout(() => {
-      startSave(async () => {
-        const res = await updateMealPlan({
-          planId: initialPlan.id,
-          title: updatedTitle,
-          nutritionist_notes: updatedNotes,
-          days: updatedDays,
-        })
-        setSaveMsg(res.ok ? 'Saved' : res.error)
-        setTimeout(() => setSaveMsg(''), 2000)
-      })
-    }, 1200)
+  function buildMetaNote() {
+    return serializeMealPlanMeta({ targetCalories, note: parsedMeta.note })
   }
 
-  function updateMealSlot(dayIdx: number, slot: keyof MealPlanDay['meals'], value: string) {
+  function handleSave() {
+    setActionError('')
+    startSave(async () => {
+      const res = await updateMealPlan({
+        planId: initialPlan.id,
+        title,
+        nutritionist_notes: buildMetaNote() ?? undefined,
+        days,
+      })
+      setSaveMsg(res.ok ? 'Saved' : res.error)
+      setTimeout(() => setSaveMsg(''), 2500)
+      if (!res.ok) setActionError(res.error)
+    })
+  }
+
+  function handlePublish() {
+    setActionError('')
+    startPublish(async () => {
+      const saveRes = await updateMealPlan({
+        planId: initialPlan.id,
+        title,
+        nutritionist_notes: buildMetaNote() ?? undefined,
+        days,
+      })
+      if (!saveRes.ok) {
+        setActionError(saveRes.error)
+        return
+      }
+      const pubRes = await publishMealPlan({ planId: initialPlan.id, clientName, clientEmail })
+      if (!pubRes.ok) {
+        setActionError(pubRes.error)
+        return
+      }
+      setStatus('published')
+      setSaveMsg('Published to client')
+      setTimeout(() => setSaveMsg(''), 2500)
+    })
+  }
+
+  function handleCreateTemplate() {
+    setActionError('')
+    startTemplate(async () => {
+      const saveRes = await updateMealPlan({
+        planId: initialPlan.id,
+        title,
+        nutritionist_notes: buildMetaNote() ?? undefined,
+        days,
+      })
+      if (!saveRes.ok) {
+        setActionError(saveRes.error)
+        return
+      }
+      const res = await duplicateMealPlan({ planId: initialPlan.id, title })
+      if (!res.ok) {
+        setActionError(res.error)
+        return
+      }
+      setSaveMsg('Template created')
+      setTimeout(() => setSaveMsg(''), 2500)
+    })
+  }
+
+  function updateMealCell(dayIdx: number, slot: keyof MealPlanDay['meals'], value: string) {
     const updated = days.map((d, i) =>
       i === dayIdx ? { ...d, meals: { ...d.meals, [slot]: value } } : d,
     )
     setDays(updated)
-    if (!isPublished) scheduleAutoSave(updated, title, notes)
   }
 
-  function updateDayField(dayIdx: number, field: 'water_target' | 'day_notes', value: string) {
-    const updated = days.map((d, i) => (i === dayIdx ? { ...d, [field]: value } : d))
+  function clearMealRow(slot: keyof MealPlanDay['meals']) {
+    if (!confirm('Clear this meal row across all active days?')) return
+    const updated = days.map((d) =>
+      d.skipped ? d : { ...d, meals: { ...d.meals, [slot]: '' } },
+    )
     setDays(updated)
-    if (!isPublished) scheduleAutoSave(updated, title, notes)
   }
 
-  function handleTitleChange(v: string) {
-    setTitle(v)
-    if (!isPublished) scheduleAutoSave(days, v, notes)
+  function addDay() {
+    if (days.length >= 31) return
+    const last = days[days.length - 1]
+    const nextDate = last?.plan_date ? nextIsoDate(last.plan_date) : todayIsoDate()
+    setDays(renumberPlanDays([...days, emptyDay(days.length + 1, nextDate)]))
   }
 
-  function handleNotesChange(v: string) {
-    setNotes(v)
-    if (!isPublished) scheduleAutoSave(days, title, v)
+  function removeDay(dayIdx: number) {
+    if (days.length <= 1) return
+    if (!confirm('Remove this day from the plan?')) return
+    setDays(renumberPlanDays(days.filter((_, i) => i !== dayIdx)))
   }
 
-  function handlePublish() {
-    setPublishError('')
-    startPublish(async () => {
-      const saveRes = await updateMealPlan({ planId: initialPlan.id, title, nutritionist_notes: notes, days })
-      if (!saveRes.ok) { setPublishError(saveRes.error); return }
-
-      const pubRes = await publishMealPlan({ planId: initialPlan.id, clientName, clientEmail })
-      if (!pubRes.ok) { setPublishError(pubRes.error); return }
-
-      setStatus('published')
-    })
+  function toggleSkipDay(dayIdx: number) {
+    setDays(
+      days.map((d, i) => {
+        if (i !== dayIdx) return d
+        const skipped = !d.skipped
+        return {
+          ...d,
+          skipped,
+          ...(skipped ? { meals: { early_morning: '', breakfast: '', mid_morning: '', lunch: '', evening_snack: '', dinner: '', bedtime: '' } } : {}),
+        }
+      }),
+    )
   }
 
-  const currentDay = days[activeDay]
+  function updateDayDate(dayIdx: number, plan_date: string) {
+    setDays(days.map((d, i) => (i === dayIdx ? { ...d, plan_date } : d)))
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition"
-        >
-          <X size={14} />
-          Back to plans
-        </button>
-        <div className="flex items-center gap-2">
-          {saving && <span className="text-gray-500 text-xs flex items-center gap-1"><Loader2 size={11} className="animate-spin" /> Saving…</span>}
-          {saveMsg === 'Saved' && <span className="text-emerald-400 text-xs flex items-center gap-1"><CheckCircle2 size={11} /> Saved</span>}
-          {status === 'published' && (
-            <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3 py-1">
-              ✓ Published to {clientName}
+    <div className="overflow-hidden rounded-xl border border-sky-200 bg-white shadow-sm">
+      {/* Back + status + title */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 bg-slate-50 px-4 py-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-slate-600 transition hover:text-sky-700"
+          >
+            <ArrowLeft size={14} />
+            Back
+          </button>
+          {!isPublished ? (
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="min-w-[180px] flex-1 rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            />
+          ) : (
+            <p className="truncate text-sm font-semibold text-slate-800">{title}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          {saving && (
+            <span className="flex items-center gap-1 text-slate-500">
+              <Loader2 size={11} className="animate-spin" /> Saving…
+            </span>
+          )}
+          {saveMsg === 'Saved' && (
+            <span className="flex items-center gap-1 text-emerald-600">
+              <CheckCircle2 size={11} /> Saved
+            </span>
+          )}
+          {saveMsg === 'Published to client' && (
+            <span className="flex items-center gap-1 text-emerald-600">
+              <CheckCircle2 size={11} /> Published
+            </span>
+          )}
+          {saveMsg === 'Template created' && (
+            <span className="flex items-center gap-1 text-sky-600">
+              <CheckCircle2 size={11} /> Template saved
+            </span>
+          )}
+          {isPublished && (
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-bold text-emerald-700">
+              Published
             </span>
           )}
         </div>
       </div>
 
-      {/* Plan title */}
-      <div className="rounded-2xl border border-white/10 bg-[#0A0F14] p-5">
-        <div className="flex flex-wrap gap-4 items-start">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-gray-400 text-xs mb-1 font-medium">Plan Title</label>
+      {/* Client info bar */}
+      <div className="border-b border-sky-200 bg-[#e8f2fa] px-3 py-3">
+        <div className="flex flex-wrap items-stretch gap-x-5 gap-y-3 text-[11px] sm:text-xs">
+          <InfoField label="ID" value={profile.id} />
+          <InfoField label="Weight" value={profile.weight} />
+          <InfoField label="Height" value={profile.height} />
+          <InfoField label="Activity Level" value={profile.activity} wide />
+          <InfoField label="Goal" value={profile.goal} wide />
+          <InfoField label="Food Preference" value={profile.foodPreference} wide />
+          <InfoField label="Country" value={profile.country} />
+          <InfoField label="Community" value={profile.community} />
+          <InfoField label="Allergy" value={profile.allergy} />
+          <InfoField label="Diseases" value={profile.diseases} />
+          <div className="flex min-w-[120px] flex-col gap-0.5">
+            <span className="font-semibold uppercase tracking-wide text-sky-800">Target Calories</span>
             <input
-              type="text"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
+              type="number"
+              min={800}
+              max={5000}
+              step={50}
+              value={targetCalories}
+              onChange={(e) => setTargetCalories(Number(e.target.value) || 1800)}
               disabled={isPublished}
-              className="w-full rounded-xl bg-[#111810] border border-white/10 text-white text-sm px-3 py-2 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50"
-            />
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-gray-400 text-xs mb-1 font-medium">Note to {clientName} (optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. Follow this plan strictly for best results"
-              value={notes}
-              onChange={(e) => handleNotesChange(e.target.value)}
-              disabled={isPublished}
-              className="w-full rounded-xl bg-[#111810] border border-white/10 text-white text-sm px-3 py-2 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50"
+              className="w-20 rounded border border-sky-300 bg-white px-2 py-0.5 text-sm font-bold text-slate-800 focus:border-sky-500 focus:outline-none disabled:opacity-60"
             />
           </div>
         </div>
       </div>
 
-      {/* Day selector tabs */}
-      <div className="flex gap-1.5 flex-wrap">
-        {days.map((d, idx) => (
+      {/* Day controls */}
+      {!isPublished && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 bg-white px-4 py-2.5">
+          <p className="text-xs text-slate-600">
+            <span className="font-semibold text-sky-800">{activeDays}</span> active day
+            {activeDays === 1 ? '' : 's'}
+            {days.length > activeDays && (
+              <span className="text-slate-400"> · {days.length - activeDays} skipped</span>
+            )}
+          </p>
           <button
-            key={d.day}
             type="button"
-            onClick={() => setActiveDay(idx)}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-              idx === activeDay
-                ? 'bg-emerald-500 text-black'
-                : 'bg-[#111810] border border-white/10 text-gray-400 hover:text-white hover:border-white/20'
-            }`}
+            onClick={addDay}
+            disabled={days.length >= 31}
+            className="flex items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100 disabled:opacity-40"
           >
-            Day {d.day}
+            <Plus size={13} />
+            Add Day
           </button>
-        ))}
-      </div>
-
-      {/* Active day meals */}
-      {currentDay && (
-        <div className="rounded-2xl border border-white/10 bg-[#0A0F14] p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-white font-bold">Day {currentDay.day}</h3>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveDay((p) => Math.max(0, p - 1))}
-                disabled={activeDay === 0}
-                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-gray-400 hover:text-white disabled:opacity-30 transition"
-              >
-                <ChevronUp size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveDay((p) => Math.min(days.length - 1, p + 1))}
-                disabled={activeDay === days.length - 1}
-                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-gray-400 hover:text-white disabled:opacity-30 transition"
-              >
-                <ChevronDown size={14} />
-              </button>
-            </div>
-          </div>
-
-          {MEAL_SLOT_META.map((slot) => (
-            <div key={slot.key}>
-              <label className="flex items-center gap-1.5 text-gray-400 text-xs font-medium mb-1">
-                <span>{slot.emoji}</span>
-                <span>{slot.label}</span>
-                <span className="text-gray-600">({slot.time})</span>
-              </label>
-              <textarea
-                rows={2}
-                value={currentDay.meals[slot.key]}
-                onChange={(e) => updateMealSlot(activeDay, slot.key, e.target.value)}
-                disabled={isPublished}
-                placeholder={slotPlaceholder(slot.key)}
-                className="w-full rounded-xl bg-[#111810] border border-white/8 text-white text-sm px-3 py-2 placeholder:text-gray-700 focus:outline-none focus:border-emerald-500/40 resize-none disabled:opacity-50"
-              />
-            </div>
-          ))}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-white/5">
-            <div>
-              <label className="block text-gray-400 text-xs font-medium mb-1">💧 Water target for day</label>
-              <input
-                type="text"
-                value={currentDay.water_target}
-                onChange={(e) => updateDayField(activeDay, 'water_target', e.target.value)}
-                disabled={isPublished}
-                placeholder="e.g. 3 litres / 10 glasses"
-                className="w-full rounded-xl bg-[#111810] border border-white/8 text-white text-sm px-3 py-2 placeholder:text-gray-700 focus:outline-none focus:border-emerald-500/40 disabled:opacity-50"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-400 text-xs font-medium mb-1">📌 Day note</label>
-              <input
-                type="text"
-                value={currentDay.day_notes}
-                onChange={(e) => updateDayField(activeDay, 'day_notes', e.target.value)}
-                disabled={isPublished}
-                placeholder="e.g. Focus on iron today"
-                className="w-full rounded-xl bg-[#111810] border border-white/8 text-white text-sm px-3 py-2 placeholder:text-gray-700 focus:outline-none focus:border-emerald-500/40 disabled:opacity-50"
-              />
-            </div>
-          </div>
         </div>
       )}
 
-      {/* Publish strip */}
-      {!isPublished && (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-          {publishError && (
-            <div className="flex items-center gap-2 text-red-400 text-sm mb-3">
-              <AlertCircle size={14} />
-              {publishError}
-            </div>
-          )}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-white font-semibold text-sm">Ready to send to {clientName}?</p>
-              <p className="text-gray-500 text-xs mt-0.5">
-                Publishing will notify {clientName} by email and make the plan visible in their dashboard.
-              </p>
-            </div>
+      {/* Weekly grid */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[900px] border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-sky-200 bg-slate-50">
+              <th className="w-[100px] border-r border-sky-100 p-2 text-left text-[10px] font-semibold text-slate-500">
+                Meal slot
+              </th>
+              {days.map((d, idx) => (
+                <th
+                  key={`${d.day}-${idx}`}
+                  className={`min-w-[130px] border-r border-sky-100 p-2 text-left align-top last:border-r-0 ${
+                    d.skipped ? 'bg-slate-100' : ''
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-1">
+                    <div className="min-w-0 flex-1">
+                      {!isPublished ? (
+                        <input
+                          type="date"
+                          value={d.plan_date ?? ''}
+                          onChange={(e) => updateDayDate(idx, e.target.value)}
+                          className="w-full rounded border border-sky-200 bg-white px-1 py-0.5 text-[10px] font-bold text-sky-900 focus:border-sky-400 focus:outline-none"
+                        />
+                      ) : (
+                        <p className="font-bold text-sky-900">
+                          {planDates[idx] ? formatGridDayHeader(planDates[idx]) : `Day ${d.day}`}
+                        </p>
+                      )}
+                      {!isPublished && planDates[idx] && (
+                        <p className="mt-0.5 text-[10px] text-slate-500">
+                          {formatGridDayHeader(planDates[idx])}
+                        </p>
+                      )}
+                    </div>
+                    {!isPublished && (
+                      <div className="flex shrink-0 flex-col gap-0.5">
+                        {days.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeDay(idx)}
+                            className="rounded p-0.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                            title="Remove day"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {!isPublished && (
+                    <button
+                      type="button"
+                      onClick={() => toggleSkipDay(idx)}
+                      className={`mt-1.5 w-full rounded px-2 py-0.5 text-[10px] font-bold transition ${
+                        d.skipped
+                          ? 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                          : 'bg-sky-100 text-sky-700 hover:bg-sky-200'
+                      }`}
+                    >
+                      {d.skipped ? 'Skipped — click to enable' : 'Skip this day'}
+                    </button>
+                  )}
+
+                  {d.skipped ? (
+                    <div className="mt-2 rounded border border-dashed border-slate-300 bg-slate-100 p-3 text-center">
+                      <p className="text-[10px] font-semibold text-slate-500">Day off</p>
+                      <p className="mt-0.5 text-[9px] text-slate-400">No meals planned</p>
+                    </div>
+                  ) : (
+                    <div className="mt-2 rounded border border-sky-200 bg-[#eef5fc] p-2">
+                      <p className="font-bold text-sky-900">
+                        {targetCalories.toLocaleString('en-IN')} Kcal
+                      </p>
+                      <p className="mt-1 text-[10px] leading-relaxed text-slate-600">
+                        Carbs: {dailyMacros.carbs}gm | Fat: {dailyMacros.fat}gm | Protein:{' '}
+                        {dailyMacros.protein}gm | Fiber: {dailyMacros.fiber}gm
+                      </p>
+                      <div className="mt-2">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                          <div className="h-full w-0 rounded-full bg-sky-400" />
+                        </div>
+                        <p className="mt-0.5 text-[10px] text-slate-500">Eaten: 0 Kcal</p>
+                      </div>
+                    </div>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {MEAL_SLOT_META.map((slot) => (
+              <tr key={slot.key} className="border-b border-sky-100">
+                <td className="border-r border-sky-100 p-1.5 align-middle">
+                  <div className="flex items-center gap-1">
+                    {!isPublished && (
+                      <button
+                        type="button"
+                        onClick={() => clearMealRow(slot.key)}
+                        className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                        title={`Clear ${slot.label} row`}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold leading-tight text-sky-900">{slot.label}</p>
+                      <p className="text-[9px] text-slate-400">{slot.time}</p>
+                    </div>
+                  </div>
+                </td>
+                {days.map((day, dayIdx) => (
+                  <td
+                    key={`${slot.key}-${day.day}-${dayIdx}`}
+                    className={`border-r border-sky-100 p-1.5 last:border-r-0 ${
+                      day.skipped ? 'bg-slate-50' : ''
+                    }`}
+                  >
+                    {day.skipped ? (
+                      <div className="flex min-h-[52px] items-center justify-center rounded border border-dashed border-slate-200 bg-slate-100 px-2 text-[10px] text-slate-400">
+                        —
+                      </div>
+                    ) : (
+                      <MealCell
+                        label={slot.label}
+                        value={day.meals[slot.key]}
+                        disabled={isPublished}
+                        onChange={(v) => updateMealCell(dayIdx, slot.key, v)}
+                      />
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer actions */}
+      <div className="flex flex-wrap items-center justify-center gap-4 border-t border-sky-200 bg-slate-50 px-4 py-5">
+        {!isPublished ? (
+          <>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || publishing}
+              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+            >
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              Save Diet Plan
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateTemplate}
+              disabled={templating || saving}
+              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+            >
+              {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+              Create Template
+            </button>
             <button
               type="button"
               onClick={handlePublish}
-              disabled={publishing}
-              className="rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm px-6 py-2.5 transition flex items-center gap-2 disabled:opacity-50 shrink-0"
+              disabled={publishing || saving}
+              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-sky-600 bg-white px-8 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50 disabled:opacity-50"
             >
-              {publishing ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Send size={14} />
-              )}
+              {publishing ? <Loader2 size={16} className="animate-spin" /> : null}
               Publish to Client
             </button>
-          </div>
-        </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={handleCreateTemplate}
+            disabled={templating}
+            className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+          >
+            {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+            Create Template
+          </button>
+        )}
+      </div>
+
+      {actionError && (
+        <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">{actionError}</div>
       )}
     </div>
   )
 }
 
-function slotPlaceholder(key: keyof MealPlanDay['meals']): string {
-  const map: Record<keyof MealPlanDay['meals'], string> = {
-    early_morning: 'e.g. Warm water + 2 soaked almonds + raw amla',
-    breakfast: 'e.g. Poha with mungfali + nimbu + green chutney',
-    mid_morning: 'e.g. 1 seasonal fruit + 1 glass chaas',
-    lunch: 'e.g. Bajra roti × 2 + palak dal + curd + salad',
-    evening_snack: 'e.g. Roasted chana + masala chai',
-    dinner: 'e.g. Khichdi + ghee + papad + raita',
-    bedtime: 'e.g. Warm haldi milk or soaked methi water',
-  }
-  return map[key] ?? ''
+function InfoField({
+  label,
+  value,
+  wide,
+}: {
+  label: string
+  value: string
+  wide?: boolean
+}) {
+  return (
+    <div className={`flex flex-col gap-0.5 ${wide ? 'min-w-[100px] max-w-[160px]' : 'min-w-[70px]'}`}>
+      <span className="font-semibold uppercase tracking-wide text-sky-800">{label}</span>
+      <span className="truncate font-medium text-slate-700" title={value}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function MealCell({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string
+  value: string
+  disabled: boolean
+  onChange: (v: string) => void
+}) {
+  const [hover, setHover] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
+  const display = value.trim() || '—'
+  const hasContent = value.trim().length > 0
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {editing && !disabled ? (
+        <textarea
+          ref={inputRef}
+          rows={2}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={() => setEditing(false)}
+          placeholder={`${label}…`}
+          className="min-h-[52px] w-full resize-none rounded border border-sky-400 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-100"
+        />
+      ) : (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => !disabled && setEditing(true)}
+          className={`min-h-[52px] w-full rounded border px-2 py-1.5 text-left text-[11px] leading-snug transition ${
+            hasContent
+              ? 'border-sky-300 bg-white text-slate-800 hover:border-sky-400'
+              : 'border-sky-200 bg-slate-50 text-slate-400 hover:border-sky-300'
+          } disabled:cursor-default`}
+        >
+          <span className="line-clamp-3">{display}</span>
+        </button>
+      )}
+
+      {hover && hasContent && !editing && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 max-w-[200px] -translate-x-1/2 rounded bg-slate-800 px-2.5 py-1.5 text-[10px] leading-relaxed text-white shadow-lg">
+          {value}
+          <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+        </div>
+      )}
+    </div>
+  )
 }

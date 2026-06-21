@@ -8,7 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { isNutritionistEmail } from '@/lib/nutritionist-config'
 import { getOrCreateNutritionist } from '@/lib/nutritionist-actions'
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
-import { emptyDay } from '@/lib/meal-plan-types'
+import { emptyDay, nextIsoDate, todayIsoDate } from '@/lib/meal-plan-types'
 import type { MealPlan, MealPlanCustomerDTO, MealPlanDay, MealPlanListItem } from '@/lib/meal-plan-types'
 
 // ─── Auth helper (mirrors nutritionist-portal-actions) ─────────────────────────
@@ -44,7 +44,13 @@ export async function createMealPlan(input: {
   const nut = await portalNutritionist()
   if (!nut) return { ok: false, error: 'Not authenticated' }
 
-  const days: MealPlanDay[] = Array.from({ length: input.numDays }, (_, i) => emptyDay(i + 1))
+  const numDays = Math.min(Math.max(input.numDays, 1), 31)
+  const days: MealPlanDay[] = []
+  let iso = todayIsoDate()
+  for (let i = 1; i <= numDays; i++) {
+    days.push(emptyDay(i, iso))
+    iso = nextIsoDate(iso)
+  }
 
   const { data, error } = await supabaseAdmin
     .from('meal_plans')
@@ -133,6 +139,49 @@ export async function publishMealPlan(input: {
 }
 
 // ─── Delete ────────────────────────────────────────────────────────────────────
+
+export async function duplicateMealPlan(input: {
+  planId: string
+  title?: string
+}): Promise<{ ok: true; plan: MealPlan } | { ok: false; error: string }> {
+  const nut = await portalNutritionist()
+  if (!nut) return { ok: false, error: 'Not authenticated' }
+
+  const { data: source, error: fetchErr } = await supabaseAdmin
+    .from('meal_plans')
+    .select('*')
+    .eq('id', input.planId)
+    .eq('nutritionist_id', nut.id)
+    .single()
+
+  if (fetchErr || !source) {
+    return { ok: false, error: fetchErr?.message ?? 'Plan not found' }
+  }
+
+  const title =
+    input.title?.trim() ||
+    `${String(source.title).replace(/^Template:\s*/i, '')} (Template)`
+
+  const { data, error } = await supabaseAdmin
+    .from('meal_plans')
+    .insert({
+      client_id: source.client_id,
+      nutritionist_id: nut.id,
+      client_email: source.client_email,
+      title: title.startsWith('Template:') ? title : `Template: ${title}`,
+      nutritionist_notes: source.nutritionist_notes,
+      status: 'draft',
+      days: source.days,
+    })
+    .select('*')
+    .single()
+
+  if (error || !data) {
+    console.error('[duplicateMealPlan]', error)
+    return { ok: false, error: error?.message ?? 'Failed to create template' }
+  }
+  return { ok: true, plan: data as MealPlan }
+}
 
 export async function deleteMealPlan(planId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const nut = await portalNutritionist()

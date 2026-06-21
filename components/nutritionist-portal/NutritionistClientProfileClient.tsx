@@ -164,7 +164,7 @@ export default function NutritionistClientProfileClient({
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'notes', label: 'Notes' },
-    { id: 'mealPlan', label: '🥗 Meal Plan' },
+    { id: 'mealPlan', label: 'Diet Plan' },
     { id: 'dietPlan', label: 'PDF Plans' },
     { id: 'documents', label: 'Documents' },
     { id: 'progress', label: 'Progress' },
@@ -615,11 +615,19 @@ export default function NutritionistClientProfileClient({
           )}
 
           {tab === 'mealPlan' && (
-            <NutritionistMealPlanTab
-              clientId={clientId}
-              clientEmail={client.email.toLowerCase()}
-              clientName={client.name}
-            />
+            <div className="-mx-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+              <NutritionistMealPlanTab
+                clientId={clientId}
+                clientEmail={client.email.toLowerCase()}
+                clientName={client.name}
+                clientContext={{
+                  clientId,
+                  client,
+                  progressLogs: bundle.progressLogs,
+                  detailedAssessment: bundle.detailedAssessment,
+                }}
+              />
+            </div>
           )}
 
           {tab === 'dietPlan' && (

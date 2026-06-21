@@ -29,6 +29,7 @@ import type {
 } from '@/lib/booking-types'
 import type { MealPlanCustomerDTO, MealPlanDay } from '@/lib/meal-plan-types'
 import { MEAL_SLOT_META } from '@/lib/meal-plan-types'
+import { formatGridDayHeader } from '@/lib/meal-plan-meta'
 import { FullPlanBookingLink } from '@/components/payment/FullPlanBookingLink'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
@@ -907,25 +908,41 @@ function ClientMealPlanSection({ mealPlans }: { mealPlans: MealPlanCustomerDTO[]
       {/* Day tabs */}
       {days.length > 0 && (
         <div className="px-6 py-3 border-b border-white/5 flex gap-1.5 flex-wrap">
-          {days.map((d, idx) => (
-            <button
-              key={d.day}
-              type="button"
-              onClick={() => setActiveDayIdx(idx)}
-              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                idx === activeDayIdx
-                  ? 'bg-emerald-500 text-black'
-                  : 'border border-white/10 text-gray-500 hover:text-white hover:border-white/20'
-              }`}
-            >
-              Day {d.day}
-            </button>
-          ))}
+          {days.map((d, idx) => {
+            const label = d.plan_date
+              ? formatGridDayHeader(new Date(`${d.plan_date}T12:00:00`))
+              : `Day ${d.day}`
+            return (
+              <button
+                key={`${d.day}-${idx}`}
+                type="button"
+                onClick={() => setActiveDayIdx(idx)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                  idx === activeDayIdx
+                    ? d.skipped
+                      ? 'bg-slate-500 text-white'
+                      : 'bg-emerald-500 text-black'
+                    : d.skipped
+                      ? 'border border-white/10 text-gray-600'
+                      : 'border border-white/10 text-gray-500 hover:text-white hover:border-white/20'
+                }`}
+              >
+                {label}
+                {d.skipped ? ' · Off' : ''}
+              </button>
+            )
+          })}
         </div>
       )}
 
       {/* Day content */}
       {currentDay ? (
+        currentDay.skipped ? (
+          <div className="px-6 py-10 text-center">
+            <p className="text-gray-400 text-sm font-semibold">Rest day</p>
+            <p className="text-gray-600 text-xs mt-1">No meals planned for this day.</p>
+          </div>
+        ) : (
         <div className="px-6 py-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white font-bold">Day {currentDay.day}</h3>
@@ -984,6 +1001,7 @@ function ClientMealPlanSection({ mealPlans }: { mealPlans: MealPlanCustomerDTO[]
             </div>
           )}
         </div>
+        )
       ) : (
         <div className="px-6 py-8 text-center text-gray-500 text-sm">
           Your nutritionist is preparing your meal plan. Check back soon.
