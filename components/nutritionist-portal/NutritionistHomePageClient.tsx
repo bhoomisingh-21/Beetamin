@@ -17,6 +17,7 @@ import { completePortalAppointment } from '@/lib/nutritionist-portal-actions'
 import type { PortalHomePayload, SlotStatus } from '@/lib/nutritionist-types'
 import { confirmAppointment, type AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { CompleteSessionModal } from '@/components/nutritionist-portal/CompleteSessionModal'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function formatTime(t: string) {
   const [h, m] = t.split(':').map(Number)
@@ -45,9 +46,9 @@ function avatarColor(name: string): string {
 
 function slotBadge(status: SlotStatus) {
   const map: Record<SlotStatus, string> = {
-    Upcoming: 'border-white/15 bg-white/5 text-[#8B9AB0]',
-    'In Progress': 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400',
-    Completed: 'border-emerald-500/35 bg-emerald-500/12 text-emerald-400',
+    Upcoming: 'border-slate-200 bg-slate-50 text-slate-600',
+    'In Progress': 'border-emerald-300 bg-emerald-50 text-emerald-700',
+    Completed: 'border-emerald-300 bg-emerald-50 text-emerald-700',
   }
   return map[status]
 }
@@ -107,7 +108,7 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
   return (
     <div className="space-y-10">
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-[110] max-w-md -translate-x-1/2 rounded-xl border border-white/10 bg-[#0F1623] px-5 py-3 text-sm font-semibold text-[#F0F4F8] shadow-xl">
+        <div className={portal.toast}>
           {toast}
         </div>
       )}
@@ -119,10 +120,10 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
         onConfirm={submitComplete}
       />
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] pb-4">
+      <div className={`flex flex-wrap items-center gap-2 border-b ${portal.divider} pb-4`}>
         <Link
           href="/nutritionist-dashboard"
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:bg-white/[0.04] hover:text-emerald-400"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-emerald-700"
         >
           <ChevronLeft size={18} aria-hidden />
           Back to quick dashboard
@@ -130,26 +131,26 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
       </div>
 
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">Dashboard</h1>
-        <p className="mt-1 text-sm text-[#8B9AB0]">Sessions and clients at a glance</p>
-        <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
+        <h1 className={portal.heading}>Dashboard</h1>
+        <p className={portal.subtext}>Sessions and clients at a glance</p>
+        <div className={portal.accentBar} aria-hidden />
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {statCards.map((s) => (
           <div
             key={s.label}
-            className="rounded-2xl border border-white/[0.06] bg-[#0F1623] px-4 py-5 shadow-[0_0_0_1px_rgba(16,185,129,0.05),0_4px_24px_rgba(0,0,0,0.4)]"
+            className={`${portal.card} px-4 py-5`}
           >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#8B9AB0]">{s.label}</p>
-            <p className="mt-2 text-3xl font-black tabular-nums text-emerald-400">{s.value}</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wider ${portal.textMuted}`}>{s.label}</p>
+            <p className="mt-2 text-3xl font-black tabular-nums text-emerald-600">{s.value}</p>
           </div>
         ))}
       </div>
 
       {pendingRequests.length > 0 && (
-        <section className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-5">
-          <h2 className="flex items-center gap-2 text-sm font-black text-amber-300">
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <h2 className="flex items-center gap-2 text-sm font-black text-amber-800">
             <ClipboardList size={18} />
             Pending confirmations ({pendingRequests.length})
           </h2>
@@ -157,7 +158,7 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
             {pendingRequests.slice(0, 8).map((a) => (
               <li
                 key={a.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-[#0F1623] px-4 py-3"
+                className={`flex flex-wrap items-center justify-between gap-3 ${portal.cardMuted} px-4 py-3`}
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -167,8 +168,8 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                     {initials(a.clients.name)}
                   </div>
                   <div>
-                    <p className="font-semibold text-[#F0F4F8]">{a.clients.name}</p>
-                    <p className="text-xs text-[#8B9AB0]">
+                    <p className={`font-semibold ${portal.textH}`}>{a.clients.name}</p>
+                    <p className={`text-xs ${portal.textMuted}`}>
                       {formatDateShort(a.scheduled_date)} · {formatTime(a.scheduled_time)}
                     </p>
                   </div>
@@ -177,7 +178,7 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                   type="button"
                   disabled={pending}
                   onClick={() => quickConfirm(a.id)}
-                  className="rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-black hover:bg-emerald-400 disabled:opacity-50"
+                  className={`rounded-full px-4 py-2 text-xs font-bold ${portal.btnPrimary} disabled:opacity-50`}
                 >
                   {pending ? <Loader2 className="animate-spin" size={14} /> : 'Confirm'}
                 </button>
@@ -189,12 +190,12 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
 
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-black text-[#F0F4F8]">Today&apos;s sessions</h2>
+          <h2 className={`text-lg font-black ${portal.textH}`}>Today&apos;s sessions</h2>
           <div className="flex items-center gap-3">
-            {pending && <Loader2 className="animate-spin text-emerald-500" size={18} />}
+            {pending && <Loader2 className="animate-spin text-emerald-600" size={18} />}
             <Link
               href="/nutritionist/appointments"
-              className="text-xs font-bold text-emerald-400 hover:underline"
+              className={`text-xs font-bold ${portal.textAccent} hover:underline`}
             >
               All appointments →
             </Link>
@@ -202,13 +203,13 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
         </div>
 
         {todaySessions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#0F1623]/60 px-6 py-14 text-center">
-            <Calendar className="mx-auto text-[#8B9AB0]" size={36} />
-            <p className="mt-4 font-semibold text-[#F0F4F8]">No sessions scheduled for today</p>
-            <p className="mt-1 text-sm text-[#8B9AB0]">Confirmed or pending requests will show here.</p>
+          <div className={portal.cardEmpty}>
+            <Calendar className={`mx-auto ${portal.textMuted}`} size={36} />
+            <p className={`mt-4 font-semibold ${portal.textH}`}>No sessions scheduled for today</p>
+            <p className={`mt-1 text-sm ${portal.textMuted}`}>Confirmed or pending requests will show here.</p>
             <Link
               href="/nutritionist/clients"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-emerald-500/35 px-5 py-3 text-sm font-bold text-emerald-400 hover:bg-emerald-500/10"
+              className={`mt-6 inline-flex items-center gap-2 px-5 py-3 text-sm font-bold ${portal.btnOutline}`}
             >
               <Users size={18} />
               View all clients
@@ -219,10 +220,10 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
             {todaySessions.map((a) => (
               <li
                 key={a.id}
-                className="flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-[#0F1623] p-4 shadow-[0_4px_24px_rgba(0,0,0,0.35)] md:flex-row md:items-center md:justify-between"
+                className={`flex flex-col gap-4 ${portal.card} p-4 md:flex-row md:items-center md:justify-between`}
               >
                 <div className="flex flex-1 flex-wrap items-center gap-4">
-                  <div className="text-lg font-black tabular-nums text-emerald-400">{formatTime(a.scheduled_time)}</div>
+                  <div className="text-lg font-black tabular-nums text-emerald-600">{formatTime(a.scheduled_time)}</div>
                   <div className="flex items-center gap-3">
                     <div
                       className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-black text-white"
@@ -231,9 +232,9 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                       {initials(a.clients.name)}
                     </div>
                     <div>
-                      <p className="font-bold text-[#F0F4F8]">{a.clients.name}</p>
-                      <p className="text-xs text-[#8B9AB0]">{a.clients.email}</p>
-                      <p className="mt-1 text-[11px] font-semibold text-emerald-400/90">
+                      <p className={`font-bold ${portal.textH}`}>{a.clients.name}</p>
+                      <p className={`text-xs ${portal.textMuted}`}>{a.clients.email}</p>
+                      <p className="mt-1 text-[11px] font-semibold text-emerald-700">
                         Session {a.session_number} of {sessionsTotal(a.clients)}
                       </p>
                     </div>
@@ -246,7 +247,7 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                 <div className="flex flex-wrap gap-2">
                   <Link
                     href={`/nutritionist/clients/${a.clients.id}`}
-                    className="inline-flex items-center justify-center rounded-xl border border-emerald-500/35 px-4 py-2.5 text-sm font-bold text-emerald-400 hover:bg-emerald-500/10"
+                    className={`inline-flex items-center justify-center ${portal.btnOutline}`}
                   >
                     View client profile
                   </Link>
@@ -255,13 +256,13 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                       type="button"
                       disabled={pending}
                       onClick={() => setCompleteTarget(a)}
-                      className="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-black hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+                      className={`inline-flex items-center justify-center ${portal.btnPrimary} disabled:cursor-not-allowed disabled:opacity-40`}
                     >
                       Complete
                     </button>
                   )}
                   {a.status === 'completed' && (
-                    <span className="inline-flex items-center gap-1 rounded-xl border border-emerald-500/35 bg-emerald-500/12 px-4 py-2.5 text-sm font-bold text-emerald-400">
+                    <span className="inline-flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700">
                       <CheckCircle size={16} />
                       Completed
                     </span>
@@ -274,26 +275,26 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-black text-[#F0F4F8]">Upcoming (next 7 days)</h2>
+        <h2 className={`mb-4 text-lg font-black ${portal.textH}`}>Upcoming (next 7 days)</h2>
         {upcomingSevenDays.length === 0 ? (
-          <p className="text-sm text-[#8B9AB0]">No upcoming sessions in the next week.</p>
+          <p className={`text-sm ${portal.textMuted}`}>No upcoming sessions in the next week.</p>
         ) : (
-          <ul className="divide-y divide-white/[0.06] rounded-2xl border border-white/[0.06] bg-[#0F1623]">
+          <ul className={`divide-y ${portal.divider} ${portal.card}`}>
             {upcomingSevenDays.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                 <div className="flex items-center gap-3 text-sm">
-                  <Clock className="text-[#8B9AB0]" size={16} />
-                  <span className="text-[#F0F4F8]">
+                  <Clock className={portal.textMuted} size={16} />
+                  <span className={portal.textH}>
                     {formatDateShort(row.scheduled_date)} · {formatTime(row.scheduled_time)}
                   </span>
-                  <span className="text-[#8B9AB0]">{row.clientName}</span>
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                  <span className={portal.textMuted}>{row.clientName}</span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                     Session {row.session_number}
                   </span>
                 </div>
                 <Link
                   href={`/nutritionist/clients/${row.clientId}`}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 hover:underline"
+                  className={`inline-flex items-center gap-1 text-xs font-bold ${portal.textAccent} hover:underline`}
                 >
                   View profile
                   <ChevronRight size={14} />

@@ -10,6 +10,7 @@ import {
   saveAvailability,
   type AvailabilitySlot,
 } from '@/lib/nutritionist-actions'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -85,8 +86,8 @@ export default function AvailabilityPage() {
 
   if (!isLoaded || isLoading) {
     return (
-      <div className="min-h-screen bg-[#0A0F14] flex items-center justify-center">
-        <Loader2 className="animate-spin text-emerald-400" size={32} />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="animate-spin text-emerald-600" size={32} />
       </div>
     )
   }
@@ -99,136 +100,130 @@ export default function AvailabilityPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-[#0A0F14] px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        {/* Back */}
-        <button
-          type="button"
-          onClick={() => router.push('/nutritionist')}
-          className="mb-6 flex min-h-[48px] w-full max-w-xs items-center gap-2 rounded-xl px-2 text-left text-gray-400 transition hover:text-white sm:w-auto"
-        >
-          <ChevronLeft size={18} aria-hidden />
-          Back to portal dashboard
-        </button>
+    <div className="space-y-8">
+      <button
+        type="button"
+        onClick={() => router.push('/nutritionist')}
+        className={portal.backBtn}
+      >
+        <ChevronLeft size={18} aria-hidden />
+        Back to portal dashboard
+      </button>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <p className="text-emerald-400 text-xs font-bold tracking-widest uppercase">
-            AVAILABILITY
-          </p>
-          <h1 className="text-white font-black text-3xl mt-2">Set Your Schedule</h1>
-          <p className="text-gray-400 mt-1">
-            Clients will only be able to book sessions during these time blocks.
-            Each session is 30 minutes.
-          </p>
-        </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">
+          AVAILABILITY
+        </p>
+        <h1 className={`mt-2 text-3xl font-black ${portal.textH}`}>Set Your Schedule</h1>
+        <p className={`mt-1 ${portal.textMuted}`}>
+          Clients will only be able to book sessions during these time blocks.
+          Each session is 30 minutes.
+        </p>
+        <div className={portal.accentBar} aria-hidden />
+      </motion.div>
 
-        <div className="mt-8 space-y-4">
-          {slotsByDay.map(({ dow, daySlots }) => (
-            <motion.div
-              key={dow}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: dow * 0.04 }}
-              className="bg-[#111820] border border-white/[0.08] rounded-2xl p-5"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-white font-bold">{DAYS[dow]}</h3>
-                <button
-                  onClick={() => addSlot(dow)}
-                  className="flex items-center gap-1.5 text-emerald-400 text-sm hover:text-emerald-300 transition"
-                >
-                  <Plus size={14} />
-                  Add block
-                </button>
-              </div>
-
-              {daySlots.length === 0 ? (
-                <p className="text-gray-600 text-sm">No availability — click &quot;Add block&quot; to add one</p>
-              ) : (
-                <div className="space-y-3">
-                  {daySlots.map(({ idx, is_active, start_time, end_time }) => (
-                    <div key={idx} className="flex flex-wrap items-center gap-3">
-                      {/* Toggle */}
-                      <button
-                        onClick={() => updateSlot(idx, 'is_active', !is_active)}
-                        className={`w-10 h-5 rounded-full transition-colors shrink-0 ${
-                          is_active ? 'bg-emerald-500' : 'bg-gray-700'
-                        }`}
-                      >
-                        <div className={`w-4 h-4 bg-white rounded-full transition-transform mx-0.5 ${
-                          is_active ? 'translate-x-5' : 'translate-x-0'
-                        }`} />
-                      </button>
-
-                      {/* Start time */}
-                      <select
-                        value={start_time}
-                        onChange={(e) => updateSlot(idx, 'start_time', e.target.value)}
-                        disabled={!is_active}
-                        className="bg-[#0A0F14] border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 focus:outline-none disabled:opacity-40"
-                      >
-                        {TIME_OPTIONS.map((t) => (
-                          <option key={t} value={t}>{formatTimeLabel(t)}</option>
-                        ))}
-                      </select>
-
-                      <span className="text-gray-500 text-sm">to</span>
-
-                      {/* End time */}
-                      <select
-                        value={end_time}
-                        onChange={(e) => updateSlot(idx, 'end_time', e.target.value)}
-                        disabled={!is_active}
-                        className="bg-[#0A0F14] border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 focus:outline-none disabled:opacity-40"
-                      >
-                        {TIME_OPTIONS.map((t) => (
-                          <option key={t} value={t}>{formatTimeLabel(t)}</option>
-                        ))}
-                      </select>
-
-                      <button
-                        onClick={() => removeSlot(idx)}
-                        className="text-gray-600 hover:text-red-400 transition ml-auto"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Save button */}
-        <div className="mt-8 pb-8">
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-5 transition flex items-center justify-center gap-2 disabled:opacity-60"
+      <div className="space-y-4">
+        {slotsByDay.map(({ dow, daySlots }) => (
+          <motion.div
+            key={dow}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: dow * 0.04 }}
+            className={`${portal.card} p-5`}
           >
-            {isSaving ? (
-              <>
-                <Loader2 className="animate-spin" size={20} />
-                Saving...
-              </>
-            ) : saved ? (
-              <>
-                <CheckCircle size={20} />
-                Saved!
-              </>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className={`font-bold ${portal.textH}`}>{DAYS[dow]}</h3>
+              <button
+                onClick={() => addSlot(dow)}
+                className="flex items-center gap-1.5 text-sm text-emerald-700 transition hover:text-emerald-600"
+              >
+                <Plus size={14} />
+                Add block
+              </button>
+            </div>
+
+            {daySlots.length === 0 ? (
+              <p className={`text-sm ${portal.textMuted}`}>No availability — click &quot;Add block&quot; to add one</p>
             ) : (
-              <>
-                <Save size={20} />
-                Save Availability
-              </>
+              <div className="space-y-3">
+                {daySlots.map(({ idx, is_active, start_time, end_time }) => (
+                  <div key={idx} className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => updateSlot(idx, 'is_active', !is_active)}
+                      className={`h-5 w-10 shrink-0 rounded-full transition-colors ${
+                        is_active ? 'bg-emerald-600' : 'bg-slate-300'
+                      }`}
+                    >
+                      <div className={`mx-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                        is_active ? 'translate-x-5' : 'translate-x-0'
+                      }`} />
+                    </button>
+
+                    <select
+                      value={start_time}
+                      onChange={(e) => updateSlot(idx, 'start_time', e.target.value)}
+                      disabled={!is_active}
+                      className={`rounded-xl px-3 py-2 text-sm disabled:opacity-40 ${portal.input}`}
+                    >
+                      {TIME_OPTIONS.map((t) => (
+                        <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                      ))}
+                    </select>
+
+                    <span className={`text-sm ${portal.textMuted}`}>to</span>
+
+                    <select
+                      value={end_time}
+                      onChange={(e) => updateSlot(idx, 'end_time', e.target.value)}
+                      disabled={!is_active}
+                      className={`rounded-xl px-3 py-2 text-sm disabled:opacity-40 ${portal.input}`}
+                    >
+                      {TIME_OPTIONS.map((t) => (
+                        <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                      ))}
+                    </select>
+
+                    <button
+                      onClick={() => removeSlot(idx)}
+                      className="ml-auto text-slate-400 transition hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
-          </button>
-        </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="pb-8">
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-5 text-lg font-black text-white transition hover:bg-emerald-500 disabled:opacity-60"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="animate-spin" size={20} />
+              Saving...
+            </>
+          ) : saved ? (
+            <>
+              <CheckCircle size={20} />
+              Saved!
+            </>
+          ) : (
+            <>
+              <Save size={20} />
+              Save Availability
+            </>
+          )}
+        </button>
       </div>
     </div>
   )

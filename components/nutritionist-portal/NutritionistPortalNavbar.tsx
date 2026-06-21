@@ -16,9 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-
-const navLinkClass =
-  'flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-[#F0F4F8] transition hover:bg-white/[0.06] active:bg-white/[0.08]'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 export function NutritionistPortalNavbar() {
   const router = useRouter()
@@ -56,55 +54,55 @@ export function NutritionistPortalNavbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#060910]/95 backdrop-blur-md">
+      <header className={portal.navHeader}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <Link
             href="/nutritionist"
-            className="flex min-h-[44px] min-w-0 shrink items-center gap-2 text-[#F0F4F8]"
+            className="flex min-h-[44px] min-w-0 shrink items-center gap-2 text-slate-900"
             onClick={closeMenu}
           >
-            <Leaf className="shrink-0 text-emerald-500" size={22} aria-hidden />
+            <Leaf className="shrink-0 text-emerald-600" size={22} aria-hidden />
             <span className="truncate font-bold tracking-tight">TheBeetamin</span>
           </Link>
 
-          <nav className="hidden items-center gap-5 text-sm font-semibold text-[#8B9AB0] md:flex">
-            <span className="rounded-full border border-white/[0.06] bg-[#0F1623] px-4 py-1.5 text-xs uppercase tracking-wider">
+          <nav className="hidden items-center gap-5 text-sm font-semibold text-slate-500 md:flex">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-xs uppercase tracking-wider text-slate-600">
               Nutritionist Portal
             </span>
-            <Link href="/nutritionist/clients" className="flex items-center gap-1.5 hover:text-emerald-400">
+            <Link href="/nutritionist/clients" className="flex items-center gap-1.5 text-slate-700 hover:text-emerald-700">
               <Users size={16} aria-hidden />
               Clients
             </Link>
-            <Link href="/nutritionist/appointments" className="flex items-center gap-1.5 hover:text-emerald-400">
+            <Link href="/nutritionist/appointments" className="flex items-center gap-1.5 text-slate-700 hover:text-emerald-700">
               <CalendarDays size={16} aria-hidden />
               Appointments
             </Link>
-            <Link href={availabilityHref} className="flex items-center gap-1.5 hover:text-emerald-400">
+            <Link href={availabilityHref} className="flex items-center gap-1.5 text-slate-700 hover:text-emerald-700">
               <CalendarClock size={16} aria-hidden />
               Availability
             </Link>
-            <Link href="/nutritionist-dashboard" className="hover:text-emerald-400">
+            <Link href="/nutritionist-dashboard" className="text-slate-700 hover:text-emerald-700">
               Quick dashboard
             </Link>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {!isLoaded ? (
-              <span className="text-xs text-[#8B9AB0]" aria-hidden>
+              <span className="text-xs text-slate-500" aria-hidden>
                 …
               </span>
             ) : isSignedIn ? (
               <>
-                <span className="hidden max-w-[140px] truncate text-sm text-[#F0F4F8] lg:inline">{name}</span>
+                <span className="hidden max-w-[140px] truncate text-sm text-slate-700 lg:inline">{name}</span>
                 <UserButton />
               </>
             ) : (
               <>
-                <span className="hidden text-sm text-[#8B9AB0] lg:inline">Signed in</span>
+                <span className="hidden text-sm text-slate-500 lg:inline">Signed in</span>
                 <button
                   type="button"
                   onClick={() => void logoutNutritionistCookie()}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-lg border border-white/10 px-3 text-xs font-bold text-red-400 hover:bg-red-500/10 sm:min-w-0 sm:px-3"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 text-xs font-bold text-red-600 hover:bg-red-50 sm:min-w-0 sm:px-3"
                   aria-label="Log out"
                 >
                   <LogOut size={18} aria-hidden />
@@ -115,7 +113,7 @@ export function NutritionistPortalNavbar() {
 
             <button
               type="button"
-              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-white/[0.12] text-[#F0F4F8] hover:bg-white/[0.06] md:hidden"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 md:hidden"
               aria-expanded={menuOpen}
               aria-controls="nutritionist-portal-mobile-nav"
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -131,19 +129,19 @@ export function NutritionistPortalNavbar() {
         <div className="fixed inset-0 z-50 md:hidden" id="nutritionist-portal-mobile-nav">
           <button
             type="button"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className={portal.overlay}
             aria-label="Close menu"
             onClick={closeMenu}
           />
           <nav
-            className="absolute inset-y-0 right-0 flex w-[min(100%,20rem)] flex-col border-l border-white/[0.08] bg-[#060910] shadow-2xl"
+            className={portal.navMobile}
             aria-hidden={false}
           >
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#8B9AB0]">Menu</span>
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Menu</span>
               <button
                 type="button"
-                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-[#8B9AB0] hover:bg-white/[0.06] hover:text-[#F0F4F8]"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 aria-label="Close menu"
                 onClick={closeMenu}
               >
@@ -151,24 +149,24 @@ export function NutritionistPortalNavbar() {
               </button>
             </div>
             <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-3 pb-8">
-              <Link href="/nutritionist" className={navLinkClass} onClick={closeMenu}>
-                <LayoutDashboard size={20} className="text-emerald-400" aria-hidden />
+              <Link href="/nutritionist" className={portal.navLink} onClick={closeMenu}>
+                <LayoutDashboard size={20} className="text-emerald-600" aria-hidden />
                 Portal home
               </Link>
-              <Link href="/nutritionist/clients" className={navLinkClass} onClick={closeMenu}>
-                <Users size={20} className="text-emerald-400" aria-hidden />
+              <Link href="/nutritionist/clients" className={portal.navLink} onClick={closeMenu}>
+                <Users size={20} className="text-emerald-600" aria-hidden />
                 Clients
               </Link>
-              <Link href="/nutritionist/appointments" className={navLinkClass} onClick={closeMenu}>
-                <CalendarDays size={20} className="text-emerald-400" aria-hidden />
+              <Link href="/nutritionist/appointments" className={portal.navLink} onClick={closeMenu}>
+                <CalendarDays size={20} className="text-emerald-600" aria-hidden />
                 Appointments
               </Link>
-              <Link href={availabilityHref} className={navLinkClass} onClick={closeMenu}>
-                <CalendarClock size={20} className="text-emerald-400" aria-hidden />
+              <Link href={availabilityHref} className={portal.navLink} onClick={closeMenu}>
+                <CalendarClock size={20} className="text-emerald-600" aria-hidden />
                 Availability
               </Link>
-              <Link href="/nutritionist-dashboard" className={navLinkClass} onClick={closeMenu}>
-                <Home size={20} className="text-[#8B9AB0]" aria-hidden />
+              <Link href="/nutritionist-dashboard" className={portal.navLink} onClick={closeMenu}>
+                <Home size={20} className="text-slate-500" aria-hidden />
                 Quick dashboard
               </Link>
             </div>

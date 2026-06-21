@@ -6,9 +6,7 @@ import type { ClientRow } from '@/lib/booking-types'
 import type { PortalClientListRow, SessionDotState } from '@/lib/nutritionist-types'
 import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
 import { Search, ChevronLeft } from 'lucide-react'
-
-const backBtn =
-  'inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/[0.08] bg-[#0F1623]/60 px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:border-emerald-500/25 hover:text-emerald-400'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function initials(name: string) {
   return name
@@ -24,7 +22,7 @@ function SessionDotsRow({ states }: { states?: Partial<Record<number, SessionDot
     <div className="flex gap-1.5 pt-1" aria-hidden>
       {[1, 2, 3, 4, 5, 6].map((n) => {
         const s = states?.[n]
-        let cls = 'h-2 w-2 shrink-0 rounded-full border border-white/20 bg-transparent'
+        let cls = 'h-2 w-2 shrink-0 rounded-full border border-slate-300 bg-transparent'
         if (s === 'completed') cls = 'h-2 w-2 shrink-0 rounded-full bg-emerald-500'
         else if (s === 'confirmed' || s === 'pending') cls = 'h-2 w-2 shrink-0 rounded-full bg-blue-500'
         return <span key={n} className={cls} />
@@ -35,9 +33,9 @@ function SessionDotsRow({ states }: { states?: Partial<Record<number, SessionDot
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    active: 'border-emerald-500/35 bg-emerald-500/10 text-emerald-400',
-    expired: 'border-red-500/35 bg-red-500/10 text-red-400',
-    completed: 'border-blue-500/35 bg-blue-500/10 text-blue-300',
+    active: 'border-emerald-300 bg-emerald-50 text-emerald-700',
+    expired: 'border-red-300 bg-red-50 text-red-700',
+    completed: 'border-blue-300 bg-blue-50 text-blue-700',
   }
   return map[status] || map.completed
 }
@@ -79,30 +77,30 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-        <Link href="/nutritionist" className={backBtn}>
+        <Link href="/nutritionist" className={portal.backBtn}>
           <ChevronLeft size={18} aria-hidden />
           Portal home
         </Link>
-        <Link href="/nutritionist-dashboard" className={backBtn}>
+        <Link href="/nutritionist-dashboard" className={portal.backBtn}>
           <ChevronLeft size={18} aria-hidden />
           Quick dashboard
         </Link>
       </div>
 
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">My Clients</h1>
-        <p className="mt-1 text-sm text-[#8B9AB0]">Clients you have sessions with — search and filter by status</p>
-        <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
+        <h1 className={portal.heading}>My Clients</h1>
+        <p className={portal.subtext}>Clients you have sessions with — search and filter by status</p>
+        <div className={portal.accentBar} aria-hidden />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B9AB0]" />
+          <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${portal.textMuted}`} />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search name or email…"
-            className="w-full rounded-xl border border-white/[0.08] bg-[#0F1623] py-2.5 pl-10 pr-4 text-sm text-[#F0F4F8] outline-none ring-emerald-500/20 focus:ring-2"
+            className={portal.inputSearch}
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -113,8 +111,8 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
               onClick={() => setFilter(p.key)}
               className={`rounded-full px-4 py-2 text-xs font-bold transition ${
                 filter === p.key
-                  ? 'bg-emerald-500 text-black'
-                  : 'border border-white/[0.08] bg-[#0F1623] text-[#8B9AB0] hover:border-emerald-500/25'
+                  ? portal.tabActive
+                  : portal.tabIdle
               }`}
             >
               {p.label}
@@ -124,9 +122,9 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#0F1623]/50 px-6 py-16 text-center">
-          <p className="font-semibold text-[#F0F4F8]">No clients match</p>
-          <p className="mt-2 text-sm text-[#8B9AB0]">Try another search or filter.</p>
+        <div className={portal.cardEmpty}>
+          <p className={`font-semibold ${portal.textH}`}>No clients match</p>
+          <p className={`mt-2 text-sm ${portal.textMuted}`}>Try another search or filter.</p>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -139,7 +137,7 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
             return (
               <div
                 key={c.id}
-                className="flex flex-col gap-5 rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.35)] lg:flex-row lg:items-center lg:justify-between lg:gap-8"
+                className={`flex flex-col gap-5 ${portal.card} p-5 lg:flex-row lg:items-center lg:justify-between lg:gap-8`}
               >
                 {/* Left */}
                 <div className="flex min-w-0 flex-1 items-start gap-4">
@@ -150,30 +148,30 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
                     {initials(c.name)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-[#F0F4F8]">{c.name}</p>
-                    <p className="text-[13px] text-[#8B9AB0]">{c.email}</p>
-                    {c.phone ? <p className="text-[13px] text-[#8B9AB0]">{c.phone}</p> : null}
+                    <p className={`text-base font-bold ${portal.textH}`}>{c.name}</p>
+                    <p className={`text-[13px] ${portal.textMuted}`}>{c.email}</p>
+                    {c.phone ? <p className={`text-[13px] ${portal.textMuted}`}>{c.phone}</p> : null}
                   </div>
                 </div>
 
                 {/* Center */}
-                <div className="min-w-0 flex-1 space-y-3 border-y border-white/[0.06] py-5 lg:border-x lg:border-y-0 lg:px-8 lg:py-0">
+                <div className={`min-w-0 flex-1 space-y-3 border-y ${portal.divider} py-5 lg:border-x lg:border-y-0 lg:px-8 lg:py-0`}>
                   {c.assessment_goal ? (
-                    <span className="inline-block rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                    <span className="inline-block rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
                       {c.assessment_goal}
                     </span>
                   ) : (
-                    <span className="text-xs text-[#8B9AB0]">No goal on file</span>
+                    <span className={`text-xs ${portal.textMuted}`}>No goal on file</span>
                   )}
                   <SessionDotsRow states={c.sessionStates} />
-                  <p className="text-[13px] text-[#8B9AB0]">
+                  <p className={`text-[13px] ${portal.textMuted}`}>
                     Session{' '}
-                    <span className="font-bold text-[#F0F4F8]">
+                    <span className={`font-bold ${portal.textH}`}>
                       {sessionLabelNum} of {total}
                     </span>
                   </p>
-                  <p className="text-[13px] text-[#8B9AB0]">
-                    Plan expires: <span className="text-[#F0F4F8]">{formatPlanDate(c.plan_end_date)}</span>
+                  <p className={`text-[13px] ${portal.textMuted}`}>
+                    Plan expires: <span className={portal.textH}>{formatPlanDate(c.plan_end_date)}</span>
                   </p>
                 </div>
 
@@ -182,12 +180,12 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
                   <span className={`self-start rounded-full border px-3 py-1 text-[11px] font-bold lg:self-end ${statusBadge(c.status)}`}>
                     {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
                   </span>
-                  <p className="text-sm text-[#8B9AB0] lg:text-right">
-                    <span className="font-semibold text-[#F0F4F8]">{c.sessions_remaining}</span> sessions left
+                  <p className={`text-sm lg:text-right ${portal.textMuted}`}>
+                    <span className={`font-semibold ${portal.textH}`}>{c.sessions_remaining}</span> sessions left
                   </p>
                   <Link
                     href={`/nutritionist/clients/${c.id}`}
-                    className="rounded-xl border border-emerald-500/40 px-4 py-2.5 text-center text-sm font-bold text-emerald-400 hover:bg-emerald-500/10 lg:w-full"
+                    className={`rounded-xl px-4 py-2.5 text-center text-sm font-bold lg:w-full ${portal.btnOutline}`}
                   >
                     View Profile →
                   </Link>

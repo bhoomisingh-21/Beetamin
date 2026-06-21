@@ -19,6 +19,7 @@ import {
   updateNutritionistNote,
 } from '@/lib/nutritionist-portal-actions'
 import { tagColorClass } from '@/lib/nutritionist-utils'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleString('en-IN', {
@@ -176,14 +177,14 @@ export function NutritionistNotesTab({
 
   return (
     <div className="space-y-0">
-      <div className="sticky top-0 z-10 -mx-1 mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] bg-[#060910]/95 px-1 py-3 backdrop-blur-md">
-        <p className="text-sm text-[#8B9AB0]">
-          <span className="font-bold text-[#F0F4F8]">{notes.length}</span> notes
+      <div className={`sticky top-0 z-10 -mx-1 mb-4 flex flex-wrap items-center justify-between gap-3 border-b ${portal.divider} bg-white/95 px-1 py-3 backdrop-blur-md`}>
+        <p className={`text-sm ${portal.textMuted}`}>
+          <span className={`font-bold ${portal.textH}`}>{notes.length}</span> notes
         </p>
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-black hover:bg-emerald-400"
+          className={`inline-flex items-center gap-2 ${portal.btnPrimary}`}
         >
           <Plus size={18} />
           Add Note
@@ -196,12 +197,12 @@ export function NutritionistNotesTab({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search notes by content or tag…"
-            className="mb-3 w-full rounded-xl border border-white/[0.08] bg-[#060910] px-4 py-2.5 text-sm text-[#F0F4F8] outline-none ring-emerald-500/15 focus:ring-2"
+            className={`mb-3 ${portal.input}`}
           />
           <select
             value={sessionFilter}
             onChange={(e) => setSessionFilter(e.target.value)}
-            className="mb-6 w-full rounded-xl border border-white/[0.08] bg-[#060910] px-4 py-2.5 text-sm text-[#F0F4F8] sm:w-auto"
+            className={`mb-6 w-full sm:w-auto ${portal.input}`}
           >
             <option value="all">All Sessions</option>
             <option value="general">General</option>
@@ -215,14 +216,14 @@ export function NutritionistNotesTab({
       )}
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
-          <div className="mt-8 w-full max-w-lg rounded-2xl border border-white/[0.08] bg-[#0F1623] p-6 shadow-xl">
+        <div className={portal.modalOverlay}>
+          <div className={`mt-8 ${portal.modal}`}>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-black text-[#F0F4F8]">{editing ? 'Edit note' : 'New note'}</h3>
+              <h3 className={`text-lg font-black ${portal.textH}`}>{editing ? 'Edit note' : 'New note'}</h3>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="rounded-lg p-2 text-[#8B9AB0] hover:bg-white/5 hover:text-[#F0F4F8]"
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               >
                 <X size={18} />
               </button>
@@ -232,13 +233,13 @@ export function NutritionistNotesTab({
               onChange={(e) => setDraftContent(e.target.value)}
               placeholder="Write your clinical note…"
               rows={6}
-              className="max-h-[min(50vh,420px)] min-h-[144px] w-full resize-y rounded-xl border border-white/[0.08] bg-[#060910] px-4 py-3 text-sm text-[#F0F4F8] outline-none ring-emerald-500/15 focus:ring-2"
+              className={`max-h-[min(50vh,420px)] min-h-[144px] resize-y ${portal.input}`}
             />
-            <label className="mt-4 block text-xs font-semibold text-[#8B9AB0]">Session</label>
+            <label className={`mt-4 block text-xs font-semibold ${portal.textMuted}`}>Session</label>
             <select
               value={draftSession}
               onChange={(e) => setDraftSession(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/[0.08] bg-[#060910] px-4 py-2.5 text-sm text-[#F0F4F8]"
+              className={`mt-1 w-full ${portal.input}`}
             >
               <option value="general">General</option>
               {sessionOptions.map((n) => (
@@ -248,7 +249,7 @@ export function NutritionistNotesTab({
               ))}
             </select>
 
-            <label className="mt-4 block text-xs font-semibold text-[#8B9AB0]">Tags</label>
+            <label className={`mt-4 block text-xs font-semibold ${portal.textMuted}`}>Tags</label>
             <div className="mt-1 flex flex-wrap gap-2">
               {draftTags.map((t) => (
                 <button
@@ -272,13 +273,13 @@ export function NutritionistNotesTab({
                   }
                 }}
                 placeholder="Tag + Enter or comma"
-                className="flex-1 rounded-xl border border-white/[0.08] bg-[#060910] px-3 py-2 text-sm text-[#F0F4F8]"
+                className={`flex-1 px-3 py-2 text-sm ${portal.input}`}
               />
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-[#060910] px-4 py-3">
+            <div className={`mt-5 flex items-center justify-between gap-3 rounded-xl border ${portal.divider} bg-slate-50 px-4 py-3`}>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#F0F4F8]">
+                <p className={`text-sm font-semibold ${portal.textH}`}>
                   {draftVisible ? '👁 Visible to client' : '🔒 Private — only you can see this'}
                 </p>
               </div>
@@ -287,7 +288,7 @@ export function NutritionistNotesTab({
                 role="switch"
                 aria-checked={draftVisible}
                 onClick={() => setDraftVisible(!draftVisible)}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition ${draftVisible ? 'bg-emerald-500' : 'bg-[#4B5563]'}`}
+                className={`relative h-7 w-12 shrink-0 rounded-full transition ${draftVisible ? 'bg-emerald-600' : 'bg-slate-300'}`}
               >
                 <span
                   className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition ${draftVisible ? 'left-6' : 'left-1'}`}
@@ -295,7 +296,7 @@ export function NutritionistNotesTab({
               </button>
             </div>
 
-            <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-[#F0F4F8]">
+            <label className={`mt-4 flex cursor-pointer items-center gap-2 text-sm ${portal.textH}`}>
               <input type="checkbox" checked={draftPin} onChange={(e) => setDraftPin(e.target.checked)} />
               📌 Pin as quick reminder
             </label>
@@ -304,7 +305,7 @@ export function NutritionistNotesTab({
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="rounded-xl border border-white/15 px-5 py-3 text-sm font-bold text-[#8B9AB0] hover:bg-white/5"
+                className={`px-5 py-3 ${portal.btnGhost}`}
               >
                 Cancel
               </button>
@@ -312,7 +313,7 @@ export function NutritionistNotesTab({
                 type="button"
                 disabled={pending || !draftContent.trim()}
                 onClick={() => saveNote()}
-                className="rounded-xl bg-emerald-500 px-6 py-3 text-sm font-bold text-black hover:bg-emerald-400 disabled:opacity-40"
+                className={`px-6 py-3 ${portal.btnPrimary} disabled:opacity-40`}
               >
                 {pending ? <Loader2 className="mx-auto animate-spin" size={18} /> : editing ? 'Save changes' : 'Save Note'}
               </button>
@@ -326,14 +327,14 @@ export function NutritionistNotesTab({
           <p className="text-5xl" aria-hidden>
             📝
           </p>
-          <h3 className="mt-4 text-lg font-black text-[#F0F4F8]">First session with {clientName}</h3>
-          <p className="mt-2 max-w-md text-sm text-[#8B9AB0]">
+          <h3 className={`mt-4 text-lg font-black ${portal.textH}`}>First session with {clientName}</h3>
+          <p className={`mt-2 max-w-md text-sm ${portal.textMuted}`}>
             Add your initial assessment note to get started.
           </p>
           <button
             type="button"
             onClick={openCreate}
-            className="mt-8 rounded-xl bg-emerald-500 px-8 py-3 text-sm font-bold text-black hover:bg-emerald-400"
+            className={`mt-8 px-8 py-3 ${portal.btnPrimary}`}
           >
             Add First Note
           </button>
@@ -365,7 +366,7 @@ export function NutritionistNotesTab({
       )}
 
       {!emptyAll && sortedFiltered.length === 0 && (
-        <p className="py-10 text-center text-sm text-[#8B9AB0]">No notes match your filters.</p>
+        <p className={`py-10 text-center text-sm ${portal.textMuted}`}>No notes match your filters.</p>
       )}
     </div>
   )
@@ -391,48 +392,48 @@ function NoteCard({
   const long = note.content.split('\n').length > 5 || note.content.length > 360
 
   return (
-    <li className="group mb-3 rounded-xl border border-white/[0.06] bg-[#0F1623] p-5 shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
+    <li className={`group mb-3 ${portal.card} p-5`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
               note.session_number == null
-                ? 'border border-white/10 bg-white/5 text-[#8B9AB0]'
-                : 'border border-blue-500/35 bg-blue-500/10 text-blue-300'
+                ? 'border border-slate-200 bg-slate-50 text-slate-600'
+                : 'border border-blue-300 bg-blue-50 text-blue-700'
             }`}
           >
             {note.session_number == null ? 'General' : `Session ${note.session_number}`}
           </span>
-          <span className="text-xs text-[#8B9AB0]">{formatWhen(note.created_at)}</span>
+          <span className={`text-xs ${portal.textMuted}`}>{formatWhen(note.created_at)}</span>
         </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
             disabled={pending}
             onClick={onTogglePin}
-            className="rounded-lg p-2 text-amber-400 hover:bg-white/5"
+            className="rounded-lg p-2 text-amber-600 hover:bg-amber-50"
             title={note.is_pinned ? 'Unpin' : 'Pin'}
           >
             <Pin size={16} fill={note.is_pinned ? 'currentColor' : 'none'} />
           </button>
-          <button type="button" onClick={onEdit} className="rounded-lg p-2 text-[#8B9AB0] hover:bg-white/5 hover:text-[#F0F4F8]">
+          <button type="button" onClick={onEdit} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900">
             <Pencil size={16} />
           </button>
           <button
             type="button"
             onClick={() => setConfirmDel(true)}
-            className="rounded-lg p-2 text-[#8B9AB0] hover:bg-red-500/15 hover:text-red-400"
+            className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 size={16} />
           </button>
         </div>
       </div>
 
-      <div className={`mt-3 whitespace-pre-wrap text-sm leading-relaxed text-[#F0F4F8] ${!expanded && long ? 'line-clamp-5' : ''}`}>
+      <div className={`mt-3 whitespace-pre-wrap text-sm leading-relaxed ${portal.textBody} ${!expanded && long ? 'line-clamp-5' : ''}`}>
         {note.content}
       </div>
       {long && (
-        <button type="button" onClick={() => setExpanded(!expanded)} className="mt-2 text-xs font-bold text-emerald-400">
+        <button type="button" onClick={() => setExpanded(!expanded)} className={`mt-2 text-xs font-bold ${portal.textAccent}`}>
           {expanded ? 'Show less' : 'Read more'}
         </button>
       )}
@@ -454,22 +455,22 @@ function NoteCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         {note.is_visible_to_client && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+          <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${portal.textAccent}`}>
             <Eye size={12} />
             Visible to client
           </span>
         )}
-        {note.is_pinned && <span className="text-[11px] font-bold text-amber-400">📌 Pinned</span>}
+        {note.is_pinned && <span className="text-[11px] font-bold text-amber-600">📌 Pinned</span>}
       </div>
 
       {confirmDel && (
-        <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/[0.06] p-4">
-          <p className="text-sm font-semibold text-[#F0F4F8]">Are you sure? This cannot be undone.</p>
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
+          <p className={`text-sm font-semibold ${portal.textH}`}>Are you sure? This cannot be undone.</p>
           <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={() => setConfirmDel(false)}
-              className="rounded-lg border border-white/15 px-4 py-2 text-xs font-bold text-[#8B9AB0]"
+              className={`rounded-lg px-4 py-2 text-xs font-bold ${portal.btnGhost}`}
             >
               Cancel
             </button>
@@ -480,7 +481,7 @@ function NoteCard({
                 setConfirmDel(false)
                 onDelete()
               }}
-              className="rounded-lg bg-red-500 px-4 py-2 text-xs font-bold text-black hover:bg-red-400 disabled:opacity-40"
+              className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-500 disabled:opacity-40"
             >
               Delete
             </button>

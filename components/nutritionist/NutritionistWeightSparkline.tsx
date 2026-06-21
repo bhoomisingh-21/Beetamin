@@ -15,6 +15,16 @@ type Props = {
   logs: ProgressLogRow[]
 }
 
+const GRID_STROKE = '#e2e8f0'
+const TICK_FILL = '#64748b'
+
+const ttStyle = {
+  background: '#ffffff',
+  border: '1px solid #e2e8f0',
+  borderRadius: 12,
+  color: '#334155',
+}
+
 /** Last seven weight entries (most recent first in input), oldest→newest for chart. */
 export function NutritionistWeightSparkline({ logs }: Props) {
   const data = useMemo(() => {
@@ -30,19 +40,13 @@ export function NutritionistWeightSparkline({ logs }: Props) {
 
   if (data.length < 2) return null
 
-  const ttStyle = {
-    background: '#0F1623',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 12,
-  }
-
   return (
     <div className="mt-4 h-28 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
-          <CartesianGrid stroke="#ffffff08" strokeDasharray="3 3" />
-          <XAxis dataKey="date" tick={{ fill: '#8B9AB0', fontSize: 9 }} />
-          <YAxis domain={['auto', 'auto']} width={36} tick={{ fill: '#8B9AB0', fontSize: 9 }} />
+          <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
+          <XAxis dataKey="date" tick={{ fill: TICK_FILL, fontSize: 9 }} />
+          <YAxis domain={['auto', 'auto']} width={36} tick={{ fill: TICK_FILL, fontSize: 9 }} />
           <Tooltip contentStyle={ttStyle} />
           <Line type="monotone" dataKey="kg" stroke="#10b981" strokeWidth={2} dot={{ r: 2, fill: '#10b981' }} />
         </LineChart>

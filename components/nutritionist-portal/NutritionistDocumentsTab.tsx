@@ -10,14 +10,15 @@ import {
   updateDocumentDescription,
   uploadClientDocument,
 } from '@/lib/nutritionist-portal-actions'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function iconFor(doc: ClientDocumentDTO) {
   const t = (doc.file_type || '').toLowerCase()
   if (t === 'pdf')
-    return <FileText className="text-red-400" size={28} aria-hidden />
+    return <FileText className="text-red-600" size={28} aria-hidden />
   if (t === 'doc' || t === 'docx')
-    return <FileText className="text-blue-400" size={28} aria-hidden />
-  return <FileImage className="text-emerald-400" size={28} aria-hidden />
+    return <FileText className="text-blue-600" size={28} aria-hidden />
+  return <FileImage className="text-emerald-600" size={28} aria-hidden />
 }
 
 function formatUploaded(iso: string) {
@@ -89,12 +90,12 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
         }}
         onClick={() => inputRef.current?.click()}
         className={`cursor-pointer rounded-2xl border-2 border-dashed px-6 py-12 text-center transition ${
-          drag ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-white/[0.12] bg-[#0F1623]/40'
+          drag ? 'border-emerald-400 bg-emerald-50' : 'border-slate-300 bg-slate-50'
         }`}
       >
-        <Upload className="mx-auto text-[#8B9AB0]" size={36} />
-        <p className="mt-3 font-semibold text-[#F0F4F8]">Drop files here or click to browse</p>
-        <p className="mt-1 text-xs text-[#8B9AB0]">PDF, DOC/DOCX, images · max 10MB</p>
+        <Upload className={`mx-auto ${portal.textMuted}`} size={36} />
+        <p className={`mt-3 font-semibold ${portal.textH}`}>Drop files here or click to browse</p>
+        <p className={`mt-1 text-xs ${portal.textMuted}`}>PDF, DOC/DOCX, images · max 10MB</p>
         <input
           ref={inputRef}
           type="file"
@@ -105,9 +106,9 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
       </div>
 
       {file && (
-        <div className="rounded-xl border border-white/[0.06] bg-[#0F1623] p-4">
-          <p className="text-sm font-semibold text-[#F0F4F8]">{file.name}</p>
-          <p className="text-xs text-[#8B9AB0]">{(file.size / 1024).toFixed(0)} KB</p>
+        <div className={`${portal.cardMuted} p-4`}>
+          <p className={`text-sm font-semibold ${portal.textH}`}>{file.name}</p>
+          <p className={`text-xs ${portal.textMuted}`}>{(file.size / 1024).toFixed(0)} KB</p>
           <div className="mt-3 flex gap-3">
             <button
               type="button"
@@ -116,7 +117,7 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
                 e.stopPropagation()
                 doUpload()
               }}
-              className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-black hover:bg-emerald-400 disabled:opacity-50"
+              className={`px-5 py-2.5 ${portal.btnPrimary} disabled:opacity-50`}
             >
               {pending ? <Loader2 className="animate-spin" size={18} /> : 'Upload'}
             </button>
@@ -126,15 +127,15 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
                 e.stopPropagation()
                 setFile(null)
               }}
-              className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-[#8B9AB0]"
+              className={`px-4 py-2.5 text-sm ${portal.btnGhost}`}
             >
               Clear
             </button>
           </div>
           {progress > 0 && (
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#060910]">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
               <div
-                className="h-full bg-emerald-500 transition-all"
+                className="h-full bg-emerald-600 transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -143,9 +144,9 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
       )}
 
       {documents.length === 0 ? (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623]/60 px-6 py-12 text-center">
-          <p className="font-semibold text-[#F0F4F8]">No documents yet</p>
-          <p className="mt-2 text-sm text-[#8B9AB0]">
+        <div className={`${portal.cardEmpty} py-12`}>
+          <p className={`font-semibold ${portal.textH}`}>No documents yet</p>
+          <p className={`mt-2 text-sm ${portal.textMuted}`}>
             Upload intake forms, lab reports, or any relevant documents for this client.
           </p>
         </div>
@@ -154,13 +155,13 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
           {documents.map((doc) => (
             <li
               key={doc.id}
-              className="flex flex-col gap-4 rounded-2xl border border-white/[0.06] bg-[#0F1623] p-4 sm:flex-row sm:items-center"
+              className={`flex flex-col gap-4 ${portal.card} p-4 sm:flex-row sm:items-center`}
             >
-              <div className="flex shrink-0 items-center justify-center rounded-xl bg-[#060910] p-3">
+              <div className="flex shrink-0 items-center justify-center rounded-xl bg-slate-50 p-3">
                 {iconFor(doc)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-bold text-[#F0F4F8]">{doc.file_name}</p>
+                <p className={`font-bold ${portal.textH}`}>{doc.file_name}</p>
                 <textarea
                   defaultValue={doc.description ?? ''}
                   placeholder="Description…"
@@ -173,11 +174,11 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
                       router.refresh()
                     })
                   }}
-                  className="mt-2 w-full rounded-lg border border-white/[0.06] bg-[#060910] px-3 py-2 text-xs text-[#F0F4F8] outline-none ring-emerald-500/10 focus:ring-2"
+                  className={`mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs ${portal.textH} outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100`}
                 />
-                <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[#8B9AB0]">
+                <div className={`mt-2 flex flex-wrap gap-2 text-[11px] ${portal.textMuted}`}>
                   {doc.session_number != null && (
-                    <span className="rounded-full border border-white/10 px-2 py-0.5">
+                    <span className="rounded-full border border-slate-200 px-2 py-0.5">
                       Session {doc.session_number}
                     </span>
                   )}
@@ -189,7 +190,7 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
                 <button
                   type="button"
                   onClick={() => download(doc.id)}
-                  className="rounded-xl border border-emerald-500/35 px-4 py-2 text-sm font-bold text-emerald-400 hover:bg-emerald-500/10"
+                  className={`rounded-xl px-4 py-2 text-sm font-bold ${portal.btnOutline}`}
                 >
                   Download
                 </button>
@@ -202,7 +203,7 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
                       router.refresh()
                     })
                   }}
-                  className="rounded-xl border border-red-500/35 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/10"
+                  className="rounded-xl border border-red-300 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
                 >
                   <Trash2 size={16} className="mx-auto" />
                 </button>

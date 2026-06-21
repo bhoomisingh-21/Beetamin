@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { ProgressLogRow } from '@/lib/booking-types'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', {
@@ -40,11 +41,21 @@ type Props = {
   clientName: string
 }
 
-const card =
-  'rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5 shadow-[0_0_0_1px_rgba(16,185,129,0.05),0_4px_24px_rgba(0,0,0,0.4)]'
-const subtitle = 'text-xs text-[#8B9AB0]'
-const title = 'text-[15px] font-semibold text-[#F0F4F8]'
+const card = `${portal.card} p-5`
+const subtitle = `text-xs ${portal.textMuted}`
+const title = `text-[15px] font-semibold ${portal.textH}`
 const chartH = 'mt-4 h-[180px] w-full md:h-52'
+
+const GRID_STROKE = '#e2e8f0'
+const TICK_FILL = '#64748b'
+const REF_LINE_STROKE = '#cbd5e1'
+
+const ttStyle = {
+  background: '#ffffff',
+  border: '1px solid #e2e8f0',
+  borderRadius: 12,
+  color: '#334155',
+}
 
 export function NutritionistProgressCharts({
   logs,
@@ -101,12 +112,6 @@ export function NutritionistProgressCharts({
       .map((l) => ({ date: shortDate(l.logged_at), hours: Number(l.sleep_hours) }))
   }, [sortedAsc, now])
 
-  const ttStyle = {
-    background: '#0F1623',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 12,
-  }
-
   const needTwo = `${clientName} needs to log at least 2 days to show this chart`
 
   return (
@@ -114,25 +119,25 @@ export function NutritionistProgressCharts({
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className={card}>
           <p className={subtitle}>Latest weight</p>
-          <p className="mt-2 text-xl font-black tabular-nums text-emerald-400">
+          <p className={`mt-2 text-xl font-black tabular-nums ${portal.textAccent}`}>
             {latestWeight != null ? `${latestWeight.toFixed(1)} kg` : '—'}
           </p>
         </div>
         <div className={card}>
           <p className={subtitle}>Current BMI</p>
-          <p className="mt-2 text-xl font-black tabular-nums text-[#F0F4F8]">
+          <p className={`mt-2 text-xl font-black tabular-nums ${portal.textH}`}>
             {currentBmi != null ? currentBmi.toFixed(1) : '—'}
           </p>
         </div>
         <div className={card}>
           <p className={subtitle}>Avg energy (7d)</p>
-          <p className="mt-2 text-xl font-black tabular-nums text-amber-400">
+          <p className="mt-2 text-xl font-black tabular-nums text-amber-600">
             {avgEnergy7 != null ? avgEnergy7.toFixed(1) + '/10' : '—'}
           </p>
         </div>
         <div className={card}>
           <p className={subtitle}>Avg sleep (7d)</p>
-          <p className="mt-2 text-xl font-black tabular-nums text-purple-400">
+          <p className="mt-2 text-xl font-black tabular-nums text-purple-600">
             {avgSleep7 != null ? `${avgSleep7.toFixed(1)} h` : '—'}
           </p>
         </div>
@@ -146,9 +151,9 @@ export function NutritionistProgressCharts({
             <div className={chartH}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={weight30}>
-                  <CartesianGrid stroke="#ffffff10" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fill: '#8B9AB0', fontSize: 11 }} />
-                  <YAxis domain={['auto', 'auto']} tick={{ fill: '#8B9AB0', fontSize: 11 }} />
+                  <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fill: TICK_FILL, fontSize: 11 }} />
+                  <YAxis domain={['auto', 'auto']} tick={{ fill: TICK_FILL, fontSize: 11 }} />
                   <Tooltip contentStyle={ttStyle} />
                   <Line type="monotone" dataKey="kg" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3 }} />
                 </LineChart>
@@ -166,9 +171,9 @@ export function NutritionistProgressCharts({
             <div className={chartH}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={energy14}>
-                  <CartesianGrid stroke="#ffffff10" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fill: '#8B9AB0', fontSize: 11 }} />
-                  <YAxis domain={[0, 10]} tick={{ fill: '#8B9AB0', fontSize: 11 }} />
+                  <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fill: TICK_FILL, fontSize: 11 }} />
+                  <YAxis domain={[0, 10]} tick={{ fill: TICK_FILL, fontSize: 11 }} />
                   <Tooltip contentStyle={ttStyle} />
                   <Bar dataKey="energy" radius={[6, 6, 0, 0]}>
                     {energy14.map((e, i) => (
@@ -192,15 +197,15 @@ export function NutritionistProgressCharts({
                 <AreaChart data={water7}>
                   <defs>
                     <linearGradient id="nwNut" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#ffffff10" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fill: '#8B9AB0', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#8B9AB0', fontSize: 11 }} />
+                  <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fill: TICK_FILL, fontSize: 11 }} />
+                  <YAxis tick={{ fill: TICK_FILL, fontSize: 11 }} />
                   <Tooltip contentStyle={ttStyle} />
-                  <ReferenceLine y={2000} stroke="#ffffff35" strokeDasharray="4 4" />
+                  <ReferenceLine y={2000} stroke={REF_LINE_STROKE} strokeDasharray="4 4" />
                   <Area
                     type="monotone"
                     dataKey="ml"
@@ -224,11 +229,11 @@ export function NutritionistProgressCharts({
             <div className={chartH}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={sleep14}>
-                  <CartesianGrid stroke="#ffffff10" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fill: '#8B9AB0', fontSize: 11 }} />
-                  <YAxis domain={[0, 12]} tick={{ fill: '#8B9AB0', fontSize: 11 }} />
+                  <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fill: TICK_FILL, fontSize: 11 }} />
+                  <YAxis domain={[0, 12]} tick={{ fill: TICK_FILL, fontSize: 11 }} />
                   <Tooltip contentStyle={ttStyle} />
-                  <ReferenceLine y={8} stroke="#ffffff35" strokeDasharray="4 4" />
+                  <ReferenceLine y={8} stroke={REF_LINE_STROKE} strokeDasharray="4 4" />
                   <Bar dataKey="hours" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

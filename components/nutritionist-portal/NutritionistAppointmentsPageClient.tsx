@@ -4,12 +4,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { CheckCircle, ChevronLeft, Loader2 } from 'lucide-react'
-
-const backBtn =
-  'inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-white/[0.08] bg-[#0F1623]/60 px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:border-emerald-500/25 hover:text-emerald-400'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { completePortalAppointment } from '@/lib/nutritionist-portal-actions'
 import { CompleteSessionModal } from '@/components/nutritionist-portal/CompleteSessionModal'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 type TabKey = 'scheduled' | 'pending' | 'cancelled' | 'completed'
 
@@ -89,18 +87,18 @@ export default function NutritionistAppointmentsPageClient({
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-        <Link href="/nutritionist" className={backBtn}>
+        <Link href="/nutritionist" className={portal.backBtn}>
           <ChevronLeft size={18} aria-hidden />
           Portal home
         </Link>
-        <Link href="/nutritionist-dashboard" className={backBtn}>
+        <Link href="/nutritionist-dashboard" className={portal.backBtn}>
           <ChevronLeft size={18} aria-hidden />
           Quick dashboard
         </Link>
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-[110] max-w-md -translate-x-1/2 rounded-xl border border-white/10 bg-[#0F1623] px-5 py-3 text-sm font-semibold text-[#F0F4F8] shadow-xl">
+        <div className={portal.toast}>
           {toast}
         </div>
       )}
@@ -113,9 +111,9 @@ export default function NutritionistAppointmentsPageClient({
       />
 
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-[#F0F4F8]">Appointments</h1>
-        <p className="mt-1 text-sm text-[#8B9AB0]">Full session history — nothing is hidden after completion</p>
-        <div className="mt-3 h-[3px] w-10 rounded-full bg-emerald-500" aria-hidden />
+        <h1 className={portal.heading}>Appointments</h1>
+        <p className={portal.subtext}>Full session history — nothing is hidden after completion</p>
+        <div className={portal.accentBar} aria-hidden />
       </div>
 
       <div className="-mx-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-1">
@@ -126,8 +124,8 @@ export default function NutritionistAppointmentsPageClient({
             onClick={() => setTab(p.key)}
             className={`rounded-full px-4 py-2 text-xs font-bold transition ${
               tab === p.key
-                ? 'bg-emerald-500 text-black'
-                : 'border border-white/[0.08] bg-[#0F1623] text-[#8B9AB0] hover:border-emerald-500/25'
+                ? portal.tabActive
+                : portal.tabIdle
             }`}
           >
             {p.label}
@@ -136,16 +134,16 @@ export default function NutritionistAppointmentsPageClient({
       </div>
 
       {pending && (
-        <div className="flex items-center gap-2 text-sm text-[#8B9AB0]">
-          <Loader2 className="animate-spin text-emerald-500" size={16} />
+        <div className={`flex items-center gap-2 text-sm ${portal.textMuted}`}>
+          <Loader2 className="animate-spin text-emerald-600" size={16} />
           Updating…
         </div>
       )}
 
-      <div className="hidden overflow-x-auto rounded-2xl border border-white/[0.06] bg-[#0F1623] md:block">
-        <table className="min-w-full divide-y divide-white/[0.06] text-left text-sm">
+      <div className={`hidden overflow-x-auto md:block ${portal.card}`}>
+        <table className={`min-w-full divide-y ${portal.divider} text-left text-sm`}>
           <thead>
-            <tr className="text-[11px] font-bold uppercase tracking-wider text-[#8B9AB0]">
+            <tr className={`text-[11px] font-bold uppercase tracking-wider ${portal.textMuted}`}>
               <th className="px-4 py-3">Date &amp; time</th>
               <th className="px-4 py-3">Client</th>
               <th className="px-4 py-3">Session</th>
@@ -154,42 +152,42 @@ export default function NutritionistAppointmentsPageClient({
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody className={`divide-y ${portal.divider}`}>
             {filtered.map((a) => (
               <tr key={a.id} className={`${rowAccent(a.status)} align-top`}>
-                <td className="whitespace-nowrap px-4 py-4 text-[#F0F4F8]">
+                <td className={`whitespace-nowrap px-4 py-4 ${portal.textH}`}>
                   <div className="font-semibold">{formatDateShort(a.scheduled_date)}</div>
-                  <div className="text-xs text-[#8B9AB0]">{formatTime(a.scheduled_time)}</div>
+                  <div className={`text-xs ${portal.textMuted}`}>{formatTime(a.scheduled_time)}</div>
                 </td>
                 <td className="max-w-[200px] px-4 py-4">
-                  <div className="font-semibold text-[#F0F4F8]">{a.clients.name}</div>
-                  <div className="truncate text-xs text-[#8B9AB0]">{a.clients.email}</div>
+                  <div className={`font-semibold ${portal.textH}`}>{a.clients.name}</div>
+                  <div className={`truncate text-xs ${portal.textMuted}`}>{a.clients.email}</div>
                 </td>
                 <td className="whitespace-nowrap px-4 py-4">
-                  <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs font-bold text-emerald-400">
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
                     Session {a.session_number}
                   </span>
                 </td>
                 <td className="px-4 py-4">
                   {a.status === 'completed' ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/35 bg-emerald-500/12 px-3 py-1 text-[11px] font-bold text-emerald-400">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
                       <CheckCircle size={14} />
                       Completed
                     </span>
                   ) : (
-                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold uppercase text-[#8B9AB0]">
+                    <span className={`rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase ${portal.textMuted}`}>
                       {a.status}
                     </span>
                   )}
                 </td>
-                <td className="max-w-[240px] px-4 py-4 text-xs leading-snug text-[#8B9AB0]">
+                <td className={`max-w-[240px] px-4 py-4 text-xs leading-snug ${portal.textMuted}`}>
                   {a.status === 'completed' ? previewNote(a.notes) : '—'}
                 </td>
                 <td className="whitespace-nowrap px-4 py-4 text-right">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Link
                       href={`/nutritionist/clients/${a.clients.id}`}
-                      className="rounded-xl border border-emerald-500/35 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-emerald-500/10"
+                      className={`rounded-xl px-3 py-2 text-xs font-bold ${portal.btnOutline}`}
                     >
                       View profile
                     </Link>
@@ -198,7 +196,7 @@ export default function NutritionistAppointmentsPageClient({
                         type="button"
                         disabled={pending}
                         onClick={() => setCompleteTarget(a)}
-                        className="rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-black hover:bg-emerald-400 disabled:opacity-40"
+                        className={`rounded-xl px-3 py-2 text-xs font-bold ${portal.btnPrimary} disabled:opacity-40`}
                       >
                         Complete
                       </button>
@@ -210,7 +208,7 @@ export default function NutritionistAppointmentsPageClient({
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <p className="px-6 py-12 text-center text-sm text-[#8B9AB0]">No sessions in this tab.</p>
+          <p className={`px-6 py-12 text-center text-sm ${portal.textMuted}`}>No sessions in this tab.</p>
         )}
       </div>
 
@@ -218,37 +216,37 @@ export default function NutritionistAppointmentsPageClient({
         {filtered.map((a) => (
           <li
             key={a.id}
-            className={`rounded-2xl border border-white/[0.06] bg-[#0F1623] p-4 ${rowAccent(a.status)}`}
+            className={`${portal.card} p-4 ${rowAccent(a.status)}`}
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="font-bold text-[#F0F4F8]">{a.clients.name}</p>
-                <p className="text-xs text-[#8B9AB0]">{a.clients.email}</p>
+                <p className={`font-bold ${portal.textH}`}>{a.clients.name}</p>
+                <p className={`text-xs ${portal.textMuted}`}>{a.clients.email}</p>
               </div>
               {a.status === 'completed' ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/35 bg-emerald-500/12 px-2.5 py-1 text-[10px] font-bold text-emerald-400">
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
                   <CheckCircle size={12} />
                   Completed
                 </span>
               ) : (
-                <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-bold uppercase text-[#8B9AB0]">
+                <span className={`rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold uppercase ${portal.textMuted}`}>
                   {a.status}
                 </span>
               )}
             </div>
-            <p className="mt-2 text-sm text-[#F0F4F8]">
+            <p className={`mt-2 text-sm ${portal.textH}`}>
               {formatDateShort(a.scheduled_date)} · {formatTime(a.scheduled_time)}
             </p>
-            <p className="mt-1 text-xs font-bold text-emerald-400">Session {a.session_number}</p>
+            <p className="mt-1 text-xs font-bold text-emerald-700">Session {a.session_number}</p>
             {a.status === 'completed' && (
-              <p className="mt-2 rounded-lg bg-black/20 px-3 py-2 text-xs text-[#8B9AB0]">
+              <p className={`mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs ${portal.textMuted}`}>
                 {previewNote(a.notes, 140)}
               </p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
                 href={`/nutritionist/clients/${a.clients.id}`}
-                className="flex-1 rounded-xl border border-emerald-500/35 py-2.5 text-center text-xs font-bold text-emerald-400"
+                className={`flex-1 py-2.5 text-center text-xs font-bold ${portal.btnOutline}`}
               >
                 View profile
               </Link>
@@ -257,7 +255,7 @@ export default function NutritionistAppointmentsPageClient({
                   type="button"
                   disabled={pending}
                   onClick={() => setCompleteTarget(a)}
-                  className="flex-1 rounded-xl bg-emerald-500 py-2.5 text-xs font-bold text-black disabled:opacity-40"
+                  className={`flex-1 py-2.5 text-xs font-bold ${portal.btnPrimary} disabled:opacity-40`}
                 >
                   Complete
                 </button>
@@ -266,7 +264,7 @@ export default function NutritionistAppointmentsPageClient({
           </li>
         ))}
         {filtered.length === 0 && (
-          <li className="rounded-2xl border border-dashed border-white/[0.12] bg-[#0F1623]/50 px-6 py-12 text-center text-sm text-[#8B9AB0]">
+          <li className={`${portal.cardEmpty} py-12 text-sm ${portal.textMuted}`}>
             No sessions in this tab.
           </li>
         )}

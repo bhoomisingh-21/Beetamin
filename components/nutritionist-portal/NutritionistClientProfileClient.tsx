@@ -23,7 +23,13 @@ import { NutritionistProgressCharts } from '@/components/nutritionist/Nutritioni
 import { NutritionistWeightSparkline } from '@/components/nutritionist/NutritionistWeightSparkline'
 import { toggleNutritionistNotePin } from '@/lib/nutritionist-portal-actions'
 import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
-import { severityPillDark } from '@/components/profile/profile-dark-styles'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
+
+function severityPillLight(sev: string) {
+  if (sev === 'high') return 'border-red-200 bg-red-50 text-red-700'
+  if (sev === 'medium') return 'border-amber-200 bg-amber-50 text-amber-700'
+  return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+}
 
 const DEFAULT_GOALS = [
   'Seven-day wellness logging streak',
@@ -173,41 +179,32 @@ export default function NutritionistClientProfileClient({
   function statusDot(a: AppointmentWithClient) {
     if (a.status === 'completed') return 'bg-emerald-500'
     if (a.status === 'confirmed') return 'bg-blue-400'
-    if (a.status === 'pending') return 'bg-gray-400'
-    return 'bg-[#4B5563]'
+    if (a.status === 'pending') return 'bg-slate-400'
+    return 'bg-slate-500'
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <Link
-          href="/nutritionist/clients"
-          className="inline-flex min-h-[44px] max-w-fit items-center gap-2 rounded-xl border border-white/[0.08] bg-[#0F1623]/60 px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:border-emerald-500/25 hover:text-emerald-400"
-        >
+        <Link href="/nutritionist/clients" className={`max-w-fit ${portal.backBtn}`}>
           <ArrowLeft size={18} aria-hidden />
           Back to clients
         </Link>
-        <Link
-          href="/nutritionist"
-          className="inline-flex min-h-[44px] max-w-fit items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:bg-white/[0.04] hover:text-emerald-400"
-        >
+        <Link href="/nutritionist" className={`max-w-fit ${portal.btnGhost}`}>
           <ArrowLeft size={18} aria-hidden />
           Portal home
         </Link>
-        <Link
-          href="/nutritionist-dashboard"
-          className="inline-flex min-h-[44px] max-w-fit items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[#8B9AB0] transition hover:bg-white/[0.04] hover:text-emerald-400"
-        >
+        <Link href="/nutritionist-dashboard" className={`max-w-fit ${portal.btnGhost}`}>
           <ArrowLeft size={18} aria-hidden />
           Quick dashboard
         </Link>
       </div>
 
       {firstSessionEmpty && (
-        <div className="rounded-2xl border border-transparent bg-gradient-to-br from-emerald-500/30 via-emerald-500/5 to-[#0F1623] p-[1px] shadow-[0_0_40px_rgba(16,185,129,0.08)]">
-          <div className="rounded-2xl bg-[#0F1623] px-6 py-10 text-center sm:px-10">
-            <p className="text-xl font-black text-[#F0F4F8]">👋 First session with {client.name}</p>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-[#8B9AB0]">
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white p-[1px] shadow-sm">
+          <div className="rounded-2xl bg-white px-6 py-10 text-center sm:px-10">
+            <p className={`text-xl font-black ${portal.textH}`}>👋 First session with {client.name}</p>
+            <p className={`mx-auto mt-3 max-w-lg text-sm ${portal.textMuted}`}>
               Get started by adding your initial notes or uploading their intake form.
             </p>
             <div className="mx-auto mt-8 grid max-w-lg grid-cols-1 gap-4 sm:grid-cols-2">
@@ -217,14 +214,14 @@ export default function NutritionistClientProfileClient({
                   setTab('notes')
                   setComposerKick((k) => k + 1)
                 }}
-                className="rounded-2xl border border-emerald-500/35 bg-emerald-500/10 px-5 py-4 text-sm font-bold text-emerald-400 hover:bg-emerald-500/15"
+                className={portal.btnOutline}
               >
                 📝 Add First Note
               </button>
               <button
                 type="button"
                 onClick={() => setTab('documents')}
-                className="rounded-2xl border border-white/[0.08] bg-[#060910] px-5 py-4 text-sm font-bold text-[#F0F4F8] hover:border-emerald-500/25"
+                className={portal.btnGhost}
               >
                 📎 Upload Document
               </button>
@@ -238,12 +235,12 @@ export default function NutritionistClientProfileClient({
         <aside className="w-full shrink-0 space-y-6 lg:w-[320px]">
           <div>
             {pinned ? (
-              <div className="group relative rounded-2xl border border-amber-500/40 bg-[#1a1500] p-4">
-                <Pin className="absolute right-3 top-3 fill-amber-400 text-amber-400" size={18} aria-hidden />
-                <p className="pr-8 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+              <div className="group relative rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <Pin className="absolute right-3 top-3 fill-amber-500 text-amber-600" size={18} aria-hidden />
+                <p className="pr-8 text-[10px] font-bold uppercase tracking-wider text-amber-700">
                   📌 Quick Reminder
                 </p>
-                <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-[#F0F4F8]">{pinned.content}</p>
+                <p className={`mt-2 line-clamp-4 text-sm leading-relaxed ${portal.textBody}`}>{pinned.content}</p>
                 <button
                   type="button"
                   disabled={pinBusy}
@@ -253,7 +250,7 @@ export default function NutritionistClientProfileClient({
                       router.refresh()
                     })
                   }
-                  className="mt-3 text-[11px] font-semibold text-[#8B9AB0] opacity-0 transition group-hover:opacity-100 hover:text-[#F0F4F8] disabled:opacity-40"
+                  className={`mt-3 text-[11px] font-semibold ${portal.textMuted} opacity-0 transition group-hover:opacity-100 hover:text-slate-700 disabled:opacity-40`}
                 >
                   Unpin
                 </button>
@@ -262,14 +259,14 @@ export default function NutritionistClientProfileClient({
               <button
                 type="button"
                 onClick={() => setTab('notes')}
-                className="w-full rounded-2xl border border-dashed border-white/[0.12] bg-transparent px-4 py-6 text-center text-xs italic text-[#8B9AB0] hover:border-emerald-500/25"
+                className={`w-full rounded-2xl border border-dashed border-slate-300 bg-transparent px-4 py-6 text-center text-xs italic ${portal.textMuted} hover:border-emerald-300`}
               >
                 Pin a note as a quick reminder →
               </button>
             )}
           </div>
 
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
+          <div className={`${portal.card} p-5`}>
             <div className="flex flex-col items-center text-center">
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-black text-white"
@@ -277,67 +274,67 @@ export default function NutritionistClientProfileClient({
               >
                 {initials(client.name)}
               </div>
-              <h2 className="mt-4 text-xl font-black text-[#F0F4F8]">{client.name}</h2>
-              <p className="mt-1 break-all text-xs text-[#8B9AB0]">{client.email}</p>
-              {client.phone ? <p className="mt-1 text-xs text-[#8B9AB0]">{client.phone}</p> : null}
+              <h2 className={`mt-4 text-xl font-black ${portal.textH}`}>{client.name}</h2>
+              <p className={`mt-1 break-all text-xs ${portal.textMuted}`}>{client.email}</p>
+              {client.phone ? <p className={`mt-1 text-xs ${portal.textMuted}`}>{client.phone}</p> : null}
               <span
                 className={`mt-4 rounded-full border px-3 py-1 text-xs font-bold ${
                   client.status === 'active'
-                    ? 'border-emerald-500/35 text-emerald-400'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                     : client.status === 'expired'
-                      ? 'border-red-500/35 text-red-400'
-                      : 'border-blue-500/35 text-blue-300'
+                      ? 'border-red-200 bg-red-50 text-red-700'
+                      : 'border-blue-200 bg-blue-50 text-blue-700'
                 }`}
               >
                 {client.status}
               </span>
-              <p className="mt-3 text-[11px] text-[#8B9AB0]">
+              <p className={`mt-3 text-[11px] ${portal.textMuted}`}>
                 Client since {formatDate(client.plan_start_date)}
               </p>
             </div>
 
-            <div className="mt-6 space-y-2.5 border-t border-white/[0.06] pt-5 text-[13px] leading-snug">
+            <div className={`mt-6 space-y-2.5 border-t ${portal.divider} pt-5 text-[13px] leading-snug`}>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">🎯 Goal</span>
-                <span className="text-right font-medium text-[#F0F4F8]">{client.assessment_goal || '—'}</span>
+                <span className={portal.textMuted}>🎯 Goal</span>
+                <span className={`text-right font-medium ${portal.textH}`}>{client.assessment_goal || '—'}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">📅 Plan expires</span>
-                <span className="text-[#F0F4F8]">{formatDate(client.plan_end_date)}</span>
+                <span className={portal.textMuted}>📅 Plan expires</span>
+                <span className={portal.textH}>{formatDate(client.plan_end_date)}</span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">💪 Sessions</span>
-                <span className="font-medium text-emerald-400">
+                <span className={portal.textMuted}>💪 Sessions</span>
+                <span className={`font-medium ${portal.textAccent}`}>
                   {client.sessions_used} used / {client.sessions_total} total
                 </span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">⚖️ Latest weight</span>
-                <span className="text-[#F0F4F8]">
+                <span className={portal.textMuted}>⚖️ Latest weight</span>
+                <span className={portal.textH}>
                   {stats.latestWeight != null ? `${stats.latestWeight.toFixed(1)} kg` : '—'}
                 </span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">📊 BMI</span>
-                <span className="text-[#F0F4F8]">
+                <span className={portal.textMuted}>📊 BMI</span>
+                <span className={portal.textH}>
                   {stats.currentBmi != null ? stats.currentBmi.toFixed(1) : '—'}
                 </span>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-[#8B9AB0]">⚡ Latest energy</span>
-                <span className="text-[#F0F4F8]">
+                <span className={portal.textMuted}>⚡ Latest energy</span>
+                <span className={portal.textH}>
                   {bundle.progressLogs.find((l) => l.energy_level != null)?.energy_level ?? '—'}
                 </span>
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-white/[0.06] bg-[#060910]/90 px-4 py-3 text-center text-[11px] text-[#8B9AB0]">
+            <div className={`mt-4 ${portal.cardMuted} px-4 py-3 text-center text-[11px] ${portal.textMuted}`}>
               👁 Client can see {bundle.visibleNotesCount} of {notes.length} notes
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#8B9AB0]">Session history</p>
+          <div className={`${portal.card} p-4`}>
+            <p className={`text-xs font-bold uppercase tracking-wider ${portal.textMuted}`}>Session history</p>
             <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
               {sortedAppts.map((a) => (
                 <li key={a.id}>
@@ -347,12 +344,12 @@ export default function NutritionistClientProfileClient({
                       setTab('notes')
                       setNotesMount({ key: Date.now(), session: String(a.session_number) })
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-white/[0.04]"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-slate-50"
                   >
                     <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot(a)}`} />
-                    <span className="font-bold text-emerald-400">Session {a.session_number}</span>
-                    <span className="text-[#8B9AB0]">{formatDate(a.scheduled_date)}</span>
-                    <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase text-[#8B9AB0]">
+                    <span className={`font-bold ${portal.textAccent}`}>Session {a.session_number}</span>
+                    <span className={portal.textMuted}>{formatDate(a.scheduled_date)}</span>
+                    <span className={`ml-auto rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] uppercase ${portal.textMuted}`}>
                       {a.status}
                     </span>
                   </button>
@@ -371,9 +368,7 @@ export default function NutritionistClientProfileClient({
                 type="button"
                 onClick={() => setTab(t.id)}
                 className={`shrink-0 rounded-full px-5 py-2.5 text-xs font-bold transition ${
-                  tab === t.id
-                    ? 'bg-emerald-500 text-black'
-                    : 'border border-white/[0.08] bg-[#0F1623] text-[#8B9AB0] hover:border-emerald-500/25'
+                  tab === t.id ? portal.tabActive : portal.tabIdle
                 }`}
               >
                 {t.label}
@@ -384,64 +379,61 @@ export default function NutritionistClientProfileClient({
           {tab === 'overview' && (
             <div className="grid gap-6 xl:grid-cols-2">
               <div className="space-y-6">
-                <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
+                <div className={`${portal.card} p-5`}>
                   <div className="flex items-center gap-2">
-                    <Target className="text-emerald-400" size={18} />
-                    <h3 className="font-black text-[#F0F4F8]">Deficiency profile</h3>
+                    <Target className="text-emerald-600" size={18} />
+                    <h3 className={`font-black ${portal.textH}`}>Deficiency profile</h3>
                   </div>
                   {latestReadyReport ? (
                     <>
                       {deficiency.overallScore != null && (
                         <div className="mt-4 flex items-center gap-3">
-                          <span className="text-3xl font-black text-emerald-400">{deficiency.overallScore}</span>
-                          <span className="text-sm text-[#8B9AB0]">/ 100</span>
+                          <span className={`text-3xl font-black ${portal.textAccent}`}>{deficiency.overallScore}</span>
+                          <span className={`text-sm ${portal.textMuted}`}>/ 100</span>
                         </div>
                       )}
                       <div className="mt-4 space-y-3">
                         {deficiency.deficiencies.slice(0, 3).map((d, i) => (
-                          <div
-                            key={i}
-                            className="rounded-xl border border-white/[0.06] bg-[#060910] px-4 py-3"
-                          >
+                          <div key={i} className={`${portal.cardMuted} px-4 py-3`}>
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-[#F0F4F8]">{d.nutrient}</span>
+                              <span className={`font-semibold ${portal.textH}`}>{d.nutrient}</span>
                               <span
-                                className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${severityPillDark(d.severity)}`}
+                                className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${severityPillLight(d.severity)}`}
                               >
                                 {d.severity}
                               </span>
                             </div>
-                            <p className="mt-2 text-xs leading-relaxed text-[#8B9AB0]">{d.reason}</p>
+                            <p className={`mt-2 text-xs leading-relaxed ${portal.textMuted}`}>{d.reason}</p>
                           </div>
                         ))}
                       </div>
                       <Link
                         href={`/report/${encodeURIComponent(latestReadyReport.report_id)}`}
-                        className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-emerald-400 hover:underline"
+                        className={`mt-4 inline-flex items-center gap-1 text-sm font-bold ${portal.textAccent} hover:underline`}
                       >
                         View full report
                         <ChevronRight size={16} />
                       </Link>
                     </>
                   ) : (
-                    <p className="mt-4 text-sm text-[#8B9AB0]">No paid report yet.</p>
+                    <p className={`mt-4 text-sm ${portal.textMuted}`}>No paid report yet.</p>
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
+                <div className={`${portal.card} p-5`}>
                   <div className="flex items-center gap-2">
-                    <Sparkles className="text-amber-400" size={18} />
-                    <h3 className="font-black text-[#F0F4F8]">Free assessment summary</h3>
+                    <Sparkles className="text-amber-600" size={18} />
+                    <h3 className={`font-black ${portal.textH}`}>Free assessment summary</h3>
                   </div>
                   {free.score != null || free.top.length > 0 ? (
                     <div className="mt-4 space-y-3 text-sm">
                       {free.score != null && (
-                        <p className="text-[#F0F4F8]">
-                          Score: <span className="font-black text-emerald-400">{free.score}</span>
+                        <p className={portal.textH}>
+                          Score: <span className={`font-black ${portal.textAccent}`}>{free.score}</span>
                         </p>
                       )}
                       {free.top.length > 0 && (
-                        <ul className="list-inside list-disc text-[#8B9AB0]">
+                        <ul className={`list-inside list-disc ${portal.textMuted}`}>
                           {free.top.map((t) => (
                             <li key={t}>{t}</li>
                           ))}
@@ -449,23 +441,23 @@ export default function NutritionistClientProfileClient({
                       )}
                     </div>
                   ) : (
-                    <p className="mt-4 text-sm text-[#8B9AB0]">No free assessment data on file.</p>
+                    <p className={`mt-4 text-sm ${portal.textMuted}`}>No free assessment data on file.</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-6">
-                <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
+                <div className={`${portal.card} p-5`}>
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="text-emerald-400" size={18} />
-                    <h3 className="font-black text-[#F0F4F8]">Recent progress</h3>
+                    <TrendingUp className="text-emerald-600" size={18} />
+                    <h3 className={`font-black ${portal.textH}`}>Recent progress</h3>
                   </div>
                   <div className="mt-4 space-y-4 text-sm">
-                    <div className="grid gap-3 border-b border-white/[0.06] pb-4 sm:grid-cols-2">
-                      <div className="text-[#8B9AB0]">
-                        <p className="font-semibold text-[#F0F4F8]">
+                    <div className={`grid gap-3 border-b ${portal.divider} pb-4 sm:grid-cols-2`}>
+                      <div className={portal.textMuted}>
+                        <p className={`font-semibold ${portal.textH}`}>
                           Latest weight:{' '}
-                          <span className="text-emerald-400">
+                          <span className={portal.textAccent}>
                             {stats.latestWeight != null ? `${stats.latestWeight.toFixed(1)} kg` : '—'}
                           </span>
                         </p>
@@ -473,48 +465,48 @@ export default function NutritionistClientProfileClient({
                           <p className="mt-1 text-xs">Logged {formatDate(stats.latestWeightLoggedAt)}</p>
                         ) : null}
                       </div>
-                      <p className="text-[#8B9AB0]">
+                      <p className={portal.textMuted}>
                         Avg energy last 7 days:{' '}
-                        <span className="font-bold text-[#F0F4F8]">
+                        <span className={`font-bold ${portal.textH}`}>
                           {stats.avgEnergy7 != null ? `${stats.avgEnergy7.toFixed(1)}/10` : '—'}
                         </span>
                       </p>
-                      <p className="text-[#8B9AB0]">
+                      <p className={portal.textMuted}>
                         Avg sleep last 7 days:{' '}
-                        <span className="font-bold text-[#F0F4F8]">
+                        <span className={`font-bold ${portal.textH}`}>
                           {stats.avgSleep7 != null ? `${stats.avgSleep7.toFixed(1)}h` : '—'}
                         </span>
                       </p>
-                      <p className="text-[#8B9AB0]">
+                      <p className={portal.textMuted}>
                         Water goal hit{' '}
-                        <span className="font-bold text-emerald-400">{stats.waterHits7}</span> of last 7 days
+                        <span className={`font-bold ${portal.textAccent}`}>{stats.waterHits7}</span> of last 7 days
                       </p>
                     </div>
 
                     <NutritionistWeightSparkline logs={bundle.progressLogs} />
 
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#8B9AB0]">Recent weights</p>
+                      <p className={`text-[11px] font-bold uppercase tracking-wider ${portal.textMuted}`}>Recent weights</p>
                       <ul className="mt-2 space-y-1">
                         {stats.weights3.map((l) => (
-                          <li key={l.id} className="flex justify-between text-[#F0F4F8]">
+                          <li key={l.id} className={`flex justify-between ${portal.textH}`}>
                             <span>{formatDate(l.logged_at)}</span>
                             <span>{Number(l.weight_kg).toFixed(1)} kg</span>
                           </li>
                         ))}
                         {stats.weights3.length === 0 && (
-                          <li className="text-[#8B9AB0]">No entries</li>
+                          <li className={portal.textMuted}>No entries</li>
                         )}
                       </ul>
                     </div>
-                    <div className="flex justify-between border-t border-white/[0.06] pt-4">
-                      <span className="text-[#8B9AB0]">BMI</span>
-                      <span className="font-bold text-[#F0F4F8]">
+                    <div className={`flex justify-between border-t ${portal.divider} pt-4`}>
+                      <span className={portal.textMuted}>BMI</span>
+                      <span className={`font-bold ${portal.textH}`}>
                         {stats.currentBmi != null ? stats.currentBmi.toFixed(1) : '—'}
                       </span>
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[#8B9AB0]">
+                      <p className={`text-[11px] font-bold uppercase tracking-wider ${portal.textMuted}`}>
                         Energy (last logs)
                       </p>
                       <div className="mt-2 flex gap-2">
@@ -525,18 +517,18 @@ export default function NutritionistClientProfileClient({
                           return (
                             <div key={l.id} className="flex flex-col items-center gap-1">
                               <span className={`h-8 w-8 rounded-full ${color}`} title={`${v}/10`} />
-                              <span className="text-[10px] text-[#8B9AB0]">{formatDate(l.logged_at)}</span>
+                              <span className={`text-[10px] ${portal.textMuted}`}>{formatDate(l.logged_at)}</span>
                             </div>
                           )
                         })}
                         {stats.energy3.length === 0 && (
-                          <span className="text-[#8B9AB0]">No data</span>
+                          <span className={portal.textMuted}>No data</span>
                         )}
                       </div>
                     </div>
                     <div>
-                      <p className="text-[11px] text-[#8B9AB0]">Water today</p>
-                      <div className="mt-2 h-3 overflow-hidden rounded-full bg-[#060910]">
+                      <p className={`text-[11px] ${portal.textMuted}`}>Water today</p>
+                      <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100">
                         <div
                           className="h-full rounded-full bg-blue-500 transition-all"
                           style={{
@@ -544,13 +536,13 @@ export default function NutritionistClientProfileClient({
                           }}
                         />
                       </div>
-                      <p className="mt-1 text-xs text-[#8B9AB0]">
+                      <p className={`mt-1 text-xs ${portal.textMuted}`}>
                         {stats.waterToday != null ? `${stats.waterToday} ml` : '—'} / 2000 ml
                       </p>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[#8B9AB0]">Sleep (latest)</span>
-                      <span className="text-[#F0F4F8]">
+                      <span className={portal.textMuted}>Sleep (latest)</span>
+                      <span className={portal.textH}>
                         {stats.sleepLast != null ? `${stats.sleepLast.toFixed(1)} h` : '—'}
                       </span>
                     </div>
@@ -558,19 +550,19 @@ export default function NutritionistClientProfileClient({
                   <button
                     type="button"
                     onClick={() => setTab('progress')}
-                    className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-emerald-400 hover:underline"
+                    className={`mt-4 inline-flex items-center gap-1 text-sm font-bold ${portal.textAccent} hover:underline`}
                   >
                     View full progress
                     <ChevronRight size={16} />
                   </button>
                 </div>
 
-                <div className="rounded-2xl border border-white/[0.06] bg-[#0F1623] p-5">
+                <div className={`${portal.card} p-5`}>
                   <div className="flex items-center gap-2">
-                    <Activity className="text-emerald-400" size={18} />
-                    <h3 className="font-black text-[#F0F4F8]">Wellness Goals</h3>
+                    <Activity className="text-emerald-600" size={18} />
+                    <h3 className={`font-black ${portal.textH}`}>Wellness Goals</h3>
                   </div>
-                  <p className="mt-2 text-xs text-[#8B9AB0]">
+                  <p className={`mt-2 text-xs ${portal.textMuted}`}>
                     {DEFAULT_GOALS.reduce((n, _, i) => (goals[String(i)] ? n + 1 : n), 0)} of 5 completed
                   </p>
                   <ul className="mt-4 space-y-3">
@@ -579,14 +571,14 @@ export default function NutritionistClientProfileClient({
                         <span
                           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${
                             goals[String(i)]
-                              ? 'border-emerald-500 bg-emerald-500 text-black'
-                              : 'border-[#4B5563]'
+                              ? 'border-emerald-600 bg-emerald-600 text-white'
+                              : 'border-slate-300'
                           }`}
                         >
                           {goals[String(i)] ? '✓' : ''}
                         </span>
                         <span
-                          className={`text-sm ${goals[String(i)] ? 'text-[#8B9AB0] line-through' : 'text-[#F0F4F8]'}`}
+                          className={`text-sm ${goals[String(i)] ? `${portal.textMuted} line-through` : portal.textH}`}
                         >
                           {text}
                         </span>
@@ -615,19 +607,17 @@ export default function NutritionistClientProfileClient({
           )}
 
           {tab === 'mealPlan' && (
-            <div className="-mx-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-              <NutritionistMealPlanTab
-                clientId={clientId}
-                clientEmail={client.email.toLowerCase()}
-                clientName={client.name}
-                clientContext={{
-                  clientId,
-                  client,
-                  progressLogs: bundle.progressLogs,
-                  detailedAssessment: bundle.detailedAssessment,
-                }}
-              />
-            </div>
+            <NutritionistMealPlanTab
+              clientId={clientId}
+              clientEmail={client.email.toLowerCase()}
+              clientName={client.name}
+              clientContext={{
+                clientId,
+                client,
+                progressLogs: bundle.progressLogs,
+                detailedAssessment: bundle.detailedAssessment,
+              }}
+            />
           )}
 
           {tab === 'dietPlan' && (
@@ -650,7 +640,7 @@ export default function NutritionistClientProfileClient({
           {tab === 'progress' && (
             <div>
               {bundle.progressLogs.length === 0 ? (
-                <p className="rounded-2xl border border-white/[0.06] bg-[#0F1623] px-6 py-12 text-center text-sm text-[#8B9AB0]">
+                <p className={`${portal.card} px-6 py-12 text-center text-sm ${portal.textMuted}`}>
                   {client.name} hasn&apos;t logged any progress yet.
                 </p>
               ) : (
