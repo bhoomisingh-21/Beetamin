@@ -10,6 +10,7 @@ import {
   Loader2,
   Plus,
   Save,
+  Send,
   Trash2,
   X,
 } from 'lucide-react'
@@ -293,6 +294,87 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
   )
 }
 
+type SuccessMode = 'saved' | 'template' | 'published'
+
+function PlanActionSuccess({
+  mode,
+  clientName,
+  isPublished,
+  publishing,
+  onBack,
+  onPublish,
+  onContinue,
+}: {
+  mode: SuccessMode
+  clientName: string
+  isPublished: boolean
+  publishing: boolean
+  onBack: () => void
+  onPublish: () => void
+  onContinue: () => void
+}) {
+  const copy =
+    mode === 'saved'
+      ? {
+          title: 'Diet plan saved',
+          body: `Your changes are saved. ${clientName} won't see this plan until you publish it.`,
+        }
+      : mode === 'template'
+        ? {
+            title: 'Template saved',
+            body: 'A reusable copy was added to this client\'s plan list. You can publish the current plan when ready.',
+          }
+        : {
+            title: `Published to ${clientName}`,
+            body: 'They\'ll get an email and can view the plan on their sessions dashboard.',
+          }
+
+  return (
+    <div className="border-t border-emerald-200 bg-emerald-50 px-4 py-6 sm:px-6">
+      <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+          <CheckCircle2 className="text-emerald-600" size={28} />
+        </div>
+        <h3 className="mt-4 text-lg font-bold text-slate-900">{copy.title}</h3>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{copy.body}</p>
+
+        <div className="mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+          >
+            <ArrowLeft size={16} />
+            Back to plans
+          </button>
+
+          {mode !== 'published' && !isPublished && (
+            <button
+              type="button"
+              onClick={onPublish}
+              disabled={publishing}
+              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-50"
+            >
+              {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              Publish plan
+            </button>
+          )}
+
+          {mode !== 'published' && (
+            <button
+              type="button"
+              onClick={onContinue}
+              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-sky-600 bg-white px-6 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50"
+            >
+              Keep editing
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── CRM Plan Builder ─────────────────────────────────────────────────────────
 
 type ClientProfile = ReturnType<typeof extractClientProfile>
@@ -324,7 +406,7 @@ function PlanBuilder({
   const [saving, startSave] = useTransition()
   const [publishing, startPublish] = useTransition()
   const [templating, startTemplate] = useTransition()
-  const [saveMsg, setSaveMsg] = useState('')
+  const [success, setSuccess] = useState<SuccessMode | null>(null)
   const [actionError, setActionError] = useState('')
 
   const isPublished = status === 'published'
@@ -338,6 +420,7 @@ function PlanBuilder({
 
   function handleSave() {
     setActionError('')
+    setSuccess(null)
     startSave(async () => {
       const res = await updateMealPlan({
         planId: initialPlan.id,
@@ -345,14 +428,17 @@ function PlanBuilder({
         nutritionist_notes: buildMetaNote() ?? undefined,
         days,
       })
-      setSaveMsg(res.ok ? 'Saved' : res.error)
-      setTimeout(() => setSaveMsg(''), 2500)
-      if (!res.ok) setActionError(res.error)
+      if (!res.ok) {
+        setActionError(res.error)
+        return
+      }
+      setSuccess('saved')
     })
   }
 
   function handlePublish() {
     setActionError('')
+    setSuccess(null)
     startPublish(async () => {
       const saveRes = await updateMealPlan({
         planId: initialPlan.id,
@@ -370,13 +456,13 @@ function PlanBuilder({
         return
       }
       setStatus('published')
-      setSaveMsg('Published to client')
-      setTimeout(() => setSaveMsg(''), 2500)
+      setSuccess('published')
     })
   }
 
   function handleCreateTemplate() {
     setActionError('')
+    setSuccess(null)
     startTemplate(async () => {
       const saveRes = await updateMealPlan({
         planId: initialPlan.id,
@@ -393,8 +479,7 @@ function PlanBuilder({
         setActionError(res.error)
         return
       }
-      setSaveMsg('Template created')
-      setTimeout(() => setSaveMsg(''), 2500)
+      setSuccess('template')
     })
   }
 
@@ -474,19 +559,14 @@ function PlanBuilder({
               <Loader2 size={11} className="animate-spin" /> Saving…
             </span>
           )}
-          {saveMsg === 'Saved' && (
-            <span className="flex items-center gap-1 text-emerald-600">
-              <CheckCircle2 size={11} /> Saved
+          {templating && (
+            <span className="flex items-center gap-1 text-slate-500">
+              <Loader2 size={11} className="animate-spin" /> Creating template…
             </span>
           )}
-          {saveMsg === 'Published to client' && (
-            <span className="flex items-center gap-1 text-emerald-600">
-              <CheckCircle2 size={11} /> Published
-            </span>
-          )}
-          {saveMsg === 'Template created' && (
-            <span className="flex items-center gap-1 text-sky-600">
-              <CheckCircle2 size={11} /> Template saved
+          {publishing && (
+            <span className="flex items-center gap-1 text-slate-500">
+              <Loader2 size={11} className="animate-spin" /> Publishing…
             </span>
           )}
           {isPublished && (
@@ -687,53 +767,74 @@ function PlanBuilder({
         </table>
       </div>
 
-      {/* Footer actions */}
-      <div className="flex flex-wrap items-center justify-center gap-4 border-t border-sky-200 bg-slate-50 px-4 py-5">
-        {!isPublished ? (
-          <>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || publishing}
-              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
-            >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-              Save Diet Plan
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateTemplate}
-              disabled={templating || saving}
-              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
-            >
-              {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-              Create Template
-            </button>
-            <button
-              type="button"
-              onClick={handlePublish}
-              disabled={publishing || saving}
-              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-sky-600 bg-white px-8 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50 disabled:opacity-50"
-            >
-              {publishing ? <Loader2 size={16} className="animate-spin" /> : null}
-              Publish to Client
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={handleCreateTemplate}
-            disabled={templating}
-            className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
-          >
-            {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-            Create Template
-          </button>
-        )}
-      </div>
-
       {actionError && (
         <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">{actionError}</div>
+      )}
+
+      {success ? (
+        <PlanActionSuccess
+          mode={success}
+          clientName={clientName}
+          isPublished={isPublished}
+          publishing={publishing}
+          onBack={onBack}
+          onPublish={handlePublish}
+          onContinue={() => setSuccess(null)}
+        />
+      ) : (
+        <div className="flex flex-wrap items-center justify-center gap-4 border-t border-sky-200 bg-slate-50 px-4 py-5">
+          {!isPublished ? (
+            <>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving || publishing || templating}
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+              >
+                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                Save Diet Plan
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateTemplate}
+                disabled={templating || saving || publishing}
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+              >
+                {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+                Create Template
+              </button>
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={publishing || saving || templating}
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-sky-600 bg-white px-8 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50 disabled:opacity-50"
+              >
+                {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                Publish to Client
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-8 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                <ArrowLeft size={16} />
+                Back to plans
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateTemplate}
+                disabled={templating}
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+              >
+                {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+                Create Template
+              </button>
+            </>
+          )}
+        </div>
       )}
     </div>
   )
