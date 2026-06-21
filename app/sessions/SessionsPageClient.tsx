@@ -29,7 +29,8 @@ import type {
 } from '@/lib/booking-types'
 import type { MealPlanCustomerDTO, MealPlanDay } from '@/lib/meal-plan-types'
 import { MEAL_SLOT_META } from '@/lib/meal-plan-types'
-import { formatGridDayHeader } from '@/lib/meal-plan-meta'
+import { formatGridDayHeader, parseMealPlanMeta } from '@/lib/meal-plan-meta'
+import type { DietPlanCustomerDTO } from '@/lib/booking-types'
 import { FullPlanBookingLink } from '@/components/payment/FullPlanBookingLink'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
@@ -214,7 +215,17 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   const paidReports = data.paidReports
   const dietPlans = data.dietPlans
   const mealPlans = data.mealPlans
+  const hasDietPlans = dietPlans.length > 0 || mealPlans.length > 0
   const sessionBooking = data.sessionBooking
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.location.hash !== '#diet-plans') return
+    const t = window.setTimeout(() => {
+      document.getElementById('diet-plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [hasDietPlans])
+
   const canUseSessionBooking = sessionBooking?.allowed === true
 
   const sortedPaidReports = useMemo(
@@ -414,6 +425,10 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           </div>
         )}
 
+        {hasDietPlans && (
+          <ClientDietPlansSection dietPlans={dietPlans} mealPlans={mealPlans} />
+        )}
+
         {sortedPaidReports.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 14 }}
@@ -512,50 +527,6 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
             )}
           </motion.div>
         )}
-
-        {dietPlans.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 bg-[#111820] border border-emerald-500/20 rounded-3xl p-6 md:p-8"
-          >
-            <div className="flex items-start gap-3 mb-4">
-              <FileText className="text-emerald-400 shrink-0 mt-1" size={22} />
-              <div className="min-w-0">
-                <h2 className="text-white font-black text-xl">Your diet plans</h2>
-                <p className="text-gray-500 text-xs mt-1">
-                  Personalised plans prepared by your nutritionist
-                </p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {dietPlans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0A0F14] px-4 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="text-white font-bold text-sm sm:text-base">{plan.title}</p>
-                    <p className="text-gray-500 text-xs mt-1">
-                      {formatReportDay(plan.published_at)}
-                      {plan.nutritionistName ? ` · ${plan.nutritionistName}` : ''}
-                    </p>
-                  </div>
-                  <a
-                    href={`/api/diet-plan/download?id=${encodeURIComponent(plan.id)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex shrink-0 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-5 py-2.5 text-xs font-black text-black"
-                  >
-                    Download
-                  </a>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {mealPlans.length > 0 && <ClientMealPlanSection mealPlans={mealPlans} />}
 
         {planComplete && (
           <motion.div
@@ -846,9 +817,97 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   )
 }
 
+// ─── Client diet plans (CRM + PDF) ────────────────────────────────────────────
+
+function ClientDietPlansSection({
+  dietPlans,
+  mealPlans,
+}: {
+  dietPlans: DietPlanCustomerDTO[]
+  mealPlans: MealPlanCustomerDTO[]
+}) {
+  function formatReportDay(iso: string) {
+    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
+  return (
+    <motion.section
+      id="diet-plans"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-8 scroll-mt-24 rounded-3xl border-2 border-emerald-500/30 bg-[#111820] p-6 md:p-8"
+    >
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15">
+            <UtensilsCrossed className="text-emerald-400" size={22} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-white md:text-2xl">Your diet plan</h2>
+            <p className="mt-1 text-xs text-gray-400 sm:text-sm">
+              Prepared by your nutritionist — day-by-day meals and PDF downloads live here
+            </p>
+          </div>
+        </div>
+        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+          From your nutritionist
+        </span>
+      </div>
+
+      {dietPlans.length > 0 && (
+        <div className="mb-6">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">PDF plans</p>
+          <div className="space-y-3">
+            {dietPlans.map((plan) => (
+              <div
+                key={plan.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0A0F14] px-4 py-4"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white sm:text-base">{plan.title}</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formatReportDay(plan.published_at)}
+                    {plan.nutritionistName ? ` · ${plan.nutritionistName}` : ''}
+                  </p>
+                </div>
+                <a
+                  href={`/api/diet-plan/download?id=${encodeURIComponent(plan.id)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black text-black hover:bg-emerald-400"
+                >
+                  <FileText size={14} />
+                  Download PDF
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mealPlans.length > 0 && (
+        <div className={dietPlans.length > 0 ? 'border-t border-white/10 pt-6' : ''}>
+          {dietPlans.length > 0 && (
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
+              Interactive meal plan
+            </p>
+          )}
+          <ClientMealPlanSection mealPlans={mealPlans} embedded />
+        </div>
+      )}
+    </motion.section>
+  )
+}
+
 // ─── Client Meal Plan Section ──────────────────────────────────────────────────
 
-function ClientMealPlanSection({ mealPlans }: { mealPlans: MealPlanCustomerDTO[] }) {
+function ClientMealPlanSection({
+  mealPlans,
+  embedded = false,
+}: {
+  mealPlans: MealPlanCustomerDTO[]
+  embedded?: boolean
+}) {
   const [activePlanIdx, setActivePlanIdx] = useState(0)
   const [activeDayIdx, setActiveDayIdx] = useState(0)
 
@@ -857,16 +916,21 @@ function ClientMealPlanSection({ mealPlans }: { mealPlans: MealPlanCustomerDTO[]
 
   const days: MealPlanDay[] = plan.days ?? []
   const currentDay = days[activeDayIdx]
+  const planNote = parseMealPlanMeta(plan.nutritionist_notes).note
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
+  const shellClass = embedded
+    ? 'overflow-hidden rounded-2xl border border-white/10 bg-[#0A0F14]'
+    : 'mt-8 overflow-hidden rounded-3xl border border-emerald-500/20 bg-[#0A0F14]'
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-8 rounded-3xl border border-emerald-500/20 bg-[#0A0F14] overflow-hidden"
+      initial={embedded ? false : { opacity: 0, y: 14 }}
+      animate={embedded ? undefined : { opacity: 1, y: 0 }}
+      className={shellClass}
     >
       {/* Header */}
       <div className="bg-emerald-500/10 border-b border-emerald-500/15 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
@@ -899,9 +963,9 @@ function ClientMealPlanSection({ mealPlans }: { mealPlans: MealPlanCustomerDTO[]
         )}
       </div>
 
-      {plan.nutritionist_notes && (
-        <div className="px-6 py-3 border-b border-white/5 bg-[#111820]">
-          <p className="text-gray-400 text-sm italic">📌 {plan.nutritionist_notes}</p>
+      {planNote && (
+        <div className="border-b border-white/5 bg-[#111820] px-6 py-3">
+          <p className="text-sm italic text-gray-400">📌 {planNote}</p>
         </div>
       )}
 

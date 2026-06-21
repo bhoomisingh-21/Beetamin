@@ -1,6 +1,5 @@
 'use server'
 
-import { Resend } from 'resend'
 import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -8,6 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { isNutritionistEmail } from '@/lib/nutritionist-config'
 import { getOrCreateNutritionist } from '@/lib/nutritionist-actions'
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
+import { sendNutritionistDietPlanEmail } from '@/lib/send-diet-plan-email'
 import { emptyDay, nextIsoDate, todayIsoDate } from '@/lib/meal-plan-types'
 import type { MealPlan, MealPlanCustomerDTO, MealPlanDay, MealPlanListItem } from '@/lib/meal-plan-types'
 
@@ -111,6 +111,17 @@ export async function publishMealPlan(input: {
   const nut = await portalNutritionist()
   if (!nut) return { ok: false, error: 'Not authenticated' }
 
+  const { data: planRow, error: fetchErr } = await supabaseAdmin
+    .from('meal_plans')
+    .select('title, client_email')
+    .eq('id', input.planId)
+    .eq('nutritionist_id', nut.id)
+    .single()
+
+  if (fetchErr || !planRow) {
+    return { ok: false, error: fetchErr?.message ?? 'Plan not found' }
+  }
+
   const { error } = await supabaseAdmin
     .from('meal_plans')
     .update({
@@ -126,14 +137,20 @@ export async function publishMealPlan(input: {
     return { ok: false, error: error.message }
   }
 
-  // Send email notification
-  await sendMealPlanReadyEmail({
-    to: input.clientEmail,
-    name: input.clientName,
-    nutritionistName: nut.name,
-    sessionsUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.thebeetamin.com'}/sessions`,
-  }).catch((e) => console.error('[publishMealPlan] email error', e))
+  const emailTo = input.clientEmail || String(planRow.client_email || '')
+  if (emailTo && !emailTo.endsWith('@beetamin.internal')) {
+    const emailRes = await sendNutritionistDietPlanEmail({
+      to: emailTo,
+      name: input.clientName,
+      nutritionistName: nut.name,
+      planTitle: String(planRow.title || 'Personalised Diet Plan'),
+    })
+    if (!emailRes.ok) {
+      console.error('[publishMealPlan] email', emailRes.error)
+    }
+  }
 
+  revalidatePath('/sessions')
   revalidatePath(`/nutritionist/clients/${input.planId}`)
   return { ok: true }
 }
@@ -279,82 +296,4 @@ export async function getClientMealPlans(
     published_at: row.published_at,
     nutritionist_name: nutMap[row.nutritionist_id as string] ?? null,
   }))
-}
-
-// ─── Email notification ────────────────────────────────────────────────────────
-
-async function sendMealPlanReadyEmail(input: {
-  to: string
-  name: string
-  nutritionistName: string
-  sessionsUrl: string
-}) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return
-
-  const from =
-    process.env.RESEND_REPORTS_FROM_EMAIL ||
-    process.env.RESEND_FROM_EMAIL ||
-    'The Beetamin <hi@thebeetamin.com>'
-  const firstName = input.name.split(/\s+/)[0] || input.name
-  const resend = new Resend(apiKey)
-
-  await resend.emails.send({
-    from,
-    to: input.to,
-    replyTo: process.env.RESEND_SUPPORT_EMAIL || 'support@thebeetamin.com',
-    subject: '🥗 Your Personalised Meal Plan is Ready — The Beetamin',
-    html: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8" /></head>
-<body style="margin:0;background:#f4f6f4;font-family:Georgia,'Times New Roman',serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8e0;">
-          <tr>
-            <td style="padding:28px 32px 8px;text-align:center;border-bottom:3px solid #10B981;">
-              <p style="margin:0;font-size:18px;font-weight:bold;color:#10B981;letter-spacing:0.02em;">The Beetamin</p>
-              <p style="margin:8px 0 0;font-size:11px;color:#64748b;">Personalised Nutrition</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:28px 32px;">
-              <p style="margin:0 0 16px;font-size:16px;color:#1a1a1a;">Hi ${firstName},</p>
-              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;">
-                Great news! Your nutritionist <strong>${input.nutritionistName}</strong> has created your personalised meal plan with day-by-day meals tailored specifically for you. 🎉
-              </p>
-              <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#475569;">
-                Your plan includes morning routines, breakfast, lunch, snacks, and dinner suggestions — all based on your deficiency report and lifestyle. View it right now on your sessions dashboard.
-              </p>
-              <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
-                <tr>
-                  <td style="background:#10B981;border-radius:8px;text-align:center;">
-                    <a href="${input.sessionsUrl}" style="display:inline-block;padding:14px 28px;color:#000000;font-weight:bold;font-size:14px;text-decoration:none;">
-                      View My Meal Plan →
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;">
-                Bring any questions to your next session with ${input.nutritionistName}.
-              </p>
-              <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#334155;">
-                Warm wishes,<br/><span style="color:#10B981;font-weight:bold;">The Beetamin team</span>
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 32px;background:#f8faf8;font-size:11px;color:#64748b;text-align:center;border-top:1px solid #e2e8e0;">
-              <a href="https://thebeetamin.com" style="color:#10B981;">thebeetamin.com</a>
-              · Reply to this email if you need any help
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`,
-  })
 }
