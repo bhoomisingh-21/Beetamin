@@ -16,9 +16,9 @@ import {
   Target,
   X,
   Zap,
-  CalendarDays,
+  UtensilsCrossed,
 } from 'lucide-react'
-import { getDashboardBundle, updateClientProfile } from '@/lib/booking-actions'
+import { getDashboardBundle, hydrateClientProfileFromMeta, updateClientProfile } from '@/lib/booking-actions'
 import type { ClientRow, DashboardBundle } from '@/lib/booking-types'
 import {
   cardSubtitle,
@@ -29,7 +29,7 @@ import {
 } from '@/components/profile/profile-dark-styles'
 import { consumeRedirectAfterAuth } from '@/app/profile/redirect-actions'
 import { formatReportHeadingDate } from '@/components/profile/profile-helpers'
-import { clientProfileContactComplete } from '@/lib/assessment-profile-fields'
+import { clientProfileContactComplete, resolveClientProfileFields } from '@/lib/assessment-profile-fields'
 import { syncLocalAssessmentToProfile } from '@/lib/sync-local-assessment-client'
 
 const HERO_IMG =
@@ -72,8 +72,9 @@ export default function ProfilePersonalClient({
       const b = await getDashboardBundle(user.id)
       setBundle(b)
       if (b.client) {
-        setEditPhone(b.client.phone || '')
-        setEditGoal(b.client.assessment_goal || '')
+        const fields = resolveClientProfileFields(b.client)
+        setEditPhone(fields.phone)
+        setEditGoal(fields.goal)
       }
     } catch {
       /* ignore */
@@ -85,8 +86,9 @@ export default function ProfilePersonalClient({
   useEffect(() => {
     setBundle(initialBundle)
     if (initialBundle.client) {
-      setEditPhone(initialBundle.client.phone || '')
-      setEditGoal(initialBundle.client.assessment_goal || '')
+      const fields = resolveClientProfileFields(initialBundle.client)
+      setEditPhone(fields.phone)
+      setEditGoal(fields.goal)
     }
   }, [initialBundle])
 
@@ -99,8 +101,9 @@ export default function ProfilePersonalClient({
 
   useEffect(() => {
     if (!user?.id) return
-    void syncLocalAssessmentToProfile(user.id).then((synced) => {
-      if (synced) void reload()
+    void syncLocalAssessmentToProfile(user.id).then(async (synced) => {
+      const hydrated = await hydrateClientProfileFromMeta(user.id)
+      if (synced || hydrated) void reload()
     })
   }, [user?.id, reload])
 
@@ -132,7 +135,9 @@ export default function ProfilePersonalClient({
 
   if (!user) return null
 
-  const { client, paidReports } = bundle
+  const { client, paidReports, dietPlans = [], mealPlans = [] } = bundle
+  const profileFields = resolveClientProfileFields(client)
+  const hasDietPlans = dietPlans.length > 0 || mealPlans.length > 0
   const profileContactComplete = clientProfileContactComplete(client)
 
   const displayName =
@@ -255,7 +260,7 @@ export default function ProfilePersonalClient({
                   <Phone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500/90" aria-hidden />
                   <div>
                     <p className={cardSubtitle}>Phone</p>
-                    <p className={`mt-1 text-sm font-medium ${textPrimary}`}>{client?.phone || '—'}</p>
+                    <p className={`mt-1 text-sm font-medium ${textPrimary}`}>{profileFields.phone || '—'}</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -263,7 +268,7 @@ export default function ProfilePersonalClient({
                   <div>
                     <p className={cardSubtitle}>Health goal</p>
                     <p className={`mt-1 text-sm font-medium ${textPrimary}`}>
-                      {client?.assessment_goal || '—'}
+                      {profileFields.goal || '—'}
                     </p>
                   </div>
                 </div>
@@ -321,11 +326,20 @@ export default function ProfilePersonalClient({
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          {hasDietPlans ? (
+            <Link
+              href="/profile/diet-plan"
+              className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/10 py-4 text-center text-sm font-bold text-emerald-300 transition hover:bg-emerald-500/15"
+            >
+              <UtensilsCrossed className="h-5 w-5 shrink-0" aria-hidden />
+              View My Diet Plan
+              <ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" aria-hidden />
+            </Link>
+          ) : null}
           <Link
             href="/sessions"
-            className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 text-center text-sm font-bold text-black shadow-[0_4px_24px_rgba(16,185,129,0.35)] transition hover:brightness-110 hover:scale-[1.01]"
+            className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 py-4 text-center text-sm font-bold text-black shadow-[0_4px_24px_rgba(16,185,129,0.35)] transition hover:scale-[1.01] hover:brightness-110"
           >
-            <CalendarDays className="h-5 w-5 shrink-0" aria-hidden />
             Book My Next Session
             <ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" aria-hidden />
           </Link>
@@ -354,8 +368,8 @@ export default function ProfilePersonalClient({
                   type="button"
                   onClick={() => {
                     setEditMode(false)
-                    setEditPhone(client.phone || '')
-                    setEditGoal(client.assessment_goal || '')
+                    setEditPhone(profileFields.phone)
+                    setEditGoal(profileFields.goal)
                   }}
                   className="flex items-center gap-1 text-sm text-[#8B9AB0] hover:text-[#F0F4F8]"
                 >
@@ -376,7 +390,7 @@ export default function ProfilePersonalClient({
                   />
                 ) : (
                   <p className={`mt-2 rounded-xl border border-white/[0.06] bg-[#060910]/80 px-4 py-3 text-sm ${textPrimary}`}>
-                    {client.phone || '—'}
+                    {profileFields.phone || '—'}
                   </p>
                 )}
               </div>
@@ -391,7 +405,7 @@ export default function ProfilePersonalClient({
                   />
                 ) : (
                   <p className={`mt-2 rounded-xl border border-white/[0.06] bg-[#060910]/80 px-4 py-3 text-sm ${textPrimary}`}>
-                    {client.assessment_goal || '—'}
+                    {profileFields.goal || '—'}
                   </p>
                 )}
               </div>

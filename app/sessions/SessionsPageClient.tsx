@@ -16,8 +16,6 @@ import {
   User,
   ChevronDown,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   UtensilsCrossed,
 } from 'lucide-react'
 import { getClientDashboard } from '@/lib/booking-actions'
@@ -27,10 +25,6 @@ import type {
   ClientSessionsDashboard,
   PaidReportSummary,
 } from '@/lib/booking-types'
-import type { MealPlanCustomerDTO, MealPlanDay } from '@/lib/meal-plan-types'
-import { MEAL_SLOT_META } from '@/lib/meal-plan-types'
-import { formatGridDayHeader, parseMealPlanMeta } from '@/lib/meal-plan-meta'
-import type { DietPlanCustomerDTO } from '@/lib/booking-types'
 import { FullPlanBookingLink } from '@/components/payment/FullPlanBookingLink'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
@@ -217,14 +211,6 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   const mealPlans = data.mealPlans
   const hasDietPlans = dietPlans.length > 0 || mealPlans.length > 0
   const sessionBooking = data.sessionBooking
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || window.location.hash !== '#diet-plans') return
-    const t = window.setTimeout(() => {
-      document.getElementById('diet-plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 400)
-    return () => window.clearTimeout(t)
-  }, [hasDietPlans])
 
   const canUseSessionBooking = sessionBooking?.allowed === true
 
@@ -426,7 +412,22 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
         )}
 
         {hasDietPlans && (
-          <ClientDietPlansSection dietPlans={dietPlans} mealPlans={mealPlans} />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-5 py-4"
+          >
+            <p className="text-sm text-emerald-100">
+              Your nutritionist has shared a diet plan with you.
+            </p>
+            <Link
+              href="/profile/diet-plan"
+              className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-emerald-400 hover:underline"
+            >
+              <UtensilsCrossed size={16} />
+              Open diet plan in Profile
+            </Link>
+          </motion.div>
         )}
 
         {sortedPaidReports.length > 0 && (
@@ -814,263 +815,5 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
         )}
       </div>
     </div>
-  )
-}
-
-// ─── Client diet plans (CRM + PDF) ────────────────────────────────────────────
-
-function ClientDietPlansSection({
-  dietPlans,
-  mealPlans,
-}: {
-  dietPlans: DietPlanCustomerDTO[]
-  mealPlans: MealPlanCustomerDTO[]
-}) {
-  function formatReportDay(iso: string) {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-  }
-
-  return (
-    <motion.section
-      id="diet-plans"
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-8 scroll-mt-24 rounded-3xl border-2 border-emerald-500/30 bg-[#111820] p-6 md:p-8"
-    >
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15">
-            <UtensilsCrossed className="text-emerald-400" size={22} />
-          </div>
-          <div>
-            <h2 className="text-xl font-black text-white md:text-2xl">Your diet plan</h2>
-            <p className="mt-1 text-xs text-gray-400 sm:text-sm">
-              Prepared by your nutritionist — day-by-day meals and PDF downloads live here
-            </p>
-          </div>
-        </div>
-        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-          From your nutritionist
-        </span>
-      </div>
-
-      {dietPlans.length > 0 && (
-        <div className="mb-6">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">PDF plans</p>
-          <div className="space-y-3">
-            {dietPlans.map((plan) => (
-              <div
-                key={plan.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0A0F14] px-4 py-4"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-white sm:text-base">{plan.title}</p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {formatReportDay(plan.published_at)}
-                    {plan.nutritionistName ? ` · ${plan.nutritionistName}` : ''}
-                  </p>
-                </div>
-                <a
-                  href={`/api/diet-plan/download?id=${encodeURIComponent(plan.id)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black text-black hover:bg-emerald-400"
-                >
-                  <FileText size={14} />
-                  Download PDF
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {mealPlans.length > 0 && (
-        <div className={dietPlans.length > 0 ? 'border-t border-white/10 pt-6' : ''}>
-          {dietPlans.length > 0 && (
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
-              Interactive meal plan
-            </p>
-          )}
-          <ClientMealPlanSection mealPlans={mealPlans} embedded />
-        </div>
-      )}
-    </motion.section>
-  )
-}
-
-// ─── Client Meal Plan Section ──────────────────────────────────────────────────
-
-function ClientMealPlanSection({
-  mealPlans,
-  embedded = false,
-}: {
-  mealPlans: MealPlanCustomerDTO[]
-  embedded?: boolean
-}) {
-  const [activePlanIdx, setActivePlanIdx] = useState(0)
-  const [activeDayIdx, setActiveDayIdx] = useState(0)
-
-  const plan = mealPlans[activePlanIdx]
-  if (!plan) return null
-
-  const days: MealPlanDay[] = plan.days ?? []
-  const currentDay = days[activeDayIdx]
-  const planNote = parseMealPlanMeta(plan.nutritionist_notes).note
-
-  function fmtDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-  }
-
-  const shellClass = embedded
-    ? 'overflow-hidden rounded-2xl border border-white/10 bg-[#0A0F14]'
-    : 'mt-8 overflow-hidden rounded-3xl border border-emerald-500/20 bg-[#0A0F14]'
-
-  return (
-    <motion.div
-      initial={embedded ? false : { opacity: 0, y: 14 }}
-      animate={embedded ? undefined : { opacity: 1, y: 0 }}
-      className={shellClass}
-    >
-      {/* Header */}
-      <div className="bg-emerald-500/10 border-b border-emerald-500/15 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <UtensilsCrossed className="text-emerald-400 shrink-0" size={20} />
-          <div>
-            <h2 className="text-white font-black text-lg leading-tight">{plan.title}</h2>
-            <p className="text-gray-400 text-xs mt-0.5">
-              {plan.nutritionist_name ? `By ${plan.nutritionist_name}` : 'Your nutritionist'} · Published {fmtDate(plan.published_at)}
-            </p>
-          </div>
-        </div>
-        {mealPlans.length > 1 && (
-          <div className="flex items-center gap-1">
-            {mealPlans.map((p, i) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => { setActivePlanIdx(i); setActiveDayIdx(0) }}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                  i === activePlanIdx
-                    ? 'bg-emerald-500 text-black'
-                    : 'border border-white/10 text-gray-400 hover:text-white'
-                }`}
-              >
-                Plan {i + 1}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {planNote && (
-        <div className="border-b border-white/5 bg-[#111820] px-6 py-3">
-          <p className="text-sm italic text-gray-400">📌 {planNote}</p>
-        </div>
-      )}
-
-      {/* Day tabs */}
-      {days.length > 0 && (
-        <div className="px-6 py-3 border-b border-white/5 flex gap-1.5 flex-wrap">
-          {days.map((d, idx) => {
-            const label = d.plan_date
-              ? formatGridDayHeader(new Date(`${d.plan_date}T12:00:00`))
-              : `Day ${d.day}`
-            return (
-              <button
-                key={`${d.day}-${idx}`}
-                type="button"
-                onClick={() => setActiveDayIdx(idx)}
-                className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                  idx === activeDayIdx
-                    ? d.skipped
-                      ? 'bg-slate-500 text-white'
-                      : 'bg-emerald-500 text-black'
-                    : d.skipped
-                      ? 'border border-white/10 text-gray-600'
-                      : 'border border-white/10 text-gray-500 hover:text-white hover:border-white/20'
-                }`}
-              >
-                {label}
-                {d.skipped ? ' · Off' : ''}
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Day content */}
-      {currentDay ? (
-        currentDay.skipped ? (
-          <div className="px-6 py-10 text-center">
-            <p className="text-gray-400 text-sm font-semibold">Rest day</p>
-            <p className="text-gray-600 text-xs mt-1">No meals planned for this day.</p>
-          </div>
-        ) : (
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-bold">Day {currentDay.day}</h3>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setActiveDayIdx((p) => Math.max(0, p - 1))}
-                disabled={activeDayIdx === 0}
-                className="rounded-lg border border-white/10 p-1.5 text-gray-500 hover:text-white disabled:opacity-30 transition"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveDayIdx((p) => Math.min(days.length - 1, p + 1))}
-                disabled={activeDayIdx === days.length - 1}
-                className="rounded-lg border border-white/10 p-1.5 text-gray-500 hover:text-white disabled:opacity-30 transition"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {MEAL_SLOT_META.map((slot) => {
-              const text = currentDay.meals[slot.key]
-              if (!text) return null
-              return (
-                <div key={slot.key} className="flex gap-3 rounded-2xl border border-white/8 bg-[#111820] px-4 py-3">
-                  <span className="text-xl shrink-0 mt-0.5">{slot.emoji}</span>
-                  <div className="min-w-0">
-                    <p className="text-gray-400 text-[11px] font-bold uppercase tracking-widest">
-                      {slot.label} <span className="font-normal normal-case tracking-normal text-gray-600">({slot.time})</span>
-                    </p>
-                    <p className="text-white text-sm mt-1 leading-relaxed">{text}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {(currentDay.water_target || currentDay.day_notes) && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {currentDay.water_target && (
-                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
-                  <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-1">💧 Water Target</p>
-                  <p className="text-white text-sm">{currentDay.water_target}</p>
-                </div>
-              )}
-              {currentDay.day_notes && (
-                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                  <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">📌 Day Note</p>
-                  <p className="text-white text-sm">{currentDay.day_notes}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        )
-      ) : (
-        <div className="px-6 py-8 text-center text-gray-500 text-sm">
-          Your nutritionist is preparing your meal plan. Check back soon.
-        </div>
-      )}
-    </motion.div>
   )
 }

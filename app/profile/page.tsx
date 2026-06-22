@@ -2,7 +2,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import ProfilePersonalClient from '@/components/profile/ProfilePersonalClient'
-import { getDashboardBundle } from '@/lib/booking-actions'
+import { getDashboardBundle, hydrateClientProfileFromMeta } from '@/lib/booking-actions'
 
 export const metadata: Metadata = {
   title: 'Your Profile',
@@ -22,6 +22,7 @@ export default async function ProfilePage({
   const sp = await searchParams
   const showOnboardingBanner = sp.onboarding === 'true'
 
+  await hydrateClientProfileFromMeta(user.id)
   const bundle = await getDashboardBundle(user.id)
 
   return (

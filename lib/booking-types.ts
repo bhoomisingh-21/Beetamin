@@ -90,6 +90,8 @@ export type DashboardBundle = {
     shortLabel: string
     detailLabel: string
   }
+  dietPlans?: DietPlanCustomerDTO[]
+  mealPlans?: import('@/lib/meal-plan-types').MealPlanCustomerDTO[]
 }
 
 export type DietPlanCustomerDTO = {

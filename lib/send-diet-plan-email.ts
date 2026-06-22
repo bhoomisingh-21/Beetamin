@@ -4,7 +4,7 @@ export type SendDietPlanEmailResult = { ok: true; id?: string } | { ok: false; e
 
 export function sessionsDietPlanUrl(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.thebeetamin.com'
-  return `${base.replace(/\/$/, '')}/sessions#diet-plans`
+  return `${base.replace(/\/$/, '')}/profile/diet-plan#top`
 }
 
 /** Sent when a nutritionist publishes a diet plan (CRM grid or PDF). */

@@ -1,6 +1,6 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
+import { assessmentMetaString, normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
 import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
 import { triggerReferralReward } from './referral-trigger'
 import { formatPurchaseSessionsLabel, getActivePurchaseForSessions } from './plan-access'
@@ -622,6 +622,56 @@ const EMPTY_DASHBOARD_BUNDLE: DashboardBundle = {
   latestReadyReport: null,
   assessmentDates: {},
   purchaseSessions: undefined,
+  dietPlans: [],
+  mealPlans: [],
+}
+
+/** Copy quiz / Clerk contact fields onto the client row when top-level columns are empty. */
+export async function hydrateClientProfileFromMeta(clerkUserId: string): Promise<boolean> {
+  const { userId } = await auth()
+  if (!userId || userId !== clerkUserId) return false
+
+  const client = await getClientByClerkId(clerkUserId)
+  if (!client) return false
+
+  const updates: Record<string, string> = {}
+
+  if (!String(client.phone || '').trim()) {
+    const fromMeta = assessmentMetaString(client.assessment_meta, 'phone')
+    if (fromMeta) updates.phone = fromMeta
+  }
+
+  if (!String(client.assessment_goal || '').trim()) {
+    const fromMeta = assessmentMetaString(client.assessment_meta, 'goal')
+    if (fromMeta) updates.assessment_goal = fromMeta
+  }
+
+  if (!String(client.phone || '').trim() && !updates.phone) {
+    const clerkUser = await currentUser()
+    const clerkPhone = clerkUser?.phoneNumbers?.[0]?.phoneNumber
+    if (clerkPhone) updates.phone = clerkPhone
+  }
+
+  if (!String(client.name || '').trim()) {
+    const clerkUser = await currentUser()
+    const clerkName =
+      clerkUser?.fullName ||
+      [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ').trim()
+    if (clerkName) updates.name = clerkName
+  }
+
+  if (Object.keys(updates).length === 0) return false
+
+  const { error } = await supabaseAdmin
+    .from('clients')
+    .update(updates)
+    .eq('clerk_user_id', clerkUserId)
+
+  if (error) {
+    console.error('[hydrateClientProfileFromMeta]', error)
+    return false
+  }
+  return true
 }
 
 export async function getDashboardBundle(clerkUserId: string): Promise<DashboardBundle> {
@@ -671,6 +721,58 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
 
     const latestReadyReport = paidReports.find((p) => p.status === 'ready' || p.status === 'generated') || null
 
+    let dietPlans: DashboardBundle['dietPlans'] = []
+    let mealPlans: DashboardBundle['mealPlans'] = []
+
+    if (client) {
+      const { data: dietRows } = await supabaseAdmin
+        .from('diet_plans')
+        .select('id, title, file_name, published_at, nutritionists(name)')
+        .eq('client_id', client.id)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+
+      dietPlans = (dietRows || []).map((d) => {
+        const raw = (d as { nutritionists?: unknown }).nutritionists
+        const n = (Array.isArray(raw) ? raw[0] : raw) as { name?: string } | null
+        return {
+          id: String(d.id),
+          title: String(d.title),
+          file_name: String(d.file_name),
+          published_at: String(d.published_at),
+          nutritionistName: n?.name ? String(n.name) : null,
+        }
+      })
+
+      const { data: mealRows } = await supabaseAdmin
+        .from('meal_plans')
+        .select('id, title, nutritionist_notes, days, published_at, nutritionist_id')
+        .eq('client_id', client.id)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+
+      const mealNutIds = [...new Set((mealRows ?? []).map((r) => String(r.nutritionist_id)))]
+      const nutNameMap: Record<string, string> = {}
+      if (mealNutIds.length > 0) {
+        const { data: nutRows } = await supabaseAdmin
+          .from('nutritionists')
+          .select('id, name')
+          .in('id', mealNutIds)
+        for (const n of nutRows ?? []) {
+          nutNameMap[String(n.id)] = String(n.name)
+        }
+      }
+
+      mealPlans = (mealRows ?? []).map((r) => ({
+        id: String(r.id),
+        title: String(r.title),
+        nutritionist_notes: r.nutritionist_notes ? String(r.nutritionist_notes) : null,
+        days: (r.days ?? []) as import('@/lib/meal-plan-types').MealPlanCustomerDTO['days'],
+        published_at: String(r.published_at),
+        nutritionist_name: nutNameMap[String(r.nutritionist_id)] ?? null,
+      }))
+    }
+
     const detailedIds = paidReports.map((p) => p.assessment_id).filter(Boolean) as string[]
     let assessmentDates: Record<string, string> = {}
     if (detailedIds.length > 0) {
@@ -692,6 +794,8 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
       latestReadyReport,
       assessmentDates,
       purchaseSessions,
+      dietPlans,
+      mealPlans,
     }
   } catch (e) {
     console.error('[getDashboardBundle]', e)
