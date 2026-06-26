@@ -27,10 +27,8 @@ import {
   datesForPlanDays,
   estimateDailyMacros,
   formatGridDayHeader,
-  formatHeight,
   parseMealPlanMeta,
   serializeMealPlanMeta,
-  shortClientId,
 } from '@/lib/meal-plan-meta'
 import type { MealPlan, MealPlanDay, MealPlanListItem } from '@/lib/meal-plan-types'
 import {
@@ -43,6 +41,7 @@ import {
 } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -64,47 +63,6 @@ type Props = {
 
 type ViewState = 'list' | 'builder'
 
-function extractClientProfile(ctx: MealPlanClientContext) {
-  const { client, progressLogs, detailedAssessment } = ctx
-  const latestWeight = progressLogs.find((l) => l.weight_kg != null)?.weight_kg
-  const height =
-    client.height_cm ?? progressLogs.find((l) => l.height_cm != null)?.height_cm ?? null
-
-  const meta =
-    client.assessment_meta && typeof client.assessment_meta === 'object' && !Array.isArray(client.assessment_meta)
-      ? (client.assessment_meta as Record<string, unknown>)
-      : null
-  const result =
-    client.assessment_result && typeof client.assessment_result === 'object' && !Array.isArray(client.assessment_result)
-      ? (client.assessment_result as Record<string, unknown>)
-      : null
-
-  const activity =
-    (typeof meta?.activity === 'string' && meta.activity) ||
-    (typeof meta?.activityLevel === 'string' && meta.activityLevel) ||
-    (typeof result?.activityLevel === 'string' && result.activityLevel) ||
-    '—'
-
-  const diet =
-    detailedAssessment?.diet_type ||
-    (typeof result?.diet === 'string' && result.diet) ||
-    (typeof result?.dietSummary === 'string' && result.dietSummary) ||
-    '—'
-
-  return {
-    id: shortClientId(client.id),
-    weight: latestWeight != null ? `${Number(latestWeight).toFixed(0)} kg` : '—',
-    height: formatHeight(height),
-    activity,
-    goal: client.assessment_goal || '—',
-    foodPreference: diet,
-    country: 'India',
-    community: '—',
-    allergy: 'No Allergy',
-    diseases: 'No Diseases',
-  }
-}
-
 export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, clientContext }: Props) {
   const router = useRouter()
   const [view, setView] = useState<ViewState>('list')
@@ -117,8 +75,6 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
 
   const [newTitle, setNewTitle] = useState('')
   const [creating, startCreating] = useTransition()
-
-  const profile = extractClientProfile(clientContext)
 
   const refreshList = useCallback(async () => {
     setLoadingList(true)
@@ -184,7 +140,6 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
         plan={activePlan}
         clientName={clientName}
         clientEmail={clientEmail}
-        profile={profile}
         onBack={() => {
           setView('list')
           void refreshList()
@@ -196,9 +151,9 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-sky-200 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-sky-900">
-          <Plus size={16} className="text-sky-600" />
+      <div className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-emerald-900">
+          <Plus size={16} className="text-emerald-600" />
           Create New Diet Plan
         </h3>
         <div className="flex flex-wrap items-end gap-3">
@@ -209,14 +164,14 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
               placeholder={`${clientName}'s Diet Plan`}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full rounded-lg border border-sky-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              className="w-full rounded-lg border border-emerald-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
             />
           </div>
           <button
             type="button"
             onClick={handleCreate}
             disabled={creating}
-            className="flex items-center gap-2 rounded-lg bg-sky-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-sky-700 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
           >
             {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             Create Diet Plan
@@ -227,9 +182,9 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
         </p>
       </div>
 
-      <div className="rounded-xl border border-sky-200 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-sky-900">
-          <BookOpen size={16} className="text-sky-600" />
+      <div className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-emerald-900">
+          <BookOpen size={16} className="text-emerald-600" />
           Diet Plans for {clientName}
         </h3>
 
@@ -247,7 +202,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sky-100 bg-slate-50 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-slate-50 px-4 py-3"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-800">{plan.title}</p>
@@ -271,7 +226,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
                   <button
                     type="button"
                     onClick={() => openPlan(plan.id)}
-                    className="rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+                    className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
                   >
                     {plan.status === 'published' ? 'View' : 'Edit'}
                   </button>
@@ -364,7 +319,7 @@ function PlanActionSuccess({
             <button
               type="button"
               onClick={onContinue}
-              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-sky-600 bg-white px-6 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50"
+              className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
             >
               Keep editing
             </button>
@@ -377,19 +332,15 @@ function PlanActionSuccess({
 
 // ─── CRM Plan Builder ─────────────────────────────────────────────────────────
 
-type ClientProfile = ReturnType<typeof extractClientProfile>
-
 function PlanBuilder({
   plan: initialPlan,
   clientName,
   clientEmail,
-  profile,
   onBack,
 }: {
   plan: MealPlan
   clientName: string
   clientEmail: string
-  profile: ClientProfile
   onBack: () => void
 }) {
   const parsedMeta = parseMealPlanMeta(initialPlan.nutritionist_notes)
@@ -530,14 +481,14 @@ function PlanBuilder({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-sky-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
       {/* Back + status + title */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 bg-slate-50 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 bg-slate-50 px-4 py-3">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-slate-600 transition hover:text-sky-700"
+            className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-slate-600 transition hover:text-emerald-700"
           >
             <ArrowLeft size={14} />
             Back
@@ -547,7 +498,7 @@ function PlanBuilder({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="min-w-[180px] flex-1 rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              className="min-w-[180px] flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
             />
           ) : (
             <p className="truncate text-sm font-semibold text-slate-800">{title}</p>
@@ -577,50 +528,36 @@ function PlanBuilder({
         </div>
       </div>
 
-      {/* Client info bar */}
-      <div className="border-b border-sky-200 bg-[#e8f2fa] px-3 py-3">
-        <div className="flex flex-wrap items-stretch gap-x-5 gap-y-3 text-[11px] sm:text-xs">
-          <InfoField label="ID" value={profile.id} />
-          <InfoField label="Weight" value={profile.weight} />
-          <InfoField label="Height" value={profile.height} />
-          <InfoField label="Activity Level" value={profile.activity} wide />
-          <InfoField label="Goal" value={profile.goal} wide />
-          <InfoField label="Food Preference" value={profile.foodPreference} wide />
-          <InfoField label="Country" value={profile.country} />
-          <InfoField label="Community" value={profile.community} />
-          <InfoField label="Allergy" value={profile.allergy} />
-          <InfoField label="Diseases" value={profile.diseases} />
-          <div className="flex min-w-[120px] flex-col gap-0.5">
-            <span className="font-semibold uppercase tracking-wide text-sky-800">Target Calories</span>
-            <input
-              type="number"
-              min={800}
-              max={5000}
-              step={50}
-              value={targetCalories}
-              onChange={(e) => setTargetCalories(Number(e.target.value) || 1800)}
-              disabled={isPublished}
-              className="w-20 rounded border border-sky-300 bg-white px-2 py-0.5 text-sm font-bold text-slate-800 focus:border-sky-500 focus:outline-none disabled:opacity-60"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Day controls */}
       {!isPublished && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sky-100 bg-white px-4 py-2.5">
-          <p className="text-xs text-slate-600">
-            <span className="font-semibold text-sky-800">{activeDays}</span> active day
-            {activeDays === 1 ? '' : 's'}
-            {days.length > activeDays && (
-              <span className="text-slate-400"> · {days.length - activeDays} skipped</span>
-            )}
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 bg-white px-4 py-2.5">
+          <div className="flex flex-wrap items-center gap-4">
+            <p className="text-xs text-slate-600">
+              <span className="font-semibold text-emerald-800">{activeDays}</span> active day
+              {activeDays === 1 ? '' : 's'}
+              {days.length > activeDays && (
+                <span className="text-slate-400"> · {days.length - activeDays} skipped</span>
+              )}
+            </p>
+            <label className="flex items-center gap-2 text-xs text-slate-600">
+              <span className="font-semibold text-emerald-800">Target</span>
+              <input
+                type="number"
+                min={800}
+                max={5000}
+                step={50}
+                value={targetCalories}
+                onChange={(e) => setTargetCalories(Number(e.target.value) || 1800)}
+                className="w-20 rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+              />
+              <span>Kcal</span>
+            </label>
+          </div>
           <button
             type="button"
             onClick={addDay}
             disabled={days.length >= 31}
-            className="flex items-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-40"
           >
             <Plus size={13} />
             Add Day
@@ -632,14 +569,14 @@ function PlanBuilder({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse text-xs">
           <thead>
-            <tr className="border-b border-sky-200 bg-slate-50">
-              <th className="w-[100px] border-r border-sky-100 p-2 text-left text-[10px] font-semibold text-slate-500">
+            <tr className="border-b border-emerald-200 bg-slate-50">
+              <th className="w-[100px] border-r border-emerald-100 p-2 text-left text-[10px] font-semibold text-slate-500">
                 Meal slot
               </th>
               {days.map((d, idx) => (
                 <th
                   key={`${d.day}-${idx}`}
-                  className={`min-w-[130px] border-r border-sky-100 p-2 text-left align-top last:border-r-0 ${
+                  className={`min-w-[130px] border-r border-emerald-100 p-2 text-left align-top last:border-r-0 ${
                     d.skipped ? 'bg-slate-100' : ''
                   }`}
                 >
@@ -650,10 +587,10 @@ function PlanBuilder({
                           type="date"
                           value={d.plan_date ?? ''}
                           onChange={(e) => updateDayDate(idx, e.target.value)}
-                          className="w-full rounded border border-sky-200 bg-white px-1 py-0.5 text-[10px] font-bold text-sky-900 focus:border-sky-400 focus:outline-none"
+                          className="w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-[10px] font-bold text-emerald-900 focus:border-emerald-400 focus:outline-none"
                         />
                       ) : (
-                        <p className="font-bold text-sky-900">
+                        <p className="font-bold text-emerald-900">
                           {planDates[idx] ? formatGridDayHeader(planDates[idx]) : `Day ${d.day}`}
                         </p>
                       )}
@@ -686,7 +623,7 @@ function PlanBuilder({
                       className={`mt-1.5 w-full rounded px-2 py-0.5 text-[10px] font-bold transition ${
                         d.skipped
                           ? 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                          : 'bg-sky-100 text-sky-700 hover:bg-sky-200'
+                          : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                       }`}
                     >
                       {d.skipped ? 'Skipped — click to enable' : 'Skip this day'}
@@ -699,8 +636,8 @@ function PlanBuilder({
                       <p className="mt-0.5 text-[9px] text-slate-400">No meals planned</p>
                     </div>
                   ) : (
-                    <div className="mt-2 rounded border border-sky-200 bg-[#eef5fc] p-2">
-                      <p className="font-bold text-sky-900">
+                    <div className={`mt-2 rounded border ${portal.gridMacroBox} p-2`}>
+                      <p className="font-bold text-emerald-900">
                         {targetCalories.toLocaleString('en-IN')} Kcal
                       </p>
                       <p className="mt-1 text-[10px] leading-relaxed text-slate-600">
@@ -709,7 +646,7 @@ function PlanBuilder({
                       </p>
                       <div className="mt-2">
                         <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                          <div className="h-full w-0 rounded-full bg-sky-400" />
+                          <div className="h-full w-0 rounded-full bg-emerald-400" />
                         </div>
                         <p className="mt-0.5 text-[10px] text-slate-500">Eaten: 0 Kcal</p>
                       </div>
@@ -721,8 +658,8 @@ function PlanBuilder({
           </thead>
           <tbody>
             {MEAL_SLOT_META.map((slot) => (
-              <tr key={slot.key} className="border-b border-sky-100">
-                <td className="border-r border-sky-100 p-1.5 align-middle">
+              <tr key={slot.key} className="border-b border-emerald-100">
+                <td className="border-r border-emerald-100 p-1.5 align-middle">
                   <div className="flex items-center gap-1">
                     {!isPublished && (
                       <button
@@ -735,7 +672,7 @@ function PlanBuilder({
                       </button>
                     )}
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold leading-tight text-sky-900">{slot.label}</p>
+                      <p className="text-[10px] font-bold leading-tight text-emerald-900">{slot.label}</p>
                       <p className="text-[9px] text-slate-400">{slot.time}</p>
                     </div>
                   </div>
@@ -743,7 +680,7 @@ function PlanBuilder({
                 {days.map((day, dayIdx) => (
                   <td
                     key={`${slot.key}-${day.day}-${dayIdx}`}
-                    className={`border-r border-sky-100 p-1.5 last:border-r-0 ${
+                    className={`border-r border-emerald-100 p-1.5 last:border-r-0 ${
                       day.skipped ? 'bg-slate-50' : ''
                     }`}
                   >
@@ -782,14 +719,14 @@ function PlanBuilder({
           onContinue={() => setSuccess(null)}
         />
       ) : (
-        <div className="flex flex-wrap items-center justify-center gap-4 border-t border-sky-200 bg-slate-50 px-4 py-5">
+        <div className="flex flex-wrap items-center justify-center gap-4 border-t border-emerald-200 bg-slate-50 px-4 py-5">
           {!isPublished ? (
             <>
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving || publishing || templating}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 Save Diet Plan
@@ -798,7 +735,7 @@ function PlanBuilder({
                 type="button"
                 onClick={handleCreateTemplate}
                 disabled={templating || saving || publishing}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
                 Create Template
@@ -807,7 +744,7 @@ function PlanBuilder({
                 type="button"
                 onClick={handlePublish}
                 disabled={publishing || saving || templating}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-sky-600 bg-white px-8 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-50 disabled:opacity-50"
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-8 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
               >
                 {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                 Publish to Client
@@ -827,7 +764,7 @@ function PlanBuilder({
                 type="button"
                 onClick={handleCreateTemplate}
                 disabled={templating}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-sky-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-50"
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
                 Create Template
@@ -836,25 +773,6 @@ function PlanBuilder({
           )}
         </div>
       )}
-    </div>
-  )
-}
-
-function InfoField({
-  label,
-  value,
-  wide,
-}: {
-  label: string
-  value: string
-  wide?: boolean
-}) {
-  return (
-    <div className={`flex flex-col gap-0.5 ${wide ? 'min-w-[100px] max-w-[160px]' : 'min-w-[70px]'}`}>
-      <span className="font-semibold uppercase tracking-wide text-sky-800">{label}</span>
-      <span className="truncate font-medium text-slate-700" title={value}>
-        {value}
-      </span>
     </div>
   )
 }
@@ -895,7 +813,7 @@ function MealCell({
           onChange={(e) => onChange(e.target.value)}
           onBlur={() => setEditing(false)}
           placeholder={`${label}…`}
-          className="min-h-[52px] w-full resize-none rounded border border-sky-400 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-100"
+          className="min-h-[52px] w-full resize-none rounded border border-emerald-400 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-100"
         />
       ) : (
         <button
@@ -904,8 +822,8 @@ function MealCell({
           onClick={() => !disabled && setEditing(true)}
           className={`min-h-[52px] w-full rounded border px-2 py-1.5 text-left text-[11px] leading-snug transition ${
             hasContent
-              ? 'border-sky-300 bg-white text-slate-800 hover:border-sky-400'
-              : 'border-sky-200 bg-slate-50 text-slate-400 hover:border-sky-300'
+              ? 'border-emerald-300 bg-white text-slate-800 hover:border-emerald-400'
+              : 'border-emerald-200 bg-slate-50 text-slate-400 hover:border-emerald-300'
           } disabled:cursor-default`}
         >
           <span className="line-clamp-3">{display}</span>

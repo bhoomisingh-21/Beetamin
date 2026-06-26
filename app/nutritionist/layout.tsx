@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react'
-import { NutritionistPortalNavbar } from '@/components/nutritionist-portal/NutritionistPortalNavbar'
+import { NutritionistPortalSidebar } from '@/components/nutritionist-portal/NutritionistPortalSidebar'
+import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 export default function NutritionistPortalLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <NutritionistPortalNavbar />
-      <div className="mx-auto flex max-w-6xl flex-col px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
-        {children}
+    <div className={`flex min-h-screen ${portal.pageBg}`}>
+      <NutritionistPortalSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <main className="flex-1 overflow-x-hidden px-4 py-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:px-6 md:py-6 lg:px-8">
+          {children}
+        </main>
       </div>
     </div>
   )

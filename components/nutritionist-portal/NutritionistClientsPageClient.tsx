@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import type { ClientRow } from '@/lib/booking-types'
 import type { PortalClientListRow, SessionDotState } from '@/lib/nutritionist-types'
 import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
-import { Search, ChevronLeft } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function initials(name: string) {
@@ -76,17 +76,6 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-        <Link href="/nutritionist" className={portal.backBtn}>
-          <ChevronLeft size={18} aria-hidden />
-          Portal home
-        </Link>
-        <Link href="/nutritionist-dashboard" className={portal.backBtn}>
-          <ChevronLeft size={18} aria-hidden />
-          Quick dashboard
-        </Link>
-      </div>
-
       <div>
         <h1 className={portal.heading}>My Clients</h1>
         <p className={portal.subtext}>Clients you have sessions with — search and filter by status</p>
