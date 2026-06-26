@@ -1,4 +1,7 @@
 /** Optional metadata stored inside `nutritionist_notes` as JSON. */
+import type { MealPlanDay } from '@/lib/meal-plan-types'
+import { emptyDay, nextIsoDate, renumberPlanDays, todayIsoDate } from '@/lib/meal-plan-types'
+
 export type MealPlanMeta = {
   note?: string
   targetCalories?: number
@@ -80,4 +83,41 @@ export function formatGridDayHeader(date: Date): string {
   const weekday = date.toLocaleDateString('en-IN', { weekday: 'short' })
   const rest = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
   return `${weekday}, ${rest}`
+}
+
+/** Compact column header: "Fri 26-Jun-2026" */
+export function formatGridDayColumn(date: Date): string {
+  const weekday = date.toLocaleDateString('en-IN', { weekday: 'short' })
+  const day = date.getDate()
+  const rest = date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+  return `${weekday} ${day}-${rest}`
+}
+
+export function formatWeekRangeLabel(start: Date, end: Date): string {
+  const sm = start.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
+  const em = end.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
+  return `${sm} - ${em}`
+}
+
+export function addDaysToIso(iso: string, offset: number): string {
+  const d = new Date(`${iso}T12:00:00`)
+  d.setDate(d.getDate() + offset)
+  return d.toISOString().slice(0, 10)
+}
+
+export function initialWeekDays(existing: MealPlanDay[], weekLength = 7): MealPlanDay[] {
+  if (existing.length >= weekLength) return existing
+  const list = existing.length > 0 ? [...existing] : []
+  let iso = list.length > 0 && list[list.length - 1]?.plan_date
+    ? nextIsoDate(list[list.length - 1].plan_date!)
+    : todayIsoDate()
+  if (list.length === 0) {
+    list.push(emptyDay(1, iso))
+    iso = nextIsoDate(iso)
+  }
+  while (list.length < weekLength) {
+    list.push(emptyDay(list.length + 1, iso))
+    iso = nextIsoDate(iso)
+  }
+  return renumberPlanDays(list)
 }

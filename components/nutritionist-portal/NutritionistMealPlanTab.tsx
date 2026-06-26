@@ -6,13 +6,14 @@ import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Loader2,
   Plus,
   Save,
   Send,
   Trash2,
-  X,
 } from 'lucide-react'
 import {
   createMealPlan,
@@ -26,7 +27,9 @@ import {
 import {
   datesForPlanDays,
   estimateDailyMacros,
-  formatGridDayHeader,
+  formatGridDayColumn,
+  formatWeekRangeLabel,
+  initialWeekDays,
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
@@ -41,7 +44,6 @@ import {
 } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
-import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -62,6 +64,8 @@ type Props = {
 }
 
 type ViewState = 'list' | 'builder'
+
+const WEEK_DAYS = 7
 
 export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, clientContext }: Props) {
   const router = useRouter()
@@ -110,7 +114,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
         clientId,
         clientEmail,
         title: newTitle.trim() || `${clientName}'s Diet Plan`,
-        numDays: 1,
+        numDays: WEEK_DAYS,
       })
       if (res.ok) {
         setNewTitle('')
@@ -140,6 +144,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
         plan={activePlan}
         clientName={clientName}
         clientEmail={clientEmail}
+        otherPlans={plans.filter((p) => p.id !== activePlan.id)}
         onBack={() => {
           setView('list')
           void refreshList()
@@ -178,7 +183,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
           </button>
         </div>
         <p className="mt-3 text-xs text-slate-500">
-          Starts with one day — add or skip days in the builder. Plan only the days you need.
+          Opens a 7-day horizontal calendar — add more weeks with the arrow navigation in the builder.
         </p>
       </div>
 
@@ -336,23 +341,27 @@ function PlanBuilder({
   plan: initialPlan,
   clientName,
   clientEmail,
+  otherPlans,
   onBack,
 }: {
   plan: MealPlan
   clientName: string
   clientEmail: string
+  otherPlans: MealPlanListItem[]
   onBack: () => void
 }) {
   const parsedMeta = parseMealPlanMeta(initialPlan.nutritionist_notes)
   const [title, setTitle] = useState(initialPlan.title)
   const [targetCalories, setTargetCalories] = useState(parsedMeta.targetCalories ?? 1800)
-  const [days, setDays] = useState<MealPlanDay[]>(() => {
-    if (initialPlan.days.length > 0) return initialPlan.days
-    return [emptyDay(1, todayIsoDate())]
-  })
+  const [days, setDays] = useState<MealPlanDay[]>(() =>
+    initialWeekDays(initialPlan.days.length > 0 ? initialPlan.days : [], WEEK_DAYS),
+  )
+  const [weekPage, setWeekPage] = useState(0)
   const [status, setStatus] = useState<'draft' | 'published'>(
     initialPlan.status === 'published' ? 'published' : 'draft',
   )
+  const [templateId, setTemplateId] = useState('')
+  const [copyingTemplate, setCopyingTemplate] = useState(false)
 
   const [saving, startSave] = useTransition()
   const [publishing, startPublish] = useTransition()
@@ -365,8 +374,62 @@ function PlanBuilder({
   const dailyMacros = estimateDailyMacros(targetCalories)
   const activeDays = activePlanDayCount(days)
 
+  const weekStart = weekPage * WEEK_DAYS
+  const weekEnd = weekStart + WEEK_DAYS - 1
+  const weekRangeLabel =
+    planDates[weekStart] && planDates[Math.min(weekEnd, days.length - 1)]
+      ? formatWeekRangeLabel(planDates[weekStart], planDates[Math.min(weekEnd, days.length - 1)])
+      : '—'
+
+  const canGoPrevWeek = weekPage > 0
+  const canGoNextWeek = weekEnd < days.length - 1 || (!isPublished && days.length < 31)
+
   function buildMetaNote() {
     return serializeMealPlanMeta({ targetCalories, note: parsedMeta.note })
+  }
+
+  function ensureDaysThrough(endIndex: number) {
+    setDays((prev) => {
+      if (prev.length > endIndex) return prev
+      const next = [...prev]
+      let iso =
+        next[next.length - 1]?.plan_date != null
+          ? nextIsoDate(next[next.length - 1].plan_date!)
+          : todayIsoDate()
+      while (next.length <= endIndex && next.length < 31) {
+        next.push(emptyDay(next.length + 1, iso))
+        iso = nextIsoDate(iso)
+      }
+      return renumberPlanDays(next)
+    })
+  }
+
+  function goNextWeek() {
+    const nextStart = (weekPage + 1) * WEEK_DAYS
+    if (nextStart >= days.length) {
+      if (isPublished || days.length >= 31) return
+      setDays((prev) => {
+        const next = [...prev]
+        let iso =
+          next[next.length - 1]?.plan_date != null
+            ? nextIsoDate(next[next.length - 1].plan_date!)
+            : todayIsoDate()
+        while (next.length < nextStart + WEEK_DAYS && next.length < 31) {
+          next.push(emptyDay(next.length + 1, iso))
+          iso = nextIsoDate(iso)
+        }
+        return renumberPlanDays(next)
+      })
+    }
+    setWeekPage((p) => p + 1)
+  }
+
+  function goPrevWeek() {
+    if (weekPage > 0) setWeekPage((p) => p - 1)
+  }
+
+  function absoluteDayIndex(localIdx: number) {
+    return weekStart + localIdx
   }
 
   function handleSave() {
@@ -435,54 +498,120 @@ function PlanBuilder({
   }
 
   function updateMealCell(dayIdx: number, slot: keyof MealPlanDay['meals'], value: string) {
-    const updated = days.map((d, i) =>
-      i === dayIdx ? { ...d, meals: { ...d.meals, [slot]: value } } : d,
+    setDays((prev) =>
+      prev.map((d, i) => (i === dayIdx ? { ...d, meals: { ...d.meals, [slot]: value } } : d)),
     )
-    setDays(updated)
   }
 
   function clearMealRow(slot: keyof MealPlanDay['meals']) {
-    if (!confirm('Clear this meal row across all active days?')) return
-    const updated = days.map((d) =>
-      d.skipped ? d : { ...d, meals: { ...d.meals, [slot]: '' } },
+    if (!confirm('Clear this meal row for the visible week?')) return
+    setDays((prev) =>
+      prev.map((d, i) =>
+        i >= weekStart && i <= weekEnd && !d.skipped
+          ? { ...d, meals: { ...d.meals, [slot]: '' } }
+          : d,
+      ),
     )
-    setDays(updated)
-  }
-
-  function addDay() {
-    if (days.length >= 31) return
-    const last = days[days.length - 1]
-    const nextDate = last?.plan_date ? nextIsoDate(last.plan_date) : todayIsoDate()
-    setDays(renumberPlanDays([...days, emptyDay(days.length + 1, nextDate)]))
-  }
-
-  function removeDay(dayIdx: number) {
-    if (days.length <= 1) return
-    if (!confirm('Remove this day from the plan?')) return
-    setDays(renumberPlanDays(days.filter((_, i) => i !== dayIdx)))
   }
 
   function toggleSkipDay(dayIdx: number) {
-    setDays(
-      days.map((d, i) => {
+    setDays((prev) =>
+      prev.map((d, i) => {
         if (i !== dayIdx) return d
         const skipped = !d.skipped
         return {
           ...d,
           skipped,
-          ...(skipped ? { meals: { early_morning: '', breakfast: '', mid_morning: '', lunch: '', evening_snack: '', dinner: '', bedtime: '' } } : {}),
+          ...(skipped
+            ? {
+                meals: {
+                  early_morning: '',
+                  breakfast: '',
+                  mid_morning: '',
+                  lunch: '',
+                  evening_snack: '',
+                  dinner: '',
+                  bedtime: '',
+                },
+              }
+            : {}),
         }
       }),
     )
   }
 
   function updateDayDate(dayIdx: number, plan_date: string) {
-    setDays(days.map((d, i) => (i === dayIdx ? { ...d, plan_date } : d)))
+    setDays((prev) => prev.map((d, i) => (i === dayIdx ? { ...d, plan_date } : d)))
   }
+
+  async function copyFromTemplate() {
+    if (!templateId) {
+      setActionError('Choose a template plan first.')
+      return
+    }
+    setActionError('')
+    setCopyingTemplate(true)
+    const res = await getMealPlan(templateId)
+    setCopyingTemplate(false)
+    if (!res.ok) {
+      setActionError(res.error)
+      return
+    }
+    const source = res.plan.days
+    setDays((prev) => {
+      const next = [...prev]
+      for (let i = 0; i < WEEK_DAYS; i++) {
+        const abs = weekStart + i
+        while (next.length <= abs) {
+          const last = next[next.length - 1]
+          const iso = last?.plan_date ? nextIsoDate(last.plan_date) : todayIsoDate()
+          next.push(emptyDay(next.length + 1, iso))
+        }
+        const src = source[i]
+        if (!src) continue
+        next[abs] = {
+          ...next[abs],
+          meals: { ...src.meals },
+          skipped: src.skipped,
+          water_target: src.water_target,
+          day_notes: src.day_notes,
+        }
+      }
+      return renumberPlanDays(next)
+    })
+  }
+
+  function copyPreviousWeek() {
+    if (weekPage === 0) {
+      setActionError('No previous week — go back one week first.')
+      return
+    }
+    setActionError('')
+    const prevStart = weekStart - WEEK_DAYS
+    setDays((prev) => {
+      const next = [...prev]
+      for (let i = 0; i < WEEK_DAYS; i++) {
+        const from = prevStart + i
+        const to = weekStart + i
+        if (!next[from] || !next[to]) continue
+        next[to] = {
+          ...next[to],
+          meals: { ...next[from].meals },
+          skipped: next[from].skipped,
+        }
+      }
+      return next
+    })
+  }
+
+  const visibleColumns = Array.from({ length: WEEK_DAYS }, (_, localIdx) => {
+    const abs = weekStart + localIdx
+    return days[abs] ?? null
+  })
 
   return (
     <div className="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
-      {/* Back + status + title */}
+      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 bg-slate-50 px-4 py-3">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
           <button
@@ -504,205 +633,249 @@ function PlanBuilder({
             <p className="truncate text-sm font-semibold text-slate-800">{title}</p>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-xs text-slate-600">
+            <span className="font-semibold text-emerald-800">Calories</span>
+            <input
+              type="number"
+              min={800}
+              max={5000}
+              step={50}
+              value={targetCalories}
+              onChange={(e) => setTargetCalories(Number(e.target.value) || 1800)}
+              disabled={isPublished}
+              className="w-16 rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm font-bold text-slate-800 disabled:opacity-60"
+            />
+          </label>
           {saving && (
-            <span className="flex items-center gap-1 text-slate-500">
+            <span className="flex items-center gap-1 text-xs text-slate-500">
               <Loader2 size={11} className="animate-spin" /> Saving…
             </span>
           )}
-          {templating && (
-            <span className="flex items-center gap-1 text-slate-500">
-              <Loader2 size={11} className="animate-spin" /> Creating template…
-            </span>
-          )}
-          {publishing && (
-            <span className="flex items-center gap-1 text-slate-500">
-              <Loader2 size={11} className="animate-spin" /> Publishing…
-            </span>
-          )}
           {isPublished && (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-bold text-emerald-700">
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
               Published
             </span>
           )}
         </div>
       </div>
 
-      {/* Day controls */}
-      {!isPublished && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 bg-white px-4 py-2.5">
-          <div className="flex flex-wrap items-center gap-4">
-            <p className="text-xs text-slate-600">
-              <span className="font-semibold text-emerald-800">{activeDays}</span> active day
-              {activeDays === 1 ? '' : 's'}
-              {days.length > activeDays && (
-                <span className="text-slate-400"> · {days.length - activeDays} skipped</span>
-              )}
-            </p>
-            <label className="flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-semibold text-emerald-800">Target</span>
-              <input
-                type="number"
-                min={800}
-                max={5000}
-                step={50}
-                value={targetCalories}
-                onChange={(e) => setTargetCalories(Number(e.target.value) || 1800)}
-                className="w-20 rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm font-bold text-slate-800 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-              />
-              <span>Kcal</span>
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={addDay}
-            disabled={days.length >= 31}
-            className="flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-40"
-          >
-            <Plus size={13} />
-            Add Day
-          </button>
-        </div>
-      )}
-
-      {/* Weekly grid */}
+      {/* Horizontal calendar grid */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse text-xs">
+        <table className="w-full min-w-[960px] border-collapse text-xs">
           <thead>
-            <tr className="border-b border-emerald-200 bg-slate-50">
-              <th className="w-[100px] border-r border-emerald-100 p-2 text-left text-[10px] font-semibold text-slate-500">
-                Meal slot
-              </th>
-              {days.map((d, idx) => (
-                <th
-                  key={`${d.day}-${idx}`}
-                  className={`min-w-[130px] border-r border-emerald-100 p-2 text-left align-top last:border-r-0 ${
-                    d.skipped ? 'bg-slate-100' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-1">
-                    <div className="min-w-0 flex-1">
-                      {!isPublished ? (
-                        <input
-                          type="date"
-                          value={d.plan_date ?? ''}
-                          onChange={(e) => updateDayDate(idx, e.target.value)}
-                          className="w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-[10px] font-bold text-emerald-900 focus:border-emerald-400 focus:outline-none"
-                        />
-                      ) : (
-                        <p className="font-bold text-emerald-900">
-                          {planDates[idx] ? formatGridDayHeader(planDates[idx]) : `Day ${d.day}`}
-                        </p>
-                      )}
-                      {!isPublished && planDates[idx] && (
-                        <p className="mt-0.5 text-[10px] text-slate-500">
-                          {formatGridDayHeader(planDates[idx])}
-                        </p>
-                      )}
+            <tr className="border-b border-emerald-200 bg-white">
+              {/* Sticky left: week nav + copy actions */}
+              <th className="sticky left-0 z-30 w-[148px] min-w-[148px] border-r border-emerald-200 bg-white p-2 align-top">
+                <div className="flex items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-1 py-1.5">
+                  <button
+                    type="button"
+                    onClick={goPrevWeek}
+                    disabled={!canGoPrevWeek}
+                    className="rounded p-1 text-emerald-700 hover:bg-white disabled:opacity-30"
+                    aria-label="Previous week"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="min-w-[72px] text-center text-[10px] font-bold text-emerald-900">
+                    {weekRangeLabel}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={goNextWeek}
+                    disabled={!canGoNextWeek}
+                    className="rounded p-1 text-emerald-700 hover:bg-white disabled:opacity-30"
+                    aria-label="Next week"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+                {!isPublished && (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="space-y-1">
+                      <select
+                        value={templateId}
+                        onChange={(e) => setTemplateId(e.target.value)}
+                        className="w-full rounded-lg border border-emerald-200 bg-white px-2 py-1 text-[10px] text-slate-700"
+                      >
+                        <option value="">Template…</option>
+                        {otherPlans.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.title}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => void copyFromTemplate()}
+                        disabled={copyingTemplate || !templateId}
+                        className="w-full rounded-lg bg-emerald-600 px-2 py-1.5 text-[10px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+                      >
+                        {copyingTemplate ? 'Copying…' : 'Copy from template'}
+                      </button>
                     </div>
-                    {!isPublished && (
-                      <div className="flex shrink-0 flex-col gap-0.5">
-                        {days.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeDay(idx)}
-                            className="rounded p-0.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                            title="Remove day"
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {!isPublished && (
                     <button
                       type="button"
-                      onClick={() => toggleSkipDay(idx)}
-                      className={`mt-1.5 w-full rounded px-2 py-0.5 text-[10px] font-bold transition ${
-                        d.skipped
-                          ? 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                          : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                      }`}
+                      onClick={copyPreviousWeek}
+                      disabled={weekPage === 0}
+                      className="w-full rounded-lg bg-emerald-600 px-2 py-1.5 text-[10px] font-bold text-white hover:bg-emerald-500 disabled:opacity-40"
                     >
-                      {d.skipped ? 'Skipped — click to enable' : 'Skip this day'}
+                      Copy previous week
                     </button>
-                  )}
+                  </div>
+                )}
+              </th>
 
-                  {d.skipped ? (
-                    <div className="mt-2 rounded border border-dashed border-slate-300 bg-slate-100 p-3 text-center">
-                      <p className="text-[10px] font-semibold text-slate-500">Day off</p>
-                      <p className="mt-0.5 text-[9px] text-slate-400">No meals planned</p>
-                    </div>
-                  ) : (
-                    <div className={`mt-2 rounded border ${portal.gridMacroBox} p-2`}>
-                      <p className="font-bold text-emerald-900">
-                        {targetCalories.toLocaleString('en-IN')} Kcal
-                      </p>
-                      <p className="mt-1 text-[10px] leading-relaxed text-slate-600">
-                        Carbs: {dailyMacros.carbs}gm | Fat: {dailyMacros.fat}gm | Protein:{' '}
-                        {dailyMacros.protein}gm | Fiber: {dailyMacros.fiber}gm
-                      </p>
-                      <div className="mt-2">
-                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                          <div className="h-full w-0 rounded-full bg-emerald-400" />
-                        </div>
-                        <p className="mt-0.5 text-[10px] text-slate-500">Eaten: 0 Kcal</p>
+              {/* Day column headers */}
+              {visibleColumns.map((d, localIdx) => {
+                const abs = absoluteDayIndex(localIdx)
+                const date = planDates[abs]
+                return (
+                  <th
+                    key={`hdr-${abs}`}
+                    className={`min-w-[118px] border-r border-emerald-100 p-2 text-left align-top last:border-r-0 ${
+                      d?.skipped ? 'bg-slate-50' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="min-w-0 flex-1">
+                        {date ? (
+                          <p className="text-[10px] font-bold leading-tight text-emerald-900">
+                            {formatGridDayColumn(date)}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] font-bold text-emerald-900">Day {abs + 1}</p>
+                        )}
+                        {!isPublished && d && (
+                          <input
+                            type="date"
+                            value={d.plan_date ?? ''}
+                            onChange={(e) => updateDayDate(abs, e.target.value)}
+                            className="mt-1 w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-[9px] focus:border-emerald-400 focus:outline-none"
+                          />
+                        )}
                       </div>
                     </div>
-                  )}
-                </th>
-              ))}
+
+                    {!isPublished && d && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSkipDay(abs)}
+                        className={`mt-1.5 w-full rounded px-1.5 py-0.5 text-[9px] font-bold ${
+                          d.skipped
+                            ? 'bg-slate-200 text-slate-600'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}
+                      >
+                        {d.skipped ? 'Enable day' : 'Skip day'}
+                      </button>
+                    )}
+
+                    {d?.skipped ? (
+                      <div className="mt-2 rounded border border-dashed border-slate-300 bg-slate-100 p-2 text-center">
+                        <p className="text-[9px] font-semibold text-slate-500">Day off</p>
+                      </div>
+                    ) : (
+                      <div className="mt-2 rounded border border-rose-200 bg-rose-50/90 p-2">
+                        <p className="font-bold text-rose-900">
+                          {targetCalories.toLocaleString('en-IN')} Kcal
+                        </p>
+                        <p className="mt-1 text-[9px] leading-relaxed text-slate-600">
+                          Carbs: {dailyMacros.carbs}gm | Fat: {dailyMacros.fat}gm
+                        </p>
+                        <p className="text-[9px] leading-relaxed text-slate-600">
+                          Protein: {dailyMacros.protein}gm | Fiber: {dailyMacros.fiber}gm
+                        </p>
+                        <div className="mt-1.5 rounded border border-rose-100 bg-white/80 px-1.5 py-1">
+                          <p className="text-[9px] text-slate-500">Eaten: 0 Kcal</p>
+                        </div>
+                      </div>
+                    )}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
             {MEAL_SLOT_META.map((slot) => (
               <tr key={slot.key} className="border-b border-emerald-100">
-                <td className="border-r border-emerald-100 p-1.5 align-middle">
+                <td className="sticky left-0 z-20 w-[148px] min-w-[148px] border-r border-emerald-200 bg-white p-2 align-middle">
                   <div className="flex items-center gap-1">
                     {!isPublished && (
                       <button
                         type="button"
                         onClick={() => clearMealRow(slot.key)}
-                        className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-                        title={`Clear ${slot.label} row`}
+                        className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                        title={`Clear ${slot.label}`}
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={12} />
                       </button>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-bold leading-tight text-emerald-900">{slot.label}</p>
                       <p className="text-[9px] text-slate-400">{slot.time}</p>
                     </div>
+                    {!isPublished && (
+                      <button
+                        type="button"
+                        className="shrink-0 rounded p-0.5 text-emerald-600 hover:bg-emerald-50"
+                        title="Add note in cell"
+                        aria-hidden
+                      >
+                        <Plus size={12} />
+                      </button>
+                    )}
                   </div>
                 </td>
-                {days.map((day, dayIdx) => (
-                  <td
-                    key={`${slot.key}-${day.day}-${dayIdx}`}
-                    className={`border-r border-emerald-100 p-1.5 last:border-r-0 ${
-                      day.skipped ? 'bg-slate-50' : ''
-                    }`}
-                  >
-                    {day.skipped ? (
-                      <div className="flex min-h-[52px] items-center justify-center rounded border border-dashed border-slate-200 bg-slate-100 px-2 text-[10px] text-slate-400">
-                        —
-                      </div>
-                    ) : (
-                      <MealCell
-                        label={slot.label}
-                        value={day.meals[slot.key]}
-                        disabled={isPublished}
-                        onChange={(v) => updateMealCell(dayIdx, slot.key, v)}
-                      />
-                    )}
-                  </td>
-                ))}
+                {visibleColumns.map((day, localIdx) => {
+                  const abs = absoluteDayIndex(localIdx)
+                  return (
+                    <td
+                      key={`${slot.key}-${abs}`}
+                      className={`min-w-[118px] border-r border-emerald-100 p-1.5 last:border-r-0 ${
+                        day?.skipped ? 'bg-slate-50' : ''
+                      }`}
+                    >
+                      {!day || day.skipped ? (
+                        <div className="flex min-h-[48px] items-center justify-center rounded border border-dashed border-slate-200 bg-slate-100 text-[10px] text-slate-400">
+                          —
+                        </div>
+                      ) : (
+                        <MealCell
+                          label={slot.label}
+                          value={day.meals[slot.key]}
+                          disabled={isPublished}
+                          onChange={(v) => updateMealCell(abs, slot.key, v)}
+                        />
+                      )}
+                    </td>
+                  )
+                })}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {!isPublished && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-100 bg-emerald-50/40 px-4 py-2 text-[10px] text-slate-600">
+          <span>
+            Week {weekPage + 1} · <span className="font-semibold text-emerald-800">{activeDays}</span> active
+            days in plan
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              ensureDaysThrough(days.length + WEEK_DAYS - 1)
+              setWeekPage((p) => p + 1)
+            }}
+            disabled={days.length >= 31}
+            className="font-semibold text-emerald-700 hover:underline disabled:opacity-40"
+          >
+            + Add another week
+          </button>
+        </div>
+      )}
 
       {actionError && (
         <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">{actionError}</div>
@@ -726,7 +899,7 @@ function PlanBuilder({
                 type="button"
                 onClick={handleSave}
                 disabled={saving || publishing || templating}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 Save Diet Plan
@@ -735,7 +908,7 @@ function PlanBuilder({
                 type="button"
                 onClick={handleCreateTemplate}
                 disabled={templating || saving || publishing}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
                 Create Template
@@ -744,7 +917,7 @@ function PlanBuilder({
                 type="button"
                 onClick={handlePublish}
                 disabled={publishing || saving || templating}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-8 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
               >
                 {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                 Publish to Client
