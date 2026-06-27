@@ -212,10 +212,10 @@ export default function NutritionistClientProfileClient({
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row">
-        {/* Client section nav */}
-        <nav className="border-b border-emerald-100 bg-white lg:w-52 lg:shrink-0 lg:border-b-0 lg:border-r">
-          <div className="flex gap-1 overflow-x-auto p-2 lg:flex-col lg:gap-0.5 lg:p-3 scrollbar-hide">
+      <div className="flex flex-col">
+        {/* Client section nav — always horizontal (calendar is column-based) */}
+        <nav className="border-b border-emerald-100 bg-white">
+          <div className="flex gap-1 overflow-x-auto p-2 scrollbar-hide">
             {tabs.map(({ id, label, Icon }) => {
               const active = tab === id
               return (
@@ -223,9 +223,9 @@ export default function NutritionistClientProfileClient({
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`flex shrink-0 items-center gap-2.5 rounded-xl px-4 py-2.5 text-left text-sm font-semibold transition lg:w-full ${
+                  className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
                     active ? portal.clientNavActive : portal.clientNavIdle
-                  } ${active ? '' : 'lg:text-slate-600'}`}
+                  }`}
                 >
                   <Icon size={18} className={active ? 'text-emerald-600' : 'text-slate-400'} aria-hidden />
                   {label}
@@ -236,7 +236,7 @@ export default function NutritionistClientProfileClient({
         </nav>
 
         {/* Main content */}
-        <div className="min-w-0 flex-1 p-4 md:p-6">
+        <div className={`min-w-0 flex-1 ${tab === 'mealPlan' ? 'p-0' : 'p-4 md:p-6'}`}>
           {tab === 'overview' && (
             <div className="space-y-6">
               {pinned ? (
@@ -526,8 +526,7 @@ export default function NutritionistClientProfileClient({
           )}
 
           {tab === 'mealPlan' && (
-            <div className="-mx-4 md:-mx-6">
-              <NutritionistMealPlanTab
+            <NutritionistMealPlanTab
               clientId={clientId}
               clientEmail={client.email.toLowerCase()}
               clientName={client.name}
@@ -537,8 +536,7 @@ export default function NutritionistClientProfileClient({
                 progressLogs: bundle.progressLogs,
                 detailedAssessment: bundle.detailedAssessment,
               }}
-              />
-            </div>
+            />
           )}
 
           {tab === 'dietPlan' && (

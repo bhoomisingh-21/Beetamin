@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
@@ -610,7 +610,7 @@ function PlanBuilder({
   })
 
   return (
-    <div className="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-none border-0 border-t border-emerald-200 bg-white shadow-sm md:rounded-xl md:border">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 bg-slate-50 px-4 py-3">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
@@ -660,201 +660,184 @@ function PlanBuilder({
         </div>
       </div>
 
-      {/* Horizontal calendar grid */}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-emerald-200 bg-white">
-              {/* Sticky left: week nav + copy actions */}
-              <th className="sticky left-0 z-30 w-[148px] min-w-[148px] border-r border-emerald-200 bg-white p-2 align-top">
-                <div className="flex items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-1 py-1.5">
-                  <button
-                    type="button"
-                    onClick={goPrevWeek}
-                    disabled={!canGoPrevWeek}
-                    className="rounded p-1 text-emerald-700 hover:bg-white disabled:opacity-30"
-                    aria-label="Previous week"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <span className="min-w-[72px] text-center text-[10px] font-bold text-emerald-900">
-                    {weekRangeLabel}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={goNextWeek}
-                    disabled={!canGoNextWeek}
-                    className="rounded p-1 text-emerald-700 hover:bg-white disabled:opacity-30"
-                    aria-label="Next week"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-                {!isPublished && (
-                  <div className="mt-2 space-y-1.5">
-                    <div className="space-y-1">
-                      <select
-                        value={templateId}
-                        onChange={(e) => setTemplateId(e.target.value)}
-                        className="w-full rounded-lg border border-emerald-200 bg-white px-2 py-1 text-[10px] text-slate-700"
-                      >
-                        <option value="">Template…</option>
-                        {otherPlans.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.title}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => void copyFromTemplate()}
-                        disabled={copyingTemplate || !templateId}
-                        className="w-full rounded-lg bg-emerald-600 px-2 py-1.5 text-[10px] font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
-                      >
-                        {copyingTemplate ? 'Copying…' : 'Copy from template'}
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={copyPreviousWeek}
-                      disabled={weekPage === 0}
-                      className="w-full rounded-lg bg-emerald-600 px-2 py-1.5 text-[10px] font-bold text-white hover:bg-emerald-500 disabled:opacity-40"
-                    >
-                      Copy previous week
-                    </button>
-                  </div>
-                )}
-              </th>
+      {/* Horizontal week bar */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-emerald-200 bg-emerald-50/50 px-4 py-3">
+        <div className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-white px-2 py-1">
+          <button
+            type="button"
+            onClick={goPrevWeek}
+            disabled={!canGoPrevWeek}
+            className="rounded p-1 text-emerald-700 hover:bg-emerald-50 disabled:opacity-30"
+            aria-label="Previous week"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <span className="min-w-[88px] text-center text-xs font-bold text-emerald-900">{weekRangeLabel}</span>
+          <button
+            type="button"
+            onClick={goNextWeek}
+            disabled={!canGoNextWeek}
+            className="rounded p-1 text-emerald-700 hover:bg-emerald-50 disabled:opacity-30"
+            aria-label="Next week"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
 
-              {/* Day column headers */}
-              {visibleColumns.map((d, localIdx) => {
-                const abs = absoluteDayIndex(localIdx)
-                const date = planDates[abs]
-                return (
-                  <th
-                    key={`hdr-${abs}`}
-                    className={`min-w-[118px] border-r border-emerald-100 p-2 text-left align-top last:border-r-0 ${
-                      d?.skipped ? 'bg-slate-50' : 'bg-white'
+        {!isPublished && (
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              className="rounded-lg border border-emerald-200 bg-white px-2 py-1.5 text-xs text-slate-700"
+            >
+              <option value="">Choose template…</option>
+              {otherPlans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void copyFromTemplate()}
+              disabled={copyingTemplate || !templateId}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
+            >
+              {copyingTemplate ? 'Copying…' : 'Copy from template'}
+            </button>
+            <button
+              type="button"
+              onClick={copyPreviousWeek}
+              disabled={weekPage === 0}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40"
+            >
+              Copy previous week
+            </button>
+          </div>
+        )}
+
+        <span className="ml-auto text-[10px] text-slate-500">
+          Week {weekPage + 1} · scroll → to see all 7 days
+        </span>
+      </div>
+
+      {/* Days as columns (horizontal calendar) */}
+      <div className="overflow-x-auto overscroll-x-contain">
+        <div
+          className="grid min-w-[1080px] border-b border-emerald-200"
+          style={{ gridTemplateColumns: `132px repeat(${WEEK_DAYS}, minmax(128px, 1fr))` }}
+        >
+          {/* Corner */}
+          <div className="sticky left-0 z-20 border-r border-emerald-200 bg-emerald-50/80 px-2 py-2 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+            Meal time
+          </div>
+
+          {/* Day headers — one column each, left → right */}
+          {visibleColumns.map((d, localIdx) => {
+            const abs = absoluteDayIndex(localIdx)
+            const date = planDates[abs]
+            return (
+              <div
+                key={`hdr-${abs}`}
+                className={`border-r border-emerald-100 p-2 last:border-r-0 ${
+                  d?.skipped ? 'bg-slate-50' : 'bg-white'
+                }`}
+              >
+                {date ? (
+                  <p className="text-[10px] font-bold leading-tight text-emerald-900">
+                    {formatGridDayColumn(date)}
+                  </p>
+                ) : (
+                  <p className="text-[10px] font-bold text-emerald-900">Day {abs + 1}</p>
+                )}
+                {!isPublished && d && (
+                  <input
+                    type="date"
+                    value={d.plan_date ?? ''}
+                    onChange={(e) => updateDayDate(abs, e.target.value)}
+                    className="mt-1 w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-[9px] focus:border-emerald-400 focus:outline-none"
+                  />
+                )}
+                {!isPublished && d && (
+                  <button
+                    type="button"
+                    onClick={() => toggleSkipDay(abs)}
+                    className={`mt-1 w-full rounded px-1.5 py-0.5 text-[9px] font-bold ${
+                      d.skipped ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-emerald-800'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-1">
-                      <div className="min-w-0 flex-1">
-                        {date ? (
-                          <p className="text-[10px] font-bold leading-tight text-emerald-900">
-                            {formatGridDayColumn(date)}
-                          </p>
-                        ) : (
-                          <p className="text-[10px] font-bold text-emerald-900">Day {abs + 1}</p>
-                        )}
-                        {!isPublished && d && (
-                          <input
-                            type="date"
-                            value={d.plan_date ?? ''}
-                            onChange={(e) => updateDayDate(abs, e.target.value)}
-                            className="mt-1 w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-[9px] focus:border-emerald-400 focus:outline-none"
-                          />
-                        )}
-                      </div>
-                    </div>
+                    {d.skipped ? 'Enable' : 'Skip'}
+                  </button>
+                )}
+                {d?.skipped ? (
+                  <div className="mt-2 rounded border border-dashed border-slate-300 bg-slate-100 p-2 text-center text-[9px] text-slate-500">
+                    Day off
+                  </div>
+                ) : (
+                  <div className="mt-2 rounded border border-rose-200 bg-rose-50/90 p-2">
+                    <p className="font-bold text-rose-900">
+                      {targetCalories.toLocaleString('en-IN')} Kcal
+                    </p>
+                    <p className="mt-1 text-[9px] text-slate-600">
+                      C {dailyMacros.carbs} · F {dailyMacros.fat} · P {dailyMacros.protein}
+                    </p>
+                    <p className="mt-1 text-[9px] text-slate-500">Eaten: 0 Kcal</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
 
-                    {!isPublished && d && (
-                      <button
-                        type="button"
-                        onClick={() => toggleSkipDay(abs)}
-                        className={`mt-1.5 w-full rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                          d.skipped
-                            ? 'bg-slate-200 text-slate-600'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {d.skipped ? 'Enable day' : 'Skip day'}
-                      </button>
-                    )}
-
-                    {d?.skipped ? (
-                      <div className="mt-2 rounded border border-dashed border-slate-300 bg-slate-100 p-2 text-center">
-                        <p className="text-[9px] font-semibold text-slate-500">Day off</p>
+          {/* Meal rows — label in col 1, meals across days */}
+          {MEAL_SLOT_META.map((slot) => (
+            <Fragment key={slot.key}>
+              <div
+                key={`${slot.key}-label`}
+                className="sticky left-0 z-20 flex items-center gap-1 border-r border-t border-emerald-200 bg-white px-2 py-2"
+              >
+                {!isPublished && (
+                  <button
+                    type="button"
+                    onClick={() => clearMealRow(slot.key)}
+                    className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                    title={`Clear ${slot.label}`}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold leading-tight text-emerald-900">{slot.label}</p>
+                  <p className="text-[9px] text-slate-400">{slot.time}</p>
+                </div>
+              </div>
+              {visibleColumns.map((day, localIdx) => {
+                const abs = absoluteDayIndex(localIdx)
+                return (
+                  <div
+                    key={`${slot.key}-${abs}`}
+                    className={`border-r border-t border-emerald-100 p-1.5 last:border-r-0 ${
+                      day?.skipped ? 'bg-slate-50' : 'bg-white'
+                    }`}
+                  >
+                    {!day || day.skipped ? (
+                      <div className="flex min-h-[48px] items-center justify-center rounded border border-dashed border-slate-200 bg-slate-100 text-[10px] text-slate-400">
+                        —
                       </div>
                     ) : (
-                      <div className="mt-2 rounded border border-rose-200 bg-rose-50/90 p-2">
-                        <p className="font-bold text-rose-900">
-                          {targetCalories.toLocaleString('en-IN')} Kcal
-                        </p>
-                        <p className="mt-1 text-[9px] leading-relaxed text-slate-600">
-                          Carbs: {dailyMacros.carbs}gm | Fat: {dailyMacros.fat}gm
-                        </p>
-                        <p className="text-[9px] leading-relaxed text-slate-600">
-                          Protein: {dailyMacros.protein}gm | Fiber: {dailyMacros.fiber}gm
-                        </p>
-                        <div className="mt-1.5 rounded border border-rose-100 bg-white/80 px-1.5 py-1">
-                          <p className="text-[9px] text-slate-500">Eaten: 0 Kcal</p>
-                        </div>
-                      </div>
-                    )}
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {MEAL_SLOT_META.map((slot) => (
-              <tr key={slot.key} className="border-b border-emerald-100">
-                <td className="sticky left-0 z-20 w-[148px] min-w-[148px] border-r border-emerald-200 bg-white p-2 align-middle">
-                  <div className="flex items-center gap-1">
-                    {!isPublished && (
-                      <button
-                        type="button"
-                        onClick={() => clearMealRow(slot.key)}
-                        className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                        title={`Clear ${slot.label}`}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold leading-tight text-emerald-900">{slot.label}</p>
-                      <p className="text-[9px] text-slate-400">{slot.time}</p>
-                    </div>
-                    {!isPublished && (
-                      <button
-                        type="button"
-                        className="shrink-0 rounded p-0.5 text-emerald-600 hover:bg-emerald-50"
-                        title="Add note in cell"
-                        aria-hidden
-                      >
-                        <Plus size={12} />
-                      </button>
+                      <MealCell
+                        label={slot.label}
+                        value={day.meals[slot.key]}
+                        disabled={isPublished}
+                        onChange={(v) => updateMealCell(abs, slot.key, v)}
+                      />
                     )}
                   </div>
-                </td>
-                {visibleColumns.map((day, localIdx) => {
-                  const abs = absoluteDayIndex(localIdx)
-                  return (
-                    <td
-                      key={`${slot.key}-${abs}`}
-                      className={`min-w-[118px] border-r border-emerald-100 p-1.5 last:border-r-0 ${
-                        day?.skipped ? 'bg-slate-50' : ''
-                      }`}
-                    >
-                      {!day || day.skipped ? (
-                        <div className="flex min-h-[48px] items-center justify-center rounded border border-dashed border-slate-200 bg-slate-100 text-[10px] text-slate-400">
-                          —
-                        </div>
-                      ) : (
-                        <MealCell
-                          label={slot.label}
-                          value={day.meals[slot.key]}
-                          disabled={isPublished}
-                          onChange={(v) => updateMealCell(abs, slot.key, v)}
-                        />
-                      )}
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )
+              })}
+            </Fragment>
+          ))}
+        </div>
       </div>
 
       {!isPublished && (

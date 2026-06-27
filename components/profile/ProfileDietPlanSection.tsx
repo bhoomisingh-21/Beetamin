@@ -1,18 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  UtensilsCrossed,
-} from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, UtensilsCrossed } from 'lucide-react'
 import type { DietPlanCustomerDTO } from '@/lib/booking-types'
 import type { MealPlanCustomerDTO, MealPlanDay } from '@/lib/meal-plan-types'
 import { MEAL_SLOT_META } from '@/lib/meal-plan-types'
-import { formatGridDayHeader, parseMealPlanMeta } from '@/lib/meal-plan-meta'
+import {
+  datesForPlanDays,
+  estimateDailyMacros,
+  formatGridDayColumn,
+  formatWeekRangeLabel,
+  parseMealPlanMeta,
+} from '@/lib/meal-plan-meta'
 import { profileCard } from '@/components/profile/profile-dark-styles'
+
+const WEEK_DAYS = 7
 
 function formatReportDay(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -32,7 +35,7 @@ export function ProfileDietPlanSection({
         <UtensilsCrossed className="mx-auto text-emerald-500/60" size={36} />
         <p className="mt-4 font-semibold text-[#F0F4F8]">No diet plan yet</p>
         <p className="mt-2 text-sm text-[#8B9AB0]">
-          When your nutritionist publishes your plan, it will appear here with day-by-day meals.
+          When your nutritionist publishes your plan, it will appear here as a weekly calendar.
         </p>
       </div>
     )
@@ -87,10 +90,26 @@ function ProfileMealPlanCard({
   showPlanLabel: boolean
   index: number
 }) {
-  const [activeDayIdx, setActiveDayIdx] = useState(0)
+  const [weekPage, setWeekPage] = useState(0)
   const days: MealPlanDay[] = plan.days ?? []
-  const currentDay = days[activeDayIdx]
   const planNote = parseMealPlanMeta(plan.nutritionist_notes).note
+  const targetCalories = parseMealPlanMeta(plan.nutritionist_notes).targetCalories ?? 1800
+  const dailyMacros = estimateDailyMacros(targetCalories)
+  const planDates = useMemo(
+    () => datesForPlanDays(days, new Date(plan.published_at)),
+    [days, plan.published_at],
+  )
+
+  const weekStart = weekPage * WEEK_DAYS
+  const weekEnd = weekStart + WEEK_DAYS - 1
+  const weekRangeLabel =
+    planDates[weekStart] && planDates[Math.min(weekEnd, days.length - 1)]
+      ? formatWeekRangeLabel(planDates[weekStart], planDates[Math.min(weekEnd, days.length - 1)])
+      : '—'
+
+  const visibleColumns = Array.from({ length: WEEK_DAYS }, (_, i) => days[weekStart + i] ?? null)
+  const canGoPrev = weekPage > 0
+  const canGoNext = weekEnd < days.length - 1
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -103,7 +122,7 @@ function ProfileMealPlanCard({
       transition={{ delay: index * 0.05 }}
       className={`${profileCard} overflow-hidden p-0`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-500/15 bg-emerald-500/10 px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-500/15 bg-emerald-500/10 px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <UtensilsCrossed className="shrink-0 text-emerald-400" size={20} />
           <div>
@@ -120,122 +139,116 @@ function ProfileMealPlanCard({
       </div>
 
       {planNote ? (
-        <div className="border-b border-white/[0.06] bg-[#060910] px-6 py-3">
+        <div className="border-b border-white/[0.06] bg-[#060910] px-4 py-3 sm:px-6">
           <p className="text-sm italic text-[#8B9AB0]">📌 {planNote}</p>
         </div>
       ) : null}
 
-      {days.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5 border-b border-white/[0.06] px-6 py-3">
-          {days.map((d, idx) => {
-            const label = d.plan_date
-              ? formatGridDayHeader(new Date(`${d.plan_date}T12:00:00`))
-              : `Day ${d.day}`
-            return (
-              <button
-                key={`${d.day}-${idx}`}
-                type="button"
-                onClick={() => setActiveDayIdx(idx)}
-                className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                  idx === activeDayIdx
-                    ? d.skipped
-                      ? 'bg-slate-500 text-white'
-                      : 'bg-emerald-500 text-black'
-                    : 'border border-white/10 text-[#8B9AB0] hover:border-emerald-500/30 hover:text-[#F0F4F8]'
-                }`}
-              >
-                {label}
-                {d.skipped ? ' · Off' : ''}
-              </button>
-            )
-          })}
-        </div>
-      ) : null}
-
-      {currentDay ? (
-        currentDay.skipped ? (
-          <div className="px-6 py-10 text-center">
-            <p className="text-sm font-semibold text-[#8B9AB0]">Rest day</p>
-            <p className="mt-1 text-xs text-[#6B7280]">No meals planned for this day.</p>
-          </div>
-        ) : (
-          <div className="px-6 py-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-bold text-[#F0F4F8]">
-                {currentDay.plan_date
-                  ? formatGridDayHeader(new Date(`${currentDay.plan_date}T12:00:00`))
-                  : `Day ${currentDay.day}`}
-              </h3>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveDayIdx((p) => Math.max(0, p - 1))}
-                  disabled={activeDayIdx === 0}
-                  className="rounded-lg border border-white/10 p-1.5 text-[#8B9AB0] hover:text-[#F0F4F8] disabled:opacity-30"
-                >
-                  <ChevronLeft size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveDayIdx((p) => Math.min(days.length - 1, p + 1))}
-                  disabled={activeDayIdx === days.length - 1}
-                  className="rounded-lg border border-white/10 p-1.5 text-[#8B9AB0] hover:text-[#F0F4F8] disabled:opacity-30"
-                >
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {MEAL_SLOT_META.map((slot) => {
-                const text = currentDay.meals[slot.key]
-                if (!text) return null
-                return (
-                  <div
-                    key={slot.key}
-                    className="flex gap-3 rounded-2xl border border-white/[0.08] bg-[#060910] px-4 py-3"
-                  >
-                    <span className="mt-0.5 shrink-0 text-xl">{slot.emoji}</span>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#8B9AB0]">
-                        {slot.label}{' '}
-                        <span className="font-normal normal-case tracking-normal text-[#6B7280]">
-                          ({slot.time})
-                        </span>
-                      </p>
-                      <p className="mt-1 text-sm leading-relaxed text-[#F0F4F8]">{text}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {(currentDay.water_target || currentDay.day_notes) && (
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {currentDay.water_target ? (
-                  <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
-                    <p className="mb-1 text-xs font-bold uppercase tracking-widest text-blue-400">
-                      💧 Water target
-                    </p>
-                    <p className="text-sm text-[#F0F4F8]">{currentDay.water_target}</p>
-                  </div>
-                ) : null}
-                {currentDay.day_notes ? (
-                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                    <p className="mb-1 text-xs font-bold uppercase tracking-widest text-amber-400">
-                      📌 Day note
-                    </p>
-                    <p className="text-sm text-[#F0F4F8]">{currentDay.day_notes}</p>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </div>
-        )
-      ) : (
+      {days.length === 0 ? (
         <div className="px-6 py-8 text-center text-sm text-[#8B9AB0]">
           Your nutritionist is preparing your meal plan.
         </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#0a1018] px-4 py-3 sm:px-6">
+            <button
+              type="button"
+              onClick={() => setWeekPage((p) => p - 1)}
+              disabled={!canGoPrev}
+              className="rounded-lg border border-white/10 p-1.5 text-[#8B9AB0] hover:text-[#F0F4F8] disabled:opacity-30"
+              aria-label="Previous week"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-xs font-bold text-emerald-400">{weekRangeLabel}</span>
+            <button
+              type="button"
+              onClick={() => setWeekPage((p) => p + 1)}
+              disabled={!canGoNext}
+              className="rounded-lg border border-white/10 p-1.5 text-[#8B9AB0] hover:text-[#F0F4F8] disabled:opacity-30"
+              aria-label="Next week"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <span className="ml-auto text-[10px] text-[#6B7280]">Swipe or scroll → for all days</span>
+          </div>
+
+          <div className="overflow-x-auto overscroll-x-contain">
+            <div
+              className="grid min-w-[960px]"
+              style={{ gridTemplateColumns: `120px repeat(${WEEK_DAYS}, minmax(120px, 1fr))` }}
+            >
+              <div className="sticky left-0 z-10 border-b border-r border-white/[0.08] bg-[#0F1623] px-2 py-2 text-[10px] font-bold uppercase tracking-wide text-[#8B9AB0]">
+                Meal
+              </div>
+              {visibleColumns.map((d, localIdx) => {
+                const abs = weekStart + localIdx
+                const date = planDates[abs]
+                return (
+                  <div
+                    key={`hdr-${abs}`}
+                    className={`border-b border-r border-white/[0.06] p-2 last:border-r-0 ${
+                      d?.skipped ? 'bg-[#0a0e14]' : 'bg-[#0F1623]'
+                    }`}
+                  >
+                    {date ? (
+                      <p className="text-[10px] font-bold text-emerald-400">{formatGridDayColumn(date)}</p>
+                    ) : (
+                      <p className="text-[10px] font-bold text-[#F0F4F8]">Day {abs + 1}</p>
+                    )}
+                    {d?.skipped ? (
+                      <p className="mt-2 text-[9px] text-[#6B7280]">Rest day</p>
+                    ) : (
+                      <div className="mt-2 rounded border border-rose-500/20 bg-rose-500/10 p-2">
+                        <p className="text-[10px] font-bold text-rose-200">
+                          {targetCalories.toLocaleString('en-IN')} Kcal
+                        </p>
+                        <p className="mt-1 text-[9px] text-[#8B9AB0]">
+                          C {dailyMacros.carbs} · F {dailyMacros.fat} · P {dailyMacros.protein}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {MEAL_SLOT_META.map((slot) => (
+                <Fragment key={slot.key}>
+                  <div className="sticky left-0 z-10 border-r border-t border-white/[0.08] bg-[#0F1623] px-2 py-2">
+                    <p className="text-[10px] font-bold text-[#F0F4F8]">{slot.label}</p>
+                    <p className="text-[9px] text-[#6B7280]">{slot.time}</p>
+                  </div>
+                  {visibleColumns.map((day, localIdx) => {
+                    const abs = weekStart + localIdx
+                    const text = day?.meals[slot.key]
+                    return (
+                      <div
+                        key={`${slot.key}-${abs}`}
+                        className={`border-r border-t border-white/[0.06] p-1.5 last:border-r-0 ${
+                          day?.skipped ? 'bg-[#0a0e14]' : 'bg-[#060910]'
+                        }`}
+                      >
+                        {!day || day.skipped ? (
+                          <div className="flex min-h-[44px] items-center justify-center text-[10px] text-[#4B5563]">
+                            —
+                          </div>
+                        ) : text ? (
+                          <div className="min-h-[44px] rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1.5 text-[11px] leading-snug text-[#F0F4F8]">
+                            {text}
+                          </div>
+                        ) : (
+                          <div className="flex min-h-[44px] items-center justify-center text-[10px] text-[#4B5563]">
+                            —
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </Fragment>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </motion.div>
   )
