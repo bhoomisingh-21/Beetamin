@@ -222,7 +222,6 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                     </div>
                     <div>
                       <p className={`font-bold ${portal.textH}`}>{a.clients.name}</p>
-                      <p className={`text-xs ${portal.textMuted}`}>{a.clients.email}</p>
                       <p className="mt-1 text-[11px] font-semibold text-emerald-700">
                         Session {a.session_number} of {sessionsTotal(a.clients)}
                       </p>

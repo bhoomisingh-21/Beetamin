@@ -22,6 +22,7 @@ export type ClientRow = {
   assessment_meta?: unknown
   height_cm?: number | null
   goals_progress?: Record<string, boolean> | null
+  nutritionist_hra?: unknown
 }
 
 export type CreateClientProfileResult =

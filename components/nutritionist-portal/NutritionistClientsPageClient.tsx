@@ -59,11 +59,7 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
     return clients.filter((c) => {
       if (filter !== 'all' && c.status !== filter) return false
       if (!needle) return true
-      return (
-        c.name.toLowerCase().includes(needle) ||
-        c.email.toLowerCase().includes(needle) ||
-        (c.phone || '').toLowerCase().includes(needle)
-      )
+      return c.name.toLowerCase().includes(needle)
     })
   }, [clients, q, filter])
 
@@ -88,7 +84,7 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search name or email…"
+            placeholder="Search by name…"
             className={portal.inputSearch}
           />
         </div>
@@ -138,8 +134,9 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
                   </div>
                   <div className="min-w-0">
                     <p className={`text-base font-bold ${portal.textH}`}>{c.name}</p>
-                    <p className={`text-[13px] ${portal.textMuted}`}>{c.email}</p>
-                    {c.phone ? <p className={`text-[13px] ${portal.textMuted}`}>{c.phone}</p> : null}
+                    {c.assessment_goal ? (
+                      <p className={`mt-1 text-[13px] ${portal.textMuted}`}>{c.assessment_goal}</p>
+                    ) : null}
                   </div>
                 </div>
 

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { CheckCircle, ChevronLeft, Loader2 } from 'lucide-react'
+import { CheckCircle, Loader2 } from 'lucide-react'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
 import { completePortalAppointment } from '@/lib/nutritionist-portal-actions'
 import { CompleteSessionModal } from '@/components/nutritionist-portal/CompleteSessionModal'
@@ -86,17 +86,6 @@ export default function NutritionistAppointmentsPageClient({
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-        <Link href="/nutritionist" className={portal.backBtn}>
-          <ChevronLeft size={18} aria-hidden />
-          Portal home
-        </Link>
-        <Link href="/nutritionist-dashboard" className={portal.backBtn}>
-          <ChevronLeft size={18} aria-hidden />
-          Quick dashboard
-        </Link>
-      </div>
-
       {toast && (
         <div className={portal.toast}>
           {toast}
@@ -161,7 +150,9 @@ export default function NutritionistAppointmentsPageClient({
                 </td>
                 <td className="max-w-[200px] px-4 py-4">
                   <div className={`font-semibold ${portal.textH}`}>{a.clients.name}</div>
-                  <div className={`truncate text-xs ${portal.textMuted}`}>{a.clients.email}</div>
+                  <div className={`truncate text-xs ${portal.textMuted}`}>
+                    Session {a.session_number} of {a.clients.sessions_used + a.clients.sessions_remaining}
+                  </div>
                 </td>
                 <td className="whitespace-nowrap px-4 py-4">
                   <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
@@ -221,7 +212,9 @@ export default function NutritionistAppointmentsPageClient({
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className={`font-bold ${portal.textH}`}>{a.clients.name}</p>
-                <p className={`text-xs ${portal.textMuted}`}>{a.clients.email}</p>
+                <p className={`text-xs ${portal.textMuted}`}>
+                  Session {a.session_number} · {formatDateShort(a.scheduled_date)}
+                </p>
               </div>
               {a.status === 'completed' ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">

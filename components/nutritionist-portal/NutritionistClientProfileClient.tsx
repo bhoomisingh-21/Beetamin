@@ -6,6 +6,7 @@ import { useMemo, useState, useTransition } from 'react'
 import {
   Activity,
   ChevronRight,
+  FileHeart,
   FileText,
   FolderOpen,
   LayoutDashboard,
@@ -26,6 +27,7 @@ import { NutritionistMealPlanTab } from '@/components/nutritionist-portal/Nutrit
 import { NutritionistProgressCharts } from '@/components/nutritionist/NutritionistProgressCharts'
 import { NutritionistWeightSparkline } from '@/components/nutritionist/NutritionistWeightSparkline'
 import { ClientProfileHeader } from '@/components/nutritionist-portal/ClientProfileHeader'
+import { NutritionistHraTab } from '@/components/nutritionist-portal/NutritionistHraTab'
 import { toggleNutritionistNotePin } from '@/lib/nutritionist-portal-actions'
 import { portal } from '@/components/nutritionist-portal/portal-theme'
 
@@ -118,7 +120,7 @@ function deriveProgressStats(bundle: PortalClientBundle) {
   }
 }
 
-type Tab = 'overview' | 'notes' | 'mealPlan' | 'dietPlan' | 'documents' | 'progress'
+type Tab = 'hra' | 'overview' | 'notes' | 'mealPlan' | 'dietPlan' | 'documents' | 'progress'
 
 export default function NutritionistClientProfileClient({
   bundle,
@@ -130,7 +132,7 @@ export default function NutritionistClientProfileClient({
   const router = useRouter()
   const [pinBusy, startPin] = useTransition()
   const [composerKick, setComposerKick] = useState(0)
-  const [tab, setTab] = useState<Tab>('overview')
+  const [tab, setTab] = useState<Tab>('hra')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [notesMount, setNotesMount] = useState<{ key: number; session: string }>({
     key: 0,
@@ -163,7 +165,8 @@ export default function NutritionistClientProfileClient({
   }, [appointments])
 
   const tabs: { id: Tab; label: string; Icon: typeof LayoutDashboard }[] = [
-    { id: 'overview', label: 'Profile', Icon: LayoutDashboard },
+    { id: 'hra', label: 'HRA Form', Icon: FileHeart },
+    { id: 'overview', label: 'Summary', Icon: LayoutDashboard },
     { id: 'mealPlan', label: 'Diet Plan', Icon: UtensilsCrossed },
     { id: 'notes', label: 'Notes', Icon: StickyNote },
     { id: 'dietPlan', label: 'PDF Plans', Icon: FileText },
@@ -180,32 +183,28 @@ export default function NutritionistClientProfileClient({
 
   return (
     <div className="-mx-4 md:-mx-6 lg:-mx-8">
-      <ClientProfileHeader bundle={bundle} clientId={clientId} />
+      <ClientProfileHeader bundle={bundle} clientId={clientId} onEditHra={() => setTab('hra')} />
 
-      {firstSessionEmpty && tab === 'overview' && (
+      {firstSessionEmpty && tab === 'hra' && (
         <div className="mx-4 mt-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white p-[1px] shadow-sm md:mx-6 lg:mx-8">
           <div className="rounded-2xl bg-white px-6 py-8 text-center sm:px-10">
             <p className={`text-xl font-black ${portal.textH}`}>👋 First session with {client.name}</p>
             <p className={`mx-auto mt-3 max-w-lg text-sm ${portal.textMuted}`}>
-              Get started by adding your initial notes or uploading their intake form.
+              Start with the HRA form — capture health details, then add notes or upload documents.
             </p>
             <div className="mx-auto mt-6 grid max-w-lg grid-cols-1 gap-3 sm:grid-cols-2">
+              <button type="button" onClick={() => setTab('hra')} className={portal.btnOutline}>
+                📋 Complete HRA Form
+              </button>
               <button
                 type="button"
                 onClick={() => {
                   setTab('notes')
                   setComposerKick((k) => k + 1)
                 }}
-                className={portal.btnOutline}
-              >
-                📝 Add First Note
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab('documents')}
                 className={portal.btnGhost}
               >
-                📎 Upload Document
+                📝 Add First Note
               </button>
             </div>
           </div>
@@ -237,6 +236,10 @@ export default function NutritionistClientProfileClient({
 
         {/* Main content */}
         <div className={`min-w-0 flex-1 ${tab === 'mealPlan' ? 'p-0' : 'p-4 md:p-6'}`}>
+          {tab === 'hra' && (
+            <NutritionistHraTab clientId={clientId} clientName={client.name} bundle={bundle} />
+          )}
+
           {tab === 'overview' && (
             <div className="space-y-6">
               {pinned ? (

@@ -94,7 +94,7 @@ function NutritionistLogin({ onSwitchToUser }: { onSwitchToUser: () => void }) {
       setError(errJson.error || 'Could not complete sign-in. Try again.')
       return
     }
-    router.push('/nutritionist-dashboard')
+    router.push('/nutritionist')
   }
 
   async function handleSignUp(e: React.FormEvent) {

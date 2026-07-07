@@ -346,7 +346,7 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
     if (clerkUid) {
       const { data: daUser } = await supabaseAdmin
         .from('detailed_assessments')
-        .select('id, user_id, email, created_at, diet_type')
+        .select('id, user_id, created_at, diet_type, exercise_level, physical_symptoms, energy_mood, sleep_quality, digestion, sun_exposure, water_intake, menstrual_health')
         .eq('user_id', clerkUid)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -356,7 +356,7 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
     if (!detailedAssessment) {
       const { data: daEmail } = await supabaseAdmin
         .from('detailed_assessments')
-        .select('id, user_id, email, created_at, diet_type')
+        .select('id, user_id, created_at, diet_type, exercise_level, physical_symptoms, energy_mood, sleep_quality, digestion, sun_exposure, water_intake, menstrual_health')
         .eq('email', email)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -400,6 +400,59 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
   } catch (e) {
     console.error('[getNutritionistClientBundle]', e)
     return null
+  }
+}
+
+export async function saveNutritionistClientHra(
+  clientId: string,
+  form: import('@/lib/nutritionist-hra-types').NutritionistHraForm,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const nutritionist = await portalNutritionist()
+    if (!nutritionist) return { ok: false, error: 'Unauthorized' }
+
+    const owned = await nutritionistOwnsClient(nutritionist.id, clientId)
+    if (!owned) return { ok: false, error: 'Client not found' }
+
+    const hraPayload = {
+      gender: form.gender?.trim() || '',
+      age: form.age ?? null,
+      actual_weight_kg: form.actual_weight_kg ?? null,
+      desired_weight_kg: form.desired_weight_kg ?? null,
+      height_cm: form.height_cm ?? null,
+      country: form.country?.trim() || 'India',
+      community: form.community?.trim() || '',
+      activity_level: form.activity_level?.trim() || '',
+      goal: form.goal?.trim() || '',
+      food_preference: form.food_preference?.trim() || '',
+      allergies: form.allergies?.trim() || '',
+      diseases: form.diseases?.trim() || '',
+      clinical_notes: form.clinical_notes?.trim() || '',
+      updated_at: new Date().toISOString(),
+    }
+
+    const clientUpdates: Record<string, unknown> = {
+      nutritionist_hra: hraPayload,
+    }
+    if (form.height_cm != null && form.height_cm > 0) {
+      clientUpdates.height_cm = Math.round(form.height_cm)
+    }
+    if (form.goal?.trim()) {
+      clientUpdates.assessment_goal = form.goal.trim()
+    }
+
+    const { error } = await supabaseAdmin.from('clients').update(clientUpdates).eq('id', clientId)
+
+    if (error) {
+      console.error('[saveNutritionistClientHra]', error)
+      return { ok: false, error: error.message }
+    }
+
+    revalidatePath(`/nutritionist/clients/${clientId}`)
+    return { ok: true }
+  } catch (e) {
+    console.error('[saveNutritionistClientHra]', e)
+    return { ok: false, error: 'Failed to save HRA' }
   }
 }
 

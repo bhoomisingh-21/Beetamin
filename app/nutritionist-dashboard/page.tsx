@@ -169,6 +169,11 @@ function ActionModal({
 // ── Main dashboard ─────────────────────────────────────────────────────────────
 export default function NutritionistDashboard() {
   const router = useRouter()
+
+  useEffect(() => {
+    router.replace('/nutritionist')
+  }, [router])
+
   const [nutEmail, setNutEmail] = useState<string | null>(null)
   const [dashboard, setDashboard] = useState<DashboardData>(null)
   const [isLoading, setIsLoading] = useState(true)

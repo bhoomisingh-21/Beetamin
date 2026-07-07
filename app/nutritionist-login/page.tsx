@@ -18,7 +18,7 @@ export default function NutritionistLoginPage() {
     if (!isLoaded || !user) return
     const userEmail = user.primaryEmailAddress?.emailAddress ?? ''
     if (ALLOWED_NUTRITIONIST_EMAILS.includes(userEmail.toLowerCase().trim())) {
-      router.replace('/nutritionist-dashboard')
+      router.replace('/nutritionist')
     } else {
       // Signed in, but not a nutritionist
       router.replace('/')
@@ -172,7 +172,7 @@ export default function NutritionistLoginPage() {
                 Signing in as: <span className="font-bold">{email}</span>
               </div>
               <SignIn
-                forceRedirectUrl="/nutritionist-dashboard"
+                forceRedirectUrl="/nutritionist"
                 appearance={{
                   layout: {
                     logoPlacement: 'none',

@@ -127,7 +127,7 @@ export default clerkMiddleware(async (auth, req) => {
       path.startsWith('/api/') ||
       path.startsWith('/_next/')
     if (!allowed) {
-      return NextResponse.redirect(new URL('/nutritionist-dashboard', req.url))
+      return NextResponse.redirect(new URL('/nutritionist', req.url))
     }
     // Skip Clerk auth for nutritionist-owned paths
     return

@@ -85,9 +85,16 @@ export type PortalClientBundle = {
   detailedAssessment: {
     id: string
     user_id: string
-    email: string | null
     created_at: string
     diet_type?: string | null
+    exercise_level?: string | null
+    physical_symptoms?: string[] | null
+    energy_mood?: string | null
+    sleep_quality?: string | null
+    digestion?: string | null
+    sun_exposure?: string | null
+    water_intake?: string | null
+    menstrual_health?: string | null
   } | null
   progressLogs: ProgressLogRow[]
   visibleNotesCount: number

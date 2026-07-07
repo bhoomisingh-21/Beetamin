@@ -81,9 +81,6 @@ export function NutritionistPortalNavbar() {
               <CalendarClock size={16} aria-hidden />
               Availability
             </Link>
-            <Link href="/nutritionist-dashboard" className="text-slate-700 hover:text-emerald-700">
-              Quick dashboard
-            </Link>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -164,10 +161,6 @@ export function NutritionistPortalNavbar() {
               <Link href={availabilityHref} className={portal.navLink} onClick={closeMenu}>
                 <CalendarClock size={20} className="text-emerald-600" aria-hidden />
                 Availability
-              </Link>
-              <Link href="/nutritionist-dashboard" className={portal.navLink} onClick={closeMenu}>
-                <Home size={20} className="text-slate-500" aria-hidden />
-                Quick dashboard
               </Link>
             </div>
           </nav>
