@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  LayoutTemplate,
   Loader2,
   Plus,
   Save,
@@ -18,7 +19,6 @@ import {
 import {
   createMealPlan,
   deleteMealPlan,
-  duplicateMealPlan,
   getMealPlan,
   listMealPlansForClient,
   publishMealPlan,
@@ -33,7 +33,8 @@ import {
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
-import type { MealPlan, MealPlanDay, MealPlanListItem } from '@/lib/meal-plan-types'
+import { MEAL_SLOT_SUGGESTIONS } from '@/lib/meal-slot-suggestions'
+import type { MealPlan, MealPlanDay, MealPlanListItem, MealSlots } from '@/lib/meal-plan-types'
 import {
   MEAL_SLOT_META,
   activePlanDayCount,
@@ -44,7 +45,25 @@ import {
 } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
-import { FoodLibraryPanel } from '@/components/nutritionist-portal/FoodLibraryPanel'
+import { listMealPlanEntries } from '@/lib/meal-plan-entry-actions'
+import {
+  entryCellKey,
+  sumDayTotals,
+  type MealPlanEntryRow,
+} from '@/lib/meal-plan-entry-types'
+import {
+  applyTemplateToMealPlan,
+  listNutritionistTemplates,
+  saveMealPlanAsTemplate,
+  TEMPLATE_CONDITION_TAGS,
+  type TemplateListItem,
+} from '@/lib/template-actions'
+import { MealPlanFoodCell } from '@/components/nutritionist-portal/MealPlanFoodCell'
+
+function isoFromPlanDate(date: Date | undefined, fallback: string): string {
+  if (!date) return fallback
+  return date.toISOString().slice(0, 10)
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -363,6 +382,54 @@ function PlanBuilder({
   )
   const [templateId, setTemplateId] = useState('')
   const [copyingTemplate, setCopyingTemplate] = useState(false)
+  const [dbTemplates, setDbTemplates] = useState<TemplateListItem[]>([])
+  const [planEntries, setPlanEntries] = useState<MealPlanEntryRow[]>([])
+  const [loadingEntries, setLoadingEntries] = useState(true)
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+  const [templateTags, setTemplateTags] = useState<string[]>(['general'])
+
+  const refreshEntries = useCallback(async () => {
+    const res = await listMealPlanEntries(initialPlan.id)
+    if (res.ok) setPlanEntries(res.entries)
+  }, [initialPlan.id])
+
+  useEffect(() => {
+    void (async () => {
+      setLoadingEntries(true)
+      await refreshEntries()
+      setLoadingEntries(false)
+    })()
+  }, [refreshEntries])
+
+  useEffect(() => {
+    void listNutritionistTemplates().then((res) => {
+      if (res.ok) setDbTemplates(res.templates)
+    })
+  }, [])
+
+  const entriesByCell = useMemo(() => {
+    const map = new Map<string, MealPlanEntryRow[]>()
+    for (const e of planEntries) {
+      const key = entryCellKey(e.entry_date, e.meal_slot)
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(e)
+    }
+    return map
+  }, [planEntries])
+
+  function setCellEntries(entryDate: string, mealSlot: string, cellEntries: MealPlanEntryRow[]) {
+    const key = entryCellKey(entryDate, mealSlot)
+    setPlanEntries((prev) => {
+      const rest = prev.filter((e) => entryCellKey(e.entry_date, e.meal_slot) !== key)
+      return [...rest, ...cellEntries]
+    })
+  }
+
+  function dayTotalsForDate(entryDate: string | undefined) {
+    if (!entryDate) return sumDayTotals([])
+    return sumDayTotals(planEntries.filter((e) => e.entry_date === entryDate))
+  }
 
   const [saving, startSave] = useTransition()
   const [publishing, startPublish] = useTransition()
@@ -478,24 +545,51 @@ function PlanBuilder({
   function handleCreateTemplate() {
     setActionError('')
     setSuccess(null)
+    setTemplateName(`${title} Template`)
+    setTemplateTags(['general'])
+    setShowSaveTemplate(true)
+  }
+
+  function submitSaveTemplate() {
+    setActionError('')
     startTemplate(async () => {
-      const saveRes = await updateMealPlan({
-        planId: initialPlan.id,
-        title,
-        nutritionist_notes: buildMetaNote() ?? undefined,
-        days,
+      const res = await saveMealPlanAsTemplate({
+        mealPlanId: initialPlan.id,
+        name: templateName,
+        conditionTags: templateTags,
+        targetKcal: targetCalories,
       })
-      if (!saveRes.ok) {
-        setActionError(saveRes.error)
-        return
-      }
-      const res = await duplicateMealPlan({ planId: initialPlan.id, title })
       if (!res.ok) {
         setActionError(res.error)
         return
       }
+      setShowSaveTemplate(false)
       setSuccess('template')
+      const list = await listNutritionistTemplates()
+      if (list.ok) setDbTemplates(list.templates)
     })
+  }
+
+  async function applySelectedTemplate() {
+    if (!templateId) {
+      setActionError('Choose a template first.')
+      return
+    }
+    const startDate = isoFromPlanDate(planDates[weekStart], todayIsoDate())
+    setActionError('')
+    setCopyingTemplate(true)
+    const res = await applyTemplateToMealPlan({
+      templateId,
+      mealPlanId: initialPlan.id,
+      startDate,
+      scaleFactor: 1,
+    })
+    setCopyingTemplate(false)
+    if (!res.ok) {
+      setActionError(res.error)
+      return
+    }
+    await refreshEntries()
   }
 
   function updateMealCell(dayIdx: number, slot: keyof MealPlanDay['meals'], value: string) {
@@ -693,20 +787,27 @@ function PlanBuilder({
               className="rounded-lg border border-emerald-200 bg-white px-2 py-1.5 text-xs text-slate-700"
             >
               <option value="">Choose template…</option>
-              {otherPlans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
+              {dbTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </select>
             <button
               type="button"
-              onClick={() => void copyFromTemplate()}
+              onClick={() => void applySelectedTemplate()}
               disabled={copyingTemplate || !templateId}
               className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-50"
             >
-              {copyingTemplate ? 'Copying…' : 'Copy from template'}
+              {copyingTemplate ? 'Applying…' : 'Apply template'}
             </button>
+            <a
+              href="/nutritionist/templates"
+              className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
+            >
+              <LayoutTemplate size={12} />
+              All templates
+            </a>
             <button
               type="button"
               onClick={copyPreviousWeek}
@@ -723,7 +824,11 @@ function PlanBuilder({
         </span>
       </div>
 
-      <FoodLibraryPanel disabled={isPublished} />
+      {loadingEntries ? (
+        <div className="flex items-center gap-2 border-b border-emerald-100 px-4 py-2 text-xs text-slate-500">
+          <Loader2 size={14} className="animate-spin" /> Loading meal foods…
+        </div>
+      ) : null}
 
       {/* Days as columns (horizontal calendar) */}
       <div className="overflow-x-auto overscroll-x-contain">
@@ -779,13 +884,26 @@ function PlanBuilder({
                   </div>
                 ) : (
                   <div className="mt-2 rounded border border-rose-200 bg-rose-50/90 p-2">
-                    <p className="font-bold text-rose-900">
-                      {targetCalories.toLocaleString('en-IN')} Kcal
-                    </p>
-                    <p className="mt-1 text-[9px] text-slate-600">
-                      C {dailyMacros.carbs} · F {dailyMacros.fat} · P {dailyMacros.protein}
-                    </p>
-                    <p className="mt-1 text-[9px] text-slate-500">Eaten: 0 Kcal</p>
+                    {(() => {
+                      const dateIso = isoFromPlanDate(date, d?.plan_date ?? todayIsoDate())
+                      const eaten = dayTotalsForDate(dateIso)
+                      return (
+                        <>
+                          <p className="font-bold text-rose-900">
+                            {Math.round(eaten.kcal).toLocaleString('en-IN')} /{' '}
+                            {targetCalories.toLocaleString('en-IN')} Kcal
+                          </p>
+                          <p className="mt-1 text-[9px] text-slate-600">
+                            C {Math.round(eaten.carbs)} · F {Math.round(eaten.fat)} · P{' '}
+                            {Math.round(eaten.protein)}
+                          </p>
+                          <p className="mt-1 text-[9px] text-slate-500">
+                            Target C {dailyMacros.carbs} · F {dailyMacros.fat} · P{' '}
+                            {dailyMacros.protein}
+                          </p>
+                        </>
+                      )
+                    })()}
                   </div>
                 )}
               </div>
@@ -816,6 +934,8 @@ function PlanBuilder({
               </div>
               {visibleColumns.map((day, localIdx) => {
                 const abs = absoluteDayIndex(localIdx)
+                const columnDate = planDates[abs]
+                const entryDateIso = isoFromPlanDate(columnDate, day?.plan_date ?? todayIsoDate())
                 return (
                   <div
                     key={`${slot.key}-${abs}`}
@@ -828,11 +948,19 @@ function PlanBuilder({
                         —
                       </div>
                     ) : (
-                      <MealCell
-                        label={slot.label}
-                        value={day.meals[slot.key]}
+                      <MealPlanFoodCell
+                        mealPlanId={initialPlan.id}
+                        entryDate={entryDateIso}
+                        mealSlot={slot.key}
+                        slotLabel={slot.label}
+                        legacyText={day.meals[slot.key]}
+                        suggestions={MEAL_SLOT_SUGGESTIONS[slot.key as keyof MealSlots]}
+                        entries={entriesByCell.get(entryCellKey(entryDateIso, slot.key)) ?? []}
                         disabled={isPublished}
-                        onChange={(v) => updateMealCell(abs, slot.key, v)}
+                        onEntriesChange={(cellEntries) =>
+                          setCellEntries(entryDateIso, slot.key, cellEntries)
+                        }
+                        onLegacyChange={(text) => updateMealCell(abs, slot.key, text)}
                       />
                     )}
                   </div>
@@ -867,6 +995,67 @@ function PlanBuilder({
         <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">{actionError}</div>
       )}
 
+      {showSaveTemplate && !isPublished ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Close"
+            onClick={() => setShowSaveTemplate(false)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-emerald-200 bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900">Save as template</h3>
+            <p className="mt-1 text-sm text-slate-600">Saves current food grid to your template library.</p>
+            <div className="mt-4 space-y-4">
+              <input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="Template name"
+                className="w-full rounded-lg border border-emerald-200 px-3 py-2 text-sm"
+              />
+              <div className="flex flex-wrap gap-2">
+                {TEMPLATE_CONDITION_TAGS.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() =>
+                      setTemplateTags((prev) =>
+                        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+                      )
+                    }
+                    className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${
+                      templateTags.includes(tag)
+                        ? 'bg-emerald-600 text-white'
+                        : 'border border-emerald-200 text-emerald-800'
+                    }`}
+                  >
+                    {tag.replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSaveTemplate(false)}
+                  className="flex-1 rounded-full border border-slate-300 py-2 text-sm font-semibold text-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={templating}
+                  onClick={submitSaveTemplate}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full bg-emerald-600 py-2 text-sm font-bold text-white disabled:opacity-50"
+                >
+                  {templating ? <Loader2 size={14} className="animate-spin" /> : null}
+                  Save template
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {success ? (
         <PlanActionSuccess
           mode={success}
@@ -897,7 +1086,7 @@ function PlanBuilder({
                 className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-                Create Template
+                Save as Template
               </button>
               <button
                 type="button"
@@ -926,73 +1115,10 @@ function PlanBuilder({
                 className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
               >
                 {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-                Create Template
+                Save as Template
               </button>
             </>
           )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function MealCell({
-  label,
-  value,
-  disabled,
-  onChange,
-}: {
-  label: string
-  value: string
-  disabled: boolean
-  onChange: (v: string) => void
-}) {
-  const [hover, setHover] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    if (editing) inputRef.current?.focus()
-  }, [editing])
-
-  const display = value.trim() || '—'
-  const hasContent = value.trim().length > 0
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      {editing && !disabled ? (
-        <textarea
-          ref={inputRef}
-          rows={2}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={() => setEditing(false)}
-          placeholder={`${label}…`}
-          className="min-h-[52px] w-full resize-none rounded border border-emerald-400 bg-white px-2 py-1.5 text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-        />
-      ) : (
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => !disabled && setEditing(true)}
-          className={`min-h-[52px] w-full rounded border px-2 py-1.5 text-left text-[11px] leading-snug transition ${
-            hasContent
-              ? 'border-emerald-300 bg-white text-slate-800 hover:border-emerald-400'
-              : 'border-emerald-200 bg-slate-50 text-slate-400 hover:border-emerald-300'
-          } disabled:cursor-default`}
-        >
-          <span className="line-clamp-3">{display}</span>
-        </button>
-      )}
-
-      {hover && hasContent && !editing && (
-        <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 max-w-[200px] -translate-x-1/2 rounded bg-slate-800 px-2.5 py-1.5 text-[10px] leading-relaxed text-white shadow-lg">
-          {value}
-          <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
         </div>
       )}
     </div>

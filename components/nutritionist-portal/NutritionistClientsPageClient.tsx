@@ -5,7 +5,8 @@ import { useMemo, useState } from 'react'
 import type { ClientRow } from '@/lib/booking-types'
 import type { PortalClientListRow, SessionDotState } from '@/lib/nutritionist-types'
 import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
-import { Search } from 'lucide-react'
+import { Search, UserPlus } from 'lucide-react'
+import { AddClientModal } from '@/components/nutritionist-portal/AddClientModal'
 import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function initials(name: string) {
@@ -53,6 +54,7 @@ type FilterKey = 'all' | ClientRow['status']
 export default function NutritionistClientsPageClient({ clients }: { clients: PortalClientListRow[] }) {
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState<FilterKey>('all')
+  const [addOpen, setAddOpen] = useState(false)
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -88,7 +90,15 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
             className={portal.inputSearch}
           />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-500"
+        >
+          <UserPlus size={16} />
+          Add client
+        </button>
+        <div className="flex flex-wrap gap-2 sm:order-last sm:w-full lg:w-auto lg:order-none">
           {pills.map((p) => (
             <button
               key={p.key}
@@ -181,6 +191,8 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
           })}
         </div>
       )}
+
+      <AddClientModal open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   )
 }

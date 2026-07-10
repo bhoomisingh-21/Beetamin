@@ -47,8 +47,10 @@ export async function createMealPlan(input: {
   const numDays = Math.min(Math.max(input.numDays, 1), 31)
   const days: MealPlanDay[] = []
   let iso = todayIsoDate()
+  let endIso = iso
   for (let i = 1; i <= numDays; i++) {
     days.push(emptyDay(i, iso))
+    endIso = iso
     iso = nextIsoDate(iso)
   }
 
@@ -61,6 +63,8 @@ export async function createMealPlan(input: {
       title: input.title.trim() || 'My Personalised Meal Plan',
       status: 'draft',
       days,
+      start_date: days[0]?.plan_date ?? todayIsoDate(),
+      end_date: endIso,
     })
     .select('*')
     .single()

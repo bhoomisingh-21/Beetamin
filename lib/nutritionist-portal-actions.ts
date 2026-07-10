@@ -71,7 +71,7 @@ const OWNERSHIP_STATUSES = ['pending', 'confirmed', 'completed'] as const
  * cancelled does not make that person a client.
  */
 async function nutritionistOwnsClient(nutritionistId: string, clientId: string): Promise<boolean> {
-  const { data } = await supabaseAdmin
+  const { data: appt } = await supabaseAdmin
     .from('appointments')
     .select('id')
     .eq('nutritionist_id', nutritionistId)
@@ -79,7 +79,17 @@ async function nutritionistOwnsClient(nutritionistId: string, clientId: string):
     .in('status', OWNERSHIP_STATUSES as unknown as string[])
     .limit(1)
     .maybeSingle()
-  return !!data
+  if (appt) return true
+
+  const { data: link } = await supabaseAdmin
+    .from('nutritionist_client_links')
+    .select('id')
+    .eq('nutritionist_id', nutritionistId)
+    .eq('client_id', clientId)
+    .in('status', ['invited', 'active'])
+    .limit(1)
+    .maybeSingle()
+  return !!link
 }
 
 export async function getNutritionistPortalHome(): Promise<PortalHomePayload | null> {
@@ -194,12 +204,25 @@ export async function getNutritionistPortalClients(): Promise<PortalClientListRo
     // Ghost rejected/cancelled-only requests are excluded above, and report-only /
     // free-assessment users (no appointment at all) never appear here.
     const myClientIds = [...new Set(rows.map((r) => r.client_id as string).filter(Boolean))]
-    if (myClientIds.length === 0) return []
+
+    const { data: linkRows } = await supabaseAdmin
+      .from('nutritionist_client_links')
+      .select('client_id')
+      .eq('nutritionist_id', nutritionist.id)
+      .in('status', ['invited', 'active'])
+
+    for (const lr of linkRows ?? []) {
+      const cid = lr.client_id as string
+      if (cid) myClientIds.push(cid)
+    }
+
+    const uniqueClientIds = [...new Set(myClientIds)]
+    if (uniqueClientIds.length === 0) return []
 
     const { data: allClients } = await supabaseAdmin
       .from('clients')
       .select('*')
-      .in('id', myClientIds)
+      .in('id', uniqueClientIds)
       .order('name', { ascending: true })
     const byClient = new Map<string, { session_number: number; status: string }[]>()
     for (const r of rows) {
@@ -976,6 +999,82 @@ export async function deleteDietPlan(
   } catch (e) {
     console.error('[deleteDietPlan]', e)
     return { ok: false, error: 'failed' }
+  }
+}
+
+export async function addNutritionistClient(input: {
+  name: string
+  email: string
+  phone?: string
+}): Promise<{ ok: true; clientId: string } | { ok: false; error: string }> {
+  try {
+    const nutritionist = await portalNutritionist()
+    if (!nutritionist) return { ok: false, error: 'Not authenticated' }
+
+    const name = input.name.trim()
+    const email = input.email.trim().toLowerCase()
+    if (!name) return { ok: false, error: 'Name is required' }
+    if (!email || !email.includes('@')) return { ok: false, error: 'Valid email is required' }
+
+    const { data: existing } = await supabaseAdmin
+      .from('clients')
+      .select('id, client_source, clerk_user_id')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (existing) {
+      return {
+        ok: false,
+        error:
+          'This email is already registered on Beetamin. Ask them to book you through the platform.',
+      }
+    }
+
+    const startDate = new Date()
+    const endDate = new Date()
+    endDate.setMonth(endDate.getMonth() + 3)
+    const pendingClerkId = `invite_pending_${crypto.randomUUID()}`
+
+    const { data: client, error: cErr } = await supabaseAdmin
+      .from('clients')
+      .insert({
+        clerk_user_id: pendingClerkId,
+        name,
+        email,
+        phone: input.phone?.trim() || '',
+        client_source: 'nutritionist_invited',
+        plan_start_date: startDate.toISOString().slice(0, 10),
+        plan_end_date: endDate.toISOString().slice(0, 10),
+        status: 'active',
+        sessions_total: 0,
+        sessions_used: 0,
+        sessions_remaining: 0,
+      })
+      .select('id')
+      .single()
+
+    if (cErr || !client) {
+      console.error('[addNutritionistClient]', cErr)
+      return { ok: false, error: cErr?.message ?? 'Failed to create client' }
+    }
+
+    const { error: linkErr } = await supabaseAdmin.from('nutritionist_client_links').insert({
+      nutritionist_id: nutritionist.id,
+      client_id: client.id,
+      status: 'invited',
+    })
+
+    if (linkErr) {
+      await supabaseAdmin.from('clients').delete().eq('id', client.id)
+      console.error('[addNutritionistClient link]', linkErr)
+      return { ok: false, error: linkErr.message }
+    }
+
+    revalidatePath('/nutritionist/clients')
+    return { ok: true, clientId: client.id as string }
+  } catch (e) {
+    console.error('[addNutritionistClient]', e)
+    return { ok: false, error: 'Failed to add client' }
   }
 }
 

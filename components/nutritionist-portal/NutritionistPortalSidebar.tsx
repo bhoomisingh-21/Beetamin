@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CalendarDays,
   Home,
+  LayoutTemplate,
   Leaf,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ import { portal } from '@/components/nutritionist-portal/portal-theme'
 const NAV = [
   { href: '/nutritionist', label: 'Home', Icon: Home, exact: true },
   { href: '/nutritionist/clients', label: 'Clients', Icon: Users, exact: false },
+  { href: '/nutritionist/templates', label: 'Templates', Icon: LayoutTemplate, exact: false },
   { href: '/nutritionist/appointments', label: 'Appts', Icon: CalendarDays, exact: false },
   { href: '/nutritionist/availability', label: 'Slots', Icon: CalendarClock, exact: false },
 ] as const
