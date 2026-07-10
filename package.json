@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "node scripts/generate-favicons.mjs && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:foods": "node scripts/seed-foods.js",
+    "build:ifct-csv": "node scripts/build-ifct-csv.js",
+    "seed:ifct": "node scripts/build-ifct-csv.js && node scripts/seed-foods.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.2.1",

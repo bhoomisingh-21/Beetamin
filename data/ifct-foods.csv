@@ -1,0 +1,543 @@
+name,category,kcal_per_100g,carbs_g_per_100g,protein_g_per_100g,fat_g_per_100g,fiber_g_per_100g
+"Amaranth seed, black",Cereals and Millets,356.12,59.98,14.59,5.74,7.02
+"Amaranth seed, pale brown",Cereals and Millets,355.88,61.46,13.27,5.56,7.47
+Bajra,Cereals and Millets,347.99,61.78,10.96,5.43,11.49
+Barley,Cereals and Millets,315.73,61.29,10.94,1.3,15.64
+Jowar,Cereals and Millets,334.13,67.68,9.97,1.73,10.22
+"Maize, dry",Cereals and Millets,334.13,64.77,8.8,3.77,12.24
+"Maize, tender, local",Cereals and Millets,119.98,22.69,3.57,1.4,3.67
+"Maize, tender, sweet",Cereals and Millets,96.8,16.42,4.16,1.35,3.3
+Quinoa,Cereals and Millets,328.39,53.65,13.11,5.5,14.66
+Ragi,Cereals and Millets,320.75,66.82,7.16,1.92,11.18
+Rice flakes,Cereals and Millets,353.73,76.75,7.44,1.14,3.46
+Rice puffed,Cereals and Millets,361.85,77.68,7.47,1.62,2.56
+"Rice, raw, brown",Cereals and Millets,353.73,74.8,9.16,1.24,4.43
+"Rice, parboiled, milled",Cereals and Millets,351.58,77.16,7.81,0.55,3.74
+"Rice, raw, milled",Cereals and Millets,356.36,78.24,7.94,0.52,2.81
+Samai,Cereals and Millets,346.32,65.55,10.13,3.89,7.72
+Varagu,Cereals and Millets,331.74,66.19,8.92,2.55,6.39
+"Wheat flour, refined",Cereals and Millets,351.82,74.27,10.36,0.76,2.76
+"Wheat flour, atta",Cereals and Millets,320.27,64.17,10.57,1.53,11.36
+"Wheat, whole",Cereals and Millets,321.94,64.72,10.59,1.47,11.23
+"Wheat, bulgur",Cereals and Millets,341.78,69.06,10.84,1.45,8.81
+"Wheat, semolina",Cereals and Millets,333.65,68.43,11.38,0.74,9.72
+"Wheat, vermicelli",Cereals and Millets,332.7,70.39,9.7,0.45,9.28
+"Wheat, vermicelli, roasted",Cereals and Millets,340.11,71.42,10.37,0.49,9.55
+"Bengal gram, dal",Grain Legumes,329.11,46.72,21.55,5.31,15.15
+"Bengal gram, whole",Grain Legumes,287.05,39.56,18.77,5.11,25.22
+"Black gram, dal",Grain Legumes,324.09,51,23.06,1.69,11.93
+"Black gram, whole",Grain Legumes,291.35,43.99,21.97,1.58,20.41
+"Cowpea, brown",Grain Legumes,320.27,54.62,20.36,1.15,11.54
+"Cowpea, white",Grain Legumes,320.27,53.77,21.25,1.14,11.7
+"Field bean, black",Grain Legumes,276.05,43.46,19.93,0.92,23.4
+"Field bean, brown",Grain Legumes,282.98,45.24,19.9,0.98,22.4
+"Field bean, white",Grain Legumes,280.35,44.53,19.84,0.94,22.99
+"Green gram, dal",Grain Legumes,325.76,52.59,23.88,1.35,9.37
+"Green gram, whole",Grain Legumes,293.74,46.13,22.53,1.14,17.04
+"Horse gram, whole",Grain Legumes,329.59,57.24,21.73,0.62,7.88
+Lentil dal,Grain Legumes,322.42,52.53,24.35,0.75,10.43
+"Lentil whole, brown",Grain Legumes,299,48.47,22.49,0.64,16.82
+"Lentil whole, yellowish",Grain Legumes,297.8,47.91,22.87,0.61,16.66
+Moth bean,Grain Legumes,308.56,52.09,19.75,1.76,15.12
+"Peas, dry",Grain Legumes,303.3,48.93,20.43,1.89,17.01
+"Rajmah, black",Grain Legumes,298.04,49.59,19.01,1.62,17.74
+"Rajmah, brown",Grain Legumes,297.56,48.83,19.5,1.68,16.95
+"Rajmah, red",Grain Legumes,299.24,48.61,19.91,1.77,16.57
+"Red gram, dal",Grain Legumes,330.78,55.23,21.7,1.56,9.06
+"Red gram, whole",Grain Legumes,273.9,42.48,20.47,1.38,22.84
+Ricebean,Grain Legumes,302.34,51.26,19.97,0.74,13.37
+"Soya bean, brown",Grain Legumes,381.45,12.79,35.58,19.82,21.55
+"Soya bean, white",Grain Legumes,377.39,10.16,37.8,19.42,22.63
+Agathi leaves,Green Leafy Vegetables,70.51,5.21,8.01,1.35,8.6
+"Amaranth leaves, green",Green Leafy Vegetables,30.59,2.28,3.29,0.65,4.41
+"Amaranth leaves, red mix",Green Leafy Vegetables,33.46,2.37,3.93,0.63,4.91
+"Amaranth leaves, red and green mix",Green Leafy Vegetables,31.55,2.87,3.09,0.53,4.6
+"Amaranth spinosus, leaves, green mix",Green Leafy Vegetables,26.29,1.61,3.54,0.36,5.1
+"Amaranth spinosus, leaves, red and green mix",Green Leafy Vegetables,23.66,1.45,2.8,0.34,5.57
+Basella leaves,Green Leafy Vegetables,19.6,2.01,1.57,0.45,2.21
+Bathua leaves,Green Leafy Vegetables,27.72,2.56,2.5,0.44,4.01
+Beet greens,Green Leafy Vegetables,34.66,3.86,2.38,0.75,3.64
+"Betel leaves, big (kolkata)",Green Leafy Vegetables,48.28,7.37,2.51,0.75,2.12
+"Betel leaves, small",Green Leafy Vegetables,43.74,6.16,2.62,0.75,1.97
+Brussels sprouts,Green Leafy Vegetables,44.22,5.09,4.26,0.5,4.29
+"Cabbage, Chinese",Green Leafy Vegetables,17.93,2.36,1.58,0.13,2.01
+"Cabbage, collard greens",Green Leafy Vegetables,30.11,2.79,3.63,0.27,2.98
+"Cabbage, green",Green Leafy Vegetables,21.51,3.25,1.36,0.12,2.76
+"Cabbage, violet",Green Leafy Vegetables,23.18,3.54,1.39,0.21,2.21
+Cauliflower leaves,Green Leafy Vegetables,35.37,3.39,3.9,0.42,3.43
+"Colocasia leaves, green",Green Leafy Vegetables,43.5,3.69,3.42,1.38,5.6
+Drumstick leaves,Green Leafy Vegetables,67.4,5.62,6.41,1.64,8.21
+Fenugreek leaves,Green Leafy Vegetables,34.42,2.17,3.68,0.83,4.9
+Garden cress,Green Leafy Vegetables,49.71,4.48,5.62,0.8,2.6
+"Gogu leaves, green",Green Leafy Vegetables,36.33,4.06,1.86,1.09,4.59
+"Gogu leaves, red",Green Leafy Vegetables,36.57,4.24,1.85,1.07,3.89
+"Knol-Khol, leaves",Green Leafy Vegetables,42.54,6.16,3.12,0.35,2.76
+Lettuce,Green Leafy Vegetables,21.75,3.01,1.54,0.27,1.79
+Mustard leaves,Green Leafy Vegetables,30.35,2.41,3.52,0.51,3.92
+Pak Choi leaves,Green Leafy Vegetables,16.01,1.78,1.41,0.25,1.91
+Parsley,Green Leafy Vegetables,72.9,9.43,5.55,1.14,3.87
+Ponnaganni,Green Leafy Vegetables,50.91,5.17,5.29,0.71,6.74
+"Pumpkin leaves, tender",Green Leafy Vegetables,44.22,4.75,4.21,0.74,2.25
+Radish leaves,Green Leafy Vegetables,26.05,2.77,2.22,0.51,1.82
+Rumex leaves,Green Leafy Vegetables,19.6,2.33,1.62,0.33,1.27
+Spinach,Green Leafy Vegetables,24.38,2.05,2.14,0.64,2.38
+"Tamarind leaves, tender",Green Leafy Vegetables,71.46,10.04,5.84,0.49,10.7
+Ash gourd,Other Vegetables,17.45,2.84,0.79,0.14,3.37
+"Bamboo shoot, tender",Other Vegetables,16.25,1.67,1.33,0.35,1.55
+"Bean scarlet, tender",Other Vegetables,42.78,5.16,2.86,0.99,4.5
+"Bitter gourd, jagged, teeth ridges, elongate",Other Vegetables,20.79,2.82,1.44,0.24,3.78
+"Bitter gourd, jagged, teeth ridges, short",Other Vegetables,18.88,2.53,1.34,0.24,3.49
+"Bitter gourd, jagged, smooth ridges, elongate",Other Vegetables,19.36,2.29,1.61,0.26,3.72
+"Bottle gourd, elongate, pale green",Other Vegetables,10.99,1.68,0.53,0.13,2.12
+"Bottle gourd, round, pale green",Other Vegetables,13.62,2.53,0.42,0.12,2.1
+"Bottle gourd, elongate, dark green",Other Vegetables,12.91,2.25,0.49,0.13,2.11
+Brinjal-1,Other Vegetables,27.25,3.49,1.77,0.39,3.57
+Brinjal-2,Other Vegetables,23.66,2.71,1.82,0.34,4.01
+Brinjal-3,Other Vegetables,24.38,3.38,1.36,0.33,4.26
+Brinjal-4,Other Vegetables,23.9,3.19,1.51,0.31,4.04
+Brinjal-5,Other Vegetables,26.53,4.02,1.38,0.29,4.13
+Brinjal-6,Other Vegetables,23.18,3.29,1.46,0.29,3.68
+Brinjal-7,Other Vegetables,23.42,3.1,1.4,0.37,3.32
+Brinjal-8,Other Vegetables,27.96,3.75,1.82,0.33,4.01
+Brinjal-9,Other Vegetables,25.33,3.52,1.47,0.35,4
+Brinjal-10,Other Vegetables,27.72,4.08,1.68,0.25,3.9
+Brinjal-11,Other Vegetables,25.1,3.53,1.43,0.31,4.12
+Brinjal-12,Other Vegetables,22.23,2.73,1.6,0.27,3.89
+Brinjal-13,Other Vegetables,29.64,4.51,1.49,0.31,3.92
+Brinjal-14,Other Vegetables,25.33,3.27,1.56,0.35,3.87
+Brinjal-15,Other Vegetables,27.25,3.96,1.58,0.29,3.99
+Brinjal-16,Other Vegetables,24.62,3.46,1.26,0.34,3.74
+Brinjal-17,Other Vegetables,21.75,2.89,1.18,0.36,3.94
+Brinjal-18,Other Vegetables,27.72,4.1,1.47,0.33,4.38
+Brinjal-19,Other Vegetables,23.9,3.39,1.26,0.31,3.97
+Brinjal-20,Other Vegetables,23.66,3.15,1.44,0.34,3.73
+Brinjal-21,Other Vegetables,27.01,3.93,1.36,0.35,3.85
+Brinjal - all varieties,Other Vegetables,25.33,3.52,1.48,0.32,3.98
+Broad beans,Other Vegetables,29.4,2.11,3.85,0.15,8.63
+"Capsicum, green",Other Vegetables,16.25,1.84,1.11,0.34,2.06
+"Capsicum, red",Other Vegetables,19.84,2.14,1.47,0.47,2.19
+"Capsicum, yellow",Other Vegetables,18.64,1.95,1.35,0.41,2.19
+Cauliflower,Other Vegetables,22.94,2.03,2.15,0.44,3.71
+Celery stalk,Other Vegetables,16.49,2.33,0.98,0.24,2.09
+Cho-cho-marrow,Other Vegetables,18.88,3.47,0.66,0.15,1.55
+Cluster beans,Other Vegetables,40.15,4.91,3.55,0.37,4.83
+"Colocasia, stem, black",Other Vegetables,23.9,3.83,0.76,0.34,3.01
+"Colocasia, stem, green",Other Vegetables,19.36,2.86,0.91,0.22,2.33
+"Corn, Baby",Other Vegetables,73.14,11.66,2.69,1.33,6.09
+"Cucumber, green, elongate",Other Vegetables,19.6,3.48,0.71,0.16,2.14
+"Cucumber, green, short",Other Vegetables,17.45,2.82,0.83,0.18,2.13
+"Cucumber, orange, round",Other Vegetables,19.6,3.01,0.98,0.24,2.46
+Drumstick,Other Vegetables,29.4,3.76,2.62,0.12,6.83
+"Field beans, tender, broad",Other Vegetables,30.83,2.75,3.06,0.64,5.64
+"Field beans, tender, lean",Other Vegetables,33.46,2.85,3.71,0.6,6.19
+"French beans, country",Other Vegetables,24.38,2.68,2.49,0.26,4.38
+"French beans, hybrid",Other Vegetables,22.23,2.63,2.12,0.19,4.18
+"Jack fruit, raw",Other Vegetables,26.29,3.48,1.98,0.35,7.69
+"Jack fruit, seed, mature",Other Vegetables,76.96,11.81,5.79,0.44,8.63
+Knol - Khol,Other Vegetables,16.01,1.39,1.58,0.35,2.75
+"Kovai, big",Other Vegetables,17.45,2.01,1.39,0.24,3
+"Kovai, small",Other Vegetables,19.12,2.41,1.22,0.24,3.25
+Ladies finger,Other Vegetables,27.49,3.62,2.08,0.22,4.08
+"Mango, green, raw",Other Vegetables,49,10.59,0.69,0.08,3.01
+"Onion, stalk",Other Vegetables,25.57,2.99,2.07,0.26,5.21
+"Papaya, raw",Other Vegetables,23.9,4.4,0.5,0.23,2.28
+Parwar,Other Vegetables,24.14,3.54,1.4,0.3,2.61
+"Peas, fresh",Other Vegetables,81.26,11.88,7.25,0.13,6.32
+"Plantain, flower",Other Vegetables,21.27,2.15,1.47,0.63,5.25
+"Plantain, green",Other Vegetables,79.83,17.58,1.18,0.23,3.6
+"Plantain, stem",Other Vegetables,39.44,8.64,0.35,0.16,2.12
+"Pumpkin, green, cylindrical",Other Vegetables,24.62,4.22,0.87,0.18,2.53
+"Pumpkin, orange, round",Other Vegetables,23.18,4,0.84,0.16,2.56
+"Red gram, tender, fresh",Other Vegetables,124.28,19.46,8.09,0.92,5.9
+Ridge gourd,Other Vegetables,13.15,1.72,0.91,0.14,1.81
+"Ridge gourd, smooth skin",Other Vegetables,15.3,2.24,0.98,0.13,1.85
+"Snake gourd, long, pale green",Other Vegetables,12.43,1.27,0.98,0.25,2.27
+"Snake gourd, long, dark green",Other Vegetables,11.95,1.23,0.89,0.25,2.27
+"Snake gourd, short",Other Vegetables,14.58,2.15,0.54,0.26,2.29
+"Tinda, tender",Other Vegetables,13.86,1.9,1.02,0.17,2
+"Tomato, green",Other Vegetables,20.79,3.18,1.12,0.27,1.62
+"Tomato, ripe, hybrid",Other Vegetables,18.88,3.2,0.76,0.25,1.58
+"Tomato, ripe, local",Other Vegetables,19.6,2.71,0.9,0.47,1.77
+"Zucchini, green",Other Vegetables,20.08,2.33,1.1,0.51,2.3
+"Zucchini, yellow",Other Vegetables,18.88,2.2,1.31,0.44,1.84
+"Apple, big",Fruits,62.38,13.11,0.29,0.64,2.59
+"Apple, green",Fruits,51.15,10.65,0.46,0.5,2.54
+"Apple, small",Fruits,63.81,13.95,0.31,0.53,2.06
+"Apple, small, Kashmir",Fruits,64.29,13.99,0.27,0.6,2.07
+"Apricot, dried",Fruits,315.73,72.63,3.17,0.74,3.32
+"Apricot, processed",Fruits,56.41,10.93,1.47,0.64,0.59
+Avocado fruit,Fruits,144.36,1.75,2.95,13.86,6.69
+Bael fruit,Fruits,135.99,28.21,2.63,0.57,6.31
+"Banana, ripe, montham",Fruits,110.66,24.95,1.25,0.32,2.21
+"Banana, ripe, poovam",Fruits,106.36,23.41,1.49,0.35,2.33
+"Banana, ripe, red",Fruits,111.62,25.21,1.29,0.29,1.98
+"Banana, ripe, robusta",Fruits,105.16,23.63,1.23,0.33,1.94
+Black berry,Fruits,54.25,10.64,0.92,0.63,4.35
+"Cherries, red",Fruits,59.75,11.87,1.49,0.46,2.12
+"Currants, black",Fruits,54.25,9.93,1.51,0.53,4.07
+Custard apple,Fruits,98.95,20.38,1.62,0.67,5.1
+"Dates, dry, pale brown",Fruits,320.27,74.91,2.45,0.35,8.95
+"Dates, dry, dark brown",Fruits,310.95,72.67,2.38,0.35,9.1
+"Dates, processed",Fruits,286.09,67.95,1.18,0.41,6.52
+Fig,Fruits,81.5,16.28,2.03,0.37,4.64
+Goosberry,Fruits,23.66,4.39,0.34,0.16,7.75
+"Grapes, seeded, round, black",Fruits,60.71,13.23,0.76,0.32,1.35
+"Grapes, seeded, round, green",Fruits,56.17,12.19,0.77,0.29,1.25
+"Grapes, seeded, round, red",Fruits,58.32,12.55,0.95,0.29,1.28
+"Grapes, seedless, oval, black",Fruits,94.41,20.48,1.41,0.46,1.64
+"Grapes, seedless, round, green",Fruits,53.54,11.81,0.62,0.26,1.28
+"Grapes, seedless, round, black",Fruits,89.39,19.86,1.24,0.35,1.15
+"Guava, white flesh",Fruits,32.27,5.13,1.44,0.32,8.59
+"Guava, pink flesh",Fruits,46.61,9.14,1.19,0.25,7.39
+"Jack fruit, ripe",Fruits,72.18,14.01,2.74,0.15,3.62
+"Jambu fruit, ripe",Fruits,56.17,12.3,0.82,0.17,3.07
+Karonda fruit,Fruits,33.7,2.87,1.15,1.67,7.25
+"Lemon, juice",Fruits,36.57,0,0.41,0.75,0
+"Lime, sweet, pulp",Fruits,27.25,5.18,0.76,0.2,2.07
+Litchi,Fruits,53.78,11.41,0.99,0.26,1.34
+"Mango, ripe, banganapalli",Fruits,41.83,8.18,0.54,0.55,1.88
+"Mango, ripe, gulabkhas",Fruits,49.95,10.32,0.52,0.53,1.67
+"Mango, ripe, himsagar",Fruits,44.69,9.03,0.46,0.54,1.55
+"Mango, ripe, kesar",Fruits,55.21,11.36,0.54,0.57,2.02
+"Mango, ripe, neelam",Fruits,42.54,8.21,0.68,0.55,1.77
+"Mango, ripe, paheri",Fruits,44.93,8.67,0.68,0.58,1.97
+"Mango, ripe, totapari",Fruits,59.27,12.75,0.41,0.49,1.73
+Mangosteen,Fruits,52.34,11.41,0.63,0.24,1.87
+Manila tamarind,Fruits,81.74,13.54,3.56,1.14,4.4
+"Musk melon, orange flesh",Fruits,23.18,4.24,0.42,0.35,1.51
+"Musk melon, yellow flesh",Fruits,27.72,5.4,0.53,0.26,1.49
+"Orange, pulp",Fruits,37.28,7.92,0.7,0.13,1.29
+"Palm fruit, tender",Fruits,24.14,4.92,0.5,0.12,2.4
+"Papaya, ripe",Fruits,23.9,4.61,0.42,0.16,2.83
+Peach,Fruits,40.15,7.82,0.86,0.37,2.13
+Pear,Fruits,37.52,8.09,0.36,0.27,4.48
+Phalsa,Fruits,71.46,15.09,1.66,0.14,4.54
+Pineapple,Fruits,43.02,9.42,0.52,0.16,3.46
+Plum,Fruits,56.88,12.1,0.64,0.4,2.07
+"Pomegranate, maroon seeds",Fruits,54.73,11.58,1.33,0.15,2.83
+Pummelo,Fruits,50.19,10.64,0.68,0.42,0.8
+"Raisins, dried, black",Fruits,305.69,71.29,2.57,0.34,3.92
+"Raisins, dried, golden",Fruits,296.61,68.79,2.76,0.35,4.56
+Rambutan,Fruits,73.14,16.84,0.68,0.16,1.02
+Sapota,Fruits,73.37,13.9,0.92,1.26,9.6
+Soursop,Fruits,62.14,11.94,0.74,0.94,4.95
+Star fruit,Fruits,26.29,4.51,0.79,0.39,2.81
+Strawberry,Fruits,24.62,3.4,0.97,0.56,2.5
+"Tamarind, pulp",Fruits,288.48,67.35,2.92,0.15,5.31
+"Water melon, dark green (sugar baby)",Fruits,20.32,3.86,0.6,0.16,0.7
+"Water melon, pale green",Fruits,16.73,3.02,0.59,0.16,0.78
+Wood Apple,Fruits,78.15,7.52,3.14,3.62,5.21
+Zizyphus,Fruits,48.76,9.4,1.34,0.35,3.73
+Beet root,Roots and Tubers,35.61,6.18,1.95,0.14,3.31
+"Carrot, orange",Roots and Tubers,33.22,5.55,0.95,0.47,4.18
+"Carrot, red",Roots and Tubers,38.24,6.71,1.04,0.47,4.49
+Colocasia,Roots and Tubers,88.91,17.85,3.31,0.17,3.22
+Lotus root,Roots and Tubers,79.35,14.67,1.94,0.93,4.7
+"Potato, brown skin, big",Roots and Tubers,69.79,14.89,1.54,0.23,1.71
+"Potato, brown skin, small",Roots and Tubers,60.95,12.9,1.35,0.22,1.69
+"Potato, red skin",Roots and Tubers,73.14,15.43,1.83,0.22,1.68
+"Radish, elongate, red skin",Roots and Tubers,32.03,6.71,0.67,0.13,2.46
+"Radish, elongate, white skin",Roots and Tubers,32.27,6.56,0.77,0.15,2.65
+"Radish, round, red skin",Roots and Tubers,31.07,6.07,0.89,0.16,2.29
+"Radish, round, white skin",Roots and Tubers,30.83,6.13,0.8,0.14,2.37
+"Sweet potato, brown skin",Roots and Tubers,108.99,24.25,1.33,0.26,3.99
+"Sweet potato, pink skin",Roots and Tubers,108.03,23.93,1.27,0.33,3.94
+Tapioca,Roots and Tubers,79.83,17.81,1.03,0.2,4.61
+Water Chestnut,Roots and Tubers,95.6,21.46,0.86,0.37,3.02
+"Yam, elephant",Roots and Tubers,84.37,17.46,2.56,0.14,4.17
+"Yam, ordinary",Roots and Tubers,83.41,17.65,2.18,0.17,4.08
+"Yam, wild",Roots and Tubers,102.77,20.95,3.07,0.3,4.57
+"Chillies, green-1",Condiments and Spices,45.65,6.32,2.62,0.73,4.86
+"Chillies, green-2",Condiments and Spices,39.91,5.27,2.28,0.75,5.13
+"Chillies, green-3",Condiments and Spices,40.39,5.23,2.38,0.75,5.1
+"Chillies, green-4",Condiments and Spices,45.41,6.63,2.33,0.74,4.15
+"Chillies, green-5",Condiments and Spices,43.02,6.64,2.01,0.65,3.95
+"Chillies, green-6",Condiments and Spices,41.83,5.31,3.01,0.64,5.15
+"Chillies, green-7",Condiments and Spices,38.96,5.61,2.12,0.6,4.95
+"Chillies, green - all varieties",Condiments and Spices,42.3,5.86,2.36,0.72,4.77
+Coriander leaves,Condiments and Spices,31.07,1.93,3.52,0.7,4.66
+Curry leaves,Condiments and Spices,63.58,4.51,7.41,1.06,16.83
+"Garlic, big clove",Condiments and Spices,123.8,21.93,6.92,0.16,5.22
+"Garlic, small clove",Condiments and Spices,122.85,21.84,6.75,0.14,5.47
+"Garlic, single clove, Kashmir",Condiments and Spices,125,23.46,6.12,0.16,4.01
+"Ginger, fresh",Condiments and Spices,54.97,8.97,2.22,0.85,5.36
+Mango ginger,Condiments and Spices,42.3,6.98,1.45,0.7,4.74
+Mint leaves,Condiments and Spices,37.05,2.39,4.66,0.65,5.89
+"Onion, big",Condiments and Spices,48.04,9.56,1.5,0.24,2.45
+"Onion, small",Condiments and Spices,56.64,11.58,1.82,0.16,1.16
+Asafoetida,Condiments and Spices,331.5,71.95,6.34,1.26,5.13
+"Cardamom, green",Condiments and Spices,255.02,47.76,8.1,2.6,23.1
+"Cardamom, black",Condiments and Spices,270.55,52.53,6.69,2.8,23.46
+"Chillies, red",Condiments and Spices,236.62,29.46,12.69,6.4,31.15
+Cloves,Condiments and Spices,186.66,18.73,5.86,8.41,34.52
+Coriander seeds,Condiments and Spices,268.88,12.98,10.66,17.47,44.81
+Cumin seeds,Condiments and Spices,304.49,22.62,13.91,16.64,30.35
+Fenugreek seeds,Condiments and Spices,234.94,10.57,25.41,5.72,47.55
+Mace,Condiments and Spices,355.64,26.51,6.24,24.41,20.31
+Nutmeg,Condiments and Spices,463.67,27.64,6.3,36.52,11.99
+Omum,Condiments and Spices,357.31,24.53,15.89,21.11,20.58
+Pippali,Condiments and Spices,216.54,35.7,10.53,2.27,34.14
+"Pepper, black",Condiments and Spices,217.5,36.22,10.12,2.74,33.16
+Poppy seeds,Condiments and Spices,422.56,12.37,20.31,30.38,26.68
+Turmeric powder,Condiments and Spices,280.59,49.22,7.66,5.03,21.38
+Almond,Nuts and Oil Seeds,609.23,3.04,18.41,58.49,13.06
+"Arecanut, dried, brown",Nuts and Oil Seeds,350.62,70.42,5.78,4.35,11.44
+"Arecanut, dried, red color",Nuts and Oil Seeds,353.01,70.27,6.46,4.46,11.11
+"Arecanut, fresh",Nuts and Oil Seeds,244.74,45,2.73,5.51,7.63
+Cashew nut,Nuts and Oil Seeds,582.7,25.46,18.78,45.2,3.86
+"Coconut, kernal, dry",Nuts and Oil Seeds,624.04,8.01,7.27,63.26,15.88
+"Coconut, kernel, fresh",Nuts and Oil Seeds,408.94,6.3,3.84,41.38,10.42
+"Garden cress, seeds",Nuts and Oil Seeds,445.27,33.66,23.36,23.74,8.27
+"Gingelly seeds, black",Nuts and Oil Seeds,507.65,10.29,19.17,43.1,17.16
+"Gingelly seeds, brown",Nuts and Oil Seeds,516.49,9.76,21.61,43.22,17.21
+"Gingelly seeds, white",Nuts and Oil Seeds,519.6,10.83,21.7,43.05,16.99
+Ground nut,Nuts and Oil Seeds,520.08,17.27,23.65,39.63,10.38
+Mustard seeds,Nuts and Oil Seeds,509.56,16.8,19.51,40.19,14.1
+Linseeds,Nuts and Oil Seeds,443.83,10.99,18.55,35.67,26.17
+"Niger seeds, black",Nuts and Oil Seeds,512.43,22.98,18.92,38.61,10.93
+"Niger seeds, gray",Nuts and Oil Seeds,508.6,20.59,18.34,39.53,10.96
+Pine seed,Nuts and Oil Seeds,594.17,26.77,12.55,48.79,3.79
+Pistachio nuts,Nuts and Oil Seeds,539.44,15.82,23.35,42.49,10.64
+Safflower seeds,Nuts and Oil Seeds,473.47,30.18,17.66,30.87,13.49
+Sunflower seeds,Nuts and Oil Seeds,586.28,6.85,23.53,51.85,10.8
+Walnut,Nuts and Oil Seeds,671.37,10.14,14.92,64.27,5.39
+"Jaggery, cane",Sugars,353.73,84.87,1.85,0.16,0
+"Sugarcane, juice",Sugars,57.84,13.11,0.16,0.4,0.56
+"Button mushroom, fresh",Mushrooms,27.49,1.98,3.68,0.42,3.11
+"Chicken mushroom, fresh",Mushrooms,21.27,2.76,1.84,0.25,1.99
+"Shiitake mushroom, fresh",Mushrooms,58.08,8.98,3.19,0.76,3.02
+"Oyster mushroom, dried",Mushrooms,243.55,33.07,19.04,2.86,39.12
+Toddy,Miscellaneous Foods,24.14,5.72,0.18,0.03,0
+Coconut Water,Miscellaneous Foods,15.3,3.16,0.26,0.16,0
+"Milk, whole, Buffalo",Milk and Milk Products,107.31,8.39,3.68,6.58,0
+"Milk, whole, Cow",Milk and Milk Products,72.9,4.94,3.26,4.48,0
+Paneer,Milk and Milk Products,257.89,12.41,18.86,14.78,0
+Khoa,Milk and Milk Products,315.97,16.53,16.34,20.62,0
+"Egg, poultry, whole, raw",Egg and Egg Products,134.8,0,13.28,9.15,0
+"Egg, poultry, white, raw",Egg and Egg Products,44.69,0,10.84,0.06,0
+"Egg, poultry, yolk, raw",Egg and Egg Products,296.85,0,15.74,26.34,0
+"Egg, poultry, whole, boiled",Egg and Egg Products,147.71,0,13.43,10.54,0
+"Egg, poultry, white, boiled",Egg and Egg Products,52.58,0,12.37,0.26,0
+"Egg, poultry, yolk, boiled",Egg and Egg Products,308.32,0,16.13,27.46,0
+"Egg, poultry, omlet",Egg and Egg Products,169.69,0,16.53,11.6,0
+"Egg, country hen, whole, raw",Egg and Egg Products,168.26,0,13.14,13,0
+"Egg, country hen, whole, boiled",Egg and Egg Products,183.32,0,14.43,14.1,0
+"Egg, country hen, omlet",Egg and Egg Products,204.35,0,14.8,16.3,0
+"Egg, duck, whole, boiled",Egg and Egg Products,176.39,0,13.8,13.61,0
+"Egg, duck, whole, raw",Egg and Egg Products,181.64,0,14.6,13.83,0
+"Egg, duck, whole, omlet",Egg and Egg Products,192.16,0,15.1,14.8,0
+"Egg, quial, whole, raw",Egg and Egg Products,151.77,0,12.39,11.46,0
+"Egg, quial, whole, boiled",Egg and Egg Products,154.64,0,13.03,11.5,0
+"Chicken, poultry, leg, skinless",Poultry,383.6,0,19.44,12.64,0
+"Chicken, poultry, thigh, skinless",Poultry,199.81,0,18.18,14.23,0
+"Chicken, poultry, breast, skinless",Poultry,168.26,0,21.81,9,0
+"Chicken, poultry, wing, skinless",Poultry,192.88,0,17.42,13.81,0
+"Poultry, chicken, liver",Poultry,123.8,0,21.57,4.08,0
+"Poultry, chicken, gizzard",Poultry,92.26,0,18.22,2.07,0
+"Country hen, leg, with skin",Poultry,172.8,0,17.01,11.73,0
+"Country hen, thigh, with skin",Poultry,187.62,0,18.29,12.82,0
+"Country hen, breast, with skin",Poultry,179.97,0,22.08,10.2,0
+"Country hen, wing, with skin",Poultry,182.6,0,18.65,12.09,0
+"Duck, meat, with skin",Poultry,130.74,0,19.07,6.03,0
+"Emu, meat, skinless",Poultry,132.89,0,22.65,4.62,0
+"Guinea fowl, meat, with skin",Poultry,112.09,0,20.52,3.24,0
+"Pigeon, meat, with skin",Poultry,126.2,0,17.94,6.03,0
+"Quail, meat, skinless",Poultry,137.67,0,20.92,5.95,0
+"Turkey, leg, with skin",Poultry,154.64,0,20.3,8.15,0
+"Turkey, thigh, with skin",Poultry,138.86,0,20.46,6.31,0
+"Turkey, breast, with skin",Poultry,160.37,0,21.96,8.04,0
+"Turkey, wing, with skin",Poultry,184.27,0,21.91,10.77,0
+"Goat, shoulder, meat",Animal Meat,188.1,0,20.33,11.94,0
+"Goat, chops",Animal Meat,135.76,0,20.39,5.98,0
+"Goat, legs",Animal Meat,159.89,0,22.07,7.94,0
+"Goat, brain",Animal Meat,127.39,0,13.82,8.06,0
+"Goat, tongue",Animal Meat,188.58,0,16.63,13.68,0
+"Goat, lungs",Animal Meat,95.84,0,16.86,3.09,0
+"Goat, heart",Animal Meat,117.59,0,19.38,4.4,0
+"Goat, liver",Animal Meat,125.72,0,20.32,4.88,0
+"Goat, tripe",Animal Meat,92.26,0,15.36,3.36,0
+"Goat, spleen",Animal Meat,95.84,0,18.45,2.37,0
+"Goat, kidneys",Animal Meat,89.39,0,15.6,2.93,0
+"Goat, tube (small intestine)",Animal Meat,125.48,0,12.92,8.26,0
+"Goat, testis",Animal Meat,71.22,0,12.32,2.39,0
+"Sheep, shoulder",Animal Meat,200.76,0,18.24,14.31,0
+"Sheep, chops",Animal Meat,118.55,0,18,5.15,0
+"Sheep, leg",Animal Meat,163.96,0,21.42,8.69,0
+"Sheep, brain",Animal Meat,117.59,0,13.05,7.29,0
+"Sheep, tongue",Animal Meat,187.14,0,16.61,13.53,0
+"Sheep, lungs",Animal Meat,86.76,0,16.12,2.41,0
+"Sheep, heart",Animal Meat,106.36,0,18.19,3.66,0
+"Sheep, liver",Animal Meat,133.6,0,22.26,4.87,0
+"Sheep, tripe",Animal Meat,103.97,0,16.76,4.05,0
+"Sheep, spleen",Animal Meat,91.78,0,16.02,3.02,0
+"Sheep, kidneys",Animal Meat,91.78,0,16.22,2.92,0
+"Beef, shoulder",Animal Meat,212.48,0,20.56,14.59,0
+"Beef, chops",Animal Meat,139.82,0,19.82,6.71,0
+"Beef, round (leg)",Animal Meat,157.27,0,22.64,7.38,0
+"Beef, brain",Animal Meat,125,0,10.55,9.28,0
+"Beef, tongue",Animal Meat,174.71,0,15.63,12.57,0
+"Beef, lungs",Animal Meat,83.89,0,15.66,2.28,0
+"Beef, heart",Animal Meat,103.49,0,17.68,3.57,0
+"Beef, liver",Animal Meat,119.26,0,20.73,3.96,0
+"Beef, tripe",Animal Meat,75.53,0,13.1,2.51,0
+"Beef, spleen",Animal Meat,90.34,0,17.42,2.22,0
+"Beef, kidneys",Animal Meat,104.92,0,17.09,4.01,0
+"Calf, shoulder",Animal Meat,151.29,0,20.98,7.47,0
+"Calf, chops",Animal Meat,125.24,0,22.47,3.85,0
+"Calf, round (leg)",Animal Meat,146.99,0,21.1,6.92,0
+"Calf, brain",Animal Meat,107.07,0,9.84,7.6,0
+"Calf, tongue",Animal Meat,176.15,0,17.78,11.76,0
+"Calf, heart",Animal Meat,109.7,0,18.84,3.75,0
+"Calf, liver",Animal Meat,120.22,0,21.02,3.95,0
+"Calf, spleen",Animal Meat,90.58,0,17.71,2.12,0
+"Calf, kidneys",Animal Meat,92.5,0,15.16,3.5,0
+"Mithun, shoulder",Animal Meat,175.91,0,19.05,11.14,0
+"Mithun, chops",Animal Meat,128.11,0,18.19,6.12,0
+"Mithun, round (leg)",Animal Meat,115.92,0,19.61,4.1,0
+"Pork, shoulder",Animal Meat,237.33,0,17.41,18.83,0
+"Pork, chops",Animal Meat,178.78,0,19.41,11.3,0
+"Pork, ham",Animal Meat,240.44,0,18.83,18.55,0
+"Pork, lungs",Animal Meat,85.56,0,15.13,2.74,0
+"Pork, heart",Animal Meat,109.23,0,16.31,4.87,0
+"Pork, liver",Animal Meat,115.68,0,19.89,3.94,0
+"Pork, stomach",Animal Meat,131.45,0,15.36,7.81,0
+"Pork, spleen",Animal Meat,85.33,0,15.13,2.71,0
+"Pork, kidneys",Animal Meat,90.58,0,14.35,3.65,0
+"Pork, tube (small intestine)",Animal Meat,140.3,0,14.96,8.98,0
+"Hare, shoulder",Animal Meat,144.12,0,21.13,6.58,0
+"Hare, chops",Animal Meat,106.36,0,20.62,2.55,0
+"Hare, leg",Animal Meat,120.22,0,20.52,4.16,0
+"Rabbit, shoulder",Animal Meat,151.77,0,20.01,7.96,0
+"Rabbit, chops",Animal Meat,135.04,0,22.61,4.88,0
+"Rabbit, leg",Animal Meat,139.58,0,21.31,5.99,0
+Allathi,Marine Fish,97.04,0,21.77,0.98,0
+Aluva,Marine Fish,103.73,0,21.63,1.8,0
+Anchovy,Marine Fish,87.72,0,19.88,0.78,0
+Ari fish,Marine Fish,99.19,0,22.01,1.11,0
+Betki,Marine Fish,67.88,0,15.28,0.29,0
+Black snapper,Marine Fish,90.11,0,19.5,1.24,0
+Bombay duck,Marine Fish,68.59,0,13.53,1.03,0
+Bommuralu,Marine Fish,115.92,0,22.3,2.87,0
+Cat fish,Marine Fish,108.99,0,22.18,2.13,0
+Chakla,Marine Fish,97.04,0,20.21,1.68,0
+Chappal,Marine Fish,75.76,0,17.17,0.67,0
+Chelu,Marine Fish,87.48,0,20.02,0.7,0
+Chembali,Marine Fish,97.04,0,20.06,1.77,0
+Eri meen,Marine Fish,108.51,0,22.3,2.02,0
+Gobro,Marine Fish,86.52,0,19.37,0.88,0
+Guitar fish,Marine Fish,95.6,0,22.56,0.44,0
+Hilsa,Marine Fish,258.84,0,21.8,18.49,0
+Jallal,Marine Fish,100.38,0,21.55,1.46,0
+Jathi vela meen,Marine Fish,108.27,0,22.45,1.92,0
+Kadal bral,Marine Fish,87.95,0,18.72,1.34,0
+Kadali,Marine Fish,126.67,0,22.07,4.2,0
+Kalamaara,Marine Fish,125,0,20.89,4.54,0
+Kalava,Marine Fish,89.39,0,19.38,1.2,0
+Kanamayya,Marine Fish,87.72,0,20.19,0.65,0
+Kannadi paarai,Marine Fish,101.1,0,22.09,1.27,0
+Karimeen,Marine Fish,92.26,0,19.68,1.38,0
+Karnagawala,Marine Fish,86.76,0,19.52,0.84,0
+Kayrai,Marine Fish,108.51,0,20.15,3,0
+Kiriyan,Marine Fish,132.89,0,22.49,4.7,0
+Kite fish,Marine Fish,98.71,0,23.07,0.56,0
+Korka,Marine Fish,126.2,0,23.72,3.36,0
+Kulam paarai,Marine Fish,119.74,0,21.62,3.6,0
+Maagaa,Marine Fish,87.48,0,20.11,0.67,0
+Mackerel,Marine Fish,101.1,0,21.51,1.53,0
+Manda clathi,Marine Fish,95.12,0,21.27,1,0
+Matha,Marine Fish,92.97,0,21.17,0.79,0
+Milk fish,Marine Fish,105.64,0,23.66,1.09,0
+Moon fish,Marine Fish,125.72,0,20.74,4.69,0
+Mullet,Marine Fish,93.93,0,20.23,1.32,0
+Mural,Marine Fish,82.46,0,19.04,0.58,0
+Myil meen,Marine Fish,97.99,0,22.89,0.56,0
+Nalla bontha,Marine Fish,87,0,19.82,0.72,0
+Narba,Marine Fish,103.25,0,21.95,1.6,0
+Paarai,Marine Fish,103.97,0,21.58,1.84,0
+Padayappa,Marine Fish,86.04,0,19.7,0.69,0
+Pali kora,Marine Fish,94.17,0,19.25,1.81,0
+Pambada,Marine Fish,128.35,0,21.95,4.44,0
+Pandukopa,Marine Fish,86.04,0,19.73,0.65,0
+Parava,Marine Fish,111.62,0,21.5,2.74,0
+Parcus,Marine Fish,86.28,0,19.87,0.62,0
+Parrot fish,Marine Fish,89.63,0,20.82,0.57,0
+Perinkilichai,Marine Fish,92.5,0,20.89,0.87,0
+Phopat,Marine Fish,101.34,0,22.05,1.33,0
+Piranha,Marine Fish,131.21,0,20.46,5.43,0
+"Pomfret, black",Marine Fish,123.09,0,18.91,4.83,0
+"Pomfret, snub nose",Marine Fish,89.63,0,21.05,0.46,0
+"Pomfret, white",Marine Fish,122.61,0,19.02,5.12,0
+Pranel,Marine Fish,96.8,0,19.69,1.89,0
+Pulli paarai,Marine Fish,95.36,0,20.06,1.55,0
+Queen fish,Marine Fish,95.6,0,20.97,1.17,0
+Raai fish,Marine Fish,102.77,0,21.61,1.69,0
+Raai vanthu,Marine Fish,97.99,0,19.39,2.17,0
+Rani,Marine Fish,90.11,0,18.83,1.49,0
+"Ray fish, bow head, spotted",Marine Fish,83.41,0,19.03,0.7,0
+Red snapper,Marine Fish,104.45,0,22.79,1.34,0
+"Red snapper, small",Marine Fish,107.79,0,21.5,2.3,0
+Sadaya,Marine Fish,110.42,0,20.68,2.97,0
+Salmon,Marine Fish,172.32,0,20.97,9.86,0
+Sangada,Marine Fish,105.88,0,20.26,2.67,0
+Sankata paarai,Marine Fish,103.73,0,21.87,1.68,0
+Sardine,Marine Fish,152.25,0,17.91,8.99,0
+Shark,Marine Fish,95.12,0,21.6,0.83,0
+"Shark, hammer head",Marine Fish,103.25,0,23.4,0.8,0
+"Shark, spotted",Marine Fish,91.78,0,20.95,0.75,0
+Shelavu,Marine Fish,106.6,0,22.46,1.74,0
+Silan,Marine Fish,151.29,0,22.72,6.68,0
+Silk fish,Marine Fish,97.51,0,20.65,1.53,0
+Silver carp,Marine Fish,132.65,0,21.71,5.17,0
+Sole fish,Marine Fish,87.72,0,19.05,1.18,0
+Stingray,Marine Fish,97.51,0,23.98,0.68,0
+Tarlava,Marine Fish,98.95,0,21.72,1.2,0
+Tholam,Marine Fish,103.25,0,20.78,2.13,0
+Tilapia,Marine Fish,83.41,0,18.48,1.08,0
+Tuna,Marine Fish,112.33,0,24.5,1.44,0
+"Tuna, striped",Marine Fish,96.32,0,21.28,1.12,0
+Valava,Marine Fish,97.99,0,21.8,1.06,0
+Vanjaram,Marine Fish,136.23,0,22.28,5.18,0
+Vela meen,Marine Fish,128.35,0,22.16,4.34,0
+Vora,Marine Fish,100.86,0,20.14,2.14,0
+Whale shark,Marine Fish,95.84,0,21.83,0.82,0
+Xiphinis,Marine Fish,88.43,0,19.82,0.88,0
+"Eggs, Cat fish",Marine Fish,143.4,0,24.68,5.28,0
+Crab,Marine Shellfish,81.98,0,10.23,1.41,0
+"Crab, sea",Marine Shellfish,67.64,0,15.36,0.6,0
+"Lobster, brown",Marine Shellfish,69.79,0,15.96,0.56,0
+"Lobster, king size",Marine Shellfish,89.63,0,18.54,0.78,0
+Mud crab,Marine Shellfish,45.41,0,10,0.55,0
+Oyster,Marine Shellfish,60.23,0,9.51,2.44,0
+"Tiger prawns, brown",Marine Shellfish,65.25,0,14.85,0.56,0
+"Tiger Prawns, orange",Marine Shellfish,64.53,0,14.25,0.74,0
+"Clam, green shell",Marine Mollusks,58.08,0,12.14,0.98,0
+"Clam, white shell, ribbed",Marine Mollusks,59.75,0,11.82,1.34,0
+Octopus,Marine Mollusks,79.83,0,14.71,1.12,0
+"Squid, black",Marine Mollusks,80.07,0,16.1,1.07,0
+"Squid, hard shell",Marine Mollusks,76.48,0,16.82,0.93,0
+"Squid, red",Marine Mollusks,78.63,0,16.25,1.44,0
+"Squid, white, small",Marine Mollusks,84.37,0,17.41,1.15,0
+Cat fish,Fresh Water Fish and Shellfish,123.8,0,15.86,6.24,0
+Catla,Fresh Water Fish and Shellfish,94.17,0,17.94,2.15,0
+Freshwater Eel,Fresh Water Fish and Shellfish,107.79,0,20.41,2.63,0
+Gold fish,Fresh Water Fish and Shellfish,94.65,0,16.91,2.94,0
+Pangas,Fresh Water Fish and Shellfish,203.63,0,17.12,16.77,0
+Rohu,Fresh Water Fish and Shellfish,102.29,0,19.71,2.39,0
+Crab,Fresh Water Fish and Shellfish,78.15,0,13.23,0.89,0
+"Prawns, big",Fresh Water Fish and Shellfish,90.82,0,19.24,0.52,0
+"Prawns, small",Fresh Water Fish and Shellfish,70.98,0,13.07,0.78,0
+Tiger prawns,Fresh Water Fish and Shellfish,67.88,0,14.24,0.66,0
+Coconut oil,Edible Oils and Fats,0,0,0,100,0
+Corn oil,Edible Oils and Fats,0,0,0,100.01,0
+Cotton seed oil,Edible Oils and Fats,0,0,0,99.99,0
+Gingelly oil,Edible Oils and Fats,0,0,0,100,0
+Groundnut oil,Edible Oils and Fats,0,0,0,100,0
+Mustard oil,Edible Oils and Fats,0,0,0,100,0
+Palm oil,Edible Oils and Fats,0,0,0,100,0
+Rice bran oil,Edible Oils and Fats,0,0,0,100,0
+Safflower oil,Edible Oils and Fats,0,0,0,100.01,0
+Safflower oil (blended),Edible Oils and Fats,0,0,0,100,0
+Soyabean oil,Edible Oils and Fats,0,0,0,100,0
+Sunflower oil,Edible Oils and Fats,0,0,0,100,0
+Ghee,Edible Oils and Fats,0,0,0,100,0
+Vanaspati,Edible Oils and Fats,0,0,0,100,0

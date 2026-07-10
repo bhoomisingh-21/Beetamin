@@ -4,8 +4,19 @@ import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { usePathname, useRouter } from 'next/navigation'
+import { isNutritionistEmail } from '@/lib/nutritionist-config'
 
-const BLOCKED_PATHS = ['/assessment', '/report', '/sessions', '/booking', '/profile', '/detailed-assessment']
+const BLOCKED_PATHS = [
+  '/assessment',
+  '/report',
+  '/sessions',
+  '/booking',
+  '/profile',
+  '/detailed-assessment',
+  '/nutritionist',
+  '/nutritionist-dashboard',
+  '/admin',
+]
 /** Once per browser tab session; cleared when the tab/window is closed */
 const SESSION_POPUP_KEY = 'beetamin.deficiencyPopupShown'
 
@@ -112,10 +123,15 @@ function PopupIllustration() {
 
 export function DeficiencyPopup() {
   const [show, setShow] = useState(false)
-  const { isSignedIn, isLoaded } = useUser()
+  const { isSignedIn, isLoaded, user } = useUser()
   const pathname = usePathname()
   const router = useRouter()
   const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const nutritionistEmail = user?.primaryEmailAddress?.emailAddress ?? ''
+  const isNutritionistAccount = isNutritionistEmail(nutritionistEmail)
+  const isOnBlockedRoute = BLOCKED_PATHS.some((p) => pathname.startsWith(p))
+  const suppressPopup = isNutritionistAccount || isOnBlockedRoute
 
   const handleClose = useCallback(() => {
     markPopupShownThisSession()
@@ -124,7 +140,7 @@ export function DeficiencyPopup() {
 
   // One delayed show per tab session; timer is not reset on client-side route changes.
   useEffect(() => {
-    if (!isLoaded || isSignedIn) {
+    if (!isLoaded || isSignedIn || suppressPopup) {
       if (popupTimerRef.current) {
         clearTimeout(popupTimerRef.current)
         popupTimerRef.current = null
@@ -140,15 +156,15 @@ export function DeficiencyPopup() {
       markPopupShownThisSession()
       setShow(true)
     }, 2000)
-  }, [isLoaded, isSignedIn])
+  }, [isLoaded, isSignedIn, suppressPopup])
 
-  // Hide on blocked routes or after login; do not re-open when pathname changes.
+  // Hide on blocked routes, nutritionist accounts, or after login.
   useEffect(() => {
     if (!isLoaded) return
-    if (isSignedIn || BLOCKED_PATHS.some((p) => pathname.startsWith(p))) {
+    if (isSignedIn || suppressPopup) {
       setShow(false)
     }
-  }, [isLoaded, isSignedIn, pathname])
+  }, [isLoaded, isSignedIn, suppressPopup])
 
   useEffect(() => {
     if (!show) return

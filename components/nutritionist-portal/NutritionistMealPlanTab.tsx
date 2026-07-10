@@ -44,6 +44,7 @@ import {
 } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
+import { FoodLibraryPanel } from '@/components/nutritionist-portal/FoodLibraryPanel'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -721,6 +722,8 @@ function PlanBuilder({
           Week {weekPage + 1} · scroll → to see all 7 days
         </span>
       </div>
+
+      <FoodLibraryPanel disabled={isPublished} />
 
       {/* Days as columns (horizontal calendar) */}
       <div className="overflow-x-auto overscroll-x-contain">
