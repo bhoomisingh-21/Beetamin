@@ -3,11 +3,8 @@
 import { useMemo, useState, useTransition } from 'react'
 import { BookOpen, Loader2, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import {
-  TEMPLATE_CONDITION_TAGS,
-  deleteNutritionistTemplate,
-  type TemplateListItem,
-} from '@/lib/template-actions'
+import { deleteNutritionistTemplate } from '@/lib/template-actions'
+import { TEMPLATE_CONDITION_TAGS, type TemplateListItem } from '@/lib/template-types'
 import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function formatDate(iso: string) {

@@ -7,25 +7,7 @@ import { isNutritionistEmail } from '@/lib/nutritionist-config'
 import { getOrCreateNutritionist } from '@/lib/nutritionist-actions'
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-
-export const TEMPLATE_CONDITION_TAGS = [
-  'PCOD',
-  'weight_loss',
-  'weight_gain',
-  'diabetes',
-  'thyroid',
-  'PCOS',
-  'general',
-] as const
-
-export type TemplateListItem = {
-  id: string
-  name: string
-  condition_tags: string[]
-  target_kcal: number | null
-  created_at: string
-  entry_count: number
-}
+import type { TemplateListItem } from '@/lib/template-types'
 
 async function portalNutritionist() {
   const { userId } = await auth()

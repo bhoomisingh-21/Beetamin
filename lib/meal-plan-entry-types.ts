@@ -1,3 +1,5 @@
+export type FoodJoinRow = { name: string; category: string | null }
+
 export type MealPlanEntryRow = {
   id: string
   meal_plan_id: string
@@ -12,7 +14,21 @@ export type MealPlanEntryRow = {
   fat_g: number | null
   created_at: string
   updated_at: string
-  foods: { name: string; category: string | null } | null
+  foods: FoodJoinRow | null
+}
+
+/** Supabase may return `foods` as object or array depending on code-gen. */
+export type MealPlanEntryDbRow = Omit<MealPlanEntryRow, 'foods'> & {
+  foods: FoodJoinRow | FoodJoinRow[] | null
+}
+
+export function normalizeMealPlanEntry(row: MealPlanEntryDbRow): MealPlanEntryRow {
+  const { foods, ...rest } = row
+  let normalizedFood: FoodJoinRow | null = null
+  if (foods) {
+    normalizedFood = Array.isArray(foods) ? (foods[0] ?? null) : foods
+  }
+  return { ...rest, foods: normalizedFood }
 }
 
 export type DayMacroTotals = {

@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { isNutritionistEmail } from '@/lib/nutritionist-config'
-import type { MealPlanEntryRow } from '@/lib/meal-plan-entry-types'
+import { normalizeMealPlanEntry, type MealPlanEntryDbRow, type MealPlanEntryRow } from '@/lib/meal-plan-entry-types'
 import { getOrCreateNutritionist } from '@/lib/nutritionist-actions'
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -62,7 +62,10 @@ export async function listMealPlanEntries(
     return { ok: false, error: error.message }
   }
 
-  return { ok: true, entries: (data ?? []) as MealPlanEntryRow[] }
+  return {
+    ok: true,
+    entries: (data ?? []).map((row) => normalizeMealPlanEntry(row as MealPlanEntryDbRow)),
+  }
 }
 
 export async function addMealPlanFoodEntry(input: {
@@ -99,7 +102,7 @@ export async function addMealPlanFoodEntry(input: {
   }
 
   revalidatePath('/nutritionist')
-  return { ok: true, entry: data as MealPlanEntryRow }
+  return { ok: true, entry: normalizeMealPlanEntry(data as MealPlanEntryDbRow) }
 }
 
 export async function updateMealPlanEntryQty(input: {
@@ -129,7 +132,7 @@ export async function updateMealPlanEntryQty(input: {
     return { ok: false, error: error?.message ?? 'Failed to update' }
   }
 
-  return { ok: true, entry: data as MealPlanEntryRow }
+  return { ok: true, entry: normalizeMealPlanEntry(data as MealPlanEntryDbRow) }
 }
 
 export async function deleteMealPlanEntry(input: {

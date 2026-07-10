@@ -55,9 +55,8 @@ import {
   applyTemplateToMealPlan,
   listNutritionistTemplates,
   saveMealPlanAsTemplate,
-  TEMPLATE_CONDITION_TAGS,
-  type TemplateListItem,
 } from '@/lib/template-actions'
+import { TEMPLATE_CONDITION_TAGS, type TemplateListItem } from '@/lib/template-types'
 import { MealPlanFoodCell } from '@/components/nutritionist-portal/MealPlanFoodCell'
 
 function isoFromPlanDate(date: Date | undefined, fallback: string): string {
