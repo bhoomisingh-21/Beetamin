@@ -7,6 +7,8 @@ import { isNutritionistEmail } from '@/lib/nutritionist-config'
 import { normalizeMealPlanEntry, type MealPlanEntryDbRow, type MealPlanEntryRow } from '@/lib/meal-plan-entry-types'
 import { getOrCreateNutritionist } from '@/lib/nutritionist-actions'
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
+import { MEAL_SLOT_QUICK_FOODS } from '@/lib/meal-slot-suggestions'
+import type { MealSlots } from '@/lib/meal-plan-types'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const ENTRY_SELECT =
@@ -157,4 +159,75 @@ export async function deleteMealPlanEntry(input: {
   }
 
   return { ok: true }
+}
+
+function sanitizeSearchTerm(term: string): string {
+  return term.replace(/[%_,]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+async function findFoodForTerm(term: string, nutritionistId: string) {
+  const q = sanitizeSearchTerm(term)
+  if (!q) return null
+  const { data } = await supabaseAdmin
+    .from('foods')
+    .select('id')
+    .or(`source.eq.ifct,created_by.eq.${nutritionistId}`)
+    .ilike('name', `%${q}%`)
+    .limit(1)
+    .maybeSingle()
+  return data?.id ?? null
+}
+
+export async function seedDefaultMealPlanEntries(input: {
+  mealPlanId: string
+  cells: { entryDate: string; mealSlot: keyof MealSlots; label: string }[]
+}): Promise<{ ok: true; added: number } | { ok: false; error: string }> {
+  const nut = await portalNutritionist()
+  if (!nut) return { ok: false, error: 'Not authenticated' }
+  if (!(await assertOwnsMealPlan(input.mealPlanId, nut.id))) {
+    return { ok: false, error: 'Meal plan not found' }
+  }
+
+  const { data: existing, error: listErr } = await supabaseAdmin
+    .from('meal_plan_entries')
+    .select('entry_date, meal_slot')
+    .eq('meal_plan_id', input.mealPlanId)
+
+  if (listErr) {
+    console.error('[seedDefaultMealPlanEntries]', listErr)
+    return { ok: false, error: listErr.message }
+  }
+
+  const occupied = new Set(
+    (existing ?? []).map((e) => `${e.entry_date}|${e.meal_slot}`),
+  )
+
+  let added = 0
+  for (const cell of input.cells) {
+    const key = `${cell.entryDate}|${cell.mealSlot}`
+    if (occupied.has(key)) continue
+
+    const picks = MEAL_SLOT_QUICK_FOODS[cell.mealSlot]
+    const pick =
+      picks.find((p) => p.label.toLowerCase() === cell.label.trim().toLowerCase()) ?? picks[0]
+    if (!pick) continue
+
+    const foodId = await findFoodForTerm(pick.searchTerm, nut.id)
+    if (!foodId) continue
+
+    const { error } = await supabaseAdmin.from('meal_plan_entries').insert({
+      meal_plan_id: input.mealPlanId,
+      entry_date: cell.entryDate,
+      meal_slot: cell.mealSlot,
+      food_id: foodId,
+      qty_grams: pick.defaultGrams,
+    })
+    if (!error) {
+      occupied.add(key)
+      added += 1
+    }
+  }
+
+  if (added > 0) revalidatePath('/nutritionist')
+  return { ok: true, added }
 }

@@ -33,7 +33,7 @@ import {
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
-import { MEAL_SLOT_SUGGESTIONS } from '@/lib/meal-slot-suggestions'
+import { defaultMealLabelForSlot, hydrateMealSlots } from '@/lib/meal-slot-suggestions'
 import type { MealPlan, MealPlanDay, MealPlanListItem, MealSlots } from '@/lib/meal-plan-types'
 import {
   MEAL_SLOT_META,
@@ -45,7 +45,7 @@ import {
 } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
-import { listMealPlanEntries } from '@/lib/meal-plan-entry-actions'
+import { listMealPlanEntries, seedDefaultMealPlanEntries } from '@/lib/meal-plan-entry-actions'
 import {
   entryCellKey,
   sumDayTotals,
@@ -85,6 +85,11 @@ type Props = {
 type ViewState = 'list' | 'builder'
 
 const WEEK_DAYS = 7
+
+function dayWithDefaultMeals(dayNumber: number, planDate?: string): MealPlanDay {
+  const d = emptyDay(dayNumber, planDate)
+  return { ...d, meals: hydrateMealSlots(d.meals) }
+}
 
 export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, clientContext }: Props) {
   const router = useRouter()
@@ -384,6 +389,8 @@ function PlanBuilder({
   const [dbTemplates, setDbTemplates] = useState<TemplateListItem[]>([])
   const [planEntries, setPlanEntries] = useState<MealPlanEntryRow[]>([])
   const [loadingEntries, setLoadingEntries] = useState(true)
+  const [openCellKey, setOpenCellKey] = useState<string | null>(null)
+  const seededDefaultsRef = useRef(false)
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateTags, setTemplateTags] = useState<string[]>(['general'])
@@ -451,6 +458,30 @@ function PlanBuilder({
   const canGoPrevWeek = weekPage > 0
   const canGoNextWeek = weekEnd < days.length - 1 || (!isPublished && days.length < 31)
 
+  useEffect(() => {
+    if (loadingEntries || isPublished || seededDefaultsRef.current) return
+    seededDefaultsRef.current = true
+
+    const cells: { entryDate: string; mealSlot: keyof MealSlots; label: string }[] = []
+    for (let abs = 0; abs < days.length; abs++) {
+      const day = days[abs]
+      if (!day || day.skipped) continue
+      const entryDate = isoFromPlanDate(planDates[abs], day.plan_date ?? todayIsoDate())
+      for (const slot of MEAL_SLOT_META) {
+        cells.push({
+          entryDate,
+          mealSlot: slot.key,
+          label: day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key),
+        })
+      }
+    }
+
+    void (async () => {
+      const res = await seedDefaultMealPlanEntries({ mealPlanId: initialPlan.id, cells })
+      if (res.ok && res.added > 0) await refreshEntries()
+    })()
+  }, [loadingEntries, isPublished, days, planDates, initialPlan.id, refreshEntries])
+
   function buildMetaNote() {
     return serializeMealPlanMeta({ targetCalories, note: parsedMeta.note })
   }
@@ -464,7 +495,7 @@ function PlanBuilder({
           ? nextIsoDate(next[next.length - 1].plan_date!)
           : todayIsoDate()
       while (next.length <= endIndex && next.length < 31) {
-        next.push(emptyDay(next.length + 1, iso))
+        next.push(dayWithDefaultMeals(next.length + 1, iso))
         iso = nextIsoDate(iso)
       }
       return renumberPlanDays(next)
@@ -482,7 +513,7 @@ function PlanBuilder({
             ? nextIsoDate(next[next.length - 1].plan_date!)
             : todayIsoDate()
         while (next.length < nextStart + WEEK_DAYS && next.length < 31) {
-          next.push(emptyDay(next.length + 1, iso))
+          next.push(dayWithDefaultMeals(next.length + 1, iso))
           iso = nextIsoDate(iso)
         }
         return renumberPlanDays(next)
@@ -659,7 +690,7 @@ function PlanBuilder({
         while (next.length <= abs) {
           const last = next[next.length - 1]
           const iso = last?.plan_date ? nextIsoDate(last.plan_date) : todayIsoDate()
-          next.push(emptyDay(next.length + 1, iso))
+          next.push(dayWithDefaultMeals(next.length + 1, iso))
         }
         const src = source[i]
         if (!src) continue
@@ -952,10 +983,15 @@ function PlanBuilder({
                         entryDate={entryDateIso}
                         mealSlot={slot.key}
                         slotLabel={slot.label}
-                        legacyText={day.meals[slot.key]}
-                        suggestions={MEAL_SLOT_SUGGESTIONS[slot.key as keyof MealSlots]}
+                        displayLabel={
+                          day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key)
+                        }
                         entries={entriesByCell.get(entryCellKey(entryDateIso, slot.key)) ?? []}
                         disabled={isPublished}
+                        isOpen={openCellKey === entryCellKey(entryDateIso, slot.key)}
+                        onOpenChange={(open) =>
+                          setOpenCellKey(open ? entryCellKey(entryDateIso, slot.key) : null)
+                        }
                         onEntriesChange={(cellEntries) =>
                           setCellEntries(entryDateIso, slot.key, cellEntries)
                         }
