@@ -1,7 +1,7 @@
 /** Optional metadata stored inside `nutritionist_notes` as JSON. */
 import type { MealPlanDay } from '@/lib/meal-plan-types'
 import { emptyDay, nextIsoDate, renumberPlanDays, todayIsoDate } from '@/lib/meal-plan-types'
-import { hydrateMealSlots } from '@/lib/meal-slot-suggestions'
+import { hydrateMealSlotsForDay, spreadWeeklyVariety } from '@/lib/meal-slot-suggestions'
 
 export type MealPlanMeta = {
   note?: string
@@ -107,23 +107,26 @@ export function addDaysToIso(iso: string, offset: number): string {
 }
 
 export function initialWeekDays(existing: MealPlanDay[], weekLength = 7): MealPlanDay[] {
-  const withDefaults = (d: MealPlanDay) => ({ ...d, meals: hydrateMealSlots(d.meals) })
+  const withDefaults = (d: MealPlanDay, index: number) => ({
+    ...d,
+    meals: hydrateMealSlotsForDay(d.meals, index),
+  })
 
   if (existing.length >= weekLength) {
-    return existing.map(withDefaults)
+    return spreadWeeklyVariety(existing.map((d, i) => withDefaults(d, i)))
   }
 
-  const list = existing.length > 0 ? existing.map(withDefaults) : []
+  const list = existing.length > 0 ? existing.map((d, i) => withDefaults(d, i)) : []
   let iso =
     list.length > 0 && list[list.length - 1]?.plan_date
       ? nextIsoDate(list[list.length - 1].plan_date!)
       : todayIsoDate()
   if (list.length === 0) {
-    list.push(withDefaults(emptyDay(1, iso)))
+    list.push(withDefaults(emptyDay(1, iso), 0))
     iso = nextIsoDate(iso)
   }
   while (list.length < weekLength) {
-    list.push(withDefaults(emptyDay(list.length + 1, iso)))
+    list.push(withDefaults(emptyDay(list.length + 1, iso), list.length))
     iso = nextIsoDate(iso)
   }
   return renumberPlanDays(list)

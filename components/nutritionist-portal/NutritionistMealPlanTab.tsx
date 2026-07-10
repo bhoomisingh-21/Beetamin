@@ -33,7 +33,7 @@ import {
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
-import { defaultMealLabelForSlot, hydrateMealSlots } from '@/lib/meal-slot-suggestions'
+import { defaultMealLabelForSlot, defaultMealsForDay, findQuickPick } from '@/lib/meal-slot-suggestions'
 import type { MealPlan, MealPlanDay, MealPlanListItem, MealSlots } from '@/lib/meal-plan-types'
 import {
   MEAL_SLOT_META,
@@ -88,7 +88,7 @@ const WEEK_DAYS = 7
 
 function dayWithDefaultMeals(dayNumber: number, planDate?: string): MealPlanDay {
   const d = emptyDay(dayNumber, planDate)
-  return { ...d, meals: hydrateMealSlots(d.meals) }
+  return { ...d, meals: defaultMealsForDay(dayNumber - 1) }
 }
 
 export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, clientContext }: Props) {
@@ -460,9 +460,8 @@ function PlanBuilder({
 
   useEffect(() => {
     if (loadingEntries || isPublished || seededDefaultsRef.current) return
-    seededDefaultsRef.current = true
 
-    const cells: { entryDate: string; mealSlot: keyof MealSlots; label: string }[] = []
+    const cells: { entryDate: string; mealSlot: keyof MealSlots; label: string; dayIndex: number }[] = []
     for (let abs = 0; abs < days.length; abs++) {
       const day = days[abs]
       if (!day || day.skipped) continue
@@ -471,13 +470,15 @@ function PlanBuilder({
         cells.push({
           entryDate,
           mealSlot: slot.key,
-          label: day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key),
+          label: day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key, abs),
+          dayIndex: abs,
         })
       }
     }
 
     void (async () => {
       const res = await seedDefaultMealPlanEntries({ mealPlanId: initialPlan.id, cells })
+      seededDefaultsRef.current = true
       if (res.ok && res.added > 0) await refreshEntries()
     })()
   }, [loadingEntries, isPublished, days, planDates, initialPlan.id, refreshEntries])
@@ -984,7 +985,7 @@ function PlanBuilder({
                         mealSlot={slot.key}
                         slotLabel={slot.label}
                         displayLabel={
-                          day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key)
+                          day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key, abs)
                         }
                         entries={entriesByCell.get(entryCellKey(entryDateIso, slot.key)) ?? []}
                         disabled={isPublished}

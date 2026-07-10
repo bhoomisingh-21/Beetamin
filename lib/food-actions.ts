@@ -33,9 +33,7 @@ async function portalNutritionist() {
   return data ?? null
 }
 
-function sanitizeSearchTerm(term: string): string {
-  return term.replace(/[%_,]/g, ' ').replace(/\s+/g, ' ').trim()
-}
+import { sanitizeFoodSearchTerm } from '@/lib/food-search'
 
 function toNullableNumber(value: number | undefined): number | null {
   if (value === undefined || value === null || Number.isNaN(value)) return null
@@ -48,18 +46,26 @@ export async function searchFoods(
   const nut = await portalNutritionist()
   if (!nut) return { ok: false, error: 'Not authenticated' }
 
-  const term = sanitizeSearchTerm(query)
+  const term = sanitizeFoodSearchTerm(query)
   if (term.length < 1) {
     return { ok: true, foods: [] }
   }
 
-  const { data, error } = await supabaseAdmin
+  const words = term.split(' ').filter(Boolean)
+  let queryBuilder = supabaseAdmin
     .from('foods')
     .select(FOOD_SELECT)
     .or(`source.eq.ifct,created_by.eq.${nut.id}`)
-    .ilike('name', `%${term}%`)
-    .order('name', { ascending: true })
-    .limit(20)
+
+  if (words.length > 1) {
+    for (const word of words) {
+      queryBuilder = queryBuilder.ilike('name', `%${word}%`)
+    }
+  } else {
+    queryBuilder = queryBuilder.ilike('name', `%${term}%`)
+  }
+
+  const { data, error } = await queryBuilder.order('name', { ascending: true }).limit(30)
 
   if (error) {
     console.error('[searchFoods]', error)

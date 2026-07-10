@@ -132,7 +132,8 @@ export function MealPlanFoodCell({
   const handleQuickPick = async (pick: QuickFoodPick) => {
     setQuickBusy(pick.label)
     try {
-      const res = await searchFoods(pick.searchTerm)
+      const term = pick.ifctName ?? pick.searchTerm
+      const res = await searchFoods(term)
       if (!res.ok || res.foods.length === 0) {
         onLegacyChange(pick.label)
         close()

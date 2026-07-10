@@ -7,8 +7,9 @@ import { isNutritionistEmail } from '@/lib/nutritionist-config'
 import { normalizeMealPlanEntry, type MealPlanEntryDbRow, type MealPlanEntryRow } from '@/lib/meal-plan-entry-types'
 import { getOrCreateNutritionist } from '@/lib/nutritionist-actions'
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
-import { MEAL_SLOT_QUICK_FOODS } from '@/lib/meal-slot-suggestions'
+import { findQuickPick, MEAL_SLOT_QUICK_FOODS } from '@/lib/meal-slot-suggestions'
 import type { MealSlots } from '@/lib/meal-plan-types'
+import { resolveFoodId } from '@/lib/food-search'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const ENTRY_SELECT =
@@ -161,26 +162,9 @@ export async function deleteMealPlanEntry(input: {
   return { ok: true }
 }
 
-function sanitizeSearchTerm(term: string): string {
-  return term.replace(/[%_,]/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
-async function findFoodForTerm(term: string, nutritionistId: string) {
-  const q = sanitizeSearchTerm(term)
-  if (!q) return null
-  const { data } = await supabaseAdmin
-    .from('foods')
-    .select('id')
-    .or(`source.eq.ifct,created_by.eq.${nutritionistId}`)
-    .ilike('name', `%${q}%`)
-    .limit(1)
-    .maybeSingle()
-  return data?.id ?? null
-}
-
 export async function seedDefaultMealPlanEntries(input: {
   mealPlanId: string
-  cells: { entryDate: string; mealSlot: keyof MealSlots; label: string }[]
+  cells: { entryDate: string; mealSlot: keyof MealSlots; label: string; dayIndex?: number }[]
 }): Promise<{ ok: true; added: number } | { ok: false; error: string }> {
   const nut = await portalNutritionist()
   if (!nut) return { ok: false, error: 'Not authenticated' }
@@ -207,22 +191,27 @@ export async function seedDefaultMealPlanEntries(input: {
     const key = `${cell.entryDate}|${cell.mealSlot}`
     if (occupied.has(key)) continue
 
-    const picks = MEAL_SLOT_QUICK_FOODS[cell.mealSlot]
     const pick =
-      picks.find((p) => p.label.toLowerCase() === cell.label.trim().toLowerCase()) ?? picks[0]
+      findQuickPick(cell.mealSlot, cell.label, cell.dayIndex) ??
+      MEAL_SLOT_QUICK_FOODS[cell.mealSlot][0]
     if (!pick) continue
 
-    const foodId = await findFoodForTerm(pick.searchTerm, nut.id)
+    const foodId = await resolveFoodId(pick, nut.id)
     if (!foodId) continue
 
-    const { error } = await supabaseAdmin.from('meal_plan_entries').insert({
-      meal_plan_id: input.mealPlanId,
-      entry_date: cell.entryDate,
-      meal_slot: cell.mealSlot,
-      food_id: foodId,
-      qty_grams: pick.defaultGrams,
-    })
-    if (!error) {
+    const { data: inserted, error } = await supabaseAdmin
+      .from('meal_plan_entries')
+      .insert({
+        meal_plan_id: input.mealPlanId,
+        entry_date: cell.entryDate,
+        meal_slot: cell.mealSlot,
+        food_id: foodId,
+        qty_grams: pick.defaultGrams,
+      })
+      .select(ENTRY_SELECT)
+      .single()
+
+    if (!error && inserted) {
       occupied.add(key)
       added += 1
     }

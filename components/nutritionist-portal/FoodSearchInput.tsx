@@ -19,7 +19,7 @@ const DEBOUNCE_MS = 300
 
 export function FoodSearchInput({
   onSelect,
-  placeholder = 'Search foods (IFCT + your custom)…',
+  placeholder = 'Search IFCT food database + your custom foods…',
   disabled = false,
   className = '',
   defaultShowAddForm = false,
