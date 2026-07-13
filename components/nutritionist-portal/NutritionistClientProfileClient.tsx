@@ -129,7 +129,6 @@ export default function NutritionistClientProfileClient({
   const { client, appointments, notes, documents, dietPlans, latestReadyReport } = bundle
 
   const pinned = notes.find((n) => n.is_pinned)
-  const firstSessionEmpty = notes.length === 0 && documents.length === 0
 
   const deficiency = useMemo(
     () => parseDeficiencySummaryPayload(latestReadyReport?.deficiency_summary),
@@ -152,12 +151,12 @@ export default function NutritionistClientProfileClient({
   }, [appointments])
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'hra', label: 'HRA' },
+    { id: 'hra', label: 'HRA Form' },
     { id: 'overview', label: 'Summary' },
-    { id: 'mealPlan', label: 'Diet plan' },
+    { id: 'mealPlan', label: 'Diet Plan' },
     { id: 'notes', label: 'Notes' },
-    { id: 'dietPlan', label: 'PDFs' },
-    { id: 'documents', label: 'Files' },
+    { id: 'dietPlan', label: 'PDF Plans' },
+    { id: 'documents', label: 'Documents' },
     { id: 'progress', label: 'Progress' },
   ]
 
@@ -169,40 +168,34 @@ export default function NutritionistClientProfileClient({
   }
 
   return (
-    <div className="-mx-4 md:-mx-6 lg:-mx-8">
+    <div className="space-y-0">
       <ClientProfileHeader bundle={bundle} onEditHra={() => setTab('hra')} />
 
       <div className="flex flex-col">
-        <nav className="border-b border-emerald-100 bg-white">
-          <div className="mx-auto flex max-w-5xl gap-0 overflow-x-auto px-2 scrollbar-hide md:px-4">
-            {tabs.map(({ id, label }) => {
-              const active = tab === id
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setTab(id)}
-                  className={`shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition sm:px-4 ${
-                    active
-                      ? 'border-emerald-600 text-emerald-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {label}
-                </button>
-              )
-            })}
+        <nav className="sticky top-0 z-20 border-b border-emerald-100 bg-white/95 backdrop-blur-md">
+          <div className="mx-auto max-w-6xl px-4 py-3 md:px-6">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {tabs.map(({ id, label }) => {
+                const active = tab === id
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setTab(id)}
+                    className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                      active ? portal.tabActive : portal.tabIdle
+                    }`}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </nav>
 
-        {firstSessionEmpty && tab === 'hra' ? (
-          <p className="border-b border-emerald-100 bg-emerald-50/60 px-4 py-2 text-center text-xs text-emerald-800">
-            First session — fill in the HRA form below, then add notes or files from the other tabs.
-          </p>
-        ) : null}
-
         <div
-          className={`mx-auto min-w-0 w-full max-w-5xl flex-1 ${tab === 'mealPlan' ? 'px-0 py-0' : 'px-4 py-5 md:px-6'}`}
+          className={`mx-auto min-w-0 w-full max-w-6xl flex-1 ${tab === 'mealPlan' ? 'px-0 py-0' : 'px-4 py-6 md:px-6'}`}
         >
           {tab === 'hra' && (
             <NutritionistHraTab clientId={clientId} clientName={client.name} bundle={bundle} />
