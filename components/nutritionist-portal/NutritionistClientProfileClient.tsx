@@ -3,20 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
-import {
-  Activity,
-  ChevronRight,
-  FileHeart,
-  FileText,
-  FolderOpen,
-  LayoutDashboard,
-  Pin,
-  Sparkles,
-  StickyNote,
-  Target,
-  TrendingUp,
-  UtensilsCrossed,
-} from 'lucide-react'
+import { Activity, ChevronRight, Pin, Sparkles, Target, TrendingUp } from 'lucide-react'
 import { parseDeficiencySummaryPayload } from '@/lib/deficiency-profile-parse'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
 import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
@@ -164,14 +151,14 @@ export default function NutritionistClientProfileClient({
     return nums.length ? Math.max(...nums) : null
   }, [appointments])
 
-  const tabs: { id: Tab; label: string; Icon: typeof LayoutDashboard }[] = [
-    { id: 'hra', label: 'HRA Form', Icon: FileHeart },
-    { id: 'overview', label: 'Summary', Icon: LayoutDashboard },
-    { id: 'mealPlan', label: 'Diet Plan', Icon: UtensilsCrossed },
-    { id: 'notes', label: 'Notes', Icon: StickyNote },
-    { id: 'dietPlan', label: 'PDF Plans', Icon: FileText },
-    { id: 'documents', label: 'Documents', Icon: FolderOpen },
-    { id: 'progress', label: 'Progress', Icon: TrendingUp },
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'hra', label: 'HRA' },
+    { id: 'overview', label: 'Summary' },
+    { id: 'mealPlan', label: 'Diet plan' },
+    { id: 'notes', label: 'Notes' },
+    { id: 'dietPlan', label: 'PDFs' },
+    { id: 'documents', label: 'Files' },
+    { id: 'progress', label: 'Progress' },
   ]
 
   function statusDot(a: AppointmentWithClient) {
@@ -183,50 +170,24 @@ export default function NutritionistClientProfileClient({
 
   return (
     <div className="-mx-4 md:-mx-6 lg:-mx-8">
-      <ClientProfileHeader bundle={bundle} clientId={clientId} onEditHra={() => setTab('hra')} />
-
-      {firstSessionEmpty && tab === 'hra' && (
-        <div className="mx-4 mt-4 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white p-[1px] shadow-sm md:mx-6 lg:mx-8">
-          <div className="rounded-2xl bg-white px-6 py-8 text-center sm:px-10">
-            <p className={`text-xl font-black ${portal.textH}`}>👋 First session with {client.name}</p>
-            <p className={`mx-auto mt-3 max-w-lg text-sm ${portal.textMuted}`}>
-              Start with the HRA form — capture health details, then add notes or upload documents.
-            </p>
-            <div className="mx-auto mt-6 grid max-w-lg grid-cols-1 gap-3 sm:grid-cols-2">
-              <button type="button" onClick={() => setTab('hra')} className={portal.btnOutline}>
-                📋 Complete HRA Form
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setTab('notes')
-                  setComposerKick((k) => k + 1)
-                }}
-                className={portal.btnGhost}
-              >
-                📝 Add First Note
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ClientProfileHeader bundle={bundle} onEditHra={() => setTab('hra')} />
 
       <div className="flex flex-col">
-        {/* Client section nav — always horizontal (calendar is column-based) */}
         <nav className="border-b border-emerald-100 bg-white">
-          <div className="flex gap-1 overflow-x-auto p-2 scrollbar-hide">
-            {tabs.map(({ id, label, Icon }) => {
+          <div className="mx-auto flex max-w-5xl gap-0 overflow-x-auto px-2 scrollbar-hide md:px-4">
+            {tabs.map(({ id, label }) => {
               const active = tab === id
               return (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-                    active ? portal.clientNavActive : portal.clientNavIdle
+                  className={`shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition sm:px-4 ${
+                    active
+                      ? 'border-emerald-600 text-emerald-700'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <Icon size={18} className={active ? 'text-emerald-600' : 'text-slate-400'} aria-hidden />
                   {label}
                 </button>
               )
@@ -234,14 +195,56 @@ export default function NutritionistClientProfileClient({
           </div>
         </nav>
 
-        {/* Main content */}
-        <div className={`min-w-0 flex-1 ${tab === 'mealPlan' ? 'p-0' : 'p-4 md:p-6'}`}>
+        {firstSessionEmpty && tab === 'hra' ? (
+          <p className="border-b border-emerald-100 bg-emerald-50/60 px-4 py-2 text-center text-xs text-emerald-800">
+            First session — fill in the HRA form below, then add notes or files from the other tabs.
+          </p>
+        ) : null}
+
+        <div
+          className={`mx-auto min-w-0 w-full max-w-5xl flex-1 ${tab === 'mealPlan' ? 'px-0 py-0' : 'px-4 py-5 md:px-6'}`}
+        >
           {tab === 'hra' && (
             <NutritionistHraTab clientId={clientId} clientName={client.name} bundle={bundle} />
           )}
 
           {tab === 'overview' && (
             <div className="space-y-6">
+              {/* Quick stats */}
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {[
+                  {
+                    label: 'Weight',
+                    value: stats.latestWeight != null ? `${stats.latestWeight.toFixed(1)} kg` : '—',
+                    sub: stats.latestWeightLoggedAt ? formatDate(stats.latestWeightLoggedAt) : 'No log',
+                  },
+                  {
+                    label: 'BMI',
+                    value: stats.currentBmi != null ? stats.currentBmi.toFixed(1) : '—',
+                    sub: 'Current',
+                  },
+                  {
+                    label: 'Avg energy',
+                    value: stats.avgEnergy7 != null ? `${stats.avgEnergy7.toFixed(1)}/10` : '—',
+                    sub: 'Last 7 days',
+                  },
+                  {
+                    label: 'Avg sleep',
+                    value: stats.avgSleep7 != null ? `${stats.avgSleep7.toFixed(1)}h` : '—',
+                    sub: 'Last 7 days',
+                  },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm"
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">{s.label}</p>
+                    <p className="mt-1 text-2xl font-black tabular-nums text-slate-900">{s.value}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{s.sub}</p>
+                  </div>
+                ))}
+              </div>
+
               {pinned ? (
                 <div className="group relative rounded-2xl border border-amber-200 bg-amber-50 p-4">
                   <Pin className="absolute right-3 top-3 fill-amber-500 text-amber-600" size={18} aria-hidden />
@@ -273,38 +276,50 @@ export default function NutritionistClientProfileClient({
                 </button>
               )}
 
-              <div className={`${portal.card} p-4`}>
-                <p className={`text-xs font-bold uppercase tracking-wider ${portal.textMuted}`}>Session history</p>
-                <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">
-                  {sortedAppts.map((a) => (
-                    <li key={a.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTab('notes')
-                          setNotesMount({ key: Date.now(), session: String(a.session_number) })
-                        }}
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-emerald-50"
-                      >
-                        <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot(a)}`} />
-                        <span className={`font-bold ${portal.textAccent}`}>Session {a.session_number}</span>
-                        <span className={portal.textMuted}>{formatDate(a.scheduled_date)}</span>
-                        <span className={`ml-auto rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] uppercase ${portal.textMuted}`}>
-                          {a.status}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+              <div className={`${portal.card} overflow-hidden`}>
+                <div className="border-b border-emerald-100 bg-emerald-50/50 px-5 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Session history</p>
+                </div>
+                <ul className="max-h-56 divide-y divide-emerald-50 overflow-y-auto">
+                  {sortedAppts.length === 0 ? (
+                    <li className={`px-5 py-8 text-center text-sm ${portal.textMuted}`}>No sessions yet</li>
+                  ) : (
+                    sortedAppts.map((a) => (
+                      <li key={a.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTab('notes')
+                            setNotesMount({ key: Date.now(), session: String(a.session_number) })
+                          }}
+                          className="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-emerald-50/80"
+                        >
+                          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusDot(a)}`} />
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-sm font-bold ${portal.textH}`}>Session {a.session_number}</p>
+                            <p className={`text-xs ${portal.textMuted}`}>{formatDate(a.scheduled_date)}</p>
+                          </div>
+                          <span className="shrink-0 rounded-full border border-emerald-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase text-emerald-700">
+                            {a.status}
+                          </span>
+                          <ChevronRight size={16} className="shrink-0 text-emerald-400" />
+                        </button>
+                      </li>
+                    ))
+                  )}
                 </ul>
               </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
               <div className="space-y-6">
-                <div className={`${portal.card} p-5`}>
-                  <div className="flex items-center gap-2">
-                    <Target className="text-emerald-600" size={18} />
+                <div className={`${portal.card} overflow-hidden`}>
+                  <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50/50 px-5 py-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                      <Target size={18} />
+                    </div>
                     <h3 className={`font-black ${portal.textH}`}>Deficiency profile</h3>
                   </div>
+                  <div className="p-5">
                   {latestReadyReport ? (
                     <>
                       {deficiency.overallScore != null && (
@@ -339,13 +354,17 @@ export default function NutritionistClientProfileClient({
                   ) : (
                     <p className={`mt-4 text-sm ${portal.textMuted}`}>No paid report yet.</p>
                   )}
+                  </div>
                 </div>
 
-                <div className={`${portal.card} p-5`}>
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="text-amber-600" size={18} />
-                    <h3 className={`font-black ${portal.textH}`}>Free assessment summary</h3>
+                <div className={`${portal.card} overflow-hidden`}>
+                  <div className="flex items-center gap-3 border-b border-emerald-100 bg-amber-50/60 px-5 py-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white">
+                      <Sparkles size={18} />
+                    </div>
+                    <h3 className={`font-black ${portal.textH}`}>Free assessment</h3>
                   </div>
+                  <div className="p-5">
                   {free.score != null || free.top.length > 0 ? (
                     <div className="mt-4 space-y-3 text-sm">
                       {free.score != null && (
@@ -364,15 +383,19 @@ export default function NutritionistClientProfileClient({
                   ) : (
                     <p className={`mt-4 text-sm ${portal.textMuted}`}>No free assessment data on file.</p>
                   )}
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-6">
-                <div className={`${portal.card} p-5`}>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="text-emerald-600" size={18} />
+                <div className={`${portal.card} overflow-hidden`}>
+                  <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50/50 px-5 py-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                      <TrendingUp size={18} />
+                    </div>
                     <h3 className={`font-black ${portal.textH}`}>Recent progress</h3>
                   </div>
+                  <div className="p-5">
                   <div className="mt-4 space-y-4 text-sm">
                     <div className={`grid gap-3 border-b ${portal.divider} pb-4 sm:grid-cols-2`}>
                       <div className={portal.textMuted}>
@@ -476,13 +499,17 @@ export default function NutritionistClientProfileClient({
                     View full progress
                     <ChevronRight size={16} />
                   </button>
+                  </div>
                 </div>
 
-                <div className={`${portal.card} p-5`}>
-                  <div className="flex items-center gap-2">
-                    <Activity className="text-emerald-600" size={18} />
-                    <h3 className={`font-black ${portal.textH}`}>Wellness Goals</h3>
+                <div className={`${portal.card} overflow-hidden`}>
+                  <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50/50 px-5 py-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                      <Activity size={18} />
+                    </div>
+                    <h3 className={`font-black ${portal.textH}`}>Wellness goals</h3>
                   </div>
+                  <div className="p-5">
                   <p className={`mt-2 text-xs ${portal.textMuted}`}>
                     {DEFAULT_GOALS.reduce((n, _, i) => (goals[String(i)] ? n + 1 : n), 0)} of 5 completed
                   </p>
@@ -506,6 +533,7 @@ export default function NutritionistClientProfileClient({
                       </li>
                     ))}
                   </ul>
+                  </div>
                 </div>
               </div>
             </div>
