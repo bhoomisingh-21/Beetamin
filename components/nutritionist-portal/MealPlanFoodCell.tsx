@@ -13,7 +13,7 @@ import {
 import type { MealPlanEntryRow } from '@/lib/meal-plan-entry-types'
 import { searchFoods } from '@/lib/food-actions'
 import type { FoodRow } from '@/lib/food-db-types'
-import { MEAL_SLOT_QUICK_FOODS, type QuickFoodPick } from '@/lib/meal-slot-suggestions'
+import { findQuickPick, MEAL_SLOT_QUICK_FOODS, estimateServingKcal, type QuickFoodPick } from '@/lib/meal-slot-suggestions'
 import type { MealSlots } from '@/lib/meal-plan-types'
 
 type Props = {
@@ -66,7 +66,11 @@ export function MealPlanFoodCell({
   const quickPicks = MEAL_SLOT_QUICK_FOODS[mealSlot]
   const slotKcal = entries.reduce((sum, e) => sum + (e.kcal ?? 0), 0)
   const hasEntries = entries.length > 0
-  const cellLabel = hasEntries ? entryNames(entries) : displayLabel
+  const estimatedKcal = hasEntries
+    ? 0
+    : estimateServingKcal(findQuickPick(mealSlot, displayLabel) ?? quickPicks[0])
+  const cellLabel = displayLabel.trim() || (hasEntries ? entryNames(entries) : '')
+  const showKcal = hasEntries ? slotKcal : estimatedKcal
 
   useEffect(() => {
     setMounted(true)
@@ -311,8 +315,11 @@ export function MealPlanFoodCell({
     return (
       <div className="flex min-h-[72px] flex-col justify-center rounded-lg border border-emerald-100/80 bg-slate-50 px-3 py-2">
         <span className="line-clamp-2 text-sm font-medium text-gray-700">{cellLabel}</span>
-        {hasEntries ? (
-          <span className="mt-1 text-xs font-semibold text-emerald-600">{formatKcal(slotKcal)}</span>
+        {showKcal > 0 ? (
+          <span className="mt-1 text-xs font-semibold text-emerald-600">
+            {formatKcal(showKcal)}
+            {!hasEntries ? ' est.' : ''}
+          </span>
         ) : null}
       </div>
     )
@@ -333,8 +340,11 @@ export function MealPlanFoodCell({
         <span className="line-clamp-2 text-sm font-medium text-gray-800 group-hover:text-emerald-900">
           {cellLabel}
         </span>
-        {hasEntries ? (
-          <span className="mt-1 text-xs font-semibold text-emerald-600">{formatKcal(slotKcal)}</span>
+        {showKcal > 0 ? (
+          <span className="mt-1 text-xs font-semibold text-emerald-600">
+            {formatKcal(showKcal)}
+            {!hasEntries ? ' est.' : ''}
+          </span>
         ) : (
           <span className="mt-1 text-xs text-gray-400">Tap to edit</span>
         )}

@@ -12,6 +12,7 @@ import {
   Leaf,
   LogOut,
   Menu,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react'
@@ -106,6 +107,14 @@ export function NutritionistPortalSidebar() {
 
         <nav className="flex flex-1 flex-col gap-1 px-2 py-4">
           <SidebarLinks />
+          <Link
+            href="/nutritionist/clients?add=1"
+            onClick={closeMenu}
+            className="mx-0 mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-2.5 text-xs font-bold text-emerald-950 shadow-sm transition hover:bg-emerald-400"
+          >
+            <UserPlus size={18} aria-hidden />
+            <span>Add client</span>
+          </Link>
         </nav>
 
         <div className="border-t border-emerald-700/60 px-2 py-4">
@@ -181,6 +190,14 @@ export function NutritionistPortalSidebar() {
             </div>
             <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-3 pb-8">
               <SidebarLinks onNavigate={closeMenu} />
+              <Link
+                href="/nutritionist/clients?add=1"
+                onClick={closeMenu}
+                className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-emerald-950"
+              >
+                <UserPlus size={18} aria-hidden />
+                Add client
+              </Link>
             </div>
           </nav>
         </div>

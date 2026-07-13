@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Clock,
   Loader2,
+  UserPlus,
   Users,
   ClipboardList,
   ChevronRight,
@@ -119,10 +120,19 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
         onConfirm={submitComplete}
       />
 
-      <div>
-        <h1 className={portal.heading}>Dashboard</h1>
-        <p className={portal.subtext}>Sessions and clients at a glance</p>
-        <div className={portal.accentBar} aria-hidden />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className={portal.heading}>Dashboard</h1>
+          <p className={portal.subtext}>Sessions and clients at a glance</p>
+          <div className={portal.accentBar} aria-hidden />
+        </div>
+        <Link
+          href="/nutritionist/clients?add=1"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-500"
+        >
+          <UserPlus size={16} />
+          Add client
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

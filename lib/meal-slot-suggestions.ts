@@ -1,77 +1,100 @@
 import type { MealSlots } from '@/lib/meal-plan-types'
+import { emptyDayTotals, type DayMacroTotals } from '@/lib/meal-plan-entry-types'
 
 export type QuickFoodPick = {
   label: string
-  /** Primary IFCT / food name match (most reliable). */
   ifctName?: string
-  /** Fallback fuzzy search term. */
   searchTerm: string
   defaultGrams: number
+  kcalPer100g?: number
+  carbsPer100g?: number
+  proteinPer100g?: number
+  fatPer100g?: number
 }
 
 /** Fitrofy-style: these rows stay the same all week. */
 export const SAME_DAILY_SLOTS: (keyof MealSlots)[] = ['early_morning', 'bedtime']
 
+function p(
+  label: string,
+  grams: number,
+  kcal100: number,
+  carbs = 0,
+  protein = 0,
+  fat = 0,
+): QuickFoodPick {
+  return {
+    label,
+    ifctName: label,
+    searchTerm: label,
+    defaultGrams: grams,
+    kcalPer100g: kcal100,
+    carbsPer100g: carbs,
+    proteinPer100g: protein,
+    fatPer100g: fat,
+  }
+}
+
 export const MEAL_SLOT_QUICK_FOODS: Record<keyof MealSlots, QuickFoodPick[]> = {
   early_morning: [
-    { label: 'Jeera + saunf water', ifctName: 'Cumin seeds', searchTerm: 'Cumin', defaultGrams: 5 },
-    { label: 'Warm water + lemon', ifctName: 'Lemon, juice', searchTerm: 'Lemon', defaultGrams: 50 },
-    { label: 'Soaked almonds (5)', ifctName: 'Almond', searchTerm: 'Almond', defaultGrams: 30 },
+    p('Jeera and saunf water', 200, 8, 1.2, 0.2, 0.1),
+    p('Warm water + lemon', 200, 12, 2.5, 0.2, 0.1),
+    p('Soaked almonds (5)', 30, 580, 18, 21, 50),
   ],
   breakfast: [
-    { label: 'Idli + sambar', ifctName: 'Rice, raw, milled', searchTerm: 'Rice, raw', defaultGrams: 180 },
-    { label: 'Vegetable Poha', ifctName: 'Rice flakes', searchTerm: 'Rice flakes', defaultGrams: 150 },
-    { label: 'Methi Paratha', ifctName: 'Wheat flour, atta', searchTerm: 'Wheat flour, atta', defaultGrams: 100 },
-    { label: 'Paneer Sandwich', ifctName: 'Paneer', searchTerm: 'Paneer', defaultGrams: 90 },
-    { label: 'Egg Omelette', ifctName: 'Egg, poultry, omlet', searchTerm: 'Egg, poultry, omlet', defaultGrams: 120 },
-    { label: 'Oats Vegetable Upma', ifctName: 'Wheat, semolina', searchTerm: 'Wheat, semolina', defaultGrams: 150 },
-    { label: 'Dosa + sambar', ifctName: 'Rice, parboiled, milled', searchTerm: 'Rice, parboiled', defaultGrams: 180 },
+    p('Idli + sambar', 180, 118, 22, 4.5, 1.2),
+    p('Vegetable Poha', 150, 128, 24, 3.2, 2.8),
+    p('Methi Paratha', 80, 265, 32, 8.5, 11),
+    p('Paneer Vegetable Sandwich', 120, 210, 24, 11, 8),
+    p('Egg Omelette Sandwich', 130, 220, 18, 14, 10),
+    p('Oats Vegetable Upma', 150, 135, 20, 4.5, 4),
+    p('Dosa with sambar', 180, 125, 23, 4.2, 1.8),
   ],
   mid_morning: [
-    { label: 'Barley water', ifctName: 'Barley', searchTerm: 'Barley', defaultGrams: 200 },
-    { label: 'Red Apple (medium)', ifctName: 'Apple, big', searchTerm: 'Apple, big', defaultGrams: 150 },
-    { label: 'Pineapple', ifctName: 'Pineapple', searchTerm: 'Pineapple', defaultGrams: 150 },
-    { label: 'ABC juice', ifctName: 'Beet root', searchTerm: 'Beet root', defaultGrams: 200 },
-    { label: 'Roasted chana', ifctName: 'Bengal gram, whole', searchTerm: 'Bengal gram, whole', defaultGrams: 50 },
-    { label: 'Buttermilk', ifctName: 'Milk, whole, Cow', searchTerm: 'Milk, whole, Cow', defaultGrams: 200 },
-    { label: 'Mango slices', ifctName: 'Mango, ripe, banganapalli', searchTerm: 'Mango, ripe', defaultGrams: 150 },
+    p('Barley water', 200, 35, 7.5, 1, 0.3),
+    p('Red Apple (medium)', 150, 52, 14, 0.3, 0.2),
+    p('ABC juice', 200, 45, 10, 1.2, 0.2),
+    p('Pineapple', 150, 50, 13, 0.5, 0.1),
+    p('Green Smoothie', 250, 55, 11, 2, 1),
+    p('Vegetable Juice', 250, 28, 5.5, 1.5, 0.3),
+    p('Buttermilk', 200, 40, 4.5, 3.2, 1.2),
   ],
   lunch: [
-    { label: 'Dal + rice + sabzi', ifctName: 'Rice, raw, milled', searchTerm: 'Rice, raw, milled', defaultGrams: 200 },
-    { label: 'Roti + paneer sabzi', ifctName: 'Wheat flour, atta', searchTerm: 'Wheat flour, atta', defaultGrams: 120 },
-    { label: 'Khichdi + curd', ifctName: 'Green gram, dal', searchTerm: 'Green gram, dal', defaultGrams: 220 },
-    { label: 'Brown rice + rajma', ifctName: 'Rajmah, red', searchTerm: 'Rajmah, red', defaultGrams: 200 },
-    { label: 'Roti + dal + sabzi', ifctName: 'Red gram, dal', searchTerm: 'Red gram, dal', defaultGrams: 200 },
-    { label: 'Jeera rice + raita', ifctName: 'Rice, parboiled, milled', searchTerm: 'Rice, parboiled', defaultGrams: 200 },
-    { label: 'Millet bowl + curd', ifctName: 'Bajra', searchTerm: 'Bajra', defaultGrams: 180 },
+    p('Dal + rice + sabzi', 250, 115, 20, 4, 2),
+    p('Roti + paneer sabzi', 220, 175, 22, 9, 6.5),
+    p('Khichdi + curd', 250, 110, 18, 5, 2.5),
+    p('Brown rice + rajma', 250, 125, 21, 6, 1.8),
+    p('Roti + dal + sabzi', 220, 120, 19, 5.5, 2.8),
+    p('Jeera rice + raita', 250, 130, 24, 4, 2.5),
+    p('Millet bowl + curd', 220, 105, 19, 4.5, 1.5),
   ],
   evening_snack: [
-    { label: 'Roasted makhana', ifctName: 'Rice puffed', searchTerm: 'Rice puffed', defaultGrams: 50 },
-    { label: 'Sprouts chaat', ifctName: 'Green gram, whole', searchTerm: 'Green gram, whole', defaultGrams: 100 },
-    { label: 'Green tea + biscuits', ifctName: 'Wheat flour, refined', searchTerm: 'Wheat flour, refined', defaultGrams: 40 },
-    { label: 'Walnut (4 halves)', ifctName: 'Walnut', searchTerm: 'Walnut', defaultGrams: 30 },
-    { label: 'Roasted flax seeds', ifctName: 'Linseeds', searchTerm: 'Linseeds', defaultGrams: 15 },
-    { label: 'Fruit bowl', ifctName: 'Banana, ripe, montham', searchTerm: 'Banana, ripe', defaultGrams: 120 },
-    { label: 'Roasted chana', ifctName: 'Bengal gram, whole', searchTerm: 'Bengal gram, whole', defaultGrams: 50 },
+    p('Roasted makhana', 50, 350, 76, 8, 1.5),
+    p('Sprouts chaat', 120, 95, 14, 7, 2),
+    p('Green tea + biscuits', 80, 180, 28, 4, 6),
+    p('Walnut (4 halves)', 30, 650, 12, 15, 63),
+    p('Roasted Flax Seeds', 15, 530, 28, 18, 42),
+    p('Fruit bowl', 150, 65, 16, 0.8, 0.3),
+    p('Roasted chana', 50, 360, 58, 19, 6),
   ],
   dinner: [
-    { label: 'Roti + dal + vegetables', ifctName: 'Wheat flour, atta', searchTerm: 'Wheat flour, atta', defaultGrams: 100 },
-    { label: 'Grilled chicken + salad', ifctName: 'Chicken, poultry, breast, skinless', searchTerm: 'Chicken, poultry, breast', defaultGrams: 120 },
-    { label: 'Vegetable soup + toast', ifctName: 'Tomato, ripe, local', searchTerm: 'Tomato, ripe', defaultGrams: 200 },
-    { label: 'Paneer tikka + roti', ifctName: 'Paneer', searchTerm: 'Paneer', defaultGrams: 100 },
-    { label: 'Fish curry + rice', ifctName: 'Rohu, fish', searchTerm: 'Rohu', defaultGrams: 150 },
-    { label: 'Khichdi + papad', ifctName: 'Rice, raw, milled', searchTerm: 'Rice, raw, milled', defaultGrams: 180 },
-    { label: 'Stuffed paratha + curd', ifctName: 'Wheat flour, atta', searchTerm: 'Wheat flour, atta', defaultGrams: 110 },
+    p('Roti + dal + vegetables', 220, 118, 18, 5.2, 2.6),
+    p('Grilled chicken + salad', 200, 145, 3, 22, 5.5),
+    p('Vegetable soup + toast', 250, 55, 9, 2.5, 1.2),
+    p('Paneer tikka + roti', 220, 185, 18, 12, 8),
+    p('Fish curry + rice', 250, 130, 16, 12, 3.5),
+    p('Moong Dal Khichdi', 250, 105, 17, 5, 2),
+    p('Stuffed paratha + curd', 200, 245, 30, 8, 10),
   ],
   bedtime: [
-    { label: 'Turmeric milk', ifctName: 'Milk, whole, Cow', searchTerm: 'Milk, whole, Cow', defaultGrams: 200 },
-    { label: 'Soaked walnuts', ifctName: 'Walnut', searchTerm: 'Walnut', defaultGrams: 30 },
-    { label: 'Warm milk + honey', ifctName: 'Milk, whole, Buffalo', searchTerm: 'Milk, whole, Buffalo', defaultGrams: 200 },
+    p('Turmeric milk', 200, 65, 6, 3.5, 3),
+    p('Soaked walnuts', 30, 650, 12, 15, 63),
+    p('Warm milk + honey', 200, 75, 10, 3.8, 2.5),
   ],
 }
 
 export const MEAL_SLOT_SUGGESTIONS: Record<keyof MealSlots, string[]> = Object.fromEntries(
-  Object.entries(MEAL_SLOT_QUICK_FOODS).map(([k, v]) => [k, v.map((p) => p.label)]),
+  Object.entries(MEAL_SLOT_QUICK_FOODS).map(([k, v]) => [k, v.map((item) => item.label)]),
 ) as Record<keyof MealSlots, string[]>
 
 export function pickForSlot(slot: keyof MealSlots, dayIndex: number): QuickFoodPick {
@@ -96,11 +119,6 @@ export function defaultMealLabelForSlot(slot: keyof MealSlots, dayIndex = 0): st
   return pickForSlot(slot, dayIndex).label
 }
 
-/** @deprecated Use defaultMealsForDay */
-export function defaultMealSlots(): MealSlots {
-  return defaultMealsForDay(0)
-}
-
 export function hydrateMealSlotsForDay(
   meals: Partial<MealSlots> | undefined,
   dayIndex: number,
@@ -118,28 +136,79 @@ export function hydrateMealSlotsForDay(
   }
 }
 
-/** @deprecated Use hydrateMealSlotsForDay */
-export function hydrateMealSlots(meals: Partial<MealSlots> | undefined): MealSlots {
-  return hydrateMealSlotsForDay(meals, 0)
-}
-
 export function isUniformMealWeek(days: { meals: MealSlots }[]): boolean {
   if (days.length < 2) return false
   const base = JSON.stringify(days[0]?.meals ?? {})
   return days.every((d) => JSON.stringify(d.meals ?? {}) === base)
 }
 
-/** When every day was cloned (old builder), spread Fitrofy-style variety across the week. */
-export function spreadWeeklyVariety(days: { day: number; meals: MealSlots; water_target: string; day_notes: string; plan_date?: string; skipped?: boolean }[]): typeof days {
+export function spreadWeeklyVariety(
+  days: {
+    day: number
+    meals: MealSlots
+    water_target: string
+    day_notes: string
+    plan_date?: string
+    skipped?: boolean
+  }[],
+): typeof days {
   if (!isUniformMealWeek(days)) return days
   return days.map((d, i) => ({ ...d, meals: defaultMealsForDay(i) }))
 }
 
-export function findQuickPick(slot: keyof MealSlots, label: string, dayIndex?: number): QuickFoodPick | undefined {
+export function findQuickPick(
+  slot: keyof MealSlots,
+  label: string,
+  dayIndex?: number,
+): QuickFoodPick | undefined {
   const picks = MEAL_SLOT_QUICK_FOODS[slot]
   const normalized = label.trim().toLowerCase()
-  const byLabel = picks.find((p) => p.label.toLowerCase() === normalized)
+  const byLabel = picks.find((item) => item.label.toLowerCase() === normalized)
   if (byLabel) return byLabel
+  const allPicks = Object.values(MEAL_SLOT_QUICK_FOODS).flat()
+  const global = allPicks.find((item) => item.label.toLowerCase() === normalized)
+  if (global) return global
   if (dayIndex != null) return pickForSlot(slot, dayIndex)
   return picks[0]
+}
+
+export function estimateServingKcal(pick: QuickFoodPick): number {
+  if (!pick.kcalPer100g) return 0
+  return Math.round((pick.kcalPer100g * pick.defaultGrams) / 100)
+}
+
+export function estimatePickMacros(pick: QuickFoodPick): DayMacroTotals {
+  const ratio = pick.defaultGrams / 100
+  return {
+    kcal: (pick.kcalPer100g ?? 0) * ratio,
+    carbs: (pick.carbsPer100g ?? 0) * ratio,
+    protein: (pick.proteinPer100g ?? 0) * ratio,
+    fat: (pick.fatPer100g ?? 0) * ratio,
+  }
+}
+
+const MEAL_SLOTS_ORDER: (keyof MealSlots)[] = [
+  'early_morning',
+  'breakfast',
+  'mid_morning',
+  'lunch',
+  'evening_snack',
+  'dinner',
+  'bedtime',
+]
+
+export function estimateDayTotalsFromMeals(meals: MealSlots, dayIndex: number): DayMacroTotals {
+  return MEAL_SLOTS_ORDER.reduce((acc, slot) => {
+    const label = meals[slot]?.trim()
+    if (!label) return acc
+    const pick = findQuickPick(slot, label, dayIndex)
+    if (!pick?.kcalPer100g) return acc
+    const m = estimatePickMacros(pick)
+    return {
+      kcal: acc.kcal + m.kcal,
+      carbs: acc.carbs + m.carbs,
+      protein: acc.protein + m.protein,
+      fat: acc.fat + m.fat,
+    }
+  }, emptyDayTotals())
 }

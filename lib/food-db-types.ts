@@ -11,7 +11,7 @@ export type FoodRow = {
   fat_g_per_100g: number | null
   fiber_g_per_100g: number | null
   tags: string[] | null
-  source: 'ifct' | 'custom'
+  source: 'ifct' | 'custom' | 'prepared'
   is_verified: boolean
   created_by: string | null
   created_at: string

@@ -110,7 +110,7 @@ export function ClientProfileHeader({
           <MetricCell label="Country" value={hra.country || 'India'} />
           <MetricCell label="Community" value={hra.community || '—'} />
           <MetricCell label="Allergies" value={hra.allergies || '—'} />
-          <MetricCell label="Conditions" value={hra.diseases || '—'} />
+          <MetricCell label="Lifestyle" value={hra.diseases && hra.diseases !== 'None' ? hra.diseases : '—'} />
         </div>
       </div>
     </div>

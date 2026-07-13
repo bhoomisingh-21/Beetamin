@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { ClientRow } from '@/lib/booking-types'
 import type { PortalClientListRow, SessionDotState } from '@/lib/nutritionist-types'
 import { avatarPaletteFromName } from '@/lib/nutritionist-utils'
@@ -52,9 +53,31 @@ function formatPlanDate(iso: string) {
 type FilterKey = 'all' | ClientRow['status']
 
 export default function NutritionistClientsPageClient({ clients }: { clients: PortalClientListRow[] }) {
+  return (
+    <Suspense fallback={<ClientsPageSkeleton />}>
+      <NutritionistClientsPageContent clients={clients} />
+    </Suspense>
+  )
+}
+
+function ClientsPageSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="h-10 w-48 rounded-lg bg-emerald-100" />
+      <div className="h-12 max-w-md rounded-xl bg-emerald-50" />
+    </div>
+  )
+}
+
+function NutritionistClientsPageContent({ clients }: { clients: PortalClientListRow[] }) {
+  const searchParams = useSearchParams()
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState<FilterKey>('all')
   const [addOpen, setAddOpen] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('add') === '1') setAddOpen(true)
+  }, [searchParams])
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -74,13 +97,23 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className={portal.heading}>My Clients</h1>
-        <p className={portal.subtext}>Clients you have sessions with — search and filter by status</p>
-        <div className={portal.accentBar} aria-hidden />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className={portal.heading}>My Clients</h1>
+          <p className={portal.subtext}>Clients you have sessions with — search and filter by status</p>
+          <div className={portal.accentBar} aria-hidden />
+        </div>
+        <button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-500"
+        >
+          <UserPlus size={16} />
+          Add client
+        </button>
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative max-w-md flex-1">
           <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${portal.textMuted}`} />
           <input
@@ -90,15 +123,7 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
             className={portal.inputSearch}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setAddOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-500"
-        >
-          <UserPlus size={16} />
-          Add client
-        </button>
-        <div className="flex flex-wrap gap-2 sm:order-last sm:w-full lg:w-auto lg:order-none">
+        <div className="flex flex-wrap gap-2">
           {pills.map((p) => (
             <button
               key={p.key}
@@ -118,8 +143,24 @@ export default function NutritionistClientsPageClient({ clients }: { clients: Po
 
       {filtered.length === 0 ? (
         <div className={portal.cardEmpty}>
-          <p className={`font-semibold ${portal.textH}`}>No clients match</p>
-          <p className={`mt-2 text-sm ${portal.textMuted}`}>Try another search or filter.</p>
+          <p className={`font-semibold ${portal.textH}`}>
+            {clients.length === 0 ? 'No clients yet' : 'No clients match'}
+          </p>
+          <p className={`mt-2 text-sm ${portal.textMuted}`}>
+            {clients.length === 0
+              ? 'Add your first freelance client to start building meal plans.'
+              : 'Try another search or filter.'}
+          </p>
+          {clients.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-500"
+            >
+              <UserPlus size={16} />
+              Add client
+            </button>
+          ) : null}
         </div>
       ) : (
         <div className="grid gap-4">

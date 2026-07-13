@@ -1,0 +1,105 @@
+name,category,kcal_per_100g,carbs_g_per_100g,protein_g_per_100g,fat_g_per_100g,fiber_g_per_100g,default_qty_grams
+Jeera and saunf water,Prepared Drink,8,1.2,0.2,0.1,0.3,200
+Jeera + saunf water,Prepared Drink,8,1.2,0.2,0.1,0.3,200
+Warm water + lemon,Prepared Drink,12,2.5,0.2,0.1,0.2,200
+Soaked almonds (5),Prepared Snack,580,18,21,50,12,30
+Walnut (4 halves),Prepared Snack,650,12,15,63,7,30
+Walnut,Prepared Snack,650,12,15,63,7,30
+Idli + sambar,Prepared Breakfast,118,22,4.5,1.2,1.8,180
+Dosa with sambar,Prepared Breakfast,125,23,4.2,1.8,1.5,180
+Dosa + sambar,Prepared Breakfast,125,23,4.2,1.8,1.5,180
+Vegetable Poha,Prepared Breakfast,128,24,3.2,2.8,1.6,150
+Methi Paratha,Prepared Breakfast,265,32,8.5,11,3.2,80
+Methi Prantha,Prepared Breakfast,265,32,8.5,11,3.2,80
+Paneer Vegetable Sandwich,Prepared Breakfast,210,24,11,8,2.5,120
+Paneer Sandwich,Prepared Breakfast,195,22,10,7.5,2,100
+Egg Omelette Sandwich,Prepared Breakfast,220,18,14,10,1.2,130
+Egg Omelette,Prepared Breakfast,185,2,13,14,0,120
+Oats Vegetable Upma,Prepared Breakfast,135,20,4.5,4,2.8,150
+Oats with milk,Prepared Breakfast,95,14,4,3,1.5,200
+Upma,Prepared Breakfast,130,22,3.8,3.5,1.8,150
+Paratha + curd,Prepared Breakfast,240,30,8,10,2.5,120
+Poha,Prepared Breakfast,125,24,3,2.5,1.5,150
+Barley water,Prepared Drink,35,7.5,1,0.3,1.8,200
+Red Apple (medium),Prepared Fruit,52,14,0.3,0.2,2.4,150
+Red Apple (Medium),Prepared Fruit,52,14,0.3,0.2,2.4,150
+ABC juice,Prepared Drink,45,10,1.2,0.2,1.5,200
+Abc Juice/ Apple Beetroot Carrot,Prepared Drink,45,10,1.2,0.2,1.5,200
+Pineapple,Prepared Fruit,50,13,0.5,0.1,1.4,150
+Green Smoothie,Prepared Drink,55,11,2,1,2.5,250
+Vegetable Juice,Prepared Drink,28,5.5,1.5,0.3,2,250
+Buttermilk,Prepared Drink,40,4.5,3.2,1.2,0,200
+Roasted chana,Prepared Snack,360,58,19,6,12,50
+Mango slices,Prepared Fruit,60,15,0.8,0.4,1.6,150
+Seasonal fruit,Prepared Fruit,55,14,0.6,0.3,2,150
+Dal + rice + sabzi,Prepared Lunch,115,20,4,2,2.5,250
+Roti + paneer sabzi,Prepared Lunch,175,22,9,6.5,3,220
+Khichdi + curd,Prepared Lunch,110,18,5,2.5,2.8,250
+Brown rice + rajma,Prepared Lunch,125,21,6,1.8,4,250
+Roti + dal + sabzi,Prepared Lunch,120,19,5.5,2.8,3.5,220
+Roti + dal + vegetables,Prepared Dinner,118,18,5.2,2.6,3.2,220
+Jeera rice + raita,Prepared Lunch,130,24,4,2.5,1.5,250
+Millet bowl + curd,Prepared Lunch,105,19,4.5,1.5,3,220
+Grilled chicken + salad,Prepared Dinner,145,3,22,5.5,1.5,200
+Vegetable soup + toast,Prepared Dinner,55,9,2.5,1.2,2,250
+Paneer tikka + roti,Prepared Dinner,185,18,12,8,2.5,220
+Fish curry + rice,Prepared Dinner,130,16,12,3.5,1.2,250
+Stuffed paratha + curd,Prepared Dinner,245,30,8,10,3,200
+Roasted makhana,Prepared Snack,350,76,8,1.5,2,50
+Sprouts chaat,Prepared Snack,95,14,7,2,4,120
+Green tea + biscuits,Prepared Snack,180,28,4,6,1.5,80
+Roasted Flax Seeds,Prepared Snack,530,28,18,42,27,15
+Roasted flax seeds,Prepared Snack,530,28,18,42,27,15
+Fruit bowl,Prepared Snack,65,16,0.8,0.3,2.2,150
+Turmeric milk,Prepared Drink,65,6,3.5,3,0,200
+Soaked walnuts,Prepared Snack,650,12,15,63,7,30
+Warm milk + honey,Prepared Drink,75,10,3.8,2.5,0,200
+Green tea,Prepared Drink,2,0.3,0.1,0,0,200
+Idli + sambar (2 pc),Prepared Breakfast,118,22,4.5,1.2,1.8,180
+Vegetable Upma,Prepared Breakfast,132,21,4,4.2,2.2,150
+Masala Dosa,Prepared Breakfast,140,25,4.5,2.5,1.8,180
+Aloo Paratha,Prepared Breakfast,270,35,7,12,3,100
+Missi Roti,Prepared Breakfast,220,28,9,8,4,90
+Besan Cheela,Prepared Breakfast,175,15,10,8,2.5,120
+Moong Dal Chilla,Prepared Breakfast,160,18,11,5,3,120
+Ragi Dosa,Prepared Breakfast,115,22,3.5,1.5,2.5,150
+Vegetable Sandwich,Prepared Breakfast,185,26,7,6,2.5,120
+Boiled Egg (2),Prepared Breakfast,155,1,13,11,0,100
+Sprouts salad,Prepared Snack,85,12,6,2,3.5,150
+Coconut water,Prepared Drink,19,3.7,0.7,0.2,1.1,250
+Lassi (sweet),Prepared Drink,85,14,3,2,0,200
+Chaas (salted),Prepared Drink,38,4.2,3,1.5,0,200
+Samosa (2 small),Prepared Snack,260,28,5,14,2.5,80
+Dhokla,Prepared Snack,160,28,6,3,2,100
+Thepla,Prepared Breakfast,240,32,7,9,3.5,80
+Handvo,Prepared Breakfast,175,22,6,7,3,120
+Pongal,Prepared Breakfast,125,20,4,3,1.5,200
+Appam + stew,Prepared Breakfast,130,24,3.5,2.5,1.2,200
+Uttapam,Prepared Breakfast,135,23,4.5,2.8,1.8,150
+Rava Idli,Prepared Breakfast,120,22,4,1.5,1.2,150
+Palak Paratha,Prepared Breakfast,255,31,8,10,4,90
+Chole Bhature,Prepared Lunch,195,28,6,7.5,3.5,250
+Rajma Chawal,Prepared Lunch,130,22,6.5,1.8,5,250
+Dal Makhani + Roti,Prepared Lunch,165,22,7,5.5,4,250
+Palak Paneer + Roti,Prepared Lunch,155,14,9,7,3.5,250
+Baingan Bharta + Roti,Prepared Lunch,95,12,3.5,4,4,220
+Tandoori Roti (2),Prepared Lunch,280,54,9,2.5,6,80
+Jeera Aloo + Roti,Prepared Lunch,145,24,4,3.5,3,220
+Lemon Rice,Prepared Lunch,140,26,3,2.5,1.2,200
+Curd Rice,Prepared Lunch,110,18,4,2,0.5,250
+Vegetable Biryani,Prepared Lunch,155,25,4.5,4,2,250
+Chicken Biryani,Prepared Lunch,175,24,10,5,1.5,250
+Egg Curry + Rice,Prepared Lunch,140,18,8,4.5,1.5,250
+Fish Fry + Rice,Prepared Lunch,165,20,14,5,1,250
+Methi Thepla + Curd,Prepared Lunch,210,26,8,8,4,200
+Sambhar Rice,Prepared Lunch,115,21,4,1.5,2.5,250
+Mixed Veg Sabzi + Roti,Prepared Dinner,105,16,4,2.5,4,220
+Lauki Sabzi + Roti,Prepared Dinner,85,14,3,1.8,3.5,220
+Tinda Sabzi + Roti,Prepared Dinner,90,15,3.2,2,3.8,220
+Chicken Curry + Roti,Prepared Dinner,160,12,16,6,1.5,250
+Egg Bhurji + Roti,Prepared Dinner,175,14,12,8,1.5,220
+Paneer Bhurji + Roti,Prepared Dinner,185,15,12,9,2,220
+Moong Dal Khichdi,Prepared Dinner,105,17,5,2,2.5,250
+Tomato Soup + Bread,Prepared Dinner,55,9,2,1.5,1.8,250
+Vegetable Pulao,Prepared Lunch,135,24,3.5,2.8,1.8,220
+Methi Matar Malai + Roti,Prepared Dinner,145,14,6,8,3,250

@@ -10,6 +10,7 @@ import {
   HRA_FOOD_OPTIONS,
   HRA_GENDER_OPTIONS,
   HRA_GOAL_OPTIONS,
+  HRA_LIFESTYLE_DISORDER_OPTIONS,
   type NutritionistHraForm,
 } from '@/lib/nutritionist-hra-types'
 import { saveNutritionistClientHra } from '@/lib/nutritionist-portal-actions'
@@ -249,14 +250,19 @@ export function NutritionistHraTab({
               className={portal.input}
             />
           </Field>
-          <Field label="Diseases / conditions">
-            <input
-              type="text"
+          <Field label="Lifestyle disorders">
+            <select
               value={form.diseases ?? ''}
               onChange={(e) => set('diseases', e.target.value)}
-              placeholder="e.g. Hypothyroidism, PCOS"
               className={portal.input}
-            />
+            >
+              <option value="">Select lifestyle disorder…</option>
+              {HRA_LIFESTYLE_DISORDER_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
           </Field>
           <div className="sm:col-span-2">
             <Field label="Clinical notes">

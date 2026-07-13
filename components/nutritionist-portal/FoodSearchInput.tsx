@@ -19,7 +19,7 @@ const DEBOUNCE_MS = 300
 
 export function FoodSearchInput({
   onSelect,
-  placeholder = 'Search IFCT food database + your custom foods…',
+  placeholder = 'Search prepared meals (Poha, Paratha…) + IFCT + custom…',
   disabled = false,
   className = '',
   defaultShowAddForm = false,
@@ -162,7 +162,7 @@ export function FoodSearchInput({
                         <span className="min-w-0">
                           <span className="block truncate font-medium text-slate-800">{food.name}</span>
                           <span className="mt-0.5 block text-[11px] text-slate-500">
-                            {[food.category, food.source === 'ifct' ? 'IFCT' : 'Custom'].filter(Boolean).join(' · ')}
+                            {[food.category, food.source === 'prepared' || food.tags?.includes('prepared_meal') ? 'Prepared meal' : food.source === 'ifct' ? 'IFCT' : 'Custom'].filter(Boolean).join(' · ')}
                           </span>
                         </span>
                         <span className="shrink-0 text-xs font-semibold text-emerald-700">

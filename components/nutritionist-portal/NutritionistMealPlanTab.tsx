@@ -33,7 +33,7 @@ import {
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
-import { defaultMealLabelForSlot, defaultMealsForDay, findQuickPick } from '@/lib/meal-slot-suggestions'
+import { defaultMealLabelForSlot, defaultMealsForDay, estimateDayTotalsFromMeals } from '@/lib/meal-slot-suggestions'
 import type { MealPlan, MealPlanDay, MealPlanListItem, MealSlots } from '@/lib/meal-plan-types'
 import {
   MEAL_SLOT_META,
@@ -61,7 +61,15 @@ import { MealPlanFoodCell } from '@/components/nutritionist-portal/MealPlanFoodC
 
 function isoFromPlanDate(date: Date | undefined, fallback: string): string {
   if (!date) return fallback
-  return date.toISOString().slice(0, 10)
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function entryDateForDay(day: MealPlanDay | undefined, columnDate: Date | undefined): string {
+  if (day?.plan_date?.trim()) return day.plan_date.trim()
+  return isoFromPlanDate(columnDate, todayIsoDate())
 }
 
 function formatDate(iso: string) {
@@ -85,6 +93,11 @@ type Props = {
 type ViewState = 'list' | 'builder'
 
 const WEEK_DAYS = 7
+
+function isPreparedDishFood(food: { category: string | null } | null | undefined): boolean {
+  const cat = food?.category?.toLowerCase() ?? ''
+  return cat.includes('prepared')
+}
 
 function dayWithDefaultMeals(dayNumber: number, planDate?: string): MealPlanDay {
   const d = emptyDay(dayNumber, planDate)
@@ -390,7 +403,8 @@ function PlanBuilder({
   const [planEntries, setPlanEntries] = useState<MealPlanEntryRow[]>([])
   const [loadingEntries, setLoadingEntries] = useState(true)
   const [openCellKey, setOpenCellKey] = useState<string | null>(null)
-  const seededDefaultsRef = useRef(false)
+  const seedingRef = useRef(false)
+  const lastSeedKeyRef = useRef('')
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateTags, setTemplateTags] = useState<string[]>(['general'])
@@ -432,9 +446,14 @@ function PlanBuilder({
     })
   }
 
-  function dayTotalsForDate(entryDate: string | undefined) {
+  function dayTotalsForDate(entryDate: string | undefined, day?: MealPlanDay, dayIndex?: number) {
     if (!entryDate) return sumDayTotals([])
-    return sumDayTotals(planEntries.filter((e) => e.entry_date === entryDate))
+    const fromDb = sumDayTotals(planEntries.filter((e) => e.entry_date === entryDate))
+    if (fromDb.kcal > 0) return fromDb
+    if (day && !day.skipped && dayIndex != null) {
+      return estimateDayTotalsFromMeals(day.meals, dayIndex)
+    }
+    return fromDb
   }
 
   const [saving, startSave] = useTransition()
@@ -459,15 +478,19 @@ function PlanBuilder({
   const canGoNextWeek = weekEnd < days.length - 1 || (!isPublished && days.length < 31)
 
   useEffect(() => {
-    if (loadingEntries || isPublished || seededDefaultsRef.current) return
+    if (loadingEntries || isPublished || seedingRef.current) return
 
-    const cells: { entryDate: string; mealSlot: keyof MealSlots; label: string; dayIndex: number }[] = []
+    const missing: { entryDate: string; mealSlot: keyof MealSlots; label: string; dayIndex: number }[] = []
     for (let abs = 0; abs < days.length; abs++) {
       const day = days[abs]
       if (!day || day.skipped) continue
-      const entryDate = isoFromPlanDate(planDates[abs], day.plan_date ?? todayIsoDate())
+      const entryDate = entryDateForDay(day, planDates[abs])
       for (const slot of MEAL_SLOT_META) {
-        cells.push({
+        const key = entryCellKey(entryDate, slot.key)
+        const cellEntries = entriesByCell.get(key) ?? []
+        const hasPrepared = cellEntries.some((e) => isPreparedDishFood(e.foods))
+        if (hasPrepared) continue
+        missing.push({
           entryDate,
           mealSlot: slot.key,
           label: day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key, abs),
@@ -476,12 +499,25 @@ function PlanBuilder({
       }
     }
 
+    if (missing.length === 0) return
+
+    const seedKey = missing.map((m) => `${m.entryDate}|${m.mealSlot}`).sort().join(';')
+    if (lastSeedKeyRef.current === seedKey) return
+    lastSeedKeyRef.current = seedKey
+
+    seedingRef.current = true
     void (async () => {
-      const res = await seedDefaultMealPlanEntries({ mealPlanId: initialPlan.id, cells })
-      seededDefaultsRef.current = true
-      if (res.ok && res.added > 0) await refreshEntries()
+      try {
+        const res = await seedDefaultMealPlanEntries({ mealPlanId: initialPlan.id, cells: missing })
+        if (res.ok && res.added > 0) {
+          lastSeedKeyRef.current = ''
+          await refreshEntries()
+        }
+      } finally {
+        seedingRef.current = false
+      }
     })()
-  }, [loadingEntries, isPublished, days, planDates, initialPlan.id, refreshEntries])
+  }, [loadingEntries, isPublished, days, planDates, planEntries, entriesByCell, initialPlan.id, refreshEntries])
 
   function buildMetaNote() {
     return serializeMealPlanMeta({ targetCalories, note: parsedMeta.note })
@@ -916,8 +952,8 @@ function PlanBuilder({
                 ) : (
                   <div className="mt-2 rounded border border-rose-200 bg-rose-50/90 p-2">
                     {(() => {
-                      const dateIso = isoFromPlanDate(date, d?.plan_date ?? todayIsoDate())
-                      const eaten = dayTotalsForDate(dateIso)
+                      const dateIso = entryDateForDay(d, date)
+                      const eaten = dayTotalsForDate(dateIso, d, abs)
                       return (
                         <>
                           <p className="font-bold text-rose-900">
@@ -966,7 +1002,7 @@ function PlanBuilder({
               {visibleColumns.map((day, localIdx) => {
                 const abs = absoluteDayIndex(localIdx)
                 const columnDate = planDates[abs]
-                const entryDateIso = isoFromPlanDate(columnDate, day?.plan_date ?? todayIsoDate())
+                const entryDateIso = entryDateForDay(day, columnDate)
                 return (
                   <div
                     key={`${slot.key}-${abs}`}

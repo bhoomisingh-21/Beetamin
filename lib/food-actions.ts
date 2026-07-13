@@ -51,11 +51,10 @@ export async function searchFoods(
     return { ok: true, foods: [] }
   }
 
+  const foodSources = `source.eq.ifct,source.eq.prepared,created_by.eq.${nut.id}`
+
   const words = term.split(' ').filter(Boolean)
-  let queryBuilder = supabaseAdmin
-    .from('foods')
-    .select(FOOD_SELECT)
-    .or(`source.eq.ifct,created_by.eq.${nut.id}`)
+  let queryBuilder = supabaseAdmin.from('foods').select(FOOD_SELECT).or(foodSources)
 
   if (words.length > 1) {
     for (const word of words) {
@@ -65,14 +64,28 @@ export async function searchFoods(
     queryBuilder = queryBuilder.ilike('name', `%${term}%`)
   }
 
-  const { data, error } = await queryBuilder.order('name', { ascending: true }).limit(30)
+  const { data, error } = await queryBuilder.order('name', { ascending: true }).limit(40)
 
   if (error) {
     console.error('[searchFoods]', error)
     return { ok: false, error: error.message }
   }
 
-  return { ok: true, foods: (data ?? []) as FoodRow[] }
+  const foods = (data ?? []) as FoodRow[]
+  const qLower = term.toLowerCase()
+  foods.sort((a, b) => {
+    const aPrep = a.source === 'prepared' || a.tags?.includes('prepared_meal') ? 0 : 1
+    const bPrep = b.source === 'prepared' || b.tags?.includes('prepared_meal') ? 0 : 1
+    if (aPrep !== bPrep) return aPrep - bPrep
+    const al = a.name.toLowerCase()
+    const bl = b.name.toLowerCase()
+    const aStarts = al.startsWith(qLower) ? 0 : al.includes(qLower) ? 1 : 2
+    const bStarts = bl.startsWith(qLower) ? 0 : bl.includes(qLower) ? 1 : 2
+    if (aStarts !== bStarts) return aStarts - bStarts
+    return al.localeCompare(bl)
+  })
+
+  return { ok: true, foods: foods.slice(0, 30) }
 }
 
 export async function createCustomFood(

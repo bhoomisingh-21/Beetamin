@@ -44,6 +44,35 @@ export const HRA_FOOD_OPTIONS = [
   'Other',
 ] as const
 
+/** Lifestyle / metabolic disorders common in Indian nutrition practice. */
+export const HRA_LIFESTYLE_DISORDER_OPTIONS = [
+  'None',
+  'Prediabetes',
+  'Type 2 Diabetes',
+  'Hypertension (High BP)',
+  'Hypothyroidism',
+  'Hyperthyroidism',
+  'PCOS / PCOD',
+  'Obesity',
+  'Overweight',
+  'Dyslipidemia (High cholesterol)',
+  'Fatty liver (NAFLD)',
+  'GERD / Acid reflux',
+  'IBS (Irritable bowel)',
+  'Anaemia',
+  'Iron deficiency',
+  'Vitamin D deficiency',
+  'Vitamin B12 deficiency',
+  'Gout',
+  'Chronic kidney disease (early)',
+  'Cardiovascular disease',
+  'Osteoporosis',
+  'Sleep apnea',
+  'Stress-related eating',
+  'Sedentary lifestyle',
+  'Other (specify in clinical notes)',
+] as const
+
 export function parseNutritionistHra(raw: unknown): NutritionistHraForm {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
   const o = raw as Record<string, unknown>
