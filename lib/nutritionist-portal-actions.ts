@@ -1007,6 +1007,17 @@ export async function addNutritionistClient(input: {
   email: string
   phone?: string
 }): Promise<{ ok: true; clientId: string } | { ok: false; error: string }> {
+  function friendlyDbError(message: string): string {
+    const m = message.toLowerCase()
+    if (m.includes('client_source') || m.includes('client source')) {
+      return 'Database is missing the client_source column. Run SUPABASE_NUTRITIONIST_CLIENT_INVITE.sql in your Supabase SQL Editor, wait ~30 seconds, then try again.'
+    }
+    if (m.includes('nutritionist_client_links')) {
+      return 'Database is missing the nutritionist_client_links table. Run SUPABASE_NUTRITIONIST_CLIENT_INVITE.sql in your Supabase SQL Editor, wait ~30 seconds, then try again.'
+    }
+    return message
+  }
+
   try {
     const nutritionist = await portalNutritionist()
     if (!nutritionist) return { ok: false, error: 'Not authenticated' }
@@ -1018,7 +1029,7 @@ export async function addNutritionistClient(input: {
 
     const { data: existing } = await supabaseAdmin
       .from('clients')
-      .select('id, client_source, clerk_user_id')
+      .select('id, clerk_user_id')
       .eq('email', email)
       .maybeSingle()
 
@@ -1055,7 +1066,7 @@ export async function addNutritionistClient(input: {
 
     if (cErr || !client) {
       console.error('[addNutritionistClient]', cErr)
-      return { ok: false, error: cErr?.message ?? 'Failed to create client' }
+      return { ok: false, error: friendlyDbError(cErr?.message ?? 'Failed to create client') }
     }
 
     const { error: linkErr } = await supabaseAdmin.from('nutritionist_client_links').insert({
@@ -1067,7 +1078,7 @@ export async function addNutritionistClient(input: {
     if (linkErr) {
       await supabaseAdmin.from('clients').delete().eq('id', client.id)
       console.error('[addNutritionistClient link]', linkErr)
-      return { ok: false, error: linkErr.message }
+      return { ok: false, error: friendlyDbError(linkErr.message) }
     }
 
     revalidatePath('/nutritionist/clients')
