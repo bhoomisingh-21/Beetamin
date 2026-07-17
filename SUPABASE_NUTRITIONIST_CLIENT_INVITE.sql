@@ -1,8 +1,13 @@
 -- ============================================================
--- TheBeetamin — Nutritionist "Add client" (invite flow)
+-- TheBeetamin — Nutritionist "Add client" + HRA form (invite flow)
 -- Run ONCE in Supabase Dashboard → SQL Editor → New query → Run
 -- Fixes: "could not find client_source column of clients in schema cache"
+-- Fixes: "could not find nutritionist_hra column of clients in schema cache"
 -- ============================================================
+
+-- Health Risk Assessment (HRA) filled by nutritionists during client intake.
+alter table public.clients
+  add column if not exists nutritionist_hra jsonb not null default '{}'::jsonb;
 
 alter table public.clients
   add column if not exists client_source text not null default 'marketplace';

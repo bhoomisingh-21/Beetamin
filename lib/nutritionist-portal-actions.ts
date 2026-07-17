@@ -468,6 +468,14 @@ export async function saveNutritionistClientHra(
 
     if (error) {
       console.error('[saveNutritionistClientHra]', error)
+      const m = error.message.toLowerCase()
+      if (m.includes('nutritionist_hra')) {
+        return {
+          ok: false,
+          error:
+            'Database is missing the nutritionist_hra column. Run SUPABASE_NUTRITIONIST_CLIENT_INVITE.sql in your Supabase SQL Editor, wait ~30 seconds, then try again.',
+        }
+      }
       return { ok: false, error: error.message }
     }
 
