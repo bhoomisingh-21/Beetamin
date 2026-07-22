@@ -12,31 +12,78 @@ type Props = {
   className?: string
 }
 
-const emptyForm = (): CreateCustomFoodInput => ({
-  name: '',
-  category: '',
-  default_unit: 'g',
-  default_qty_grams: 100,
-  kcal_per_100g: undefined,
-  carbs_g_per_100g: undefined,
-  protein_g_per_100g: undefined,
-  fat_g_per_100g: undefined,
-  fiber_g_per_100g: undefined,
+type TextFields = {
+  name: string
+  category: string
+  default_unit: string
+}
+
+/** Numeric fields are tracked as raw strings while typing so decimals/backspacing never get clobbered by re-renders. */
+type NumericFields = {
+  default_qty_grams: string
+  kcal_per_100g: string
+  carbs_g_per_100g: string
+  protein_g_per_100g: string
+  fat_g_per_100g: string
+  fiber_g_per_100g: string
+}
+
+const emptyTextForm = (): TextFields => ({ name: '', category: '', default_unit: 'g' })
+const emptyNumForm = (): NumericFields => ({
+  default_qty_grams: '100',
+  kcal_per_100g: '',
+  carbs_g_per_100g: '',
+  protein_g_per_100g: '',
+  fat_g_per_100g: '',
+  fiber_g_per_100g: '',
 })
+
+/** Allow only what a person typing a positive decimal would type: digits and at most one dot. */
+function sanitizeNumericInput(raw: string): string {
+  let v = raw.replace(/[^0-9.]/g, '')
+  const firstDot = v.indexOf('.')
+  if (firstDot !== -1) {
+    v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '')
+  }
+  return v
+}
+
+function toOptionalNumber(raw: string): number | undefined {
+  const v = raw.trim()
+  if (!v || v === '.') return undefined
+  const n = Number(v)
+  return Number.isNaN(n) ? undefined : n
+}
 
 export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props) {
   const formId = useId()
-  const [form, setForm] = useState<CreateCustomFoodInput>(emptyForm)
+  const [text, setText] = useState<TextFields>(emptyTextForm)
+  const [nums, setNums] = useState<NumericFields>(emptyNumForm)
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
 
-  function setField<K extends keyof CreateCustomFoodInput>(key: K, value: CreateCustomFoodInput[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }))
+  function setTextField<K extends keyof TextFields>(key: K, value: TextFields[K]) {
+    setText((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function setNumField<K extends keyof NumericFields>(key: K, value: string) {
+    setNums((prev) => ({ ...prev, [key]: sanitizeNumericInput(value) }))
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    const form: CreateCustomFoodInput = {
+      name: text.name,
+      category: text.category,
+      default_unit: text.default_unit,
+      default_qty_grams: toOptionalNumber(nums.default_qty_grams),
+      kcal_per_100g: toOptionalNumber(nums.kcal_per_100g),
+      carbs_g_per_100g: toOptionalNumber(nums.carbs_g_per_100g),
+      protein_g_per_100g: toOptionalNumber(nums.protein_g_per_100g),
+      fat_g_per_100g: toOptionalNumber(nums.fat_g_per_100g),
+      fiber_g_per_100g: toOptionalNumber(nums.fiber_g_per_100g),
+    }
     startTransition(async () => {
       const res = await createCustomFood(form)
       if (!res.ok) {
@@ -44,7 +91,8 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
         return
       }
       onCreated?.(res.food)
-      setForm(emptyForm())
+      setText(emptyTextForm())
+      setNums(emptyNumForm())
     })
   }
 
@@ -60,8 +108,8 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
         <input
           id={`${formId}-name`}
           required
-          value={form.name}
-          onChange={(e) => setField('name', e.target.value)}
+          value={text.name}
+          onChange={(e) => setTextField('name', e.target.value)}
           placeholder="e.g. Homemade dal"
           className={inputClass}
         />
@@ -75,8 +123,8 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
           <input
             id={`${formId}-category`}
             list={`${formId}-categories`}
-            value={form.category ?? ''}
-            onChange={(e) => setField('category', e.target.value)}
+            value={text.category}
+            onChange={(e) => setTextField('category', e.target.value)}
             placeholder="Pulse, cereal…"
             className={inputClass}
           />
@@ -92,8 +140,8 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
           </label>
           <input
             id={`${formId}-unit`}
-            value={form.default_unit ?? ''}
-            onChange={(e) => setField('default_unit', e.target.value)}
+            value={text.default_unit}
+            onChange={(e) => setTextField('default_unit', e.target.value)}
             placeholder="g, cup, bowl…"
             className={inputClass}
           />
@@ -106,11 +154,10 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
         </label>
         <input
           id={`${formId}-qty`}
-          type="number"
-          min={1}
-          step={1}
-          value={form.default_qty_grams ?? ''}
-          onChange={(e) => setField('default_qty_grams', e.target.value ? Number(e.target.value) : undefined)}
+          type="text"
+          inputMode="decimal"
+          value={nums.default_qty_grams}
+          onChange={(e) => setNumField('default_qty_grams', e.target.value)}
           className={inputClass}
         />
       </div>
@@ -132,11 +179,10 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
             </label>
             <input
               id={`${formId}-${key}`}
-              type="number"
-              min={0}
-              step={0.1}
-              value={form[key] ?? ''}
-              onChange={(e) => setField(key, e.target.value ? Number(e.target.value) : undefined)}
+              type="text"
+              inputMode="decimal"
+              value={nums[key]}
+              onChange={(e) => setNumField(key, e.target.value)}
               className={inputClass}
             />
           </div>

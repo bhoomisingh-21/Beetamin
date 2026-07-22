@@ -35,6 +35,7 @@ export function buildHraFormDefaults(bundle: PortalClientBundle): NutritionistHr
     ''
 
   return {
+    phone: String(client.phone || '').trim(),
     gender: saved.gender || metaString(meta, 'gender') || metaString(meta, 'sex') || '',
     age: saved.age ?? (Number(metaString(meta, 'age')) || null),
     actual_weight_kg: saved.actual_weight_kg ?? (latestWeight != null ? Number(latestWeight) : null),

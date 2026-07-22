@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Loader2, Plus, Trash2, X } from 'lucide-react'
+import { Copy, Loader2, Plus, Trash2, X } from 'lucide-react'
 import { FoodSearchInput } from '@/components/nutritionist-portal/FoodSearchInput'
 import { AddCustomFoodForm } from '@/components/nutritionist-portal/AddCustomFoodForm'
 import {
@@ -28,6 +28,18 @@ type Props = {
   onOpenChange: (open: boolean) => void
   onEntriesChange: (entries: MealPlanEntryRow[]) => void
   onLegacyChange: (text: string) => void
+  /** Other editable days in the plan, for the "Copy to…" control. */
+  copyTargets?: { date: string; label: string }[]
+  onCopyTo?: (targetDate: string) => void
+  copying?: boolean
+  /** Drag-and-drop copy: drag this cell onto another day's cell in the same meal slot. */
+  draggable?: boolean
+  isDragOver?: boolean
+  onDragStartCell?: () => void
+  onDragEndCell?: () => void
+  onDragOverCell?: (e: React.DragEvent) => void
+  onDragLeaveCell?: () => void
+  onDropCell?: (e: React.DragEvent) => void
 }
 
 function formatKcal(kcal: number | null | undefined): string {
@@ -54,11 +66,22 @@ export function MealPlanFoodCell({
   onOpenChange,
   onEntriesChange,
   onLegacyChange,
+  copyTargets = [],
+  onCopyTo,
+  copying = false,
+  draggable = false,
+  isDragOver = false,
+  onDragStartCell,
+  onDragEndCell,
+  onDragOverCell,
+  onDragLeaveCell,
+  onDropCell,
 }: Props) {
   const [mounted, setMounted] = useState(false)
   const [showCustomFood, setShowCustomFood] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [quickBusy, setQuickBusy] = useState<string | null>(null)
+  const [copyTarget, setCopyTarget] = useState('')
   const anchorRef = useRef<HTMLButtonElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ top: 0, left: 0, width: 320 })
@@ -256,6 +279,37 @@ export function MealPlanFoodCell({
             </ul>
           ) : null}
 
+          {onCopyTo && copyTargets.length > 0 ? (
+            <div className="mb-3 flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50/50 p-1.5">
+              <Copy className="ml-1 h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden />
+              <select
+                value={copyTarget}
+                onChange={(e) => setCopyTarget(e.target.value)}
+                disabled={copying}
+                className="min-w-0 flex-1 rounded-md border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700 disabled:opacity-60"
+              >
+                <option value="">Copy this meal to…</option>
+                {copyTargets.map((t) => (
+                  <option key={t.date} value={t.date}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!copyTarget || copying}
+                onClick={() => {
+                  if (!copyTarget) return
+                  onCopyTo(copyTarget)
+                  setCopyTarget('')
+                }}
+                className="shrink-0 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-emerald-500 disabled:opacity-40"
+              >
+                {copying ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Copy'}
+              </button>
+            </div>
+          ) : null}
+
           <FoodSearchInput
             placeholder="Search food to add or replace"
             disabled={busyId === 'add'}
@@ -331,10 +385,34 @@ export function MealPlanFoodCell({
         ref={anchorRef}
         type="button"
         onClick={() => onOpenChange(!isOpen)}
+        draggable={draggable}
+        onDragStart={(e) => {
+          if (!draggable) return
+          e.dataTransfer.effectAllowed = 'copy'
+          // Firefox requires setData in dragstart or the drag operation never starts.
+          e.dataTransfer.setData('text/plain', `${mealSlot}:${entryDate}`)
+          onDragStartCell?.()
+        }}
+        onDragEnd={() => onDragEndCell?.()}
+        onDragOver={(e) => {
+          if (!onDragOverCell) return
+          e.preventDefault()
+          onDragOverCell(e)
+        }}
+        onDragLeave={() => onDragLeaveCell?.()}
+        onDrop={(e) => {
+          e.preventDefault()
+          onDropCell?.(e)
+        }}
+        title={draggable ? 'Drag to copy this meal to another day' : undefined}
         className={`group flex min-h-[72px] w-full flex-col items-start justify-center rounded-lg border px-3 py-2 text-left transition ${
-          isOpen
-            ? 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-200'
-            : 'border-emerald-100/80 bg-white/60 hover:border-emerald-300 hover:bg-emerald-50/80'
+          draggable ? 'cursor-grab active:cursor-grabbing' : ''
+        } ${
+          isDragOver
+            ? 'border-emerald-500 bg-emerald-100 ring-2 ring-emerald-400'
+            : isOpen
+              ? 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-200'
+              : 'border-emerald-100/80 bg-white/60 hover:border-emerald-300 hover:bg-emerald-50/80'
         }`}
       >
         <span className="line-clamp-2 text-sm font-medium text-gray-800 group-hover:text-emerald-900">

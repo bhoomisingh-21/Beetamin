@@ -162,6 +162,72 @@ export async function deleteMealPlanEntry(input: {
   return { ok: true }
 }
 
+/** Copies every food item from one day's meal slot cell to another day's cell (overwriting the target). */
+export async function copyMealPlanCell(input: {
+  mealPlanId: string
+  sourceDate: string
+  targetDate: string
+  mealSlot: string
+}): Promise<{ ok: true; entries: MealPlanEntryRow[] } | { ok: false; error: string }> {
+  const nut = await portalNutritionist()
+  if (!nut) return { ok: false, error: 'Not authenticated' }
+  if (!(await assertOwnsMealPlan(input.mealPlanId, nut.id))) {
+    return { ok: false, error: 'Meal plan not found' }
+  }
+  if (input.sourceDate === input.targetDate) {
+    return { ok: false, error: 'Source and target day are the same' }
+  }
+
+  const { data: sourceRows, error: srcErr } = await supabaseAdmin
+    .from('meal_plan_entries')
+    .select('food_id, qty_grams')
+    .eq('meal_plan_id', input.mealPlanId)
+    .eq('entry_date', input.sourceDate)
+    .eq('meal_slot', input.mealSlot)
+
+  if (srcErr) {
+    console.error('[copyMealPlanCell] source', srcErr)
+    return { ok: false, error: srcErr.message }
+  }
+
+  const { error: delErr } = await supabaseAdmin
+    .from('meal_plan_entries')
+    .delete()
+    .eq('meal_plan_id', input.mealPlanId)
+    .eq('entry_date', input.targetDate)
+    .eq('meal_slot', input.mealSlot)
+
+  if (delErr) {
+    console.error('[copyMealPlanCell] delete', delErr)
+    return { ok: false, error: delErr.message }
+  }
+
+  if (!sourceRows || sourceRows.length === 0) {
+    return { ok: true, entries: [] }
+  }
+
+  const rowsToInsert = sourceRows.map((r) => ({
+    meal_plan_id: input.mealPlanId,
+    entry_date: input.targetDate,
+    meal_slot: input.mealSlot,
+    food_id: r.food_id,
+    qty_grams: r.qty_grams,
+  }))
+
+  const { data: inserted, error: insErr } = await supabaseAdmin
+    .from('meal_plan_entries')
+    .insert(rowsToInsert)
+    .select(ENTRY_SELECT)
+
+  if (insErr) {
+    console.error('[copyMealPlanCell] insert', insErr)
+    return { ok: false, error: insErr.message }
+  }
+
+  revalidatePath('/nutritionist')
+  return { ok: true, entries: (inserted ?? []).map((row) => normalizeMealPlanEntry(row as MealPlanEntryDbRow)) }
+}
+
 export async function seedDefaultMealPlanEntries(input: {
   mealPlanId: string
   cells: { entryDate: string; mealSlot: keyof MealSlots; label: string; dayIndex?: number }[]

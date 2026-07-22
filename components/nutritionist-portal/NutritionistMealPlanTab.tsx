@@ -45,7 +45,7 @@ import {
 } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
-import { listMealPlanEntries, seedDefaultMealPlanEntries } from '@/lib/meal-plan-entry-actions'
+import { copyMealPlanCell, listMealPlanEntries, seedDefaultMealPlanEntries } from '@/lib/meal-plan-entry-actions'
 import {
   entryCellKey,
   sumDayTotals,
@@ -408,6 +408,12 @@ function PlanBuilder({
   const [showSaveTemplate, setShowSaveTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateTags, setTemplateTags] = useState<string[]>(['general'])
+  const [dragSource, setDragSource] = useState<{ dayIdx: number; slot: keyof MealSlots; date: string } | null>(
+    null,
+  )
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null)
+  const [copyBusyKey, setCopyBusyKey] = useState<string | null>(null)
+  const [copyToast, setCopyToast] = useState('')
 
   const refreshEntries = useCallback(async () => {
     const res = await listMealPlanEntries(initialPlan.id)
@@ -476,6 +482,77 @@ function PlanBuilder({
 
   const canGoPrevWeek = weekPage > 0
   const canGoNextWeek = weekEnd < days.length - 1 || (!isPublished && days.length < 31)
+
+  /** Every editable (non-skipped) day in the plan, for the copy-to-day pickers. */
+  const allDayOptions = useMemo(() => {
+    const out: { date: string; label: string }[] = []
+    days.forEach((d, idx) => {
+      if (!d || d.skipped) return
+      const date = entryDateForDay(d, planDates[idx])
+      const columnLabel = planDates[idx] ? formatGridDayColumn(planDates[idx]) : date
+      out.push({ date, label: `Day ${idx + 1} · ${columnLabel}` })
+    })
+    return out
+  }, [days, planDates])
+
+  async function copyCellTo(
+    sourceDayIdx: number,
+    slot: keyof MealSlots,
+    sourceDate: string,
+    targetDate: string,
+  ) {
+    if (sourceDate === targetDate || isPublished) return
+    const key = entryCellKey(targetDate, slot)
+    setCopyBusyKey(key)
+    setActionError('')
+    const res = await copyMealPlanCell({
+      mealPlanId: initialPlan.id,
+      sourceDate,
+      targetDate,
+      mealSlot: slot,
+    })
+    setCopyBusyKey(null)
+    if (!res.ok) {
+      setActionError(res.error)
+      return
+    }
+    setCellEntries(targetDate, slot, res.entries)
+    const targetDayIdx = days.findIndex(
+      (d, idx) => !!d && !d.skipped && entryDateForDay(d, planDates[idx]) === targetDate,
+    )
+    const sourceLabel = days[sourceDayIdx]?.meals[slot] ?? ''
+    if (targetDayIdx >= 0) updateMealCell(targetDayIdx, slot, sourceLabel)
+    const slotLabel = MEAL_SLOT_META.find((s) => s.key === slot)?.label ?? 'Meal'
+    setCopyToast(`Copied ${slotLabel} to ${formatDate(targetDate)}`)
+    window.setTimeout(() => setCopyToast(''), 2500)
+  }
+
+  function handleCellDragStart(dayIdx: number, slot: keyof MealSlots, date: string) {
+    if (isPublished) return
+    setDragSource({ dayIdx, slot, date })
+  }
+
+  function handleCellDragEnd() {
+    setDragSource(null)
+    setDragOverKey(null)
+  }
+
+  function handleCellDragOver(slot: keyof MealSlots, date: string) {
+    if (!dragSource || isPublished || dragSource.slot !== slot) return
+    setDragOverKey(entryCellKey(date, slot))
+  }
+
+  function handleCellDragLeave(slot: keyof MealSlots, date: string) {
+    setDragOverKey((k) => (k === entryCellKey(date, slot) ? null : k))
+  }
+
+  function handleCellDrop(slot: keyof MealSlots, date: string) {
+    setDragOverKey(null)
+    if (!dragSource || dragSource.slot !== slot) return
+    const src = dragSource
+    setDragSource(null)
+    void copyCellTo(src.dayIdx, src.slot, src.date, date)
+  }
 
   useEffect(() => {
     if (loadingEntries || isPublished || seedingRef.current) return
@@ -888,6 +965,7 @@ function PlanBuilder({
 
         <span className="ml-auto text-[10px] text-slate-500">
           Week {weekPage + 1} · scroll → to see all 7 days
+          {!isPublished ? ' · drag a meal cell onto another day to copy it' : ''}
         </span>
       </div>
 
@@ -1033,6 +1111,16 @@ function PlanBuilder({
                           setCellEntries(entryDateIso, slot.key, cellEntries)
                         }
                         onLegacyChange={(text) => updateMealCell(abs, slot.key, text)}
+                        copyTargets={allDayOptions.filter((o) => o.date !== entryDateIso)}
+                        onCopyTo={(targetDate) => void copyCellTo(abs, slot.key, entryDateIso, targetDate)}
+                        copying={copyBusyKey === entryCellKey(entryDateIso, slot.key)}
+                        draggable={!isPublished}
+                        isDragOver={dragOverKey === entryCellKey(entryDateIso, slot.key)}
+                        onDragStartCell={() => handleCellDragStart(abs, slot.key, entryDateIso)}
+                        onDragEndCell={handleCellDragEnd}
+                        onDragOverCell={() => handleCellDragOver(slot.key, entryDateIso)}
+                        onDragLeaveCell={() => handleCellDragLeave(slot.key, entryDateIso)}
+                        onDropCell={() => handleCellDrop(slot.key, entryDateIso)}
                       />
                     )}
                   </div>
@@ -1060,6 +1148,13 @@ function PlanBuilder({
           >
             + Add another week
           </button>
+        </div>
+      )}
+
+      {copyToast && !actionError && (
+        <div className="flex items-center gap-2 border-t border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
+          <Copy size={14} />
+          {copyToast}
         </div>
       )}
 

@@ -14,9 +14,65 @@ export type NutritionistHraForm = {
   diseases?: string
   clinical_notes?: string
   updated_at?: string
+  /** Not stored in the HRA jsonb — mirrors/updates clients.phone directly. */
+  phone?: string
 }
 
 export const HRA_GENDER_OPTIONS = ['Female', 'Male', 'Other', 'Prefer not to say'] as const
+
+export const HRA_COUNTRY_OPTIONS = [
+  'India',
+  'United States',
+  'United Kingdom',
+  'United Arab Emirates',
+  'Canada',
+  'Australia',
+  'Singapore',
+  'Saudi Arabia',
+  'Qatar',
+  'Other',
+] as const
+
+/** States & union territories of India, for the intake "State" dropdown. */
+export const HRA_INDIAN_STATE_OPTIONS = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi (NCT)',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+  'Other',
+] as const
 
 export const HRA_ACTIVITY_OPTIONS = [
   'Sedentary',

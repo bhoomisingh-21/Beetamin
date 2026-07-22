@@ -463,6 +463,9 @@ export async function saveNutritionistClientHra(
     if (form.goal?.trim()) {
       clientUpdates.assessment_goal = form.goal.trim()
     }
+    if (form.phone != null) {
+      clientUpdates.phone = form.phone.trim()
+    }
 
     const { error } = await supabaseAdmin.from('clients').update(clientUpdates).eq('id', clientId)
 

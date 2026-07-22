@@ -7,9 +7,11 @@ import type { PortalClientBundle } from '@/lib/nutritionist-types'
 import { buildHraFormDefaults } from '@/lib/nutritionist-hra-defaults'
 import {
   HRA_ACTIVITY_OPTIONS,
+  HRA_COUNTRY_OPTIONS,
   HRA_FOOD_OPTIONS,
   HRA_GENDER_OPTIONS,
   HRA_GOAL_OPTIONS,
+  HRA_INDIAN_STATE_OPTIONS,
   HRA_LIFESTYLE_DISORDER_OPTIONS,
   type NutritionistHraForm,
 } from '@/lib/nutritionist-hra-types'
@@ -78,6 +80,15 @@ export function NutritionistHraTab({
     setForm((f) => ({ ...f, [key]: value }))
   }
 
+  const countryValue = form.country || 'India'
+  const isKnownCountry = (HRA_COUNTRY_OPTIONS as readonly string[]).includes(countryValue)
+  const countrySelectValue = isKnownCountry ? countryValue : 'Other'
+  const isIndia = countryValue === 'India'
+
+  const stateValue = form.community || ''
+  const isKnownState = (HRA_INDIAN_STATE_OPTIONS as readonly string[]).includes(stateValue)
+  const stateSelectValue = stateValue && !isKnownState ? 'Other' : stateValue
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -145,13 +156,39 @@ export function NutritionistHraTab({
               required
             />
           </Field>
-          <Field label="Country">
+          <Field label="Phone number">
             <input
-              type="text"
-              value={form.country ?? 'India'}
-              onChange={(e) => set('country', e.target.value)}
+              type="tel"
+              value={form.phone ?? ''}
+              onChange={(e) => set('phone', e.target.value)}
+              placeholder="+91 98765 43210"
               className={portal.input}
             />
+          </Field>
+          <Field label="Country">
+            <select
+              value={countrySelectValue}
+              onChange={(e) => {
+                const v = e.target.value
+                set('country', v === 'Other' ? '' : v)
+              }}
+              className={portal.input}
+            >
+              {HRA_COUNTRY_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+            {countrySelectValue === 'Other' ? (
+              <input
+                type="text"
+                value={form.country ?? ''}
+                onChange={(e) => set('country', e.target.value)}
+                placeholder="Enter country"
+                className={`${portal.input} mt-2`}
+              />
+            ) : null}
           </Field>
           <Field label="Actual weight (kg)" required>
             <input
@@ -191,14 +228,43 @@ export function NutritionistHraTab({
               required
             />
           </Field>
-          <Field label="Community / State">
-            <input
-              type="text"
-              value={form.community ?? ''}
-              onChange={(e) => set('community', e.target.value)}
-              placeholder="e.g. Andhra Pradesh, North India"
-              className={portal.input}
-            />
+          <Field label="State / Community">
+            {isIndia ? (
+              <>
+                <select
+                  value={stateSelectValue || ''}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    set('community', v === 'Other' ? '' : v)
+                  }}
+                  className={portal.input}
+                >
+                  <option value="">Select…</option>
+                  {HRA_INDIAN_STATE_OPTIONS.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+                {stateSelectValue === 'Other' ? (
+                  <input
+                    type="text"
+                    value={form.community ?? ''}
+                    onChange={(e) => set('community', e.target.value)}
+                    placeholder="Enter state / community"
+                    className={`${portal.input} mt-2`}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <input
+                type="text"
+                value={form.community ?? ''}
+                onChange={(e) => set('community', e.target.value)}
+                placeholder="State / region / community"
+                className={portal.input}
+              />
+            )}
           </Field>
         </div>
       </div>
