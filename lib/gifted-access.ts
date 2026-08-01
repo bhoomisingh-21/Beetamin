@@ -208,7 +208,7 @@ export async function grantGiftAccessByEmail(args: {
 
   const { data: client, error } = await supabaseAdmin
     .from('clients')
-    .select('id, clerk_user_id, email')
+    .select('id, clerk_user_id, email, status, sessions_total, sessions_remaining, plan_end_date')
     .eq('email', email)
     .maybeSingle()
 
@@ -225,7 +225,28 @@ export async function grantGiftAccessByEmail(args: {
   }
 
   if (client) {
-    const { error: updErr } = await supabaseAdmin.from('clients').update(giftFields).eq('id', client.id)
+    const patch: Record<string, unknown> = { ...giftFields }
+
+    // Nutritionist-added clients (and anyone whose plan lapsed) start with 0 sessions.
+    // A full_plan grant should actually unlock the 6 sessions / 3 months it promises —
+    // otherwise "Grant access" succeeds but booking still fails with "No sessions remaining".
+    if (args.plan === 'full_plan') {
+      const noSessionsLeft = Number(client.sessions_total ?? 0) <= 0 || Number(client.sessions_remaining ?? 0) <= 0
+      const planExpired = !client.plan_end_date || new Date(client.plan_end_date as string) < new Date()
+      if (noSessionsLeft || planExpired || client.status !== 'active') {
+        const startDate = new Date()
+        const endDate = new Date()
+        endDate.setMonth(endDate.getMonth() + 3)
+        patch.status = 'active'
+        patch.sessions_total = 6
+        patch.sessions_used = 0
+        patch.sessions_remaining = 6
+        patch.plan_start_date = startDate.toISOString().slice(0, 10)
+        patch.plan_end_date = endDate.toISOString().slice(0, 10)
+      }
+    }
+
+    const { error: updErr } = await supabaseAdmin.from('clients').update(patch).eq('id', client.id)
     if (updErr) {
       console.error('[grantGiftAccessByEmail] update', updErr)
       return { ok: false, error: 'Could not grant access.' }
