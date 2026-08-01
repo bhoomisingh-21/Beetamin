@@ -3,10 +3,17 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
-import { CheckCircle, Loader2 } from 'lucide-react'
-import type { AppointmentWithClient } from '@/lib/nutritionist-actions'
+import { CheckCircle, Loader2, Video } from 'lucide-react'
+import {
+  confirmAppointment,
+  nutritionistCancelAppointment,
+  rescheduleAppointment,
+  type AppointmentWithClient,
+} from '@/lib/nutritionist-actions'
 import { completePortalAppointment } from '@/lib/nutritionist-portal-actions'
 import { CompleteSessionModal } from '@/components/nutritionist-portal/CompleteSessionModal'
+import { RescheduleModal } from '@/components/nutritionist-portal/RescheduleModal'
+import { CancelSessionModal } from '@/components/nutritionist-portal/CancelSessionModal'
 import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 type TabKey = 'scheduled' | 'pending' | 'cancelled' | 'completed'
@@ -49,10 +56,13 @@ export default function NutritionistAppointmentsPageClient({
   const [tab, setTab] = useState<TabKey>('scheduled')
   const [toast, setToast] = useState<string | null>(null)
   const [completeTarget, setCompleteTarget] = useState<AppointmentWithClient | null>(null)
+  const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentWithClient | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<AppointmentWithClient | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!toast) return
-    const t = window.setTimeout(() => setToast(null), 3800)
+    const t = window.setTimeout(() => setToast(null), 4500)
     return () => window.clearTimeout(t)
   }, [toast])
 
@@ -77,6 +87,49 @@ export default function NutritionistAppointmentsPageClient({
     refresh()
   }
 
+  async function handleAccept(a: AppointmentWithClient) {
+    setBusyId(a.id)
+    try {
+      const res = await confirmAppointment(a.id)
+      if (!res.ok) {
+        setToast(res.error)
+        return
+      }
+      setToast(
+        res.warning
+          ? `Session accepted. ${res.warning}`
+          : res.meetLink
+            ? 'Session accepted — Google Meet link created and emailed to the client.'
+            : 'Session accepted.',
+      )
+      refresh()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function submitReschedule(newDate: string, newTime: string) {
+    if (!rescheduleTarget) return
+    const res = await rescheduleAppointment(rescheduleTarget.id, newDate, newTime)
+    if (!res.ok) {
+      setToast(res.error)
+      throw new Error(res.error)
+    }
+    setToast(res.warning ? `Session rescheduled. ${res.warning}` : 'Session rescheduled — client notified by email.')
+    refresh()
+  }
+
+  async function submitCancel(reason: string) {
+    if (!cancelTarget) return
+    const res = await nutritionistCancelAppointment(cancelTarget.id, reason || undefined)
+    if (!res.ok) {
+      setToast(res.error)
+      throw new Error(res.error)
+    }
+    setToast('Session cancelled — client notified by email.')
+    refresh()
+  }
+
   const pills: { key: TabKey; label: string }[] = [
     { key: 'scheduled', label: 'Scheduled' },
     { key: 'pending', label: 'Pending' },
@@ -84,19 +137,90 @@ export default function NutritionistAppointmentsPageClient({
     { key: 'completed', label: 'Completed' },
   ]
 
+  function ActionButtons({ a }: { a: AppointmentWithClient }) {
+    const rowBusy = pending || busyId === a.id
+    return (
+      <>
+        {a.status === 'pending' && (
+          <button
+            type="button"
+            disabled={rowBusy}
+            onClick={() => void handleAccept(a)}
+            className={`rounded-xl px-3 py-2 text-xs font-bold ${portal.btnPrimary} disabled:opacity-40`}
+          >
+            {busyId === a.id ? <Loader2 className="animate-spin" size={14} /> : 'Accept'}
+          </button>
+        )}
+        {(a.status === 'pending' || a.status === 'confirmed') && (
+          <>
+            <button
+              type="button"
+              disabled={rowBusy}
+              onClick={() => setRescheduleTarget(a)}
+              className={`rounded-xl px-3 py-2 text-xs font-bold ${portal.btnOutline} disabled:opacity-40`}
+            >
+              Reschedule
+            </button>
+            <button
+              type="button"
+              disabled={rowBusy}
+              onClick={() => setCancelTarget(a)}
+              className="rounded-xl border border-red-300 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-40"
+            >
+              Cancel
+            </button>
+          </>
+        )}
+        {a.status === 'confirmed' && a.meet_link && (
+          <a
+            href={a.meet_link}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-500"
+          >
+            <Video size={14} />
+            Join
+          </a>
+        )}
+        {a.status === 'confirmed' && (
+          <button
+            type="button"
+            disabled={rowBusy}
+            onClick={() => setCompleteTarget(a)}
+            className={`rounded-xl px-3 py-2 text-xs font-bold ${portal.btnPrimary} disabled:opacity-40`}
+          >
+            Complete
+          </button>
+        )}
+      </>
+    )
+  }
+
   return (
     <div className="space-y-8">
-      {toast && (
-        <div className={portal.toast}>
-          {toast}
-        </div>
-      )}
+      {toast && <div className={portal.toast}>{toast}</div>}
 
       <CompleteSessionModal
         open={!!completeTarget}
         clientName={completeTarget?.clients?.name ?? ''}
         onClose={() => setCompleteTarget(null)}
         onConfirm={submitComplete}
+      />
+
+      <RescheduleModal
+        open={!!rescheduleTarget}
+        clientName={rescheduleTarget?.clients?.name ?? ''}
+        currentDate={rescheduleTarget?.scheduled_date ?? ''}
+        currentTime={rescheduleTarget?.scheduled_time ?? ''}
+        onClose={() => setRescheduleTarget(null)}
+        onConfirm={submitReschedule}
+      />
+
+      <CancelSessionModal
+        open={!!cancelTarget}
+        clientName={cancelTarget?.clients?.name ?? ''}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={submitCancel}
       />
 
       <div>
@@ -182,16 +306,7 @@ export default function NutritionistAppointmentsPageClient({
                     >
                       View profile
                     </Link>
-                    {a.status === 'confirmed' && (
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() => setCompleteTarget(a)}
-                        className={`rounded-xl px-3 py-2 text-xs font-bold ${portal.btnPrimary} disabled:opacity-40`}
-                      >
-                        Complete
-                      </button>
-                    )}
+                    <ActionButtons a={a} />
                   </div>
                 </td>
               </tr>
@@ -243,16 +358,7 @@ export default function NutritionistAppointmentsPageClient({
               >
                 View profile
               </Link>
-              {a.status === 'confirmed' && (
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => setCompleteTarget(a)}
-                  className={`flex-1 py-2.5 text-xs font-bold ${portal.btnPrimary} disabled:opacity-40`}
-                >
-                  Complete
-                </button>
-              )}
+              <ActionButtons a={a} />
             </div>
           </li>
         ))}

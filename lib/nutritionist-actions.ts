@@ -1,10 +1,20 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { markAppointmentCompleteById } from './booking-actions'
+import {
+  cancelMeetEvent,
+  createMeetEventForAppointment,
+  friendlyGoogleCalendarError,
+  updateMeetEventTime,
+} from './google-calendar'
 import { supabaseAdmin } from './supabase-admin'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+export type AppointmentActionResult =
+  | { ok: true; meetLink: string | null; warning?: string }
+  | { ok: false; error: string }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +34,8 @@ export type AppointmentWithClient = {
   status: string
   notes?: string
   created_at: string
+  meet_link?: string | null
+  google_event_id?: string | null
   clients: {
     id: string
     name: string
@@ -88,6 +100,7 @@ export async function getNutritionistDashboard() {
     .from('appointments')
     .select(`
       id, session_number, scheduled_date, scheduled_time, reason, status, notes, created_at,
+      meet_link, google_event_id,
       clients(id, name, email, phone, sessions_used, sessions_remaining, plan_end_date)
     `)
     .eq('nutritionist_id', nutritionist.id)
@@ -188,6 +201,7 @@ export async function getNutritionistDashboardByEmail(email: string) {
     .from('appointments')
     .select(`
       id, session_number, scheduled_date, scheduled_time, reason, status, notes, created_at,
+      meet_link, google_event_id,
       clients(id, name, email, phone, sessions_used, sessions_remaining, plan_end_date)
     `)
     .eq('nutritionist_id', nutritionist.id)
@@ -248,7 +262,35 @@ export async function confirmAppointmentByEmail(appointmentId: string, nutEmail:
   if (!nutritionist) throw new Error('Not a nutritionist')
   const appt = await getAppointmentWithClient(appointmentId)
   if (!appt) throw new Error('Appointment not found')
-  await supabaseAdmin.from('appointments').update({ status: 'confirmed' }).eq('id', appointmentId)
+
+  let meetLink: string | null = null
+  let googleEventId: string | null = null
+  try {
+    const created = await createMeetEventForAppointment({
+      appointmentId,
+      scheduledDate: appt.scheduled_date,
+      scheduledTime: appt.scheduled_time,
+      clientName: appt.clients.name,
+      clientEmail: appt.clients.email,
+      nutritionistName: nutritionist.name,
+      nutritionistEmail: nutritionist.email,
+      sessionNumber: appt.session_number,
+    })
+    meetLink = created.meetLink
+    googleEventId = created.eventId
+  } catch (e) {
+    console.error('[confirmAppointmentByEmail] meet creation failed', e)
+  }
+
+  await supabaseAdmin
+    .from('appointments')
+    .update({
+      status: 'confirmed',
+      ...(meetLink
+        ? { meet_link: meetLink, google_event_id: googleEventId, meeting_created_at: new Date().toISOString() }
+        : {}),
+    })
+    .eq('id', appointmentId)
   const sessionDate = new Date(`${appt.scheduled_date}T${appt.scheduled_time}`)
   try {
     await resend.emails.send({
@@ -264,6 +306,7 @@ export async function confirmAppointmentByEmail(appointmentId: string, nutEmail:
           <p style="color:white;margin:8px 0;">⏰ Time: <strong>${appt.scheduled_time}</strong></p>
           <p style="color:white;margin:0;">👤 Nutritionist: <strong>${nutritionist.name}</strong></p>
         </div>
+        ${meetLinkEmailSection(meetLink)}
         <a href="https://thebeetamin.com/sessions" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">View My Sessions →</a>
       </div>
     `,
@@ -349,16 +392,56 @@ async function getAppointmentWithClient(appointmentId: string) {
   return data as AppointmentWithClient & { nutritionist_id: string } | null
 }
 
-export async function confirmAppointment(appointmentId: string) {
+/** Inline HTML snippet with a real Join button when a Meet link exists, else a "coming shortly" note. */
+function meetLinkEmailSection(meetLink: string | null): string {
+  if (meetLink) {
+    return `
+      <a href="${meetLink}" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:8px;">
+        Join Google Meet →
+      </a>
+      <p style="color:#6B7280;font-size:12px;margin-top:12px;word-break:break-all;">Meet link: ${meetLink}</p>
+    `
+  }
+  return `<p style="color:#F59E0B;">Your Google Meet link is being generated and will appear on your Beetamin dashboard shortly.</p>`
+}
+
+export async function confirmAppointment(appointmentId: string): Promise<AppointmentActionResult> {
   const nutritionist = await getOrCreateNutritionist()
-  if (!nutritionist) throw new Error('Not a nutritionist')
+  if (!nutritionist) return { ok: false, error: 'Not a nutritionist' }
 
   const appt = await getAppointmentWithClient(appointmentId)
-  if (!appt) throw new Error('Appointment not found')
+  if (!appt || appt.nutritionist_id !== nutritionist.id) return { ok: false, error: 'Appointment not found' }
+
+  let meetLink: string | null = null
+  let googleEventId: string | null = null
+  let warning: string | undefined
+
+  try {
+    const created = await createMeetEventForAppointment({
+      appointmentId,
+      scheduledDate: appt.scheduled_date,
+      scheduledTime: appt.scheduled_time,
+      clientName: appt.clients.name,
+      clientEmail: appt.clients.email,
+      nutritionistName: nutritionist.name,
+      nutritionistEmail: nutritionist.email,
+      sessionNumber: appt.session_number,
+    })
+    meetLink = created.meetLink
+    googleEventId = created.eventId
+  } catch (e) {
+    console.error('[confirmAppointment] meet creation failed', e)
+    warning = friendlyGoogleCalendarError(e)
+  }
 
   await supabaseAdmin
     .from('appointments')
-    .update({ status: 'confirmed' })
+    .update({
+      status: 'confirmed',
+      ...(meetLink
+        ? { meet_link: meetLink, google_event_id: googleEventId, meeting_created_at: new Date().toISOString() }
+        : {}),
+    })
     .eq('id', appointmentId)
 
   const sessionDate = new Date(`${appt.scheduled_date}T${appt.scheduled_time}`)
@@ -376,14 +459,13 @@ export async function confirmAppointment(appointmentId: string) {
           <p style="color:white;margin:0;">📅 Date: <strong>${sessionDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></p>
           <p style="color:white;margin:8px 0;">⏰ Time: <strong>${appt.scheduled_time}</strong></p>
           <p style="color:white;margin:0;">👤 Nutritionist: <strong>${nutritionist.name}</strong></p>
-          <p style="color:white;margin:8px 0;">⏱️ Duration: <strong>30 minutes</strong></p>
+          <p style="color:white;margin:8px 0;">⏱️ Duration: <strong>35 minutes</strong></p>
           <p style="color:white;margin:0;">📊 Sessions remaining after this: <strong>${appt.clients.sessions_remaining - 1}</strong></p>
         </div>
-        <p style="color:#9CA3AF;">You will receive a Google Meet link 30 minutes before your session.</p>
-        <a href="https://thebeetamin.com/sessions"
-           style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">
-          View My Sessions →
-        </a>
+        ${meetLinkEmailSection(meetLink)}
+        <p style="color:#9CA3AF;margin-top:24px;">
+          <a href="https://thebeetamin.com/sessions" style="color:#10B981;">View My Sessions →</a>
+        </p>
         <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
       </div>
     `,
@@ -391,6 +473,148 @@ export async function confirmAppointment(appointmentId: string) {
   } catch (e) {
     console.error('[confirmAppointment] Resend failed:', e)
   }
+
+  return { ok: true, meetLink, warning }
+}
+
+export async function rescheduleAppointment(
+  appointmentId: string,
+  newDate: string,
+  newTime: string,
+): Promise<AppointmentActionResult> {
+  const nutritionist = await getOrCreateNutritionist()
+  if (!nutritionist) return { ok: false, error: 'Not a nutritionist' }
+
+  const appt = await getAppointmentWithClient(appointmentId)
+  if (!appt || appt.nutritionist_id !== nutritionist.id) return { ok: false, error: 'Appointment not found' }
+  if (appt.status !== 'pending' && appt.status !== 'confirmed') {
+    return { ok: false, error: 'Only pending or confirmed sessions can be rescheduled.' }
+  }
+
+  let meetLink: string | null = appt.meet_link ?? null
+  let googleEventId: string | null = appt.google_event_id ?? null
+  let warning: string | undefined
+
+  try {
+    if (googleEventId) {
+      const updated = await updateMeetEventTime({
+        eventId: googleEventId,
+        scheduledDate: newDate,
+        scheduledTime: newTime,
+      })
+      if (updated.meetLink) meetLink = updated.meetLink
+    } else {
+      const created = await createMeetEventForAppointment({
+        appointmentId,
+        scheduledDate: newDate,
+        scheduledTime: newTime,
+        clientName: appt.clients.name,
+        clientEmail: appt.clients.email,
+        nutritionistName: nutritionist.name,
+        nutritionistEmail: nutritionist.email,
+        sessionNumber: appt.session_number,
+      })
+      meetLink = created.meetLink
+      googleEventId = created.eventId
+    }
+  } catch (e) {
+    console.error('[rescheduleAppointment] meet update failed', e)
+    warning = friendlyGoogleCalendarError(e)
+  }
+
+  await supabaseAdmin
+    .from('appointments')
+    .update({
+      scheduled_date: newDate,
+      scheduled_time: newTime,
+      status: 'confirmed',
+      meet_link: meetLink,
+      google_event_id: googleEventId,
+      ...(meetLink ? { meeting_created_at: new Date().toISOString() } : {}),
+    })
+    .eq('id', appointmentId)
+
+  const sessionDate = new Date(`${newDate}T${newTime}`)
+
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Session ${appt.session_number} Rescheduled — ${sessionDate.toLocaleDateString('en-IN')} 🔄`,
+      html: `
+      <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
+        <h1 style="color:#10B981;">Session ${appt.session_number} Rescheduled</h1>
+        <p style="color:#9CA3AF;">${nutritionist.name} has moved your session to a new date/time.</p>
+        <div style="background:#111820;border-radius:12px;padding:24px;margin:24px 0;">
+          <p style="color:white;margin:0;">📅 New date: <strong>${sessionDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></p>
+          <p style="color:white;margin:8px 0;">⏰ New time: <strong>${newTime}</strong></p>
+          <p style="color:white;margin:0;">👤 Nutritionist: <strong>${nutritionist.name}</strong></p>
+          <p style="color:white;margin:8px 0;">⏱️ Duration: <strong>35 minutes</strong></p>
+        </div>
+        ${meetLinkEmailSection(meetLink)}
+        <p style="color:#9CA3AF;margin-top:24px;">
+          <a href="https://thebeetamin.com/sessions" style="color:#10B981;">View My Sessions →</a>
+        </p>
+        <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
+      </div>
+    `,
+    })
+  } catch (e) {
+    console.error('[rescheduleAppointment] Resend failed:', e)
+  }
+
+  return { ok: true, meetLink, warning }
+}
+
+export async function nutritionistCancelAppointment(
+  appointmentId: string,
+  reason?: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const nutritionist = await getOrCreateNutritionist()
+  if (!nutritionist) return { ok: false, error: 'Not a nutritionist' }
+
+  const appt = await getAppointmentWithClient(appointmentId)
+  if (!appt || appt.nutritionist_id !== nutritionist.id) return { ok: false, error: 'Appointment not found' }
+  if (appt.status === 'completed' || appt.status === 'cancelled') {
+    return { ok: false, error: 'This session can no longer be cancelled.' }
+  }
+
+  await supabaseAdmin
+    .from('appointments')
+    .update({ status: 'cancelled', notes: reason ?? null })
+    .eq('id', appointmentId)
+
+  if (appt.google_event_id) {
+    try {
+      await cancelMeetEvent(appt.google_event_id)
+    } catch (e) {
+      console.error('[nutritionistCancelAppointment] calendar cancel failed', e)
+    }
+  }
+
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Session ${appt.session_number} Cancelled`,
+      html: `
+      <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
+        <h1 style="color:#F59E0B;">Session Cancelled</h1>
+        <p style="color:#9CA3AF;">${nutritionist.name} has cancelled your session ${appt.session_number} scheduled for ${new Date(appt.scheduled_date).toLocaleDateString('en-IN')} at ${appt.scheduled_time}.</p>
+        ${reason ? `<p style="color:#9CA3AF;">Note: ${reason}</p>` : ''}
+        <a href="https://thebeetamin.com/booking/new"
+           style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px;">
+          Book a New Slot →
+        </a>
+        <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
+      </div>
+    `,
+    })
+  } catch (e) {
+    console.error('[nutritionistCancelAppointment] Resend failed:', e)
+  }
+
+  return { ok: true }
 }
 
 export async function rejectAppointment(appointmentId: string, reason?: string) {

@@ -111,7 +111,7 @@ function buildSessionIcs(appt: AppointmentRow & { nutritionists?: { name: string
   const uid = `${appt.id}@thebeetamin.com`
   const start = toIcsDateUtc(appt.scheduled_date, appt.scheduled_time.slice(0, 5))
   const endDate = new Date(`${appt.scheduled_date}T${appt.scheduled_time.slice(0, 5)}`)
-  endDate.setMinutes(endDate.getMinutes() + 30)
+  endDate.setMinutes(endDate.getMinutes() + 35)
   const end =
     endDate.getUTCFullYear() +
     pad2(endDate.getUTCMonth() + 1) +
@@ -123,6 +123,10 @@ function buildSessionIcs(appt: AppointmentRow & { nutritionists?: { name: string
     'Z'
   const title = 'TheBeetamin Nutrition Session'
   const host = appt.nutritionists?.name || 'Nutritionist'
+  const meetLink = appt.meet_link || ''
+  const description = meetLink
+    ? `Session ${appt.session_number} with ${host.replace(/,/g, ' ')}\\nJoin: ${meetLink}`
+    : `Session ${appt.session_number} with ${host.replace(/,/g, ' ')}`
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -133,7 +137,8 @@ function buildSessionIcs(appt: AppointmentRow & { nutritionists?: { name: string
     `DTSTART:${start}`,
     `DTEND:${end}`,
     `SUMMARY:${title}`,
-    `DESCRIPTION:Session ${appt.session_number} with ${host.replace(/,/g, ' ')}`,
+    `DESCRIPTION:${description}`,
+    ...(meetLink ? [`LOCATION:${meetLink}`, `URL:${meetLink}`] : []),
     'END:VEVENT',
     'END:VCALENDAR',
   ]
@@ -595,13 +600,25 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
                       Confirmed
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={downloadIcs}
-                    className="shrink-0 rounded-xl border border-blue-400/50 bg-blue-500/20 px-5 py-3 text-sm font-bold text-blue-200 hover:bg-blue-500/30 transition"
-                  >
-                    Add to Calendar
-                  </button>
+                  <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                    {firstConfirmed.meet_link && (
+                      <a
+                        href={firstConfirmed.meet_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-black transition hover:bg-emerald-400"
+                      >
+                        Join Meeting
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={downloadIcs}
+                      className="rounded-xl border border-blue-400/50 bg-blue-500/20 px-5 py-3 text-sm font-bold text-blue-200 hover:bg-blue-500/30 transition"
+                    >
+                      Add to Calendar
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}

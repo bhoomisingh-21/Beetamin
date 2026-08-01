@@ -12,11 +12,19 @@ import {
   Users,
   ClipboardList,
   ChevronRight,
+  Video,
 } from 'lucide-react'
 import { completePortalAppointment } from '@/lib/nutritionist-portal-actions'
 import type { PortalHomePayload, SlotStatus } from '@/lib/nutritionist-types'
-import { confirmAppointment, type AppointmentWithClient } from '@/lib/nutritionist-actions'
+import {
+  confirmAppointment,
+  nutritionistCancelAppointment,
+  rescheduleAppointment,
+  type AppointmentWithClient,
+} from '@/lib/nutritionist-actions'
 import { CompleteSessionModal } from '@/components/nutritionist-portal/CompleteSessionModal'
+import { RescheduleModal } from '@/components/nutritionist-portal/RescheduleModal'
+import { CancelSessionModal } from '@/components/nutritionist-portal/CancelSessionModal'
 import { portal } from '@/components/nutritionist-portal/portal-theme'
 
 function formatTime(t: string) {
@@ -65,6 +73,8 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
   const [completeTarget, setCompleteTarget] = useState<(typeof initial.todaySessions)[number] | null>(
     null,
   )
+  const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentWithClient | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<AppointmentWithClient | null>(null)
 
   useEffect(() => {
     if (!toast) return
@@ -91,9 +101,42 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
 
   function quickConfirm(id: string) {
     start(async () => {
-      await confirmAppointment(id)
+      const res = await confirmAppointment(id)
+      if (!res.ok) {
+        setToast(res.error)
+        return
+      }
+      setToast(
+        res.warning
+          ? `Session accepted. ${res.warning}`
+          : res.meetLink
+            ? 'Session accepted — Google Meet link created and emailed to the client.'
+            : 'Session accepted.',
+      )
       refresh()
     })
+  }
+
+  async function submitReschedule(newDate: string, newTime: string) {
+    if (!rescheduleTarget) return
+    const res = await rescheduleAppointment(rescheduleTarget.id, newDate, newTime)
+    if (!res.ok) {
+      setToast(res.error)
+      throw new Error(res.error)
+    }
+    setToast(res.warning ? `Session rescheduled. ${res.warning}` : 'Session rescheduled — client notified by email.')
+    refresh()
+  }
+
+  async function submitCancel(reason: string) {
+    if (!cancelTarget) return
+    const res = await nutritionistCancelAppointment(cancelTarget.id, reason || undefined)
+    if (!res.ok) {
+      setToast(res.error)
+      throw new Error(res.error)
+    }
+    setToast('Session cancelled — client notified by email.')
+    refresh()
   }
 
   const { stats, todaySessions, upcomingSevenDays, pendingRequests } = initial
@@ -118,6 +161,22 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
         clientName={completeTarget?.clients?.name ?? ''}
         onClose={() => setCompleteTarget(null)}
         onConfirm={submitComplete}
+      />
+
+      <RescheduleModal
+        open={!!rescheduleTarget}
+        clientName={rescheduleTarget?.clients?.name ?? ''}
+        currentDate={rescheduleTarget?.scheduled_date ?? ''}
+        currentTime={rescheduleTarget?.scheduled_time ?? ''}
+        onClose={() => setRescheduleTarget(null)}
+        onConfirm={submitReschedule}
+      />
+
+      <CancelSessionModal
+        open={!!cancelTarget}
+        clientName={cancelTarget?.clients?.name ?? ''}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={submitCancel}
       />
 
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -173,14 +232,32 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => quickConfirm(a.id)}
-                  className={`rounded-full px-4 py-2 text-xs font-bold ${portal.btnPrimary} disabled:opacity-50`}
-                >
-                  {pending ? <Loader2 className="animate-spin" size={14} /> : 'Confirm'}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => quickConfirm(a.id)}
+                    className={`rounded-full px-4 py-2 text-xs font-bold ${portal.btnPrimary} disabled:opacity-50`}
+                  >
+                    {pending ? <Loader2 className="animate-spin" size={14} /> : 'Accept'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => setRescheduleTarget(a)}
+                    className={`rounded-full px-4 py-2 text-xs font-bold ${portal.btnOutline} disabled:opacity-50`}
+                  >
+                    Reschedule
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => setCancelTarget(a)}
+                    className="rounded-full border border-red-300 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -249,6 +326,17 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                   >
                     View client profile
                   </Link>
+                  {a.status === 'confirmed' && a.meet_link && (
+                    <a
+                      href={a.meet_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500"
+                    >
+                      <Video size={16} />
+                      Join
+                    </a>
+                  )}
                   {a.status === 'confirmed' && (
                     <button
                       type="button"

@@ -42,6 +42,9 @@ export type AppointmentRow = {
   reminder_24h_sent: boolean
   reminder_1h_sent: boolean
   created_at: string
+  meet_link?: string | null
+  google_event_id?: string | null
+  meeting_created_at?: string | null
   nutritionists?: { name: string; email: string }
 }
 

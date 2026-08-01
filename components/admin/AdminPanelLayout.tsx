@@ -15,6 +15,7 @@ import {
   ShieldX,
   UserCircle,
   Users,
+  Video,
   X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -63,6 +64,7 @@ function SidebarNav({
     { href: '/admin/clients', label: 'Clients', icon: UserCircle },
     { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/admin/gift-access', label: 'Gift access', icon: Gift },
+    { href: '/admin/google-calendar', label: 'Google Calendar', icon: Video },
   ]
 
   return (

@@ -101,6 +101,7 @@ export async function getNutritionistPortalHome(): Promise<PortalHomePayload | n
       .from('appointments')
       .select(
         `id, client_id, nutritionist_id, session_number, scheduled_date, scheduled_time, reason, status, notes, created_at,
+        meet_link, google_event_id,
         clients(id, name, email, phone, sessions_used, sessions_remaining, plan_end_date, status, sessions_total)`,
       )
       .eq('nutritionist_id', nutritionist.id)
@@ -267,6 +268,7 @@ export async function getNutritionistPortalAppointments(): Promise<AppointmentWi
       .from('appointments')
       .select(
         `id, client_id, nutritionist_id, session_number, scheduled_date, scheduled_time, reason, status, notes, created_at,
+        meet_link, google_event_id,
         clients(id, name, email, phone, sessions_used, sessions_remaining, plan_end_date, status, sessions_total)`,
       )
       .eq('nutritionist_id', nutritionist.id)
@@ -296,6 +298,7 @@ export async function getNutritionistClientBundle(clientId: string): Promise<Por
       .from('appointments')
       .select(
         `id, session_number, scheduled_date, scheduled_time, reason, status, notes, created_at,
+        meet_link, google_event_id,
         clients(id, name, email, phone, sessions_used, sessions_remaining, plan_end_date, status, sessions_total)`,
       )
       .eq('nutritionist_id', nutritionist.id)
