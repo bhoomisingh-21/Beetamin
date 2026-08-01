@@ -48,15 +48,19 @@ export async function POST(req: Request) {
 
   const result = await grantGiftAccessByEmail({ email, plan, note })
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 404 })
+    return NextResponse.json({ error: result.error }, { status: 500 })
   }
 
   const planLabel = plan === 'full_plan' ? '₹3,999 Full Plan' : '₹39 Report'
+  const message = result.pending
+    ? `No account yet for ${result.email} — access reserved for ${planLabel}. It unlocks automatically the moment they sign up.`
+    : `Access granted to ${result.email} for ${planLabel}`
   return NextResponse.json({
     success: true,
-    message: `Access granted to ${result.email} for ${planLabel}`,
+    message,
     email: result.email,
     plan: result.plan,
+    pending: result.pending,
   })
 }
 

@@ -10,6 +10,7 @@ type GiftedRow = {
   gifted_plan: 'report' | 'full_plan'
   gifted_note: string | null
   gifted_at: string
+  pending: boolean
 }
 
 const PLAN_OPTIONS = [
@@ -115,7 +116,8 @@ export function GiftAccessAdminClient() {
         <div>
           <h1 className="text-white font-black text-2xl md:text-3xl">Gift Plan Access</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Grant ₹39 report or ₹3,999 full plan without PayU checkout.
+            Grant ₹39 report or ₹3,999 full plan without PayU checkout. If they haven&apos;t signed up
+            yet, access is reserved and unlocks automatically the moment they sign in.
           </p>
         </div>
       </div>
@@ -212,6 +214,7 @@ export function GiftAccessAdminClient() {
               <thead>
                 <tr className="border-b border-white/10 text-gray-500 text-xs uppercase tracking-wider">
                   <th className="px-4 py-3 font-semibold">Email</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3 font-semibold">Plan</th>
                   <th className="px-4 py-3 font-semibold">Note</th>
                   <th className="px-4 py-3 font-semibold">Gifted on</th>
@@ -222,6 +225,17 @@ export function GiftAccessAdminClient() {
                 {rows.map((row) => (
                   <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                     <td className="px-4 py-3 text-gray-200">{row.email || '—'}</td>
+                    <td className="px-4 py-3">
+                      {row.pending ? (
+                        <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-300">
+                          Pending sign-up
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-300">
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-emerald-300">{formatPlan(row.gifted_plan)}</td>
                     <td className="px-4 py-3 text-gray-400">{row.gifted_note || '—'}</td>
                     <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{formatGiftedAt(row.gifted_at)}</td>

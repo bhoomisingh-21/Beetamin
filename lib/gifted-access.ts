@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
 
 import { paymentAppBaseUrl } from '@/lib/payment-app-base-url'
 import { makePayUTxnId } from '@/lib/payu'
@@ -38,6 +38,12 @@ export async function getClientGiftedAccess(clerkUserId: string): Promise<Client
 
   if (error || !data) return null
   return data as ClientGiftedRow
+}
+
+/** Placeholder clerk_user_id prefixes used for clients who haven't signed up yet. */
+function isPlaceholderClerkId(clerkUserId: string | null | undefined): boolean {
+  const id = String(clerkUserId ?? '')
+  return !id || id.startsWith('pending_gift_') || id.startsWith('invite_pending_')
 }
 
 export function giftedPlanMatchesPayment(
@@ -163,6 +169,8 @@ export type GiftedAccessListRow = {
   gifted_plan: GiftedPlan
   gifted_note: string | null
   gifted_at: string
+  /** True until the person signs up — the row's clerk_user_id is still a placeholder. */
+  pending: boolean
 }
 
 export async function listGiftedClients(): Promise<GiftedAccessListRow[]> {
@@ -185,6 +193,7 @@ export async function listGiftedClients(): Promise<GiftedAccessListRow[]> {
     gifted_plan: row.gifted_plan as GiftedPlan,
     gifted_note: row.gifted_note != null ? String(row.gifted_note) : null,
     gifted_at: String(row.gifted_at ?? ''),
+    pending: isPlaceholderClerkId(row.clerk_user_id),
   }))
 }
 
@@ -192,7 +201,8 @@ export async function grantGiftAccessByEmail(args: {
   email: string
   plan: GiftedPlan
   note?: string
-}): Promise<{ ok: true; email: string; plan: GiftedPlan } | { ok: false; error: string }> {
+  name?: string
+}): Promise<{ ok: true; email: string; plan: GiftedPlan; pending: boolean } | { ok: false; error: string }> {
   const email = args.email.trim().toLowerCase()
   if (!email) return { ok: false, error: 'Email is required.' }
 
@@ -207,29 +217,52 @@ export async function grantGiftAccessByEmail(args: {
     return { ok: false, error: 'Database error. Try again.' }
   }
 
-  if (!client?.clerk_user_id) {
-    return {
-      ok: false,
-      error: 'No account found with this email. Ask them to sign up first.',
+  const giftFields = {
+    is_gifted_access: true,
+    gifted_plan: args.plan,
+    gifted_at: new Date().toISOString(),
+    gifted_note: args.note?.trim() || null,
+  }
+
+  if (client) {
+    const { error: updErr } = await supabaseAdmin.from('clients').update(giftFields).eq('id', client.id)
+    if (updErr) {
+      console.error('[grantGiftAccessByEmail] update', updErr)
+      return { ok: false, error: 'Could not grant access.' }
     }
+    const pending = isPlaceholderClerkId(client.clerk_user_id)
+    return { ok: true, email, plan: args.plan, pending }
   }
 
-  const { error: updErr } = await supabaseAdmin
-    .from('clients')
-    .update({
-      is_gifted_access: true,
-      gifted_plan: args.plan,
-      gifted_at: new Date().toISOString(),
-      gifted_note: args.note?.trim() || null,
-    })
-    .eq('id', client.id)
+  // No account yet — create a placeholder client row keyed by email. Once they sign up
+  // and complete onboarding, the email-conflict upsert in createClientProfile / the free
+  // assessment flow re-links this same row to their real clerk_user_id, keeping these
+  // gifted fields intact so they can book immediately.
+  const startDate = new Date()
+  const endDate = new Date()
+  endDate.setMonth(endDate.getMonth() + 3)
+  const name = args.name?.trim() || email.split('@')[0]
 
-  if (updErr) {
-    console.error('[grantGiftAccessByEmail] update', updErr)
-    return { ok: false, error: 'Could not grant access.' }
+  const { error: insErr } = await supabaseAdmin.from('clients').insert({
+    clerk_user_id: `pending_gift_${randomUUID()}`,
+    name,
+    email,
+    phone: '',
+    plan_start_date: startDate.toISOString().slice(0, 10),
+    plan_end_date: endDate.toISOString().slice(0, 10),
+    status: 'active',
+    sessions_total: args.plan === 'full_plan' ? 6 : 0,
+    sessions_used: 0,
+    sessions_remaining: args.plan === 'full_plan' ? 6 : 0,
+    ...giftFields,
+  })
+
+  if (insErr) {
+    console.error('[grantGiftAccessByEmail] insert', insErr)
+    return { ok: false, error: 'Could not create a pending account for this email.' }
   }
 
-  return { ok: true, email, plan: args.plan }
+  return { ok: true, email, plan: args.plan, pending: true }
 }
 
 export async function revokeGiftAccess(clientId: string): Promise<{ ok: boolean; error?: string }> {
