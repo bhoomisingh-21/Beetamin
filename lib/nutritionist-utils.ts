@@ -22,6 +22,75 @@ export function sessionStatesFromAppointments(
   return out
 }
 
+export type SessionSlotState = 'completed' | 'confirmed' | 'pending' | 'active_empty' | 'locked'
+
+export type SessionSlotAppointment = {
+  id: string
+  session_number: number
+  status: string
+  scheduled_date: string
+  scheduled_time: string
+  meet_link?: string | null
+  google_event_id?: string | null
+  notes?: string | null
+}
+
+export type SessionSlot = {
+  sessionNumber: number
+  state: SessionSlotState
+  appointment: SessionSlotAppointment | null
+}
+
+/**
+ * Turns a client's raw appointment rows into a fixed 1..sessionsTotal sequence where
+ * only one slot is ever "active" at a time — everything before it is completed,
+ * everything after is locked. This is what powers the nutritionist's per-client
+ * "Session 1 / Session 2 / …" dashboard and the one-click "Generate Meet Link" flow.
+ */
+export function computeSessionSlots(
+  sessionsTotal: number,
+  sessionsUsed: number,
+  appointments: SessionSlotAppointment[],
+): SessionSlot[] {
+  const total = Math.max(0, Math.min(Number(sessionsTotal) || 0, 24))
+  const activeNumber = Math.max(1, (Number(sessionsUsed) || 0) + 1)
+  const relevant = appointments.filter((a) => ['pending', 'confirmed', 'completed'].includes(a.status))
+
+  const slots: SessionSlot[] = []
+  for (let n = 1; n <= total; n++) {
+    const row =
+      relevant
+        .filter((a) => a.session_number === n)
+        .sort((a, b) =>
+          `${b.scheduled_date}T${b.scheduled_time}`.localeCompare(`${a.scheduled_date}T${a.scheduled_time}`),
+        )[0] ?? null
+
+    let state: SessionSlotState
+    if (n < activeNumber) {
+      state = 'completed'
+    } else if (n === activeNumber) {
+      state = row ? (row.status as SessionSlotState) : 'active_empty'
+    } else {
+      state = 'locked'
+    }
+    slots.push({ sessionNumber: n, state, appointment: row })
+  }
+  return slots
+}
+
+/** Inline HTML snippet with a real Join button when a Meet link exists, else a "coming shortly" note. */
+export function meetLinkEmailSection(meetLink: string | null): string {
+  if (meetLink) {
+    return `
+      <a href="${meetLink}" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:8px;">
+        Join Google Meet →
+      </a>
+      <p style="color:#6B7280;font-size:12px;margin-top:12px;word-break:break-all;">Meet link: ${meetLink}</p>
+    `
+  }
+  return `<p style="color:#F59E0B;">Your Google Meet link is being generated and will appear on your Beetamin dashboard shortly.</p>`
+}
+
 /** Avatar background seeded by first character of name (nutritionist portal spec). */
 export function avatarPaletteFromName(name: string): string {
   const colors = [

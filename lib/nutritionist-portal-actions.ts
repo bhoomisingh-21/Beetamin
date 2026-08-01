@@ -3,10 +3,16 @@
 import { auth } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { Resend } from 'resend'
 import { markAppointmentCompleteById } from '@/lib/booking-actions'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import { isNutritionistEmail } from '@/lib/nutritionist-config'
-import { getOrCreateNutritionist, type AppointmentWithClient } from '@/lib/nutritionist-actions'
+import {
+  getOrCreateNutritionist,
+  type AppointmentActionResult,
+  type AppointmentWithClient,
+} from '@/lib/nutritionist-actions'
+import { createMeetEventForAppointment, friendlyGoogleCalendarError } from '@/lib/google-calendar'
 import { verifySignedCookie } from '@/lib/nut-session-crypto-node'
 import type {
   ClientDocumentDTO,
@@ -20,10 +26,13 @@ import { sendDietPlanReadyEmail } from '@/lib/send-diet-plan-email'
 import {
   computeSlotStatus,
   isoTodayLocal,
+  meetLinkEmailSection,
   mondayWeekBounds,
   sessionStatesFromAppointments,
 } from '@/lib/nutritionist-utils'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -544,6 +553,145 @@ export async function completePortalAppointment(
   } catch (e) {
     console.error('[completePortalAppointment]', e)
     return { ok: false, error: 'failed' }
+  }
+}
+
+/**
+ * Lets the nutritionist directly schedule + confirm a client's next unlocked session
+ * without waiting for the client to submit a booking request themselves — essential for
+ * clients added manually from the portal who may not have logged in yet. Targets whichever
+ * session number is currently "active" for the client (sessions_used + 1) and creates a
+ * real Google Meet event for it in one step.
+ */
+export async function nutritionistScheduleSession(input: {
+  clientId: string
+  scheduledDate: string
+  scheduledTime: string
+}): Promise<AppointmentActionResult & { sessionNumber?: number; appointmentId?: string }> {
+  try {
+    const nutritionist = await portalNutritionist()
+    if (!nutritionist) return { ok: false, error: 'Unauthorized' }
+
+    const owns = await nutritionistOwnsClient(nutritionist.id, input.clientId)
+    if (!owns) return { ok: false, error: 'Client not found' }
+
+    const { data: client } = await supabaseAdmin
+      .from('clients')
+      .select('id, name, email, status, sessions_total, sessions_used, sessions_remaining')
+      .eq('id', input.clientId)
+      .maybeSingle()
+    if (!client) return { ok: false, error: 'Client not found' }
+
+    const sessionsRemaining = Number(client.sessions_remaining ?? 0)
+    if (sessionsRemaining <= 0) {
+      return {
+        ok: false,
+        error: 'This client has no sessions remaining. Grant plan access from Admin → Gift Access first.',
+      }
+    }
+
+    const sessionNumber = Number(client.sessions_used ?? 0) + 1
+
+    const { data: activeRow } = await supabaseAdmin
+      .from('appointments')
+      .select('id')
+      .eq('client_id', client.id)
+      .eq('session_number', sessionNumber)
+      .in('status', ['pending', 'confirmed'])
+      .maybeSingle()
+    if (activeRow) {
+      return { ok: false, error: 'This session is already scheduled. Use Reschedule instead.' }
+    }
+
+    const { data: appt, error: insErr } = await supabaseAdmin
+      .from('appointments')
+      .insert({
+        client_id: client.id,
+        nutritionist_id: nutritionist.id,
+        session_number: sessionNumber,
+        scheduled_date: input.scheduledDate,
+        scheduled_time: input.scheduledTime,
+        reason: 'Scheduled by nutritionist',
+        status: 'pending',
+      })
+      .select('id')
+      .single()
+
+    if (insErr || !appt) {
+      console.error('[nutritionistScheduleSession] insert', insErr)
+      return { ok: false, error: 'Could not create the session.' }
+    }
+
+    const appointmentId = appt.id as string
+
+    let meetLink: string | null = null
+    let googleEventId: string | null = null
+    let warning: string | undefined
+
+    try {
+      const created = await createMeetEventForAppointment({
+        appointmentId,
+        scheduledDate: input.scheduledDate,
+        scheduledTime: input.scheduledTime,
+        clientName: client.name,
+        clientEmail: client.email,
+        nutritionistName: nutritionist.name,
+        nutritionistEmail: nutritionist.email,
+        sessionNumber,
+      })
+      meetLink = created.meetLink
+      googleEventId = created.eventId
+    } catch (e) {
+      console.error('[nutritionistScheduleSession] meet creation failed', e)
+      warning = friendlyGoogleCalendarError(e)
+    }
+
+    await supabaseAdmin
+      .from('appointments')
+      .update({
+        status: 'confirmed',
+        ...(meetLink
+          ? { meet_link: meetLink, google_event_id: googleEventId, meeting_created_at: new Date().toISOString() }
+          : {}),
+      })
+      .eq('id', appointmentId)
+
+    const sessionDate = new Date(`${input.scheduledDate}T${input.scheduledTime}`)
+    try {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL!,
+        to: client.email,
+        subject: `Session ${sessionNumber} Scheduled — ${sessionDate.toLocaleDateString('en-IN')} 🗓️`,
+        html: `
+        <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
+          <h1 style="color:#10B981;">Session ${sessionNumber} Scheduled! 🗓️</h1>
+          <p style="color:#9CA3AF;">${nutritionist.name} has scheduled your next consultation.</p>
+          <div style="background:#111820;border-radius:12px;padding:24px;margin:24px 0;">
+            <p style="color:white;margin:0;">📅 Date: <strong>${sessionDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong></p>
+            <p style="color:white;margin:8px 0;">⏰ Time: <strong>${input.scheduledTime}</strong></p>
+            <p style="color:white;margin:0;">👤 Nutritionist: <strong>${nutritionist.name}</strong></p>
+            <p style="color:white;margin:8px 0;">⏱️ Duration: <strong>35 minutes</strong></p>
+          </div>
+          ${meetLinkEmailSection(meetLink)}
+          <p style="color:#9CA3AF;margin-top:24px;">
+            <a href="https://thebeetamin.com/sessions" style="color:#10B981;">View My Sessions →</a>
+          </p>
+          <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
+        </div>
+      `,
+      })
+    } catch (e) {
+      console.error('[nutritionistScheduleSession] Resend failed:', e)
+    }
+
+    revalidatePath(`/nutritionist/clients/${input.clientId}`)
+    revalidatePath('/nutritionist')
+    revalidatePath('/nutritionist/appointments')
+
+    return { ok: true, meetLink, warning, sessionNumber, appointmentId }
+  } catch (e) {
+    console.error('[nutritionistScheduleSession]', e)
+    return { ok: false, error: 'Failed to schedule session' }
   }
 }
 

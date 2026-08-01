@@ -15,6 +15,7 @@ import { NutritionistProgressCharts } from '@/components/nutritionist/Nutritioni
 import { NutritionistWeightSparkline } from '@/components/nutritionist/NutritionistWeightSparkline'
 import { ClientProfileHeader } from '@/components/nutritionist-portal/ClientProfileHeader'
 import { NutritionistHraTab } from '@/components/nutritionist-portal/NutritionistHraTab'
+import { ClientSessionsPanel } from '@/components/nutritionist-portal/ClientSessionsPanel'
 import { toggleNutritionistNotePin } from '@/lib/nutritionist-portal-actions'
 import { portal } from '@/components/nutritionist-portal/portal-theme'
 
@@ -107,7 +108,7 @@ function deriveProgressStats(bundle: PortalClientBundle) {
   }
 }
 
-type Tab = 'hra' | 'overview' | 'notes' | 'mealPlan' | 'dietPlan' | 'documents' | 'progress'
+type Tab = 'sessions' | 'hra' | 'overview' | 'notes' | 'mealPlan' | 'dietPlan' | 'documents' | 'progress'
 
 export default function NutritionistClientProfileClient({
   bundle,
@@ -119,7 +120,7 @@ export default function NutritionistClientProfileClient({
   const router = useRouter()
   const [pinBusy, startPin] = useTransition()
   const [composerKick, setComposerKick] = useState(0)
-  const [tab, setTab] = useState<Tab>('hra')
+  const [tab, setTab] = useState<Tab>('sessions')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [notesMount, setNotesMount] = useState<{ key: number; session: string }>({
     key: 0,
@@ -151,6 +152,7 @@ export default function NutritionistClientProfileClient({
   }, [appointments])
 
   const tabs: { id: Tab; label: string }[] = [
+    { id: 'sessions', label: 'Sessions' },
     { id: 'hra', label: 'HRA Form' },
     { id: 'overview', label: 'Summary' },
     { id: 'mealPlan', label: 'Diet Plan' },
@@ -197,6 +199,17 @@ export default function NutritionistClientProfileClient({
         <div
           className={`mx-auto min-w-0 w-full max-w-6xl flex-1 ${tab === 'mealPlan' ? 'px-0 py-0' : 'px-4 py-6 md:px-6'}`}
         >
+          {tab === 'sessions' && (
+            <ClientSessionsPanel
+              clientId={clientId}
+              clientName={client.name}
+              sessionsTotal={client.sessions_total}
+              sessionsUsed={client.sessions_used}
+              sessionsRemaining={client.sessions_remaining}
+              appointments={appointments}
+            />
+          )}
+
           {tab === 'hra' && (
             <NutritionistHraTab clientId={clientId} clientName={client.name} bundle={bundle} />
           )}

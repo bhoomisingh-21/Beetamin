@@ -8,6 +8,7 @@ import {
   updateMeetEventTime,
 } from './google-calendar'
 import { supabaseAdmin } from './supabase-admin'
+import { meetLinkEmailSection } from './nutritionist-utils'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -390,19 +391,6 @@ async function getAppointmentWithClient(appointmentId: string) {
     .eq('id', appointmentId)
     .single()
   return data as AppointmentWithClient & { nutritionist_id: string } | null
-}
-
-/** Inline HTML snippet with a real Join button when a Meet link exists, else a "coming shortly" note. */
-function meetLinkEmailSection(meetLink: string | null): string {
-  if (meetLink) {
-    return `
-      <a href="${meetLink}" style="background:#10B981;color:black;padding:16px 32px;border-radius:50px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:8px;">
-        Join Google Meet →
-      </a>
-      <p style="color:#6B7280;font-size:12px;margin-top:12px;word-break:break-all;">Meet link: ${meetLink}</p>
-    `
-  }
-  return `<p style="color:#F59E0B;">Your Google Meet link is being generated and will appear on your Beetamin dashboard shortly.</p>`
 }
 
 export async function confirmAppointment(appointmentId: string): Promise<AppointmentActionResult> {
