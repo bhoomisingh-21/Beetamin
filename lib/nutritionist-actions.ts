@@ -117,6 +117,24 @@ export async function getNutritionistDashboard() {
 
 // ─── Availability ─────────────────────────────────────────────────────────────
 
+/**
+ * Postgres `time` columns come back from PostgREST as "HH:MM:SS" (e.g. "12:00:00"),
+ * but the availability editor's <select> options use "HH:MM" values. Without this,
+ * the saved value never matches an <option>, so the dropdown silently falls back to
+ * its first entry — looking exactly like the edit "didn't save" after navigating away.
+ */
+function toHHMM(t: string | null | undefined): string {
+  return typeof t === 'string' ? t.slice(0, 5) : ''
+}
+
+function normalizeSlots(rows: AvailabilitySlot[]): AvailabilitySlot[] {
+  return rows.map((s) => ({
+    ...s,
+    start_time: toHHMM(s.start_time),
+    end_time: toHHMM(s.end_time),
+  }))
+}
+
 export async function getAvailability(): Promise<AvailabilitySlot[]> {
   const nutritionist = await getOrCreateNutritionist()
   if (!nutritionist) return []
@@ -128,7 +146,7 @@ export async function getAvailability(): Promise<AvailabilitySlot[]> {
     .order('day_of_week')
     .order('start_time')
 
-  return (data || []) as AvailabilitySlot[]
+  return normalizeSlots((data || []) as AvailabilitySlot[])
 }
 
 export async function saveAvailability(slots: AvailabilitySlot[]) {
@@ -205,7 +223,7 @@ export async function getAvailabilityByEmail(email: string): Promise<Availabilit
     .eq('nutritionist_id', nutritionist.id)
     .order('day_of_week')
     .order('start_time')
-  return (data || []) as AvailabilitySlot[]
+  return normalizeSlots((data || []) as AvailabilitySlot[])
 }
 
 export async function saveAvailabilityByEmail(slots: AvailabilitySlot[], email: string) {
