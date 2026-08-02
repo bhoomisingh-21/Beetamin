@@ -18,6 +18,7 @@ import { completePortalAppointment } from '@/lib/nutritionist-portal-actions'
 import type { PortalHomePayload, SlotStatus } from '@/lib/nutritionist-types'
 import {
   confirmAppointment,
+  createMissingMeetLink,
   nutritionistCancelAppointment,
   rescheduleAppointment,
   type AppointmentWithClient,
@@ -126,6 +127,18 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
     }
     setToast(res.warning ? `Session rescheduled. ${res.warning}` : 'Session rescheduled — client notified by email.')
     refresh()
+  }
+
+  function handleCreateMeetLink(id: string) {
+    start(async () => {
+      const res = await createMissingMeetLink(id)
+      if (!res.ok) {
+        setToast(res.error)
+        return
+      }
+      setToast('Google Meet link created and emailed to the client.')
+      refresh()
+    })
   }
 
   async function submitCancel(reason: string) {
@@ -336,6 +349,17 @@ export default function NutritionistHomePageClient({ initial }: { initial: Porta
                       <Video size={16} />
                       Join
                     </a>
+                  )}
+                  {a.status === 'confirmed' && !a.meet_link && (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => handleCreateMeetLink(a.id)}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500 disabled:opacity-40"
+                    >
+                      <Video size={16} />
+                      Create Meet link
+                    </button>
                   )}
                   {a.status === 'confirmed' && (
                     <button

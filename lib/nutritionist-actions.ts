@@ -1,5 +1,6 @@
 'use server'
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { cookies } from 'next/headers'
 import { markAppointmentCompleteById } from './booking-actions'
 import {
   cancelMeetEvent,
@@ -7,6 +8,8 @@ import {
   friendlyGoogleCalendarError,
   updateMeetEventTime,
 } from './google-calendar'
+import { isNutritionistEmail } from './nutritionist-config'
+import { verifySignedCookie } from './nut-session-crypto-node'
 import { supabaseAdmin } from './supabase-admin'
 import { meetLinkEmailSection } from './nutritionist-utils'
 import { Resend } from 'resend'
@@ -90,10 +93,39 @@ export async function getOrCreateNutritionist() {
   return { ...byEmail, clerk_user_id: userId }
 }
 
+/**
+ * The portal supports two logins: Clerk (nutritionist signs in like a normal user) and a
+ * signed-cookie email session (`/nutritionist-login`, no Clerk account). `getOrCreateNutritionist`
+ * only understands Clerk and throws when there's no Clerk session — which crashed every
+ * appointment action (Accept/Reschedule/Cancel/Reject/Complete) for anyone using the email
+ * login. This mirrors the same dual-auth resolver used in nutritionist-portal-actions.ts.
+ */
+async function portalNutritionist() {
+  const { userId } = await auth()
+  if (userId) {
+    try {
+      return await getOrCreateNutritionist()
+    } catch {
+      return null
+    }
+  }
+
+  const cookieStore = await cookies()
+  const token = cookieStore.get('nut-session')?.value
+  const secret = process.env.COOKIE_SECRET
+  if (!token || !secret) return null
+  const rawEmail = verifySignedCookie(token, secret)
+  const email = rawEmail?.toLowerCase().trim() ?? ''
+  if (!email || !isNutritionistEmail(email)) return null
+
+  const { data } = await supabaseAdmin.from('nutritionists').select('*').eq('email', email).maybeSingle()
+  return data ?? null
+}
+
 // ─── Dashboard stats + appointments ───────────────────────────────────────────
 
 export async function getNutritionistDashboard() {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
 
   if (!nutritionist) return null
 
@@ -150,7 +182,7 @@ function normalizeSlots(rows: AvailabilitySlot[]): AvailabilitySlot[] {
 }
 
 export async function getAvailability(): Promise<AvailabilitySlot[]> {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
   if (!nutritionist) return []
 
   const { data } = await supabaseAdmin
@@ -164,7 +196,7 @@ export async function getAvailability(): Promise<AvailabilitySlot[]> {
 }
 
 export async function saveAvailability(slots: AvailabilitySlot[]) {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
   if (!nutritionist) throw new Error('Nutritionist profile not found')
 
   // Replace all existing slots
@@ -394,7 +426,7 @@ async function getAppointmentWithClient(appointmentId: string) {
 }
 
 export async function confirmAppointment(appointmentId: string): Promise<AppointmentActionResult> {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
   if (!nutritionist) return { ok: false, error: 'Not a nutritionist' }
 
   const appt = await getAppointmentWithClient(appointmentId)
@@ -465,12 +497,78 @@ export async function confirmAppointment(appointmentId: string): Promise<Appoint
   return { ok: true, meetLink, warning }
 }
 
+/**
+ * Backfills a Google Meet link for a session that's already confirmed but has none —
+ * this happens if Meet creation failed at Accept/Reschedule time (e.g. Google Calendar
+ * wasn't connected yet). Lets the nutritionist retry with a single click instead of being
+ * stuck with a confirmed session that has no way to join it.
+ */
+export async function createMissingMeetLink(appointmentId: string): Promise<AppointmentActionResult> {
+  const nutritionist = await portalNutritionist()
+  if (!nutritionist) return { ok: false, error: 'Not a nutritionist' }
+
+  const appt = await getAppointmentWithClient(appointmentId)
+  if (!appt || appt.nutritionist_id !== nutritionist.id) return { ok: false, error: 'Appointment not found' }
+  if (appt.status !== 'confirmed') return { ok: false, error: 'Only confirmed sessions need a Meet link.' }
+  if (appt.meet_link) return { ok: true, meetLink: appt.meet_link }
+
+  let meetLink: string | null = null
+  let googleEventId: string | null = null
+
+  try {
+    const created = await createMeetEventForAppointment({
+      appointmentId,
+      scheduledDate: appt.scheduled_date,
+      scheduledTime: appt.scheduled_time,
+      clientName: appt.clients.name,
+      clientEmail: appt.clients.email,
+      nutritionistName: nutritionist.name,
+      nutritionistEmail: nutritionist.email,
+      sessionNumber: appt.session_number,
+    })
+    meetLink = created.meetLink
+    googleEventId = created.eventId
+  } catch (e) {
+    console.error('[createMissingMeetLink] meet creation failed', e)
+    return { ok: false, error: friendlyGoogleCalendarError(e) }
+  }
+
+  await supabaseAdmin
+    .from('appointments')
+    .update({ meet_link: meetLink, google_event_id: googleEventId, meeting_created_at: new Date().toISOString() })
+    .eq('id', appointmentId)
+
+  const sessionDate = new Date(`${appt.scheduled_date}T${appt.scheduled_time}`)
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: appt.clients.email,
+      subject: `Your Google Meet link is ready — Session ${appt.session_number} 🗓️`,
+      html: `
+      <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#0A0F14;color:white;padding:40px;border-radius:16px;">
+        <h1 style="color:#10B981;">Your Meet link is ready ✅</h1>
+        <p style="color:#9CA3AF;">For your session on ${sessionDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} at ${appt.scheduled_time}.</p>
+        ${meetLinkEmailSection(meetLink)}
+        <p style="color:#9CA3AF;margin-top:24px;">
+          <a href="https://thebeetamin.com/sessions" style="color:#10B981;">View My Sessions →</a>
+        </p>
+        <p style="color:#6B7280;font-size:12px;margin-top:32px;">TheBeetamin · India's #1 Personalized Nutrition System</p>
+      </div>
+    `,
+    })
+  } catch (e) {
+    console.error('[createMissingMeetLink] Resend failed:', e)
+  }
+
+  return { ok: true, meetLink }
+}
+
 export async function rescheduleAppointment(
   appointmentId: string,
   newDate: string,
   newTime: string,
 ): Promise<AppointmentActionResult> {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
   if (!nutritionist) return { ok: false, error: 'Not a nutritionist' }
 
   const appt = await getAppointmentWithClient(appointmentId)
@@ -558,7 +656,7 @@ export async function nutritionistCancelAppointment(
   appointmentId: string,
   reason?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
   if (!nutritionist) return { ok: false, error: 'Not a nutritionist' }
 
   const appt = await getAppointmentWithClient(appointmentId)
@@ -606,7 +704,7 @@ export async function nutritionistCancelAppointment(
 }
 
 export async function rejectAppointment(appointmentId: string, reason?: string) {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
   if (!nutritionist) throw new Error('Not a nutritionist')
 
   const appt = await getAppointmentWithClient(appointmentId)
@@ -642,7 +740,7 @@ export async function rejectAppointment(appointmentId: string, reason?: string) 
 }
 
 export async function completeAppointment(appointmentId: string, notes: string) {
-  const nutritionist = await getOrCreateNutritionist()
+  const nutritionist = await portalNutritionist()
   if (!nutritionist) throw new Error('Not a nutritionist')
 
   const appt = await getAppointmentWithClient(appointmentId)

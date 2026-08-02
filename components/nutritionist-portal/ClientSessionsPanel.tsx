@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { CheckCircle, Loader2, Lock, Video } from 'lucide-react'
 import {
   confirmAppointment,
+  createMissingMeetLink,
   nutritionistCancelAppointment,
   rescheduleAppointment,
   type AppointmentWithClient,
@@ -98,6 +99,21 @@ export function ClientSessionsPanel({
           ? `Session accepted. ${res.warning}`
           : 'Session accepted — Google Meet link created and emailed to the client.',
       )
+      refresh()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleCreateMeetLink(a: AppointmentWithClient) {
+    setBusyId(a.id)
+    try {
+      const res = await createMissingMeetLink(a.id)
+      if (!res.ok) {
+        setToast(res.error)
+        return
+      }
+      setToast('Google Meet link created and emailed to the client.')
       refresh()
     } finally {
       setBusyId(null)
@@ -288,6 +304,17 @@ export function ClientSessionsPanel({
                     <Video size={14} />
                     Join
                   </a>
+                )}
+                {slot.state === 'confirmed' && a && !a.meet_link && (
+                  <button
+                    type="button"
+                    disabled={rowBusy}
+                    onClick={() => void handleCreateMeetLink(a)}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-500 disabled:opacity-40"
+                  >
+                    {busyId === a.id ? <Loader2 className="animate-spin" size={14} /> : <Video size={14} />}
+                    Create Meet link
+                  </button>
                 )}
                 {slot.state === 'confirmed' && a && (
                   <button
