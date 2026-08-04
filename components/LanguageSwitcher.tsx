@@ -79,6 +79,27 @@ export function LanguageSwitcher() {
     } else if (window.google?.translate) {
       window.googleTranslateElementInit()
     }
+
+    // Belt-and-suspenders: Google sometimes re-applies its own inline styles to
+    // the banner iframe after our CSS loads, which can win the cascade. Force it
+    // hidden via JS too, and keep the body from being pushed down by 40px.
+    function hideGoogleChrome() {
+      const banner = document.querySelector<HTMLElement>(
+        '.goog-te-banner-frame, iframe.goog-te-banner-frame',
+      )
+      if (banner) banner.style.display = 'none'
+      if (document.body.style.top && document.body.style.top !== '0px') {
+        document.body.style.top = '0px'
+      }
+    }
+    hideGoogleChrome()
+    const observer = new MutationObserver(hideGoogleChrome)
+    observer.observe(document.body, { childList: true, subtree: true })
+    const interval = window.setInterval(hideGoogleChrome, 1000)
+    return () => {
+      observer.disconnect()
+      window.clearInterval(interval)
+    }
   }, [])
 
   function changeLanguage(code: string) {
