@@ -71,13 +71,18 @@ async function assertAppointmentOwnedByNutritionist(
   return !!data
 }
 
-/** Appointment statuses that make someone a genuine client (excludes ghost rejected/cancelled requests). */
-const OWNERSHIP_STATUSES = ['pending', 'confirmed', 'completed'] as const
+/**
+ * Appointment statuses that make someone a genuine client. `cancelled` is included
+ * because in the sequential session model, cancelling just reopens that slot for a
+ * fresh Meet link — it must NOT sever the whole client relationship. Only `rejected`
+ * (a request the nutritionist declined before ever confirming it) is excluded.
+ */
+const OWNERSHIP_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'] as const
 
 /**
  * A nutritionist "owns" a client only if they have at least one real appointment
- * together (pending / confirmed / completed). A request that was rejected or
- * cancelled does not make that person a client.
+ * together (pending / confirmed / completed / cancelled). A request that was rejected
+ * before ever being confirmed does not make that person a client.
  */
 async function nutritionistOwnsClient(nutritionistId: string, clientId: string): Promise<boolean> {
   const { data: appt } = await supabaseAdmin
@@ -210,8 +215,8 @@ export async function getNutritionistPortalClients(): Promise<PortalClientListRo
 
     const rows = appts || []
 
-    // Only clients this nutritionist genuinely booked — pending/confirmed/completed.
-    // Ghost rejected/cancelled-only requests are excluded above, and report-only /
+    // Only clients this nutritionist genuinely booked — pending/confirmed/completed/cancelled.
+    // Ghost rejected-only requests are excluded above, and report-only /
     // free-assessment users (no appointment at all) never appear here.
     const myClientIds = [...new Set(rows.map((r) => r.client_id as string).filter(Boolean))]
 

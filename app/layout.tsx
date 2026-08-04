@@ -11,6 +11,7 @@ import {
 import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
 import { AssessmentProfileSync } from '@/components/AssessmentProfileSync'
 import { DeficiencyPopup } from '@/components/DeficiencyPopup'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { CrawlableSiteNav } from '@/components/seo/CrawlableSiteNav'
 import './globals.css'
 
@@ -139,6 +140,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CrawlableSiteNav />
           <AssessmentProfileSync />
           <DeficiencyPopup />
+          <LanguageSwitcher />
           {children}
         </body>
       </html>

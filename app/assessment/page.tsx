@@ -242,7 +242,7 @@ export default function AssessmentPage() {
                 { Icon: Zap, label: 'Instant Results' },
                 { Icon: Shield, label: 'Nutritionist-Reviewed' },
               ].map(({ Icon, label }) => (
-                <div key={label} className="flex items-center gap-2 text-gray-400 text-xs md:text-sm">
+                <div key={label} className="flex items-center gap-2 text-gray-400 text-sm md:text-base">
                   <Icon size={14} className="text-emerald-500" />
                   {label}
                 </div>
@@ -280,8 +280,8 @@ export default function AssessmentPage() {
                   {/* Progress Header */}
                   <div className="bg-gray-50 border-b border-gray-100 px-5 md:px-8 py-3 md:py-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500 text-xs md:text-sm font-medium">Step {currentStep} of {TOTAL_STEPS}</span>
-                      <span className="text-emerald-600 text-xs md:text-sm font-semibold">
+                      <span className="text-gray-500 text-sm md:text-base font-medium">Step {currentStep} of {TOTAL_STEPS}</span>
+                      <span className="text-emerald-600 text-sm md:text-base font-semibold">
                         {Math.round((currentStep / TOTAL_STEPS) * 100)}% Complete
                       </span>
                     </div>
@@ -309,10 +309,10 @@ export default function AssessmentPage() {
                         {/* Step 1 — Diet type */}
                         {currentStep === 1 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🔬 DIETARY PATTERN ANALYSIS
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5">
                               What best describes your diet?
                             </h2>
                             <div className="grid grid-cols-1 gap-2 md:gap-3">
@@ -330,8 +330,8 @@ export default function AssessmentPage() {
                                 >
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                    <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
+                                    <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
                                 </button>
                               ))}
@@ -342,10 +342,10 @@ export default function AssessmentPage() {
                         {/* Step 2 — Health goal */}
                         {currentStep === 2 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🎯 YOUR PRIMARY GOAL
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5">
                               What&apos;s your #1 health goal right now?
                             </h2>
                             <div className="grid grid-cols-1 gap-2 md:gap-3">
@@ -363,8 +363,8 @@ export default function AssessmentPage() {
                                 >
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                    <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
+                                    <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
                                 </button>
                               ))}
@@ -375,10 +375,10 @@ export default function AssessmentPage() {
                         {/* Step 3 — Energy */}
                         {currentStep === 3 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🔬 TESTING: B-VITAMINS · IRON · ADRENAL FUNCTION
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               It&apos;s 2:30 PM. Which best describes your energy right now?
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
@@ -393,8 +393,8 @@ export default function AssessmentPage() {
                                 >
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                    <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
+                                    <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
                                 </button>
                               ))}
@@ -405,10 +405,10 @@ export default function AssessmentPage() {
                         {/* Step 4 — Sleep */}
                         {currentStep === 4 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🔬 TESTING: MAGNESIUM · CORTISOL BALANCE · MELATONIN
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               After 7–8 hours of sleep, how do you feel 10 minutes after waking?
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
@@ -423,8 +423,8 @@ export default function AssessmentPage() {
                                 >
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                    <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
+                                    <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
                                 </button>
                               ))}
@@ -435,13 +435,13 @@ export default function AssessmentPage() {
                         {/* Step 5 — Physical symptoms */}
                         {currentStep === 5 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🔬 TESTING: ZINC · BIOTIN · OMEGA-3 · COLLAGEN · VITAMIN C
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-2">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-2">
                               Which of these have you noticed recently?
                             </h2>
-                            <p className="text-gray-400 text-xs md:text-sm mb-4 md:mb-6">Select all that apply — even minor signs count</p>
+                            <p className="text-gray-500 text-sm md:text-base mb-4 md:mb-6">Select all that apply — even minor signs count</p>
                             <div className="grid grid-cols-2 gap-2 md:gap-3">
                               {dermalOptions.map(opt => {
                                 const selected = answers.dermalMarkers.includes(opt.value)
@@ -460,7 +460,7 @@ export default function AssessmentPage() {
                                       </div>
                                     )}
                                     <div className="text-lg md:text-xl mb-1">{opt.emoji}</div>
-                                    <div className="text-gray-800 text-xs md:text-sm font-medium leading-tight">{opt.label}</div>
+                                    <div className="text-gray-800 text-sm md:text-base font-medium leading-tight">{opt.label}</div>
                                   </button>
                                 )
                               })}
@@ -471,10 +471,10 @@ export default function AssessmentPage() {
                         {/* Step 6 — Mental clarity */}
                         {currentStep === 6 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🔬 TESTING: VITAMIN D3 · B12 · OMEGA-3 FATTY ACIDS
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               During deep focus work, what happens to your mental clarity?
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
@@ -489,8 +489,8 @@ export default function AssessmentPage() {
                                 >
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
-                                    <div className="text-gray-900 text-sm font-semibold">{opt.title}</div>
-                                    <div className="text-gray-400 text-xs mt-0.5">{opt.subtitle}</div>
+                                    <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
+                                    <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
                                 </button>
                               ))}
@@ -501,15 +501,15 @@ export default function AssessmentPage() {
                         {/* Step 7 — Recovery & immunity */}
                         {currentStep === 7 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🔬 TESTING: VITAMIN C · D · AMINO ACIDS · ELECTROLYTES
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-5 md:mb-6">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               Two quick questions about your recovery &amp; immunity
                             </h2>
 
                             <div className="mt-2 mb-6 md:mb-8">
-                              <p className="text-gray-700 font-semibold text-sm md:text-base mb-3">
+                              <p className="text-gray-700 font-semibold text-base md:text-lg mb-3">
                                 Muscle soreness 24 hours after light activity:
                               </p>
                               <div className="flex flex-wrap gap-2">
@@ -517,7 +517,7 @@ export default function AssessmentPage() {
                                   <button
                                     key={opt.value}
                                     onClick={() => setAnswers(prev => ({ ...prev, muscleRecovery: opt.value }))}
-                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-xs md:text-sm cursor-pointer font-medium transition-all ${answers.muscleRecovery === opt.value
+                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-sm md:text-base cursor-pointer font-medium transition-all ${answers.muscleRecovery === opt.value
                                       ? 'bg-emerald-500 text-black border-emerald-500'
                                       : 'border-gray-300 text-gray-600 hover:border-emerald-400'
                                       }`}
@@ -531,7 +531,7 @@ export default function AssessmentPage() {
                             <div className="border-t border-gray-100 my-4" />
 
                             <div>
-                              <p className="text-gray-700 font-semibold text-sm md:text-base mb-3">
+                              <p className="text-gray-700 font-semibold text-base md:text-lg mb-3">
                                 Colds, flu, or infections in the last 6 months:
                               </p>
                               <div className="flex flex-wrap gap-2">
@@ -539,7 +539,7 @@ export default function AssessmentPage() {
                                   <button
                                     key={opt.value}
                                     onClick={() => setAnswers(prev => ({ ...prev, immuneResilience: opt.value }))}
-                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-xs md:text-sm cursor-pointer font-medium transition-all ${answers.immuneResilience === opt.value
+                                    className={`border-2 rounded-full px-3 md:px-4 py-2 text-sm md:text-base cursor-pointer font-medium transition-all ${answers.immuneResilience === opt.value
                                       ? 'bg-emerald-500 text-black border-emerald-500'
                                       : 'border-gray-300 text-gray-600 hover:border-emerald-400'
                                       }`}
@@ -555,29 +555,29 @@ export default function AssessmentPage() {
                         {/* Step 8 — Personal info (last, before report) */}
                         {currentStep === 8 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-[10px] md:text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
                               🔬 PERSONALIZING YOUR ANALYSIS
                             </span>
-                            <h2 className="text-gray-900 font-bold text-lg md:text-xl lg:text-2xl mb-2">
+                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-2">
                               Almost done — where should we send your report?
                             </h2>
-                            <p className="text-gray-400 text-xs md:text-sm mb-5">
+                            <p className="text-gray-500 text-sm md:text-base mb-5">
                               We only use this to personalize your results and follow up if you book a session.
                             </p>
                             <div className="flex flex-col gap-3">
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                  <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Your first name *</label>
+                                  <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Your first name *</label>
                                   <input
                                     type="text"
                                     placeholder="e.g. Priya"
                                     value={answers.name}
                                     onChange={e => setAnswers(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Your age *</label>
+                                  <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Your age *</label>
                                   <input
                                     type="number"
                                     placeholder="e.g. 28"
@@ -585,25 +585,25 @@ export default function AssessmentPage() {
                                     max={90}
                                     value={answers.age}
                                     onChange={e => setAnswers(prev => ({ ...prev, age: e.target.value }))}
-                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
                                   />
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Email address *</label>
+                                <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Email address *</label>
                                 <input
                                   type="email"
                                   placeholder="priya@example.com"
                                   value={answers.email}
                                   onChange={e => setAnswers(prev => ({ ...prev, email: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
+                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
                                 />
                               </div>
                               <div>
-                                <label className="block text-gray-700 text-xs md:text-sm font-medium mb-1">Phone number *</label>
+                                <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Phone number *</label>
                                 <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition bg-white">
                                   <select
-                                    className="bg-transparent pl-3 pr-2 py-2.5 text-sm text-gray-600 border-r border-gray-200 focus:outline-none shrink-0"
+                                    className="bg-transparent pl-3 pr-2 py-2.5 text-base text-gray-600 border-r border-gray-200 focus:outline-none shrink-0"
                                     onChange={e => setAnswers(prev => ({ ...prev, phone: e.target.value + ' ' + prev.phone.split(' ').slice(1).join(' ') }))}
                                     defaultValue="+91"
                                   >
@@ -617,7 +617,7 @@ export default function AssessmentPage() {
                                   <input
                                     type="tel"
                                     placeholder="98765 43210"
-                                    className="flex-1 bg-transparent px-3 py-2.5 text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none min-w-0"
+                                    className="flex-1 bg-transparent px-3 py-2.5 text-gray-900 text-base placeholder:text-gray-400 focus:outline-none min-w-0"
                                     onChange={e => setAnswers(prev => ({
                                       ...prev,
                                       phone: (prev.phone.split(' ')[0] || '+91') + ' ' + e.target.value
@@ -637,7 +637,7 @@ export default function AssessmentPage() {
                   <div className="px-5 md:px-8 pb-6 md:pb-8 flex items-center justify-between gap-3">
                     <button
                       onClick={() => { setDirection('back'); setCurrentStep(p => p - 1) }}
-                      className={`border border-gray-200 text-gray-500 rounded-full px-4 md:px-6 py-2.5 md:py-3 hover:border-gray-400 transition flex items-center gap-2 text-sm font-medium flex-shrink-0 ${currentStep === 1 ? 'invisible' : ''}`}
+                      className={`border border-gray-200 text-gray-500 rounded-full px-4 md:px-6 py-2.5 md:py-3 hover:border-gray-400 transition flex items-center gap-2 text-base font-medium flex-shrink-0 ${currentStep === 1 ? 'invisible' : ''}`}
                     >
                       <ChevronLeft size={16} />
                       Back
@@ -651,7 +651,7 @@ export default function AssessmentPage() {
                           setCurrentStep((p) => p + 1)
                         }}
                         disabled={!isStepValid()}
-                        className={`bg-emerald-500 text-black rounded-full px-6 md:px-8 py-2.5 md:py-3 font-bold text-sm flex items-center gap-2 transition-all flex-shrink-0 ${isStepValid()
+                        className={`bg-emerald-500 text-black rounded-full px-6 md:px-8 py-2.5 md:py-3 font-bold text-base flex items-center gap-2 transition-all flex-shrink-0 ${isStepValid()
                           ? 'hover:bg-emerald-400 hover:scale-105 cursor-pointer'
                           : 'opacity-40 cursor-not-allowed'
                           }`}
@@ -663,7 +663,7 @@ export default function AssessmentPage() {
                       <button
                         onClick={handleSubmit}
                         disabled={!isStepValid()}
-                        className={`bg-emerald-500 text-black rounded-full px-5 md:px-8 py-2.5 md:py-3 font-bold text-xs md:text-sm flex items-center gap-2 transition-all flex-shrink-0 ${isStepValid()
+                        className={`bg-emerald-500 text-black rounded-full px-5 md:px-8 py-2.5 md:py-3 font-bold text-sm md:text-base flex items-center gap-2 transition-all flex-shrink-0 ${isStepValid()
                           ? 'hover:bg-emerald-400 hover:scale-105 cursor-pointer'
                           : 'opacity-40 cursor-not-allowed'
                           }`}
@@ -677,7 +677,7 @@ export default function AssessmentPage() {
             </div>
 
             {/* Bottom Trust Bar */}
-            <p className="text-center mt-4 text-gray-500 text-xs px-4">
+            <p className="text-center mt-4 text-gray-500 text-sm px-4">
               🔒 Your answers are private and never shared · Used only to generate your personal report
             </p>
           </div>

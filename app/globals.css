@@ -143,3 +143,22 @@
   box-shadow: none !important;
   border: none !important;
 }
+
+/* Google Translate widget (LanguageSwitcher): keep only our own pill visible —
+   hide Google's own top banner iframe, tooltip, and highlight styling. */
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+body {
+  top: 0 !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+#google_translate_element .goog-te-gadget {
+  font-size: 0;
+}
