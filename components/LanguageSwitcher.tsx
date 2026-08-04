@@ -99,7 +99,7 @@ export function LanguageSwitcher() {
   return (
     <>
       <div id="google_translate_element" className="hidden" />
-      <div className="fixed bottom-20 right-4 z-[200] md:bottom-5">
+      <div className="fixed bottom-20 left-4 z-[200] md:bottom-5">
         <label htmlFor="beetamin-lang-switcher" className="sr-only">
           Choose language
         </label>
