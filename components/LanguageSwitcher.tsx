@@ -80,24 +80,38 @@ export function LanguageSwitcher() {
       window.googleTranslateElementInit()
     }
 
-    // Belt-and-suspenders: Google sometimes re-applies its own inline styles to
-    // the banner iframe after our CSS loads, which can win the cascade. Force it
-    // hidden via JS too, and keep the body from being pushed down by 40px.
+    // Belt-and-suspenders: Google injects a top "Translated to X — Show original"
+    // banner (and pushes <body> down ~40px) directly into the document, outside
+    // our own widget container, and it can re-apply itself after our CSS loads.
+    // Force it gone via JS with !important priority so it always wins, no matter
+    // what class name this version of the widget happens to use.
     function hideGoogleChrome() {
-      const banner = document.querySelector<HTMLElement>(
-        '.goog-te-banner-frame, iframe.goog-te-banner-frame',
-      )
-      if (banner) banner.style.display = 'none'
-      if (document.body.style.top && document.body.style.top !== '0px') {
-        document.body.style.top = '0px'
-      }
+      document
+        .querySelectorAll<HTMLElement>(
+          'iframe.goog-te-banner-frame, .goog-te-banner-frame, iframe.skiptranslate, body > .skiptranslate, .goog-te-ftab',
+        )
+        .forEach((el) => {
+          if (el.id === 'google_translate_element' || el.closest('#google_translate_element')) return
+          el.style.setProperty('display', 'none', 'important')
+          el.style.setProperty('visibility', 'hidden', 'important')
+          el.style.setProperty('height', '0px', 'important')
+        })
+      document.body.style.setProperty('position', 'static', 'important')
+      document.body.style.setProperty('top', '0px', 'important')
     }
     hideGoogleChrome()
-    const observer = new MutationObserver(hideGoogleChrome)
-    observer.observe(document.body, { childList: true, subtree: true })
-    const interval = window.setInterval(hideGoogleChrome, 1000)
+    // Two observers: one watches for new nodes anywhere (the banner being
+    // inserted), the other watches only <body>'s own `style` attribute
+    // (Google's push-down) — kept separate so the attribute watch stays cheap
+    // and isn't triggered by every Framer Motion animation in the subtree.
+    const structureObserver = new MutationObserver(hideGoogleChrome)
+    structureObserver.observe(document.body, { childList: true, subtree: true })
+    const bodyStyleObserver = new MutationObserver(hideGoogleChrome)
+    bodyStyleObserver.observe(document.body, { attributes: true, attributeFilter: ['style'] })
+    const interval = window.setInterval(hideGoogleChrome, 300)
     return () => {
-      observer.disconnect()
+      structureObserver.disconnect()
+      bodyStyleObserver.disconnect()
       window.clearInterval(interval)
     }
   }, [])
