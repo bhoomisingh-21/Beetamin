@@ -118,6 +118,19 @@ export function LanguageSwitcher() {
 
   function changeLanguage(code: string) {
     setCurrent(code)
+
+    if (code === 'en') {
+      // The Google widget's injected <select> only lists "translate to X"
+      // options (the includedLanguages), never "en" itself, so setting
+      // combo.value = 'en' matches nothing and the dispatched change event
+      // is a no-op. The reliable way to revert to the original page is to
+      // expire the googtrans cookie entirely and reload.
+      document.cookie = 'googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      document.cookie = `googtrans=;path=/;domain=${window.location.hostname};expires=Thu, 01 Jan 1970 00:00:00 GMT`
+      window.location.reload()
+      return
+    }
+
     const value = `/en/${code}`
     document.cookie = `googtrans=${value};path=/`
     document.cookie = `googtrans=${value};path=/;domain=${window.location.hostname}`
