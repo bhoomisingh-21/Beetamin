@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Zap, Shield, ChevronRight, ChevronLeft, FlaskConical, Check, ShieldCheck, UserCheck, Clock } from 'lucide-react'
@@ -231,19 +232,19 @@ export default function AssessmentPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0A0F14] overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#0A0F14] flex flex-col">
 
       {/* Announcement Bar */}
       <div className="bg-emerald-950 text-white text-xs tracking-widest uppercase text-center py-2 px-4 flex-shrink-0">
         🧬 TAKES ONLY 2 MINUTES · 100% FREE · NO SIGNUP REQUIRED
       </div>
 
-      {/* Two-column layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 items-center">
+      {/* Two-column layout — items-start keeps left hero from dropping when quiz grows */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 items-start">
 
-        {/* ── LEFT: Hero ── */}
+        {/* ── LEFT: Hero (sticky on lg so it stays put while right column grows) ── */}
         <div
-          className="relative flex items-center justify-center px-6 py-10 lg:py-16 lg:min-h-full text-center"
+          className="relative flex items-start justify-center px-6 pt-16 pb-10 sm:pt-20 lg:sticky lg:top-0 lg:self-start lg:h-[calc(100dvh-2rem)] lg:overflow-hidden lg:px-10 lg:pt-24 lg:pb-16 text-center"
           style={{
             backgroundImage: `url("${HEX_URL}")`,
             backgroundSize: '60px 70px',
@@ -251,41 +252,44 @@ export default function AssessmentPage() {
             backgroundColor: '#0A0F14',
           }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/15 via-[#0A0F14]/70 to-[#0A0F14] pointer-events-none" />
-          <a
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,_rgba(16,185,129,0.18)_0%,_transparent_55%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/10 via-[#0A0F14]/75 to-[#0A0F14] pointer-events-none" />
+          <Link
             href="/"
             className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0A0F14]/80 px-3 py-2 text-sm font-medium text-zinc-400 backdrop-blur-sm transition hover:border-white/20 hover:text-white sm:left-6 sm:top-6"
           >
             <ChevronLeft size={14} aria-hidden />
             Back to home
-          </a>
-          <div className="relative z-10 max-w-md w-full pt-10 sm:pt-0">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs tracking-widest uppercase rounded-full px-3 py-1 inline-flex items-center gap-2">
-                <FlaskConical size={12} />
-                CLINICAL DEFICIENCY ASSESSMENT
-              </span>
-              <span className="border border-white/10 bg-white/5 text-gray-300 text-xs tracking-widest uppercase rounded-full px-3 py-1 inline-flex items-center gap-2">
-                <Clock size={12} className="text-emerald-500" />
-                ⏱ Takes about 2 minutes
-              </span>
-            </div>
+          </Link>
+          <div className="relative z-10 max-w-md w-full flex flex-col items-center">
+            <span className="border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 text-xs tracking-[0.2em] uppercase rounded-full px-4 py-1.5 inline-flex items-center gap-2 shadow-[0_0_24px_-4px_rgba(16,185,129,0.45)]">
+              <FlaskConical size={12} className="text-emerald-400" />
+              CLINICAL DEFICIENCY ASSESSMENT
+            </span>
 
-            <h1 className="mt-4 font-black text-2xl md:text-3xl lg:text-4xl max-w-5xl mx-auto leading-tight text-center text-white">
-              Find Your Nutrient Deficiencies — Free Assessment
+            <span className="mt-3 border border-white/10 bg-white/[0.04] text-gray-300 text-xs tracking-widest uppercase rounded-full px-3.5 py-1 inline-flex items-center gap-2">
+              <Clock size={12} className="text-emerald-500" />
+              Takes about 2 minutes
+            </span>
+
+            <h1 className="mt-7 font-black text-2xl md:text-3xl lg:text-4xl max-w-sm mx-auto leading-[1.15] text-balance text-center">
+              <span className="text-white">Find Your Nutrient Deficiencies</span>
+              <span className="block mt-1.5 text-emerald-400">— Free Assessment</span>
             </h1>
-            <p className="mt-4 text-gray-400 text-sm md:text-base lg:text-lg max-w-xl mx-auto">
+            <p className="mt-5 text-gray-400 text-sm md:text-base lg:text-lg max-w-sm mx-auto leading-relaxed">
               7 clinically-derived questions. Expert-reviewed analysis. Personalized deficiency report in under 2 minutes.
             </p>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-3 md:gap-8">
+            <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3 md:gap-x-8">
               {[
                 { Icon: Lock, label: '100% Private' },
                 { Icon: Zap, label: 'Instant Results' },
                 { Icon: Shield, label: 'Nutritionist-Reviewed' },
               ].map(({ Icon, label }) => (
                 <div key={label} className="flex items-center gap-2 text-gray-400 text-sm md:text-base">
-                  <Icon size={14} className="text-emerald-500" />
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-500/25 bg-emerald-500/10">
+                    <Icon size={13} className="text-emerald-500" />
+                  </span>
                   {label}
                 </div>
               ))}
@@ -294,7 +298,7 @@ export default function AssessmentPage() {
         </div>
 
         {/* ── RIGHT: Form ── */}
-        <div className="flex flex-col items-center justify-center px-4 py-8 lg:py-12 bg-[#0A0F14]">
+        <div className="flex flex-col items-center justify-start px-4 py-8 lg:py-12 bg-[#0A0F14]">
           <div className="w-full max-w-xl">
             <div className="rounded-2xl lg:rounded-3xl bg-gradient-to-b from-emerald-500/40 via-emerald-500/10 to-transparent p-[1.5px] shadow-[0_25px_70px_-20px_rgba(16,185,129,0.35)]">
               <div className="bg-white rounded-2xl lg:rounded-3xl shadow-2xl overflow-hidden">
