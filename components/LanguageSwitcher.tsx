@@ -33,9 +33,124 @@ const LANGUAGES: { code: string; label: string }[] = [
   { code: 'or', label: 'ଓଡ଼ିଆ' },
 ]
 
-function readGoogTransCookie(): string {
-  const match = document.cookie.match(/(?:^|; )googtrans=([^;]*)/)
-  return match ? decodeURIComponent(match[1]) : ''
+const GOOGTRANS_COOKIE_NAMES = ['googtrans', 'googtransopt'] as const
+
+/** Parse every googtrans= value present in document.cookie (duplicates possible across domains). */
+function readGoogTransCookieValues(): string[] {
+  if (typeof document === 'undefined') return []
+  const values: string[] = []
+  for (const part of document.cookie.split(';')) {
+    const trimmed = part.trim()
+    if (!trimmed.toLowerCase().startsWith('googtrans=')) continue
+    values.push(decodeURIComponent(trimmed.slice('googtrans='.length)))
+  }
+  return values
+}
+
+/** Active target language from cookie, or 'en' when missing / empty / invalid. */
+function languageFromGoogTransCookie(): string {
+  const values = readGoogTransCookieValues()
+  for (const raw of values) {
+    if (!raw || raw === '/en/en') continue
+    // Typical shapes: /en/hi, /auto/hi
+    const match = raw.match(/\/(?:en|auto)\/([a-z]{2,3})$/i)
+    if (match && match[1].toLowerCase() !== 'en') {
+      return match[1].toLowerCase()
+    }
+  }
+  return 'en'
+}
+
+/** Domains Google Translate may have bound googtrans to (host-only + dotted + parent). */
+function googTransCookieDomains(): Array<string | undefined> {
+  const hostname = window.location.hostname
+  const domains: Array<string | undefined> = [undefined, hostname, `.${hostname}`]
+
+  // www.example.com → also clear example.com / .example.com
+  const parts = hostname.split('.').filter(Boolean)
+  if (parts.length >= 2) {
+    const parent = parts.slice(-2).join('.')
+    if (parent && parent !== hostname) {
+      domains.push(parent, `.${parent}`)
+    }
+  }
+
+  // Deduplicate while preserving order
+  const seen = new Set<string>()
+  return domains.filter((d) => {
+    const key = d ?? '__host__'
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/**
+ * Exhaustively expire googtrans cookies. Google's widget often sets the cookie
+ * on `.hostname` (leading dot) and sometimes the registrable parent domain;
+ * clearing only the host-only / bare-hostname variants leaves a survivor that
+ * re-applies translation after reload — which is why English→X worked but
+ * X→English did not.
+ */
+function clearGoogTransCookies(): void {
+  const expires = 'Thu, 01 Jan 1970 00:00:00 GMT'
+  const paths = Array.from(
+    new Set(['/', window.location.pathname || '/', '/']),
+  )
+  const domains = googTransCookieDomains()
+
+  for (const name of GOOGTRANS_COOKIE_NAMES) {
+    for (const path of paths) {
+      for (const domain of domains) {
+        const base = `${name}=;expires=${expires};Max-Age=0;path=${path}`
+        if (domain) {
+          document.cookie = `${base};domain=${domain}`
+        } else {
+          document.cookie = base
+        }
+      }
+    }
+  }
+}
+
+function clearGoogTransStorage(): void {
+  try {
+    for (const storage of [window.localStorage, window.sessionStorage]) {
+      const keys: string[] = []
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i)
+        if (!key) continue
+        if (/googtrans|google.?translate|goog-te/i.test(key)) keys.push(key)
+      }
+      keys.forEach((key) => storage.removeItem(key))
+    }
+  } catch {
+    // Storage may be blocked; cookie clear + reload is still the main path.
+  }
+}
+
+/** Best-effort reset of the in-page Google Translate widget before reload. */
+function resetGoogleTranslateDom(): void {
+  const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo')
+  if (combo) {
+    // Empty string is Google's "original language" option (not "en").
+    combo.value = ''
+    combo.dispatchEvent(new Event('change'))
+  }
+
+  document.documentElement.classList.remove('translated-ltr', 'translated-rtl')
+  document.body.classList.remove('translated-ltr', 'translated-rtl')
+  document.documentElement.setAttribute('lang', 'en')
+
+  // Drop leftover skiptranslate chrome so a stale frame can't flash content.
+  document
+    .querySelectorAll<HTMLElement>(
+      'iframe.goog-te-banner-frame, .goog-te-banner-frame, iframe.skiptranslate, body > .skiptranslate, .goog-te-ftab, .goog-te-spinner-pos',
+    )
+    .forEach((el) => {
+      if (el.id === 'google_translate_element' || el.closest('#google_translate_element')) return
+      el.remove()
+    })
 }
 
 /**
@@ -47,8 +162,7 @@ function readGoogTransCookie(): string {
 export function LanguageSwitcher() {
   const [current, setCurrent] = useState<string>(() => {
     if (typeof document === 'undefined') return 'en'
-    const match = readGoogTransCookie().match(/\/en\/(\w+)/)
-    return match ? match[1] : 'en'
+    return languageFromGoogTransCookie()
   })
   const initialized = useRef(false)
 
@@ -122,18 +236,24 @@ export function LanguageSwitcher() {
     if (code === 'en') {
       // The Google widget's injected <select> only lists "translate to X"
       // options (the includedLanguages), never "en" itself, so setting
-      // combo.value = 'en' matches nothing and the dispatched change event
-      // is a no-op. The reliable way to revert to the original page is to
-      // expire the googtrans cookie entirely and reload.
-      document.cookie = 'googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      document.cookie = `googtrans=;path=/;domain=${window.location.hostname};expires=Thu, 01 Jan 1970 00:00:00 GMT`
+      // combo.value = 'en' matches nothing and is a no-op. Empty string is
+      // Google's "show original"; we also exhaustively clear googtrans cookies
+      // (including dotted / parent domains) then reload so GT cannot re-apply.
+      resetGoogleTranslateDom()
+      clearGoogTransCookies()
+      clearGoogTransStorage()
+      // Second pass after DOM reset in case the widget rewrote the cookie.
+      clearGoogTransCookies()
       window.location.reload()
       return
     }
 
     const value = `/en/${code}`
-    document.cookie = `googtrans=${value};path=/`
-    document.cookie = `googtrans=${value};path=/;domain=${window.location.hostname}`
+    // Mirror the domains GT itself uses so later English clear can find them.
+    for (const domain of googTransCookieDomains()) {
+      const base = `googtrans=${value};path=/`
+      document.cookie = domain ? `${base};domain=${domain}` : base
+    }
 
     const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo')
     if (combo) {
