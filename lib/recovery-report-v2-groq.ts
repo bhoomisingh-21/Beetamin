@@ -1,13 +1,18 @@
 import Groq from 'groq-sdk'
-import {
-  FORBIDDEN_WESTERN_MEAL_TERMS,
-  resolvePatientDiet,
-  sanitizeMealPlanForPatient,
-} from '@/lib/patient-diet'
+import { resolvePatientDiet } from '@/lib/patient-diet'
+import { generateWeeklyMealPlan } from '@/lib/meal-engine/generate-plan'
+import type {
+  ActivityLevel,
+  DietTag,
+  MealRow,
+  NutritionGoal,
+  UserNutritionProfile,
+} from '@/lib/meal-engine/types'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
 import type {
   GutHealthV2,
   LabTestV2,
+  MealPlanDayV2,
   NutrientPairV2,
   RecoveryReportV2Data,
   ShoppingListV2,
@@ -18,39 +23,16 @@ import type {
   GutAbsorptionTipV2,
   SleepStressNutrientRowV2,
 } from '@/lib/recovery-report-v2-types'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 /** Dense prompt = smaller completion. Brevity rules keep output within Groq TPM. */
 const RECOVERY_REPORT_V2_SYSTEM_PROMPT = `You are Dr. Priya Sharma, Senior Clinical Nutritionist (TheBeetamin). Write for Indian readers: kirana/sabzi, metro + tier-2 realistic costs, veg/non-veg per patient diet.
 
 VOICE: Smart wellness coach—warm, precise, never textbook. Short paragraphs. Zero filler. Ban phrases like "supports overall health", "balanced diet", "listen to your body" unless tied to their symptom.
 
-ANTI-GENERIC: Every block must tie to THIS patient's JSON (symptoms, sleep, stress, meals, goal). If data missing, infer once, label lightly—never long lectures.
+ANTI-GENERIC: Every block must tie to THIS patient's JSON (symptoms, sleep, stress, goal). If data missing, infer once, label lightly—never long lectures.
 
-STRICT MEAL PLAN — output is WRONG if any rule breaks. Every dish must be everyday Indian home/kitchen food (North + South + regional staples).
-
-INDIAN ONLY — NEVER use western-coded meals or ingredients. Forbidden in mealPlan (any field): ${FORBIDDEN_WESTERN_MEAL_TERMS.slice(0, 12).join(', ')}, and similar western items. Use dal, roti, paratha, idli, dosa, khichdi, sabzi, chawal, rajma, chana, upma, poha, thepla, dhokla, murabba, ladoo, chikki, ragi, bajra, jowar, til, alsi, methi, palak — NOT quinoa, avocado, kale, bagels, granola, smoothie bowls, protein shakes.
-
-DIET CATEGORY (payload dietCategory + dietRules) is AUTHORITATIVE — obey dietRules exactly. If dietCategory is pure_vegetarian or lacto_ovo_vegetarian, ZERO chicken/fish/meat/seafood in mealPlan; pure_vegetarian also ZERO eggs/anda. Only non_vegetarian may include Indian fish (rohu/katla/bangda) or chicken — still Indian-style, never western.
-
-DEFICIENCY-TO-FOOD — days 1–7: each day "focus" and all 5 meals must pull from the nutrient that day targets. Stack days in patient primaryDeficiencies order: highest severity first (High → Moderate → Mild); only repeat lower tiers after higher ones are covered.
-
-Maps (Indian names encouraged; only use fish/eggs/dairy rows when diet allows):
-• BIOTIN (brittle nails, hair loss): eggs (anda), peanuts (mungfali), almonds, shakarkandi, sunflower seeds, jowar, gobi, palak, mushrooms, homemade curd, soyabean. Breakfast ideas: anda bhurji + multigrain roti; poha with mungfali; jowar upma; shakarkandi chaat; methi palak paratha + curd; mushroom masala + bajra roti; soaked almond + warm haldi milk; soya chunks upma; gobi paratha with curd; sunflower seed chutney + idli. Lunch/Dinner ideas: peanut chutney + idli; gobi sabzi + roti; soya chunk curry + jeera rice; mungfali dal + jowar roti; mushroom do pyaza + rice; turai aur mungfali sabzi.
-• OMEGA-3/DHA (dry skin, dry eyes): alsi, akhrot, mustard oil cooking; fish rohu/katla/surmai/bangda only if non‑veg diet; chia seeds, methi seeds, rajma, sabut moong, tofu, sarson (mustard greens). Breakfast ideas: alsi roti + ghee; akhrot milk (warm); methi thepla + curd; chia seed kheer; flaxseed chatni + idli; surmai fry + rice (non-veg); katla macher jhol + rice (non-veg); methi paratha + lassi; sabut moong dosa; alsi ladoo. Lunch/Dinner ideas: rajma chawal (mustard oil tadka); sarson ka saag + makki roti; methi dal + alsi tadka; moong dal palak + roti; fish curry Goan style + rice (non-veg); rohu macher kalia + rice (non-veg).
-• MAGNESIUM (muscle soreness, poor sleep, cramps): palak, methi, bathua, amaranth leaves; kaddu ke beej (pumpkin seeds); dark chocolate (one piece); rajma; kabuli chana; kala chana; cashews (kaju); bajra; banana; curd; jowar. Breakfast ideas: bajra khichdi; palak moong dal chilla; banana + soaked kaju; methi paratha; jowar bhakri + ghee; ragi dosa; kala chana chaat AM snack; bathua raita + roti; kaddu ke beej roasted snack; banana walnut porridge. Lunch/Dinner ideas: rajma masala + rice; chana dal + methi; palak dal + jowar roti; kabuli chana sundal; kala chana curry + rice; kaddu ki sabzi + bajra roti.
-• VITAMIN D (bone health, fatigue, low immunity): egg yolk if allowed; fortified milk; mushrooms (sun‑dried/fresh); paneer from fortified milk; small oily fish bangda/sardines (non‑veg only); fortified atta; ragi. Breakfast ideas: anda bhurji (yolk-rich) + roti; mushroom aloo sabzi + paratha; paneer bhurji + multigrain roti; warm haldi fortified milk; ragi porridge with banana; daliya + fortified milk; mushroom upma; egg yolk omelette + veg; paneer stuffed paratha; bangda fry + rice (non-veg). Lunch/Dinner ideas: paneer matar + rice; mushroom do pyaza + roti; egg curry + rice (eggs allowed); sardine curry + rice (non-veg); fortified atta roti + dal; ragi mudde + sambar (South Indian).
-• IRON (fatigue, hair fall, pale skin): palak, methi, rajma, masoor dal, gud (jaggery), til, rajgira (amaranth), kulthi dal, pomegranate, chaulai, beetroot, kala chana. Breakfast ideas: gud + warm water AM; rajgira chikki snack; masoor dal cheela; palak poha; methi paratha + nimbu; til ladoo mid-morning; pomegranate seeds AM; chaulai ki roti + ghee; beetroot upma; kulthi dal khichdi. Lunch/Dinner ideas: palak dal + roti; masoor dal khichdi + ghee; kala chana curry + rice; rajma dal + bajra roti; chaulai saag + roti; beetroot sabzi + roti; methi malai matar (veg) + roti.
-• VITAMIN C (immunity, skin collagen, iron absorption): amla, amrud (guava), nimbu (lemon), tamatar (tomato), shimla mirch (capsicum), drumstick/sahjan (moringa), kachcha aam (raw mango), aamla murabba, kairi chutney, tomato rasam. Breakfast ideas: raw amla AM on empty stomach; nimbu pani + soaked seeds; amrud (guava) AM; tomato poha; raw mango kairi chutney + paratha; capsicum aloo sabzi + roti; moringa (drumstick) dal; tomato rasam + rice; amla murabba + roti; nimbu chhachh (buttermilk). Snack ideas: amrud sliced mid-morning; raw capsicum strips; amla supari snack; nimbu pani post-lunch.
-• CALCIUM (bone health, muscle cramps, PMS): ragi, curd (dahi), paneer, til (sesame), rajma, kabuli chana, rajgira, drumstick leaves (moringa), sabut urad dal, soya. Breakfast ideas: ragi dosa with sambar; paneer bhurji + multigrain roti; til chutney + idli; ragi porridge + banana; curd rice; ragi ladoo snack; paneer stuffed paratha + curd; rajgira khichdi; sabut urad dal dosa; soya milk haldi morning. Lunch/Dinner ideas: moringa (drumstick) dal + rice; paneer palak + roti; ragi mudde + sambar; rajma chawal + curd; kabuli chana sundal; til wali daal + jowar roti.
-• ZINC (immunity, taste/smell, wound healing): pumpkin seeds (kaddu beej), sesame (til), lentils, legumes, sabut moong, rajma, kaju, sabut wheat. Ideas: kaddu ke beej roasted snack; moong dal cheela; til gajak; rajma + roti; kaju curry; moong sprouts salad (chaat); sabut moong khichdi.
-• B12 (nerve health, energy, mood — dairy/eggs/fish sources): paneer, dahi, fortified milk, egg (if allowed), rohu/katla fish (non-veg). Ideas: paneer tikka masala + roti; curd rice; fortified milk + haldi; egg paratha (eggs allowed); fish curry + rice (non-veg); dahi kadhi + jeera rice.
-
-MEAL STRING FORMAT — quantities only in Indian units: katori, roti, tbsp, tsp, glass, cup, piece. Whole line in meal "food", exactly:
-"[dish] — [quantity] — why: [one line linking to their specific symptom]"
-Example: "Alsi (flaxseed) roti — 2 rotis with ghee — why: alsi is your richest plant source of omega-3, directly targeting your dry skin and dry eyes"
-Use JSON key "deficiencyTarget" as short nutrient tag only (e.g. Omega‑3).
-
-UNIQUENESS — CRITICAL RULE: ZERO dish repeated across all 35 meals. You have 1000+ authentic Indian recipes available — use a completely fresh dish for every single one of the 35 meals. Every Breakfast must be a different dish (7 unique breakfasts). Every Lunch must be a different dish (7 unique lunches). Every Dinner must be a different dish (7 unique dinners). Snacks must also vary daily. If you write the same dish twice anywhere in mealPlan, the output is WRONG. Normalize dish titles before checking (e.g. "Rajma Chawal" and "rajma chawal" are the same — use each only ONCE). Draw from all regional Indian cuisines to ensure variety: North Indian (roti, dal, sabzi, paratha, khichdi), South Indian (idli, dosa, uttapam, rasam, sambar, kozhukattai, adai), Gujarati (thepla, dhokla, undhiyu, khakhra, sev tameta), Bengali (khichuri, shorshe ilish non-veg only, aloo posto, luchi, cholar dal), Maharashtrian (puran poli, zunka, thalipeeth, modak, pithla), Rajasthani (dal baati, gatte ki sabzi, bajra khichdi, ker sangri, churma), Odia (dalma, santula, pakhala), Punjabi (makki di roti + sarson da saag, amritsari chole, langar dal). A fully diverse 7-day plan is non-negotiable.
+DIET CATEGORY (payload dietCategory + dietRules) is AUTHORITATIVE for any food you mention (foodsToAvoid swaps, shopping list items, supplement food alternatives) — obey dietRules exactly. If dietCategory is pure_vegetarian or lacto_ovo_vegetarian, ZERO chicken/fish/meat/seafood suggestions; pure_vegetarian also ZERO eggs/anda. Only non_vegetarian may suggest Indian fish (rohu/katla/bangda) or chicken — still Indian-style, never western. Never suggest quinoa, avocado, kale, greek yogurt, bagels, granola, smoothie bowls, or other western-coded foods — kirana/sabzi-shop Indian items only.
 
 SUPPLEMENTS: Max 3. Each must include dosage, when, takeWithFood (with meal / empty / away from tea/coffee), absorptionPair (synergy), whyThisForm ≤18 words, howItWorks ≤16 words, expectedResults ≤14 words, 2 foodAlternatives India-specific, safetyNote if needed.
 
@@ -72,7 +54,6 @@ JSON ONLY — no markdown, no keys outside schema:
   "recoveryBlockers": [ "habit/sleep/stress/absorption issue — ≤18 words each" ],
   "progressPrediction": "2 sentences — 30/60/90 day trajectory IF they follow plan; credible numbers",
   "morningRoutine": [ { "time": "", "action": "", "reason": "their case ≤16 words" } ],
-  "mealPlan": [ { "day": 1, "focus": "today's top deficiency + symptom hook ≤18 words", "meals": [ { "timing": "Breakfast|Mid-snack|Lunch|Eve-snack|Dinner", "food": "dish — qty Indian units — why: …", "deficiencyTarget": "short nutrient", "reason": "optional duplicate or ''" } ] } ],
   "supplements": [ { "name": "", "dosage": "", "when": "", "takeWithFood": "", "absorptionPair": "",
     "duration": "", "brand": "realistic India", "whyThisForm": "", "howItWorks": "", "expectedResults": "",
     "foodAlternatives": ["", ""], "safetyNote": "" } ],
@@ -103,7 +84,7 @@ JSON ONLY — no markdown, no keys outside schema:
     "totalWeeklyGroceryAdd": "", "totalSupplementCost": "", "budgetTip": "" }
 }
 
-COUNTS: primaryDeficiencies 3–4 max. symptomDeficiencyMap exactly 4. recoveryBlockers exactly 4. lifestyleInsights exactly 4. quickWins exactly 3. foodsToAvoid ≥3. morningRoutine ≥5 rows. mealPlan exactly 7 days each with exactly 5 meals. timeline exactly 4 phases: Week 1-2 / Week 3-4 / Week 5-8 / Week 9-12 (90-day arc). gutHealth nutrientPairs 3; absorptionTips 3; sleepStress eveningRoutine 5; stressNutrients 3; labTests 5. subScores 0-100; healthScore 0-100; gut absorptionScore 0-100; sleepScore 0-100.`
+COUNTS: primaryDeficiencies 3–4 max. symptomDeficiencyMap exactly 4. recoveryBlockers exactly 4. lifestyleInsights exactly 4. quickWins exactly 3. foodsToAvoid ≥3. morningRoutine ≥5 rows. timeline exactly 4 phases: Week 1-2 / Week 3-4 / Week 5-8 / Week 9-12 (90-day arc). gutHealth nutrientPairs 3; absorptionTips 3; sleepStress eveningRoutine 5; stressNutrients 3; labTests 5. subScores 0-100; healthScore 0-100; gut absorptionScore 0-100; sleepScore 0-100.`
 
 /** Groq free/on-demand TPM is often 12k per request bundle (prompt estimate + completion budget). Stay conservative. */
 const GROQ_TPM_REQUEST_BUDGET = 11000
@@ -535,6 +516,8 @@ export function coerceRecoveryReportV2(
     reportId?: string
     generatedAt?: string
   },
+  /** Meal plan produced by the rule-based `lib/meal-engine/` — Groq no longer authors meals. */
+  mealPlan: MealPlanDayV2[],
 ): RecoveryReportV2Data {
   const ss = data.subScores && typeof data.subScores === 'object' ? (data.subScores as Record<string, unknown>) : {}
 
@@ -579,29 +562,6 @@ export function coerceRecoveryReportV2(
     detailedDietType: envelope.diet,
     freeQuizDiet: envelope.diet,
   })
-
-  const mealPlanRaw = Array.isArray(data.mealPlan) ? data.mealPlan : []
-  const mealPlan = sanitizeMealPlanForPatient(
-    mealPlanRaw
-      .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
-      .map((d) => {
-        const mealsRaw = Array.isArray(d.meals) ? d.meals : []
-        const meals = mealsRaw
-          .filter((m): m is Record<string, unknown> => !!m && typeof m === 'object')
-          .map((m) => ({
-            timing: asStr(m.timing, ''),
-            food: asStr(m.food, ''),
-            deficiencyTarget: asStr(m.deficiencyTarget, ''),
-            reason: asStr(m.reason, ''),
-          }))
-        return {
-          day: num(d.day, 1, 1, 14),
-          focus: asStr(d.focus, ''),
-          meals,
-        }
-      }),
-    dietResolved.category,
-  )
 
   const supplementsRaw = Array.isArray(data.supplements) ? data.supplements : []
   const supplements = supplementsRaw
@@ -694,10 +654,12 @@ export type GenerateRecoveryReportV2Input = {
   age?: string | null
   diet?: string | null
   goal?: string | null
+  /** Report/job id, used only to derive a stable per-report seed for the meal engine — never sent to Groq. */
+  reportId?: string | null
 }
 
 const USER_PAYLOAD_INSTRUCTION_PREFIX =
-  'Generate the complete recovery report JSON for this patient. Use BOTH freeAssessment and detailedLifestyleAssessment when present; infer carefully only where data is missing. Obey dietCategory and dietRules — mealPlan must be 100% Indian dishes matching the patient diet.\nPatient payload (JSON):\n'
+  'Generate the complete recovery report JSON for this patient. Use BOTH freeAssessment and detailedLifestyleAssessment when present; infer carefully only where data is missing. Obey dietCategory and dietRules for any food you reference.\nPatient payload (JSON):\n'
 
 /** Completion budget so estimated prompt tokens + max_tokens stays under Groq TPM per request (often 12k). */
 function maxCompletionTokensForPrompt(promptCharLength: number): number {
@@ -799,6 +761,173 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
   }
 
   throw new Error('Groq rate limit / TPM exceeded after retries — try again shortly or shorten assessment payload.')
+}
+
+/**
+ * Meal engine wiring — Groq no longer authors meals (see prompt above). Instead we fetch the
+ * curated `meals` table and let `generateWeeklyMealPlan` (lib/meal-engine/) pick a diet-safe,
+ * allergen-safe, goal/condition-aware weekly plan. This is the sole place `RecoveryReportV2Data.mealPlan`
+ * gets populated.
+ */
+
+/** Below this many active rows the catalog can't fill a varied 7×5 plan — fail loudly instead of shipping thin/repetitive meals. */
+const MIN_ACTIVE_MEALS_FOR_PLAN = 20
+
+function mapGenderForEngine(gender: string | null | undefined): UserNutritionProfile['gender'] {
+  return gender === 'male' || gender === 'female' || gender === 'other' ? gender : null
+}
+
+/**
+ * Precise diet-type detection for the meal engine. Deliberately more granular than
+ * `resolvePatientDiet()`'s Groq-facing `DietCategory` (which has no vegan/jain concept and would
+ * fold vegan users into `pure_vegetarian`, letting dairy-containing meals slip through) — we start
+ * from `resolvePatientDiet()`'s category per the diet-safety contract, then upgrade to vegan/jain
+ * when the raw diet text says so, since the engine's `diet_type` filter depends on that distinction.
+ */
+function mapDietTypeForEngine(input: { detailedDietType?: string | null; freeQuizDiet?: string | null }): DietTag | null {
+  const resolved = resolvePatientDiet({
+    detailedDietType: input.detailedDietType,
+    freeQuizDiet: input.freeQuizDiet,
+  })
+  let dietType: DietTag | null =
+    resolved.category === 'non_vegetarian'
+      ? 'non_vegetarian'
+      : resolved.category === 'pure_vegetarian' || resolved.category === 'lacto_ovo_vegetarian'
+        ? 'vegetarian'
+        : null
+
+  const rawText = `${input.detailedDietType ?? ''} ${input.freeQuizDiet ?? ''}`.toLowerCase()
+  if (rawText.includes('jain')) dietType = 'jain'
+  else if (rawText.includes('vegan')) dietType = 'vegan'
+
+  return dietType
+}
+
+function mapActivityLevelForEngine(exerciseLevel: string | null | undefined): ActivityLevel | null {
+  const t = (exerciseLevel ?? '').toLowerCase()
+  if (!t) return null
+  if (t.includes('very active')) return 'very_active'
+  if (t.includes('moderately active')) return 'moderate'
+  if (t.includes('lightly active')) return 'light'
+  if (t.includes('sedentary') || t.includes('no exercise')) return 'sedentary'
+  return 'moderate'
+}
+
+const ENGINE_NUTRITION_GOALS: readonly NutritionGoal[] = [
+  'energy',
+  'focus',
+  'skin_hair',
+  'recovery',
+  'immunity',
+  'hormones',
+  'wellness',
+  'weight_loss',
+  'muscle_gain',
+]
+
+function mapGoalForEngine(goal: string | null | undefined): NutritionGoal | null {
+  const t = (goal ?? '').toLowerCase().trim()
+  return (ENGINE_NUTRITION_GOALS as readonly string[]).includes(t) ? (t as NutritionGoal) : null
+}
+
+function parseAgeForEngine(age: string | null | undefined): number | null {
+  if (!age) return null
+  const n = Number(age)
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null
+}
+
+/** Free quiz teaser output shape (see app/api/assessment/route.ts) is `{ primaryDeficiencies: [{ nutrient, severity, ... }] }`. */
+function extractPrimaryDeficienciesFromFreeAssessment(freeAssessment: unknown): string[] {
+  if (!freeAssessment || typeof freeAssessment !== 'object' || Array.isArray(freeAssessment)) return []
+  const pd = (freeAssessment as Record<string, unknown>).primaryDeficiencies
+  if (!Array.isArray(pd)) return []
+
+  const out: string[] = []
+  for (const item of pd) {
+    if (typeof item === 'string' && item.trim()) {
+      out.push(item.trim())
+    } else if (item && typeof item === 'object') {
+      const nutrient = (item as Record<string, unknown>).nutrient
+      if (typeof nutrient === 'string' && nutrient.trim()) out.push(nutrient.trim())
+    }
+  }
+  return out
+}
+
+function buildNutritionProfileForEngine(input: GenerateRecoveryReportV2Input): UserNutritionProfile {
+  const detailed = input.detailed
+
+  return {
+    age: parseAgeForEngine(input.age),
+    gender: mapGenderForEngine(detailed?.gender),
+    heightCm: typeof detailed?.height_cm === 'number' ? detailed.height_cm : null,
+    weightKg: typeof detailed?.weight_kg === 'number' ? detailed.weight_kg : null,
+    activityLevel: mapActivityLevelForEngine(detailed?.exercise_level),
+    goal: mapGoalForEngine(input.goal),
+    dietType: mapDietTypeForEngine({ detailedDietType: detailed?.diet_type, freeQuizDiet: input.diet }),
+    medicalConditions: detailed?.medical_conditions ?? [],
+    allergies: detailed?.allergies ?? [],
+    primaryDeficiencies: extractPrimaryDeficienciesFromFreeAssessment(input.freeAssessment),
+    stressLevel: detailed?.stress_level ?? null,
+    weightLossTargetKg: detailed?.weight_loss_target_kg ?? null,
+    // Stable per-report, differs-per-user seed. patientName + reportId is the best identifier pair
+    // in scope here; falls back to a fixed string only if both are somehow missing.
+    seed: `${input.patientName || 'patient'}|${input.reportId || 'no-report-id'}`,
+  }
+}
+
+function mapEngineMealPlanToV2(days: ReturnType<typeof generateWeeklyMealPlan>): MealPlanDayV2[] {
+  return days.map((d) => ({
+    day: d.day,
+    focus: d.focus,
+    meals: d.meals.map((m) => ({
+      timing: m.timing,
+      food: m.mealName,
+      deficiencyTarget: m.deficiencyTarget,
+      reason: m.reason,
+      calories: m.calories,
+      protein: m.protein,
+      carbs: m.carbs,
+      fat: m.fat,
+      fiber: m.fiber,
+      servingSize: m.servingSize,
+      prepNotes: m.prepNotes,
+      hydrationTip: m.hydrationTip,
+      healthyAlternative: m.healthyAlternative,
+      cuisine: m.cuisine,
+    })),
+  }))
+}
+
+async function fetchActiveMealsOrThrow(): Promise<MealRow[]> {
+  const { data, error } = await supabaseAdmin.from('meals').select('*').eq('is_active', true)
+
+  if (error) {
+    throw new Error(
+      `Meal database query failed (${error.message}). Run the \`meals\` table migration and \`npm run seed:meals\` before generating reports.`,
+    )
+  }
+
+  const meals = (data ?? []) as MealRow[]
+  if (meals.length < MIN_ACTIVE_MEALS_FOR_PLAN) {
+    throw new Error(
+      `Meal database is empty or too small (${meals.length} active row(s), need at least ${MIN_ACTIVE_MEALS_FOR_PLAN}) — run the \`meals\` table migration and \`npm run seed:meals\` before generating reports.`,
+    )
+  }
+  return meals
+}
+
+/**
+ * Builds this patient's weekly meal plan via the deterministic rule-based engine
+ * (lib/meal-engine/) — the sole source of `RecoveryReportV2Data.mealPlan`. Throws (does not
+ * swallow) if the `meals` table is missing/empty/too-thin, so callers can fail the report
+ * generation loudly instead of shipping a broken or empty plan to a paying customer.
+ */
+export async function generateEngineMealPlan(input: GenerateRecoveryReportV2Input): Promise<MealPlanDayV2[]> {
+  const meals = await fetchActiveMealsOrThrow()
+  const profile = buildNutritionProfileForEngine(input)
+  const days = generateWeeklyMealPlan(profile, meals)
+  return mapEngineMealPlanToV2(days)
 }
 
 export function deficiencySummaryFromV2(reportData: RecoveryReportV2Data) {

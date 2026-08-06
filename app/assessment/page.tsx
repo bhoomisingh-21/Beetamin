@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock, Zap, Shield, ChevronRight, ChevronLeft, Loader2, FlaskConical } from 'lucide-react'
+import { Lock, Zap, Shield, ChevronRight, ChevronLeft, FlaskConical, Check, ShieldCheck, UserCheck, Clock } from 'lucide-react'
 import { writeAssessmentBundle } from '@/lib/assessment-local-storage'
 import { trackEvent } from '@/lib/analytics'
+import PremiumLoadingScreen, { TEASER_LOADING_MESSAGES } from '@/components/PremiumLoadingScreen'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
   <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.18'/>
@@ -13,6 +14,39 @@ const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' 
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG)}`
 
 const TOTAL_STEPS = 8
+
+const CATEGORY_NAMES: Record<number, string> = {
+  1: 'Eating Habits',
+  2: 'Your Goals',
+  3: 'Lifestyle & Energy',
+  4: 'Sleep Quality',
+  5: 'Physical Symptoms',
+  6: 'Cognitive Health',
+  7: 'Physical Activity & Immunity',
+  8: 'Personal Information',
+}
+
+function StepBadge({ step, science }: { step: number; science: string }) {
+  return (
+    <span className="inline-flex flex-col items-start gap-1 rounded-2xl border border-blue-200 bg-blue-50 px-3.5 py-2 mb-4">
+      <span className="text-blue-700 text-xs md:text-sm font-black uppercase tracking-widest">{CATEGORY_NAMES[step]}</span>
+      <span className="text-blue-500 text-[11px] md:text-xs font-semibold tracking-wide">{science}</span>
+    </span>
+  )
+}
+
+function SelectedCheck() {
+  return (
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 24 }}
+      className="absolute top-2 right-2 md:top-2.5 md:right-2.5 bg-emerald-500 rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center shadow-md shadow-emerald-500/40"
+    >
+      <Check size={12} className="text-black" strokeWidth={3} />
+    </motion.div>
+  )
+}
 
 export default function AssessmentPage() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -140,6 +174,8 @@ export default function AssessmentPage() {
     { emoji: '🛡️', title: 'Build immunity', subtitle: 'Fewer colds, stronger defenses', value: 'immunity' },
     { emoji: '⚖️', title: 'Hormonal balance', subtitle: 'Better mood, cycle health', value: 'hormones' },
     { emoji: '🌿', title: 'Overall wellness', subtitle: 'General health improvement', value: 'wellness' },
+    { emoji: '🔥', title: 'Weight Loss', subtitle: 'Sustainable fat loss, portion control', value: 'weight_loss' },
+    { emoji: '🏋️', title: 'Muscle Gain', subtitle: 'Build lean muscle, higher protein', value: 'muscle_gain' },
   ]
 
   const stepVariants = {
@@ -224,10 +260,16 @@ export default function AssessmentPage() {
             Back to home
           </a>
           <div className="relative z-10 max-w-md w-full pt-10 sm:pt-0">
-            <span className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs tracking-widest uppercase rounded-full px-3 py-1 inline-flex items-center gap-2">
-              <FlaskConical size={12} />
-              CLINICAL DEFICIENCY ASSESSMENT
-            </span>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs tracking-widest uppercase rounded-full px-3 py-1 inline-flex items-center gap-2">
+                <FlaskConical size={12} />
+                CLINICAL DEFICIENCY ASSESSMENT
+              </span>
+              <span className="border border-white/10 bg-white/5 text-gray-300 text-xs tracking-widest uppercase rounded-full px-3 py-1 inline-flex items-center gap-2">
+                <Clock size={12} className="text-emerald-500" />
+                ⏱ Takes about 2 minutes
+              </span>
+            </div>
 
             <h1 className="mt-4 font-black text-2xl md:text-3xl lg:text-4xl max-w-5xl mx-auto leading-tight text-center text-white">
               Find Your Nutrient Deficiencies — Free Assessment
@@ -254,26 +296,16 @@ export default function AssessmentPage() {
         {/* ── RIGHT: Form ── */}
         <div className="flex flex-col items-center justify-center px-4 py-8 lg:py-12 bg-[#0A0F14]">
           <div className="w-full max-w-xl">
-            <div className="bg-white rounded-2xl lg:rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+            <div className="rounded-2xl lg:rounded-3xl bg-gradient-to-b from-emerald-500/40 via-emerald-500/10 to-transparent p-[1.5px] shadow-[0_25px_70px_-20px_rgba(16,185,129,0.35)]">
+              <div className="bg-white rounded-2xl lg:rounded-3xl shadow-2xl overflow-hidden">
 
               {isLoading ? (
-                <div className="py-12 px-6 md:py-16 md:px-8 text-center">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-emerald-100 mx-auto relative">
-                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-emerald-500 animate-spin" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 size={28} className="text-emerald-500 animate-spin" />
-                    </div>
-                  </div>
-                  <h2 className="mt-5 text-gray-900 font-bold text-lg md:text-xl">Analyzing Your Biology...</h2>
-                  <p className="mt-2 text-gray-400 text-sm max-w-xs mx-auto">
-                    Our AI is cross-referencing your answers against 50+ nutrient deficiency markers
-                  </p>
-                  <div className="mt-5 flex justify-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                  <p className="mt-4 text-gray-300 text-xs">This takes about 5–10 seconds</p>
+                <div className="py-8 px-4 md:py-10 md:px-6">
+                  <PremiumLoadingScreen
+                    messages={TEASER_LOADING_MESSAGES}
+                    title="Analyzing Your Health Profile..."
+                    subtitle="Cross-referencing your answers against 50+ nutrient deficiency markers."
+                  />
                 </div>
               ) : (
                 <>
@@ -291,6 +323,15 @@ export default function AssessmentPage() {
                         style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
                       />
                     </div>
+                    {currentStep >= TOTAL_STEPS - 1 && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 md:mt-3 text-emerald-600 text-sm md:text-base font-semibold flex items-center gap-1.5"
+                      >
+                        🎉 Almost there — just {TOTAL_STEPS - currentStep === 0 ? 'this' : 'one more'} question!
+                      </motion.p>
+                    )}
                   </div>
 
                   {/* Step Content */}
@@ -309,31 +350,31 @@ export default function AssessmentPage() {
                         {/* Step 1 — Diet type */}
                         {currentStep === 1 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🔬 DIETARY PATTERN ANALYSIS
-                            </span>
+                            <StepBadge step={1} science="🔬 DIETARY PATTERN ANALYSIS" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5">
                               What best describes your diet?
                             </h2>
                             <div className="grid grid-cols-1 gap-2 md:gap-3">
                               {dietOptions.map(opt => (
-                                <button
+                                <motion.button
                                   key={opt.value}
+                                  whileTap={{ scale: 0.98 }}
                                   onClick={() => {
                                     setAnswers(prev => ({ ...prev, diet: opt.value }))
                                     scheduleAdvance()
                                   }}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-center gap-3 text-left w-full ${answers.diet === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                  className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-center gap-3 text-left w-full ${answers.diet === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
                                     }`}
                                 >
+                                  {answers.diet === opt.value && <SelectedCheck />}
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
                                     <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
                                     <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
-                                </button>
+                                </motion.button>
                               ))}
                             </div>
                           </div>
@@ -342,31 +383,31 @@ export default function AssessmentPage() {
                         {/* Step 2 — Health goal */}
                         {currentStep === 2 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🎯 YOUR PRIMARY GOAL
-                            </span>
+                            <StepBadge step={2} science="🎯 YOUR PRIMARY GOAL" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5">
                               What&apos;s your #1 health goal right now?
                             </h2>
                             <div className="grid grid-cols-1 gap-2 md:gap-3">
                               {goalOptions.map(opt => (
-                                <button
+                                <motion.button
                                   key={opt.value}
+                                  whileTap={{ scale: 0.98 }}
                                   onClick={() => {
                                     setAnswers(prev => ({ ...prev, goal: opt.value }))
                                     scheduleAdvance()
                                   }}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-center gap-3 text-left w-full ${answers.goal === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                  className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-center gap-3 text-left w-full ${answers.goal === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
                                     }`}
                                 >
+                                  {answers.goal === opt.value && <SelectedCheck />}
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
                                     <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
                                     <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
-                                </button>
+                                </motion.button>
                               ))}
                             </div>
                           </div>
@@ -375,28 +416,28 @@ export default function AssessmentPage() {
                         {/* Step 3 — Energy */}
                         {currentStep === 3 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🔬 TESTING: B-VITAMINS · IRON · ADRENAL FUNCTION
-                            </span>
+                            <StepBadge step={3} science="🔬 TESTING: B-VITAMINS · IRON · ADRENAL FUNCTION" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               It&apos;s 2:30 PM. Which best describes your energy right now?
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                               {energyOptions.map(opt => (
-                                <button
+                                <motion.button
                                   key={opt.value}
+                                  whileTap={{ scale: 0.98 }}
                                   onClick={() => setAnswers(prev => ({ ...prev, metabolicRhythm: opt.value }))}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.metabolicRhythm === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                  className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.metabolicRhythm === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
                                     }`}
                                 >
+                                  {answers.metabolicRhythm === opt.value && <SelectedCheck />}
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
                                     <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
                                     <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
-                                </button>
+                                </motion.button>
                               ))}
                             </div>
                           </div>
@@ -405,28 +446,28 @@ export default function AssessmentPage() {
                         {/* Step 4 — Sleep */}
                         {currentStep === 4 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🔬 TESTING: MAGNESIUM · CORTISOL BALANCE · MELATONIN
-                            </span>
+                            <StepBadge step={4} science="🔬 TESTING: MAGNESIUM · CORTISOL BALANCE · MELATONIN" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               After 7–8 hours of sleep, how do you feel 10 minutes after waking?
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                               {sleepOptions.map(opt => (
-                                <button
+                                <motion.button
                                   key={opt.value}
+                                  whileTap={{ scale: 0.98 }}
                                   onClick={() => setAnswers(prev => ({ ...prev, sleepArchitecture: opt.value }))}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.sleepArchitecture === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                  className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.sleepArchitecture === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
                                     }`}
                                 >
+                                  {answers.sleepArchitecture === opt.value && <SelectedCheck />}
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
                                     <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
                                     <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
-                                </button>
+                                </motion.button>
                               ))}
                             </div>
                           </div>
@@ -435,9 +476,7 @@ export default function AssessmentPage() {
                         {/* Step 5 — Physical symptoms */}
                         {currentStep === 5 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🔬 TESTING: ZINC · BIOTIN · OMEGA-3 · COLLAGEN · VITAMIN C
-                            </span>
+                            <StepBadge step={5} science="🔬 TESTING: ZINC · BIOTIN · OMEGA-3 · COLLAGEN · VITAMIN C" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-2">
                               Which of these have you noticed recently?
                             </h2>
@@ -446,22 +485,19 @@ export default function AssessmentPage() {
                               {dermalOptions.map(opt => {
                                 const selected = answers.dermalMarkers.includes(opt.value)
                                 return (
-                                  <button
+                                  <motion.button
                                     key={opt.value}
+                                    whileTap={{ scale: 0.97 }}
                                     onClick={() => toggleDermalMarker(opt.value)}
                                     className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-2.5 md:p-3 transition-all duration-200 relative text-left w-full ${selected
-                                      ? 'border-emerald-500 bg-emerald-50'
-                                      : 'border-gray-200 hover:border-emerald-300'
+                                      ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
+                                      : 'border-gray-200 hover:border-emerald-300 hover:shadow-md'
                                       }`}
                                   >
-                                    {selected && (
-                                      <div className="absolute top-1.5 right-1.5 md:top-2 md:right-2 bg-emerald-500 rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center">
-                                        <span className="text-white text-[10px]">✓</span>
-                                      </div>
-                                    )}
+                                    {selected && <SelectedCheck />}
                                     <div className="text-lg md:text-xl mb-1">{opt.emoji}</div>
                                     <div className="text-gray-800 text-sm md:text-base font-medium leading-tight">{opt.label}</div>
-                                  </button>
+                                  </motion.button>
                                 )
                               })}
                             </div>
@@ -471,28 +507,28 @@ export default function AssessmentPage() {
                         {/* Step 6 — Mental clarity */}
                         {currentStep === 6 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🔬 TESTING: VITAMIN D3 · B12 · OMEGA-3 FATTY ACIDS
-                            </span>
+                            <StepBadge step={6} science="🔬 TESTING: VITAMIN D3 · B12 · OMEGA-3 FATTY ACIDS" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               During deep focus work, what happens to your mental clarity?
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
                               {clarityOptions.map(opt => (
-                                <button
+                                <motion.button
                                   key={opt.value}
+                                  whileTap={{ scale: 0.98 }}
                                   onClick={() => setAnswers(prev => ({ ...prev, cognitiveClarity: opt.value }))}
-                                  className={`cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.cognitiveClarity === opt.value
-                                    ? 'border-emerald-500 bg-emerald-50'
-                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30'
+                                  className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.cognitiveClarity === opt.value
+                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
+                                    : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
                                     }`}
                                 >
+                                  {answers.cognitiveClarity === opt.value && <SelectedCheck />}
                                   <span className="text-xl md:text-2xl flex-shrink-0">{opt.emoji}</span>
                                   <div>
                                     <div className="text-gray-900 text-base font-semibold">{opt.title}</div>
                                     <div className="text-gray-500 text-sm mt-0.5">{opt.subtitle}</div>
                                   </div>
-                                </button>
+                                </motion.button>
                               ))}
                             </div>
                           </div>
@@ -501,9 +537,7 @@ export default function AssessmentPage() {
                         {/* Step 7 — Recovery & immunity */}
                         {currentStep === 7 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🔬 TESTING: VITAMIN C · D · AMINO ACIDS · ELECTROLYTES
-                            </span>
+                            <StepBadge step={7} science="🔬 TESTING: VITAMIN C · D · AMINO ACIDS · ELECTROLYTES" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-5 md:mb-6">
                               Two quick questions about your recovery &amp; immunity
                             </h2>
@@ -514,16 +548,17 @@ export default function AssessmentPage() {
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {muscleOptions.map(opt => (
-                                  <button
+                                  <motion.button
                                     key={opt.value}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={() => setAnswers(prev => ({ ...prev, muscleRecovery: opt.value }))}
                                     className={`border-2 rounded-full px-3 md:px-4 py-2 text-sm md:text-base cursor-pointer font-medium transition-all ${answers.muscleRecovery === opt.value
-                                      ? 'bg-emerald-500 text-black border-emerald-500'
+                                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-md shadow-emerald-500/30'
                                       : 'border-gray-300 text-gray-600 hover:border-emerald-400'
                                       }`}
                                   >
                                     {opt.label}
-                                  </button>
+                                  </motion.button>
                                 ))}
                               </div>
                             </div>
@@ -536,16 +571,17 @@ export default function AssessmentPage() {
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {immuneOptions.map(opt => (
-                                  <button
+                                  <motion.button
                                     key={opt.value}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={() => setAnswers(prev => ({ ...prev, immuneResilience: opt.value }))}
                                     className={`border-2 rounded-full px-3 md:px-4 py-2 text-sm md:text-base cursor-pointer font-medium transition-all ${answers.immuneResilience === opt.value
-                                      ? 'bg-emerald-500 text-black border-emerald-500'
+                                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-md shadow-emerald-500/30'
                                       : 'border-gray-300 text-gray-600 hover:border-emerald-400'
                                       }`}
                                   >
                                     {opt.label}
-                                  </button>
+                                  </motion.button>
                                 ))}
                               </div>
                             </div>
@@ -555,9 +591,7 @@ export default function AssessmentPage() {
                         {/* Step 8 — Personal info (last, before report) */}
                         {currentStep === 8 && (
                           <div>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-4 text-blue-600 text-xs md:text-sm font-semibold">
-                              🔬 PERSONALIZING YOUR ANALYSIS
-                            </span>
+                            <StepBadge step={8} science="🔬 PERSONALIZING YOUR ANALYSIS" />
                             <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-2">
                               Almost done — where should we send your report?
                             </h2>
@@ -674,10 +708,23 @@ export default function AssessmentPage() {
                   </div>
                 </>
               )}
+              </div>
             </div>
 
             {/* Bottom Trust Bar */}
-            <p className="text-center mt-4 text-gray-500 text-sm px-4">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-4">
+              {[
+                { Icon: UserCheck, label: 'Nutritionist Approved' },
+                { Icon: ShieldCheck, label: '100% Personalized' },
+                { Icon: Lock, label: 'Data is Secure' },
+              ].map(({ Icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5 text-gray-500 text-sm">
+                  <Icon size={14} className="text-emerald-500" />
+                  {label}
+                </div>
+              ))}
+            </div>
+            <p className="text-center mt-2 text-gray-500 text-sm px-4">
               🔒 Your answers are private and never shared · Used only to generate your personal report
             </p>
           </div>

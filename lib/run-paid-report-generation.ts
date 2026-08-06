@@ -1,9 +1,11 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import { resolvePatientDiet } from '@/lib/patient-diet'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
+import type { MealPlanDayV2 } from '@/lib/recovery-report-v2-types'
 import {
   coerceRecoveryReportV2,
   deficiencySummaryFromV2,
+  generateEngineMealPlan,
   generateRecoveryReportV2Payload,
 } from '@/lib/recovery-report-v2-groq'
 import { renderRecoveryReportV2PdfBuffer } from '@/lib/render-recovery-report-v2-pdf'
@@ -141,33 +143,61 @@ export async function runPaidReportGeneration(args: {
       exercise_level: detailed.exercise_level,
       water_intake: detailed.water_intake,
       menstrual_health: detailed.menstrual_health,
+      gender: detailed.gender ?? null,
+      height_cm: typeof detailed.height_cm === 'number' ? detailed.height_cm : null,
+      weight_kg: typeof detailed.weight_kg === 'number' ? detailed.weight_kg : null,
+      medical_conditions: Array.isArray(detailed.medical_conditions) ? detailed.medical_conditions : [],
+      allergies: Array.isArray(detailed.allergies) ? detailed.allergies : [],
+      stress_level: detailed.stress_level ?? null,
+      condition_details:
+        detailed.condition_details && typeof detailed.condition_details === 'object'
+          ? (detailed.condition_details as Record<string, unknown>)
+          : {},
+      weight_loss_target_kg: typeof detailed.weight_loss_target_kg === 'number' ? detailed.weight_loss_target_kg : null,
+    }
+
+    const reportGenerationInput = {
+      patientName,
+      freeAssessment,
+      detailed: detailedPayload,
+      age: meta.age ?? 'Not specified',
+      diet: resolvedDiet.label,
+      goal: meta.goal ?? goalFromClient ?? 'Personalised nutrient recovery',
+      reportId,
     }
 
     let raw: Record<string, unknown>
     try {
-      raw = await generateRecoveryReportV2Payload({
-        patientName,
-        freeAssessment,
-        detailed: detailedPayload,
-        age: meta.age ?? 'Not specified',
-        diet: resolvedDiet.label,
-        goal: meta.goal ?? goalFromClient ?? 'Personalised nutrient recovery',
-      })
+      raw = await generateRecoveryReportV2Payload(reportGenerationInput)
     } catch (e) {
       console.error('[run-paid-report-generation] Groq', e)
       await markFailed(reportId, userId)
       return
     }
 
+    let mealPlan: MealPlanDayV2[]
+    try {
+      mealPlan = await generateEngineMealPlan(reportGenerationInput)
+    } catch (e) {
+      // Loud + traceable: meals table empty/missing, or engine failure — never ship a broken/empty plan.
+      console.error('[run-paid-report-generation] meal engine', e)
+      await markFailed(reportId, userId)
+      return
+    }
+
     const generatedAt = new Date().toISOString()
-    const reportData = coerceRecoveryReportV2(raw, {
-      name: patientName,
-      age: meta.age,
-      diet: resolvedDiet.label,
-      goal: meta.goal ?? goalFromClient,
-      reportId,
-      generatedAt,
-    })
+    const reportData = coerceRecoveryReportV2(
+      raw,
+      {
+        name: patientName,
+        age: meta.age,
+        diet: resolvedDiet.label,
+        goal: meta.goal ?? goalFromClient,
+        reportId,
+        generatedAt,
+      },
+      mealPlan,
+    )
 
     const deficiencySummary = deficiencySummaryFromV2(reportData)
 

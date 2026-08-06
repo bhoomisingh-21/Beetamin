@@ -18,6 +18,14 @@ export type DetailedAssessmentPayload = {
   exercise_level: string
   water_intake: string
   menstrual_health?: string | null
+  gender?: string | null
+  height_cm?: number | null
+  weight_kg?: number | null
+  medical_conditions?: string[]
+  allergies?: string[]
+  stress_level?: string | null
+  condition_details?: Record<string, unknown>
+  weight_loss_target_kg?: number | null
 }
 
 export type RecoveryReportSections = {

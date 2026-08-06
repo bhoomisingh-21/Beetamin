@@ -2,7 +2,11 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { resolvePatientDiet } from '@/lib/patient-diet'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
-import { coerceRecoveryReportV2, generateRecoveryReportV2Payload } from '@/lib/recovery-report-v2-groq'
+import {
+  coerceRecoveryReportV2,
+  generateEngineMealPlan,
+  generateRecoveryReportV2Payload,
+} from '@/lib/recovery-report-v2-groq'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 /** Recovery report Groq prompt + JSON shape live in `recovery-report-v2-groq.ts`. */
@@ -27,6 +31,21 @@ function mapDetailedRow(row: Record<string, unknown>): DetailedAssessmentPayload
     water_intake: typeof row.water_intake === 'string' ? row.water_intake : String(row.water_intake ?? ''),
     menstrual_health:
       row.menstrual_health == null ? null : typeof row.menstrual_health === 'string' ? row.menstrual_health : String(row.menstrual_health),
+    gender: typeof row.gender === 'string' ? row.gender : null,
+    height_cm: typeof row.height_cm === 'number' ? row.height_cm : null,
+    weight_kg: typeof row.weight_kg === 'number' ? row.weight_kg : null,
+    medical_conditions: Array.isArray(row.medical_conditions)
+      ? (row.medical_conditions as unknown[]).filter((x): x is string => typeof x === 'string')
+      : [],
+    allergies: Array.isArray(row.allergies)
+      ? (row.allergies as unknown[]).filter((x): x is string => typeof x === 'string')
+      : [],
+    stress_level: typeof row.stress_level === 'string' ? row.stress_level : null,
+    condition_details:
+      row.condition_details && typeof row.condition_details === 'object' && !Array.isArray(row.condition_details)
+        ? (row.condition_details as Record<string, unknown>)
+        : {},
+    weight_loss_target_kg: typeof row.weight_loss_target_kg === 'number' ? row.weight_loss_target_kg : null,
   }
 }
 
@@ -98,25 +117,47 @@ export async function POST(req: Request) {
     dietSummary,
   })
 
-  try {
-    const raw = await generateRecoveryReportV2Payload({
-      patientName,
-      freeAssessment: assessmentResult,
-      detailed,
-      age,
-      diet: resolvedDiet.label,
-      goal,
-    })
+  const reportId = `BT-${Date.now().toString(36).toUpperCase()}`
+  const reportGenerationInput = {
+    patientName,
+    freeAssessment: assessmentResult,
+    detailed,
+    age,
+    diet: resolvedDiet.label,
+    goal,
+    reportId,
+  }
 
-    const reportId = `BT-${Date.now().toString(36).toUpperCase()}`
-    const reportData = coerceRecoveryReportV2(raw, {
-      name: patientName,
-      age,
-      diet: resolvedDiet.label,
-      goal,
-      reportId,
-      generatedAt: new Date().toISOString(),
-    })
+  try {
+    const raw = await generateRecoveryReportV2Payload(reportGenerationInput)
+
+    let mealPlan
+    try {
+      mealPlan = await generateEngineMealPlan(reportGenerationInput)
+    } catch (mealError) {
+      // Loud + traceable: meals table empty/missing, or engine failure — never ship a broken/empty plan.
+      console.error('[api/report] meal engine', mealError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: mealError instanceof Error ? mealError.message : 'Meal plan generation failed',
+        },
+        { status: 503 },
+      )
+    }
+
+    const reportData = coerceRecoveryReportV2(
+      raw,
+      {
+        name: patientName,
+        age,
+        diet: resolvedDiet.label,
+        goal,
+        reportId,
+        generatedAt: new Date().toISOString(),
+      },
+      mealPlan,
+    )
 
     return NextResponse.json({
       success: true,

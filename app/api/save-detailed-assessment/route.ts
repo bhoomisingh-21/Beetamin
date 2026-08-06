@@ -51,6 +51,32 @@ function validatePayload(body: unknown): { ok: true; data: DetailedAssessmentPay
         ? b.menstrual_health.trim() || null
         : null
 
+  const nullableStr = (k: string) => {
+    const v = b[k]
+    return typeof v === 'string' && v.trim() ? v.trim() : null
+  }
+
+  const nullableNum = (k: string) => {
+    const v = b[k]
+    if (typeof v === 'number' && Number.isFinite(v)) return v
+    if (typeof v === 'string' && v.trim()) {
+      const n = Number(v)
+      if (Number.isFinite(n)) return n
+    }
+    return null
+  }
+
+  const strArray = (k: string): string[] => {
+    const v = b[k]
+    if (!Array.isArray(v)) return []
+    return v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+  }
+
+  const conditionDetails =
+    b.condition_details != null && typeof b.condition_details === 'object' && !Array.isArray(b.condition_details)
+      ? (b.condition_details as Record<string, unknown>)
+      : {}
+
   return {
     ok: true,
     data: {
@@ -64,6 +90,14 @@ function validatePayload(body: unknown): { ok: true; data: DetailedAssessmentPay
       exercise_level: str('exercise_level'),
       water_intake: str('water_intake'),
       menstrual_health: menstrual,
+      gender: nullableStr('gender'),
+      height_cm: nullableNum('height_cm'),
+      weight_kg: nullableNum('weight_kg'),
+      medical_conditions: strArray('medical_conditions'),
+      allergies: strArray('allergies'),
+      stress_level: nullableStr('stress_level'),
+      condition_details: conditionDetails,
+      weight_loss_target_kg: nullableNum('weight_loss_target_kg'),
     },
   }
 }
@@ -129,16 +163,27 @@ export async function POST(req: Request) {
       exercise_level: validated.data.exercise_level,
       water_intake: validated.data.water_intake,
       menstrual_health: validated.data.menstrual_health,
+      gender: validated.data.gender,
+      height_cm: validated.data.height_cm,
+      weight_kg: validated.data.weight_kg,
+      medical_conditions: validated.data.medical_conditions,
+      allergies: validated.data.allergies,
+      stress_level: validated.data.stress_level,
+      condition_details: validated.data.condition_details,
+      weight_loss_target_kg: validated.data.weight_loss_target_kg,
     }
     if (freeSnapshot) {
       insertRow.free_assessment_snapshot = freeSnapshot
       insertRow.free_assessment_meta = freeMeta
     }
 
+    const SELECT_COLUMNS =
+      'id, gender, height_cm, weight_kg, medical_conditions, allergies, stress_level, condition_details, weight_loss_target_kg'
+
     const { data, error } = await supabaseAdmin
       .from('detailed_assessments')
       .insert(insertRow)
-      .select('id')
+      .select(SELECT_COLUMNS)
       .single()
 
     if (error) {
@@ -176,7 +221,18 @@ export async function POST(req: Request) {
       )
     }
 
-    return NextResponse.json({ id: data.id, freeQuizStored: Boolean(freeSnapshot) })
+    return NextResponse.json({
+      id: data.id,
+      freeQuizStored: Boolean(freeSnapshot),
+      gender: data.gender ?? null,
+      height_cm: data.height_cm ?? null,
+      weight_kg: data.weight_kg ?? null,
+      medical_conditions: data.medical_conditions ?? [],
+      allergies: data.allergies ?? [],
+      stress_level: data.stress_level ?? null,
+      condition_details: data.condition_details ?? {},
+      weight_loss_target_kg: data.weight_loss_target_kg ?? null,
+    })
   } catch (e) {
     console.error('[save-detailed-assessment]', e)
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })

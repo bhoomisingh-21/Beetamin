@@ -378,6 +378,86 @@ function MorningRoutineSection({ data }: { data: RecoveryReportV2Data }) {
   )
 }
 
+/** Nutrition-card row for meals produced by lib/meal-engine (has macros/serving/prep data). */
+function MealNutritionCard({ m }: { m: RecoveryReportV2Data['mealPlan'][number]['meals'][number] }) {
+  const pills: Array<[string, string]> = [
+    ['CAL', `${Math.round(m.calories ?? 0)}`],
+    ['PROTEIN', `${Math.round(m.protein ?? 0)}g`],
+    ['CARBS', `${Math.round(m.carbs ?? 0)}g`],
+    ['FAT', `${Math.round(m.fat ?? 0)}g`],
+    ['FIBER', `${Math.round(m.fiber ?? 0)}g`],
+  ]
+
+  return (
+    <View style={styles.mealNutritionCard} wrap={false}>
+      <View style={styles.mealCardTopRow}>
+        <View style={styles.mealTimingBadge}>
+          <Text style={styles.mealTimingBadgeText}>{m.timing.toUpperCase()}</Text>
+        </View>
+        <View style={styles.mealNameRow}>
+          <Text style={styles.mealNameText}>{m.food}</Text>
+          {m.cuisine ? <Text style={styles.mealCuisineText}>{m.cuisine.replace(/_/g, ' ')}</Text> : null}
+        </View>
+        {m.servingSize ? (
+          <View style={styles.mealServingPill}>
+            <Text style={styles.mealServingPillText}>{m.servingSize}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.mealNutriPillRow}>
+        {pills.map(([label, val], i) => (
+          <View key={i} style={styles.mealNutriPill}>
+            <Text style={styles.mealNutriPillVal}>{val}</Text>
+            <Text style={styles.mealNutriPillLabel}>{label}</Text>
+          </View>
+        ))}
+      </View>
+
+      {m.prepNotes ? <Text style={styles.mealPrepNoteText}>Prep tip: {m.prepNotes}</Text> : null}
+
+      {m.hydrationTip ? (
+        <View style={styles.mealHydrationRow}>
+          <Text style={styles.mealHydrationIcon}>{'\u{1F4A7}'}</Text>
+          <Text style={styles.mealHydrationText}>{m.hydrationTip}</Text>
+        </View>
+      ) : null}
+
+      {m.healthyAlternative ? (
+        <View style={styles.mealSwapRow}>
+          <Text style={styles.mealSwapLabel}>LIGHTER SWAP:</Text>
+          <Text style={styles.mealSwapText}>{m.healthyAlternative}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.mealTargetFooterRow}>
+        <View style={styles.defTargetPill}>
+          <Text style={styles.defTargetPillText}>{'\u2192'} {m.deficiencyTarget}</Text>
+        </View>
+      </View>
+    </View>
+  )
+}
+
+/** Fallback compact row for legacy mealPlan data without macro/serving fields yet. */
+function MealCompactRow({
+  m,
+  altRow,
+}: {
+  m: RecoveryReportV2Data['mealPlan'][number]['meals'][number]
+  altRow: boolean
+}) {
+  return (
+    <View style={[styles.tableRow, styles.mealPlanCompactRow, altRow ? styles.tableRowAlt : {}]} wrap={false}>
+      <Text style={[styles.tableCellText, { width: '24%', fontSize: 7.5, color: COLORS.gray500 }]}>{m.timing}</Text>
+      <Text style={[styles.tableCellText, { width: '48%', fontSize: 8.5, fontWeight: 700 }]}>{m.food}</Text>
+      <Text style={[styles.tableCellText, { width: '28%', fontSize: 8, color: COLORS.emerald, fontWeight: 700 }]}>
+        {m.deficiencyTarget}
+      </Text>
+    </View>
+  )
+}
+
 function MealPlanSection({ data }: { data: RecoveryReportV2Data }) {
   const days = [...data.mealPlan].sort((a, b) => a.day - b.day)
   return (
@@ -385,7 +465,7 @@ function MealPlanSection({ data }: { data: RecoveryReportV2Data }) {
       <Text style={styles.sectionLabel}>NUTRITION</Text>
       <Text style={styles.sectionTitle}>7-day meal plan</Text>
       <Text style={styles.sectionSubtitle}>
-        Indian units only. Each food line: dish — qty — why (your symptoms).
+        Indian units only. Each card shows calories, macros, prep + hydration tips for your case.
       </Text>
       <View style={styles.sectionDivider} />
 
@@ -394,40 +474,36 @@ function MealPlanSection({ data }: { data: RecoveryReportV2Data }) {
         style={[styles.sectionBannerWide, styles.mealPlanBannerImg, { objectFit: 'cover', height: 64 }]}
       />
 
-      {days.map((d, di) => (
-        <View key={di} wrap={false}>
-          <View style={[styles.mealDayHeaderBox, { paddingVertical: 6 }]}>
-            <View style={styles.mealDayTexts}>
-              <Text style={[styles.mealDayHeaderText, { fontSize: 9 }]}>DAY {d.day}</Text>
-              <Text style={[styles.mealDayFocus, { fontSize: 7.5 }]}>Focus: {d.focus}</Text>
+      {days.map((d, di) => {
+        const hasNutritionData = d.meals.some((m) => typeof m.calories === 'number')
+        return (
+          <View key={di}>
+            <View style={[styles.mealDayHeaderBox, { paddingVertical: 6 }]} wrap={false}>
+              <View style={styles.mealDayTexts}>
+                <Text style={[styles.mealDayHeaderText, { fontSize: 9 }]}>DAY {d.day}</Text>
+                <Text style={[styles.mealDayFocus, { fontSize: 7.5 }]}>Focus: {d.focus}</Text>
+              </View>
+              <SafeImage
+                src={dayFoodImages[d.day - 1] || dayFoodImages[0]}
+                style={[styles.mealDayThumb, { objectFit: 'cover', width: 32, height: 32, borderRadius: 16 }]}
+              />
             </View>
-            <SafeImage
-              src={dayFoodImages[d.day - 1] || dayFoodImages[0]}
-              style={[styles.mealDayThumb, { objectFit: 'cover', width: 32, height: 32, borderRadius: 16 }]}
-            />
+
+            {hasNutritionData ? (
+              d.meals.map((m, mi) => <MealNutritionCard key={mi} m={m} />)
+            ) : (
+              <>
+                <View style={[styles.tableHeader, styles.mealPlanCompactHeader]}>
+                  <Text style={[styles.tableHeaderText, { width: '24%' }]}>TIMING</Text>
+                  <Text style={[styles.tableHeaderText, { width: '48%' }]}>FOOD</Text>
+                  <Text style={[styles.tableHeaderText, { width: '28%' }]}>TARGET</Text>
+                </View>
+                {d.meals.map((m, mi) => <MealCompactRow key={mi} m={m} altRow={mi % 2 === 1} />)}
+              </>
+            )}
           </View>
-          <View style={[styles.tableHeader, styles.mealPlanCompactHeader]}>
-            <Text style={[styles.tableHeaderText, { width: '24%' }]}>TIMING</Text>
-            <Text style={[styles.tableHeaderText, { width: '48%' }]}>FOOD</Text>
-            <Text style={[styles.tableHeaderText, { width: '28%' }]}>TARGET</Text>
-          </View>
-          {d.meals.map((m, mi) => (
-            <View
-              key={mi}
-              style={[styles.tableRow, styles.mealPlanCompactRow, mi % 2 === 1 ? styles.tableRowAlt : {}]}
-              wrap={false}
-            >
-              <Text style={[styles.tableCellText, { width: '24%', fontSize: 7.5, color: COLORS.gray500 }]}>
-                {m.timing}
-              </Text>
-              <Text style={[styles.tableCellText, { width: '48%', fontSize: 8.5, fontWeight: 700 }]}>{m.food}</Text>
-              <Text style={[styles.tableCellText, { width: '28%', fontSize: 8, color: COLORS.emerald, fontWeight: 700 }]}>
-                {m.deficiencyTarget}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ))}
+        )
+      })}
     </View>
   )
 }

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed:foods": "node scripts/seed-foods.js",
+    "seed:meals": "tsx scripts/seed-meal-database.ts",
     "build:ifct-csv": "node scripts/build-ifct-csv.js",
     "seed:ifct": "node scripts/build-ifct-csv.js && node scripts/seed-foods.js",
     "seed:prepared-meals": "node scripts/seed-prepared-meals.js",
@@ -43,6 +44,7 @@
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
     "to-ico": "^1.1.5",
+    "tsx": "^4.23.8",
     "typescript": "^5"
   }
 }

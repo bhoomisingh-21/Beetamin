@@ -35,6 +35,18 @@ export type MealPlanMealV2 = {
   food: string
   deficiencyTarget: string
   reason: string
+  /** Nutrition-card fields from the rule-based meal engine (lib/meal-engine/). Optional so
+   * older/LLM-authored mealPlan data without these fields still satisfies the type. */
+  calories?: number
+  protein?: number
+  carbs?: number
+  fat?: number
+  fiber?: number
+  servingSize?: string
+  prepNotes?: string
+  hydrationTip?: string
+  healthyAlternative?: string
+  cuisine?: string
 }
 
 export type MealPlanDayV2 = {

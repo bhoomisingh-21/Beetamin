@@ -4,10 +4,10 @@ import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { ReportAppHeader } from '@/components/report/ReportAppHeader'
 import Footer from '@/components/sections/Footer'
+import PremiumLoadingScreen, { FULL_REPORT_LOADING_MESSAGES } from '@/components/PremiumLoadingScreen'
 import { trackEvent } from '@/lib/analytics'
 import { ReportReadyLayout } from './ReportReadyLayout'
 
@@ -20,14 +20,6 @@ type PaidReportRow = {
   report_id: string | null
   assessment_id: string | null
 }
-
-const GENERATING_MESSAGES = [
-  'Analyzing your deficiencies and symptoms…',
-  'Building your personalized 7-day meal plan…',
-  'Selecting evidence-based supplement guidance…',
-  'Formatting your recovery plan as a professional PDF…',
-  'Almost there — final checks before delivery…',
-]
 
 const POLL_MS = 4000
 const TIMEOUT_MS = 180000
@@ -144,7 +136,6 @@ function ReportPageInner() {
     'loading' | 'generating' | 'ready' | 'failed' | 'timeout' | 'not_found' | 'error'
   >('loading')
   const [pollData, setPollData] = useState<PaidReportRow | null>(null)
-  const [messageIndex, setMessageIndex] = useState(0)
   const [showConfetti, setShowConfetti] = useState(false)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [downloadStatus, setDownloadStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -304,14 +295,6 @@ function ReportPageInner() {
       clearTimeout(timeout)
     }
   }, [view, reportId, pollPaidReport])
-
-  useEffect(() => {
-    if (view !== 'generating') return
-    const t = setInterval(() => {
-      setMessageIndex((i) => (i + 1) % GENERATING_MESSAGES.length)
-    }, 3200)
-    return () => clearInterval(t)
-  }, [view])
 
   useEffect(() => {
     return () => {
@@ -515,39 +498,29 @@ function ReportPageInner() {
     return (
       <div className="min-h-screen bg-[#f6f7f4]">
         <ReportAppHeader />
-        <section className="relative overflow-hidden bg-[#1a2e1a] px-4 py-12 text-white sm:px-6 sm:py-16">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_50%)]" />
-          <div className="relative mx-auto grid max-w-6xl gap-10 lg:grid-cols-2 lg:items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="text-center lg:text-left"
-            >
-              <h1 className="text-2xl font-extrabold leading-tight sm:text-3xl md:text-4xl">
-                {showLoader ? 'Preparing your recovery plan' : 'Loading your report'}
-              </h1>
-              {showLoader ? (
-                <p className="mt-4 min-h-[3rem] text-sm text-white/90 sm:text-base">
-                  {GENERATING_MESSAGES[messageIndex]}
-                </p>
-              ) : (
-                <p className="mt-4 text-sm text-white/85">Fetching your report status…</p>
-              )}
-              <p className="mt-4 font-mono text-xs text-white/70">Report ID: {displayReportId}</p>
-            </motion.div>
-            <div className="flex justify-center lg:justify-end">
-              <div className="flex h-28 w-28 items-center justify-center rounded-full bg-white/10 ring-2 ring-white/20">
-                <Loader2 className="h-14 w-14 animate-spin text-white" strokeWidth={2} />
+        <section className="px-4 py-10 sm:px-6 sm:py-14">
+          <div className="mx-auto max-w-2xl">
+            {showLoader ? (
+              <PremiumLoadingScreen
+                messages={FULL_REPORT_LOADING_MESSAGES}
+                isComplete={isReadyStatus(pollData?.status ?? null)}
+                title="Building Your Personalized Report..."
+                subtitle="Sit tight — this usually takes one to two minutes."
+              />
+            ) : (
+              <div className="flex flex-col items-center py-12 text-center">
+                <Loader2 className="h-10 w-10 animate-spin text-[#1a472a]" strokeWidth={2} />
+                <p className="mt-4 text-sm text-stone-600">Fetching your report status…</p>
               </div>
-            </div>
+            )}
+            <p className="mt-6 text-center font-mono text-xs text-stone-500">Report ID: {displayReportId}</p>
           </div>
         </section>
-        <div className="mx-auto max-w-2xl px-4 py-10 text-center text-sm text-stone-600">
-          {showLoader
-            ? 'This usually takes one to two minutes. This page updates automatically when your PDF is ready — you can keep this tab open or check your email.'
-            : 'Please wait…'}
-        </div>
+        {showLoader ? (
+          <div className="mx-auto max-w-2xl px-4 pb-10 text-center text-sm text-stone-600">
+            This page updates automatically when your PDF is ready — you can keep this tab open or check your email.
+          </div>
+        ) : null}
         <Footer />
       </div>
     )
