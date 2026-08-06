@@ -260,7 +260,7 @@ export default function ResultsPage() {
       <div className="min-h-screen bg-[#0B0F14] flex flex-col items-center justify-center gap-3 px-6 text-center">
         <div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
         {isSignedIn ? (
-          <p className="text-sm text-slate-400">Restoring your assessment results…</p>
+          <p className="text-base text-slate-400">Restoring your assessment results…</p>
         ) : null}
       </div>
     )
@@ -300,12 +300,12 @@ export default function ResultsPage() {
 
       {/* Back nav */}
       <div className="sticky top-0 z-10 bg-[#0B0F14]/90 backdrop-blur-md border-b border-white/5 px-3 py-2.5 md:px-4 md:py-3 flex items-center gap-2 md:gap-3">
-        <a href="/assessment" className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition">
-          <ChevronLeft size={16} />
+        <a href="/assessment" className="flex items-center gap-1.5 text-gray-400 hover:text-white text-base transition">
+          <ChevronLeft size={18} />
           Retake Assessment
         </a>
         <span className="flex-1" />
-        <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition">← Home</a>
+        <a href="/" className="text-gray-500 hover:text-gray-300 text-base transition">← Home</a>
       </div>
 
       {/* ===== SECTION 1 ===== */}
@@ -320,10 +320,10 @@ export default function ResultsPage() {
 
           {/* HEADING */}
           <motion.div {...fadeUp(0)} className="text-center max-md:px-0.5">
-            <p className="md:hidden text-[10px] font-bold tracking-[0.2em] text-emerald-400/90 uppercase mb-3">
+            <p className="md:hidden text-xs font-bold tracking-[0.2em] text-emerald-400/90 uppercase mb-3">
               Your report
             </p>
-            <h1 className="text-[1.35rem] leading-snug sm:text-3xl md:text-4xl lg:text-6xl font-black md:leading-tight">
+            <h1 className="text-2xl leading-snug sm:text-4xl md:text-5xl lg:text-7xl font-black md:leading-tight">
               <span className="text-white/90">{headline.main}</span>
               <br />
               <span className="bg-gradient-to-r from-emerald-400 to-emerald-600 text-transparent bg-clip-text">
@@ -331,21 +331,21 @@ export default function ResultsPage() {
               </span>
             </h1>
 
-            <div className="mt-4 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-semibold rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
-              <ShieldCheck size={12} />
+            <div className="mt-4 inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-semibold rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+              <ShieldCheck size={14} />
               {isHealthy ? 'NUTRITIONIST-REVIEWED ANALYSIS' : 'DOCTOR-APPROVED RECOVERY PLAN AVAILABLE'}
             </div>
           </motion.div>
 
           {/* SUBTEXT */}
-          <motion.p {...fadeUp(0.1)} className="mt-3 md:mt-8 text-gray-400 text-[13px] sm:text-base md:text-lg text-center max-w-3xl mx-auto leading-relaxed max-md:leading-relaxed px-0.5 md:px-1">
+          <motion.p {...fadeUp(0.1)} className="mt-3 md:mt-8 text-gray-400 text-base sm:text-lg md:text-xl text-center max-w-3xl mx-auto leading-relaxed max-md:leading-relaxed px-0.5 md:px-1">
             {headline.subtext}
           </motion.p>
 
           {/* DIET SUMMARY */}
           {result.dietSummary && (
             <motion.div {...fadeUp(0.15)} className="mt-3 md:mt-6 max-w-2xl mx-auto bg-[#121821] border border-white/5 rounded-xl sm:rounded-2xl px-3.5 sm:px-6 py-3 sm:py-4 max-md:shadow-sm max-md:shadow-black/20">
-              <p className="text-gray-400 text-[11px] sm:text-sm leading-relaxed text-center max-md:text-left">
+              <p className="text-gray-400 text-sm sm:text-base leading-relaxed text-center max-md:text-left">
                 <span className="text-emerald-400 font-semibold">Diet analysis: </span>
                 {result.dietSummary}
               </p>
@@ -360,18 +360,18 @@ export default function ResultsPage() {
                   <span className="text-5xl font-black leading-none tabular-nums" style={{ color: scoreInfo.color }}>
                     {scoreAnimated}
                   </span>
-                  <span className="text-gray-500 text-sm mb-1">/100</span>
+                  <span className="text-gray-500 text-base mb-1">/100</span>
                 </div>
-                <div className={`mt-2 text-[10px] font-bold px-2.5 py-1 rounded-full inline-block ${scoreInfo.bg}`}>
+                <div className={`mt-2 text-xs font-bold px-2.5 py-1 rounded-full inline-block ${scoreInfo.bg}`}>
                   {scoreInfo.label}
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-gray-500 text-[10px] uppercase tracking-widest leading-tight mb-2">
+                <p className="text-gray-500 text-xs uppercase tracking-widest leading-tight mb-2">
                   {meta.name || 'Your'}'s deficiency risk score
                 </p>
                 {result.urgencyMessage && (
-                  <p className={`text-xs font-medium leading-snug ${isHealthy ? 'text-emerald-300' : 'text-red-300'}`}>
+                  <p className={`text-sm font-medium leading-snug ${isHealthy ? 'text-emerald-300' : 'text-red-300'}`}>
                     {result.urgencyMessage}
                   </p>
                 )}
@@ -392,25 +392,25 @@ export default function ResultsPage() {
                 </span>
                 <div className="mb-3">
                   <span className="text-gray-500 text-2xl">/100</span>
-                  <div className={`mt-2 text-xs font-bold px-3 py-1 rounded-full inline-block ${scoreInfo.bg}`}>
+                  <div className={`mt-2 text-sm font-bold px-3 py-1 rounded-full inline-block ${scoreInfo.bg}`}>
                     {scoreInfo.label}
                   </div>
                 </div>
               </div>
 
-              <p className="hidden md:block text-gray-500 text-xs uppercase tracking-widest mb-6">
+              <p className="hidden md:block text-gray-500 text-sm uppercase tracking-widest mb-6">
                 {isHealthy
                   ? `${meta.name || 'Your'}'s overall deficiency risk score`
                   : `${meta.name || 'Your'}'s nutrient deficiency risk score`}
               </p>
 
               {result.urgencyMessage && (
-                <div className={`hidden md:block mb-6 px-4 py-3 rounded-xl text-sm font-medium ${isHealthy ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-red-500/10 border border-red-500/20 text-red-300'}`}>
+                <div className={`hidden md:block mb-6 px-4 py-3 rounded-xl text-base font-medium ${isHealthy ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-red-500/10 border border-red-500/20 text-red-300'}`}>
                   {result.urgencyMessage}
                 </div>
               )}
 
-              <p className="md:hidden text-[10px] font-bold tracking-widest uppercase text-emerald-400 mb-2 pt-1 border-t border-white/10">
+              <p className="md:hidden text-xs font-bold tracking-widest uppercase text-emerald-400 mb-2 pt-1 border-t border-white/10">
                 Nutrient gaps (read next)
               </p>
 
@@ -427,16 +427,16 @@ export default function ResultsPage() {
                       className="bg-[#0F141A] p-3.5 sm:p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/5"
                     >
                       <div className="flex justify-between items-start gap-2">
-                        <p className="font-bold text-sm md:text-base text-white leading-snug">{def.nutrient}</p>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${getSeverityBadge(def.severity)}`}>
+                        <p className="font-bold text-base md:text-lg text-white leading-snug">{def.nutrient}</p>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${getSeverityBadge(def.severity)}`}>
                           {def.severity} risk
                         </span>
                       </div>
-                      <p className="text-gray-400 mt-1.5 text-xs sm:text-sm leading-relaxed">{def.reason}</p>
+                      <p className="text-gray-400 mt-1.5 text-sm sm:text-base leading-relaxed">{def.reason}</p>
                       {def.symptoms?.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {def.symptoms.map((s: string, j: number) => (
-                            <span key={j} className="bg-white/5 text-gray-500 text-[10px] px-2 py-0.5 rounded-full">
+                            <span key={j} className="bg-white/5 text-gray-500 text-xs px-2 py-0.5 rounded-full">
                               {s}
                             </span>
                           ))}
@@ -445,7 +445,7 @@ export default function ResultsPage() {
                     </motion.div>
                   ))
                 ) : (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-emerald-300 text-sm">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 text-emerald-300 text-base">
                     ✅ No significant deficiencies detected based on your answers.
                   </div>
                 )}
@@ -454,10 +454,10 @@ export default function ResultsPage() {
 
             {/* RIGHT — INSIGHTS */}
             <motion.div {...fadeUp(0.25)} className="flex flex-col gap-3 md:gap-4 md:justify-center max-md:rounded-2xl max-md:border max-md:border-white/10 max-md:bg-[#0e141c] max-md:p-4">
-              <p className={`text-[10px] sm:text-xs font-bold tracking-widest uppercase max-md:mb-0.5 ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
+              <p className={`text-xs sm:text-sm font-bold tracking-widest uppercase max-md:mb-0.5 ${isHealthy ? 'text-emerald-400' : 'text-red-400'}`}>
                 {isHealthy ? `What's Working For ${meta.name || 'You'}` : `What This Is Doing To ${meta.name || 'You'}`}
               </p>
-              <p className="md:hidden text-[11px] text-gray-500 leading-snug -mt-1 mb-1">
+              <p className="md:hidden text-sm text-gray-500 leading-snug -mt-1 mb-1">
                 Short bullets — your detailed plan is below.
               </p>
 
@@ -472,8 +472,8 @@ export default function ResultsPage() {
                     transition={{ duration: 0.4, delay: i * 0.08 }}
                     className="flex gap-3 bg-[#0f141c] md:bg-[#121821] p-3 sm:p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/10 md:border-white/5"
                   >
-                    <Icon className={`${insightIconColor} flex-shrink-0 mt-0.5`} size={14} />
-                    <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">{item}</p>
+                    <Icon className={`${insightIconColor} flex-shrink-0 mt-0.5`} size={18} />
+                    <p className="text-gray-300 text-sm sm:text-base leading-relaxed">{item}</p>
                   </motion.div>
                 )
               })}
@@ -483,7 +483,7 @@ export default function ResultsPage() {
 
           {/* TRANSITION */}
           <motion.div {...fadeUp(0.3)} className="text-center mt-10 md:mt-20">
-            <p className="text-emerald-400 font-black tracking-widest text-[10px] sm:text-xs md:text-sm">
+            <p className="text-emerald-400 font-black tracking-widest text-xs sm:text-sm md:text-base">
               {headline.transition}
             </p>
             <div className="mt-4 hidden md:flex justify-center">
@@ -495,10 +495,10 @@ export default function ResultsPage() {
 
           {/* QUICK WINS */}
           <motion.div {...fadeUp(0.35)} className="mt-6 md:mt-16 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/25 rounded-2xl md:rounded-[2rem] p-4 sm:p-6 md:p-8 lg:p-12 max-w-5xl mx-auto max-md:shadow-lg max-md:shadow-black/30">
-            <p className="text-center text-[10px] sm:text-xs tracking-widest text-emerald-400 mb-1 font-bold uppercase">
+            <p className="text-center text-xs sm:text-sm tracking-widest text-emerald-400 mb-1 font-bold uppercase">
               {isHealthy ? 'Optimize & Maintain' : 'Immediate Corrective Actions'}
             </p>
-            <p className="text-center text-gray-500 text-xs sm:text-sm mb-6 md:mb-10">
+            <p className="text-center text-gray-500 text-sm sm:text-base mb-6 md:mb-10">
               {isHealthy
                 ? `Specific to ${meta.name || 'your'}'s current profile`
                 : `Personalized for ${meta.name || 'your'}'s deficiency pattern`}
@@ -514,10 +514,10 @@ export default function ResultsPage() {
                   transition={{ duration: 0.4, delay: i * 0.1 }}
                   className="flex items-start sm:items-center gap-3 sm:gap-4 md:gap-6 group max-md:rounded-xl max-md:bg-black/20 max-md:p-3 max-md:border max-md:border-white/5"
                 >
-                  <div className="w-8 h-8 sm:w-11 sm:h-11 md:w-14 md:h-14 bg-emerald-500 text-black rounded-lg sm:rounded-xl flex items-center justify-center font-black text-xs sm:text-base md:text-lg flex-shrink-0 mt-0.5 sm:mt-0">
+                  <div className="w-8 h-8 sm:w-11 sm:h-11 md:w-14 md:h-14 bg-emerald-500 text-black rounded-lg sm:rounded-xl flex items-center justify-center font-black text-sm sm:text-lg md:text-xl flex-shrink-0 mt-0.5 sm:mt-0">
                     {i + 1}
                   </div>
-                  <p className="text-[11px] sm:text-sm md:text-base lg:text-lg font-semibold flex-1 group-hover:text-emerald-300 transition leading-snug max-md:text-gray-200">
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold flex-1 group-hover:text-emerald-300 transition leading-snug max-md:text-gray-200">
                     {win}
                   </p>
                   <ArrowRight className="text-emerald-400 opacity-40 group-hover:opacity-100 flex-shrink-0 hidden sm:block" size={16} />
@@ -528,7 +528,7 @@ export default function ResultsPage() {
 
           {/* BRIDGE */}
           <motion.div {...fadeUp(0.4)} className="text-center mt-8 md:mt-14 max-w-2xl mx-auto px-2">
-            <p className="text-sm sm:text-base md:text-lg text-gray-300 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 leading-relaxed">
               {isHealthy ? `These habits help — ` : `These steps will help — `}
               <span className="text-white font-semibold">
                 {isHealthy
@@ -536,7 +536,7 @@ export default function ResultsPage() {
                   : `but they won't fully fix ${meta.name || 'your'}'s root deficiencies.`}
               </span>
             </p>
-            <p className="mt-3 text-emerald-400 font-bold text-xs sm:text-sm">
+            <p className="mt-3 text-emerald-400 font-bold text-sm sm:text-base">
               {isHealthy
                 ? `Want a complete optimization plan built for your profile?`
                 : `Want a complete recovery plan built around your exact deficiencies?`}
@@ -561,26 +561,26 @@ export default function ResultsPage() {
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <CheckCircle size={36} strokeWidth={2.5} />
             </div>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black leading-tight">
               Your personalised recovery plan is ready
             </h2>
-            <p className="mt-4 text-gray-600 text-sm sm:text-base leading-relaxed">
+            <p className="mt-4 text-gray-600 text-base sm:text-lg leading-relaxed">
               We emailed your PDF. Open your report page anytime to download or share.
             </p>
-            <p className="mt-2 font-mono text-xs text-gray-500">{readyReportId}</p>
+            <p className="mt-2 font-mono text-sm text-gray-500">{readyReportId}</p>
             <button
               type="button"
               onClick={() =>
                 router.push(`/report/${encodeURIComponent(readyReportId)}`)
               }
-              className="mt-8 w-full max-w-md mx-auto block rounded-xl bg-emerald-600 py-4 font-black text-base text-white shadow-lg hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="mt-8 w-full max-w-md mx-auto block rounded-xl bg-emerald-600 py-4 font-black text-lg text-white shadow-lg hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               Open My PDF Report
             </button>
             <button
               type="button"
               onClick={() => router.push('/detailed-assessment')}
-              className="mt-6 text-sm font-semibold text-emerald-700 underline underline-offset-2"
+              className="mt-6 text-base font-semibold text-emerald-700 underline underline-offset-2"
             >
               Run detailed assessment again for an updated report
             </button>
@@ -590,17 +590,17 @@ export default function ResultsPage() {
         <div className="bg-white text-black px-4 md:px-6 py-10 md:py-24 rounded-t-[1.5rem] md:rounded-t-[3rem]">
           <motion.div {...fadeUp(0)} className="max-w-2xl mx-auto text-center">
             <Loader2 className="mx-auto mb-6 h-14 w-14 animate-spin text-emerald-600" strokeWidth={2.5} />
-            <h2 className="text-2xl sm:text-4xl font-black">Your recovery plan is generating</h2>
-            <p className="mt-4 text-gray-600 text-sm sm:text-base">
+            <h2 className="text-3xl sm:text-5xl font-black">Your recovery plan is generating</h2>
+            <p className="mt-4 text-gray-600 text-base sm:text-lg">
               This usually takes a minute or two. Keep this tab open, or check your email when it is ready.
             </p>
-            <p className="mt-2 font-mono text-xs text-gray-500">{generatingReportId}</p>
+            <p className="mt-2 font-mono text-sm text-gray-500">{generatingReportId}</p>
             <button
               type="button"
               onClick={() =>
                 router.push(`/report/${encodeURIComponent(generatingReportId)}`)
               }
-              className="mt-8 w-full max-w-md mx-auto block rounded-xl bg-emerald-600 py-4 font-black text-white hover:bg-emerald-700 transition"
+              className="mt-8 w-full max-w-md mx-auto block rounded-xl bg-emerald-600 py-4 font-black text-lg text-white hover:bg-emerald-700 transition"
             >
               View live status
             </button>
@@ -612,34 +612,34 @@ export default function ResultsPage() {
 
             {/* LEFT */}
             <motion.div {...fadeUp(0)}>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
                 {offerHeadline.h2}
                 <span className="block text-emerald-600 mt-1 md:mt-2">
                   {offerHeadline.h2sub}
                 </span>
               </h2>
 
-              <p className="mt-4 md:mt-6 text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
+              <p className="mt-4 md:mt-6 text-gray-600 text-base sm:text-lg md:text-xl leading-relaxed">
                 {offerHeadline.desc}
               </p>
 
               <div className="grid grid-cols-3 mt-6 md:mt-12 gap-2 md:gap-10">
                 <div>
-                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">50,000+</p>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Indians helped</p>
+                  <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black">50,000+</p>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-500 leading-tight">Indians helped</p>
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black">94%</p>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Success rate</p>
+                  <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black">94%</p>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-500 leading-tight">Success rate</p>
                 </div>
                 <div>
-                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-emerald-600">₹39</p>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 leading-tight">Recovery PDF</p>
+                  <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-emerald-600">₹39</p>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-500 leading-tight">Recovery PDF</p>
                 </div>
               </div>
 
               <div className="mt-6 md:mt-12 bg-gray-50 p-4 sm:p-5 md:p-8 lg:p-10 rounded-xl sm:rounded-2xl">
-                <p className="text-[10px] sm:text-xs font-bold mb-3 md:mb-6 text-gray-400 uppercase">
+                <p className="text-xs sm:text-sm font-bold mb-3 md:mb-6 text-gray-400 uppercase">
                   {`${meta.name || 'Your'}'s 90-Day Protocol Includes`}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
@@ -654,8 +654,8 @@ export default function ResultsPage() {
                     'Doctor-reviewed & signed off',
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-2">
-                      <CheckCircle size={13} className="text-emerald-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-xs sm:text-sm text-gray-700 leading-snug">{item}</span>
+                      <CheckCircle size={16} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm sm:text-base text-gray-700 leading-snug">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -668,25 +668,25 @@ export default function ResultsPage() {
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-72 h-72 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
 
               <div className="relative z-10">
-                <p className="text-red-500 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-3">
+                <p className="text-red-500 text-xs sm:text-sm font-bold tracking-widest uppercase mb-3">
                   🔥 New User Offer — Expires Soon
                 </p>
 
-                <p className="line-through text-gray-400 text-sm md:text-lg">₹399</p>
+                <p className="line-through text-gray-400 text-base md:text-xl">₹399</p>
                 <p className="text-5xl sm:text-6xl md:text-7xl font-black mt-1">₹39</p>
-                <p className="text-emerald-600 text-xs sm:text-sm font-semibold mt-1.5">
+                <p className="text-emerald-600 text-sm sm:text-base font-semibold mt-1.5">
                   {isHealthy
                     ? `Optimization plan for ${meta.name || 'you'}`
                     : `Recovery plan for ${meta.name || 'you'}'s ${result.primaryDeficiencies?.[0]?.nutrient || 'deficiencies'}`}
                 </p>
 
                 <div className="mt-4 md:mt-6 rounded-xl bg-emerald-50/80 border border-emerald-100 px-3 py-3 sm:px-4">
-                  <p className="text-xs sm:text-sm text-emerald-900 font-medium leading-relaxed">
+                  <p className="text-sm sm:text-base text-emerald-900 font-medium leading-relaxed">
                     Next: a short follow-up questionnaire (about 2 minutes). Your personalised PDF is prepared right after you complete secure PayU checkout (₹39).
                   </p>
                 </div>
 
-                <p className="mt-3 text-xs text-gray-500">
+                <p className="mt-3 text-sm text-gray-500">
                   Trusted by <span className="font-bold text-black">50,000+ Indians</span>
                 </p>
 
@@ -699,7 +699,7 @@ export default function ResultsPage() {
                     )
                   }
                   disabled={isGeneratingReport}
-                  className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-sm sm:text-base md:text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
+                  className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-base sm:text-lg md:text-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
                 >
                   {isGeneratingReport ? (
                     <span className="inline-flex items-center justify-center gap-2">
@@ -711,26 +711,26 @@ export default function ResultsPage() {
                   )}
                 </button>
                 {generateError ? (
-                  <p className="mt-3 text-xs text-red-600 text-center font-medium">{generateError}</p>
+                  <p className="mt-3 text-sm text-red-600 text-center font-medium">{generateError}</p>
                 ) : null}
 
-                <p className="mt-3 text-[10px] sm:text-xs text-gray-400">
+                <p className="mt-3 text-xs sm:text-sm text-gray-400">
                   🔐 Private • Doctor-reviewed format • PDF to your inbox
                 </p>
 
-                <div className="mt-2 flex justify-center gap-2.5 text-[10px] text-gray-400 flex-wrap">
+                <div className="mt-2 flex justify-center gap-2.5 text-xs sm:text-sm text-gray-400 flex-wrap">
                   <span>✔ Quick questions first</span>
                   <span>✔ Instant PDF</span>
                   <span>✔ Secure PayU checkout</span>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                  <FullPlanBookingLink className="w-full bg-black text-white font-bold rounded-xl py-3 text-sm hover:bg-gray-900 transition flex items-center justify-center">
+                  <FullPlanBookingLink className="w-full bg-black text-white font-bold rounded-xl py-3 text-base hover:bg-gray-900 transition flex items-center justify-center">
                     📅 Book the Complete ₹3999 Plan →
                   </FullPlanBookingLink>
                   <button
                     onClick={() => { localStorage.clear(); router.push('/assessment') }}
-                    className="text-gray-400 text-xs mt-3 underline cursor-pointer hover:text-gray-500 transition block mx-auto"
+                    className="text-gray-400 text-sm mt-3 underline cursor-pointer hover:text-gray-500 transition block mx-auto"
                   >
                     Retake assessment
                   </button>
