@@ -707,7 +707,7 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
         max_tokens,
         response_format: { type: 'json_object' },
       }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 60000)),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 45_000)),
     ])
 
     return { content: completion.choices[0]?.message?.content }
@@ -741,9 +741,9 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
     )
   }
 
-  let maxCeiling = 6144
+  let maxCeiling = 4096
 
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const { content } = await tryComplete(maxCeiling)
       if (!content) throw new Error('Empty response from report generation')
@@ -753,10 +753,9 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
       if (!tpmHit) throw e
 
       stringCap = Math.max(350, Math.floor(stringCap * 0.52))
-      maxCeiling = Math.max(3072, Math.floor(maxCeiling * 0.72))
+      maxCeiling = Math.max(2048, Math.floor(maxCeiling * 0.72))
 
-      if (attempt >= 2) await sleep(8000)
-      else await sleep(groqFailureStatus(e) === 429 ? 1500 : 400)
+      await sleep(groqFailureStatus(e) === 429 ? 1200 : 300)
     }
   }
 
@@ -865,7 +864,11 @@ function buildNutritionProfileForEngine(input: GenerateRecoveryReportV2Input): U
     activityLevel: mapActivityLevelForEngine(detailed?.exercise_level),
     goal: mapGoalForEngine(input.goal),
     dietType: mapDietTypeForEngine({ detailedDietType: detailed?.diet_type, freeQuizDiet: input.diet }),
-    medicalConditions: detailed?.medical_conditions ?? [],
+    medicalConditions: Array.isArray(detailed?.medical_conditions)
+      ? detailed.medical_conditions
+          .map((c) => String(c).toLowerCase().replace(/['"]/g, '').trim())
+          .filter(Boolean)
+      : [],
     allergies: detailed?.allergies ?? [],
     primaryDeficiencies: extractPrimaryDeficienciesFromFreeAssessment(input.freeAssessment),
     stressLevel: detailed?.stress_level ?? null,

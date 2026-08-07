@@ -4,8 +4,15 @@
  */
 
 import { MEAL_TYPE_CALORIE_SHARE, calculateDailyTargets } from './targets'
-import { getBoostedHealthTags, isMealEligible, labelForBoostSource, type TagBoost } from './rules'
-import type { Cuisine, HealthTag, MealPlanDayV3, MealPlanMealV3, MealRow, MealType, UserNutritionProfile } from './types'
+import {
+  HEALTHY_MEAL_KEYWORDS,
+  getBoostedHealthTags,
+  isMealEligible,
+  labelForBoostSource,
+  mealContainsExcludedFood,
+  type TagBoost,
+} from './rules'
+import type { HealthTag, MealPlanDayV3, MealPlanMealV3, MealRow, MealType, UserNutritionProfile } from './types'
 
 const MEAL_TYPES_ORDERED: MealType[] = ['breakfast', 'mid_morning_snack', 'lunch', 'evening_snack', 'dinner']
 
@@ -16,17 +23,6 @@ const TIMING_LABEL: Record<MealType, string> = {
   evening_snack: 'Evening Snack',
   dinner: 'Dinner',
 }
-
-const CUISINES_ORDERED: Cuisine[] = [
-  'north_indian',
-  'south_indian',
-  'gujarati',
-  'maharashtrian',
-  'punjabi',
-  'bengali',
-  'rajasthani',
-  'indian_fusion',
-]
 
 const DAYS_PER_WEEK = 7
 
@@ -51,16 +47,6 @@ function mulberry32(seed: number): () => number {
   }
 }
 
-/** Fisher-Yates shuffle driven by the seeded PRNG (deterministic per profile). */
-function seededShuffle<T>(arr: T[], rng: () => number): T[] {
-  const out = [...arr]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
-
 /** Weighted random pick from `candidates` using `weights` (same length/order), via the seeded PRNG. */
 function weightedPick<T>(candidates: T[], weights: number[], rng: () => number): number {
   const total = weights.reduce((sum, w) => sum + w, 0)
@@ -77,7 +63,6 @@ function weightedPick<T>(candidates: T[], weights: number[], rng: () => number):
 function scoreMeal(
   meal: MealRow,
   boostedTags: Map<HealthTag, TagBoost>,
-  desiredCuisine: Cuisine,
   targetCaloriesForSlot: number,
 ): number {
   let score = 1
@@ -87,7 +72,13 @@ function scoreMeal(
     if (boost) score += boost.weight
   }
 
-  if (meal.cuisine === desiredCuisine) score += 2
+  const text = [meal.meal_name, ...meal.ingredients].join(' ').toLowerCase()
+  if (mealContainsExcludedFood(meal)) score = 0
+  else {
+    for (const kw of HEALTHY_MEAL_KEYWORDS) {
+      if (text.includes(kw)) score += 0.75
+    }
+  }
 
   if (targetCaloriesForSlot > 0) {
     const diffRatio = Math.abs(meal.calories - targetCaloriesForSlot) / targetCaloriesForSlot
@@ -141,7 +132,7 @@ function dayFocusLabel(day: number, profile: UserNutritionProfile): string {
  * - Boosts meals whose `health_tags` match the profile's conditions/deficiencies/goal.
  * - Seeded weighted-random selection avoids repeats until the eligible pool for a slot is
  *   exhausted, then resets — so a small catalog still produces a full 7-day plan.
- * - Rotates the "desired" cuisine per day/slot for week-to-week variety.
+ * - Health + condition appropriateness drive selection (not regional cuisine variety).
  */
 export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: MealRow[]): MealPlanDayV3[] {
   const rng = mulberry32(hashSeedToInt(profile.seed || 'default-seed'))
@@ -155,9 +146,6 @@ export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: Mea
       meals.filter((m) => m.meal_type === mealType && isMealEligible(m, profile)),
     )
   }
-
-  // Per-slot cuisine rotation order, shuffled once per profile so different users see different orders.
-  const cuisineRotation = seededShuffle(CUISINES_ORDERED, rng)
 
   // Track which meal ids have already been used per slot this week; reset once a slot's pool is exhausted.
   const usedByType = new Map<MealType, Set<string>>()
@@ -181,10 +169,9 @@ export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: Mea
         candidates = pool
       }
 
-      const desiredCuisine = cuisineRotation[(day - 1 + slotIndex) % cuisineRotation.length]
       const targetCaloriesForSlot = dailyTargets.calories * (MEAL_TYPE_CALORIE_SHARE[mealType] ?? 0.2)
 
-      const weights = candidates.map((m) => scoreMeal(m, boostedTags, desiredCuisine, targetCaloriesForSlot))
+      const weights = candidates.map((m) => scoreMeal(m, boostedTags, targetCaloriesForSlot))
       const pickIndex = weightedPick(candidates, weights, rng)
       const chosen = candidates[pickIndex]
 

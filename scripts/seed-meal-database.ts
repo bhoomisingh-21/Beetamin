@@ -20,6 +20,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
+import { textContainsExcludedFood } from '../lib/meal-engine/rules'
 
 const MEAL_TYPES = ['breakfast', 'mid_morning_snack', 'lunch', 'evening_snack', 'dinner'] as const
 const CUISINES = [
@@ -314,6 +315,13 @@ function validateMeal(raw: RawMeal, seenNamesLower: Set<string>): MealInsertRow 
     return null
   }
 
+  const ingredientList = isStringArray(raw.ingredients) ? raw.ingredients.map((i) => i.trim()).filter(Boolean) : []
+  const mealText = [raw.meal_name.trim(), ...ingredientList].join(' ')
+  const metabolicTags = ['pcos', 'diabetes', 'weight_loss', 'low_gi'] as const
+  if (healthTags.some((t) => (metabolicTags as readonly string[]).includes(t)) && textContainsExcludedFood(mealText)) {
+    return null
+  }
+
   return {
     meal_name: raw.meal_name.trim(),
     meal_type: mealType,
@@ -326,7 +334,7 @@ function validateMeal(raw: RawMeal, seenNamesLower: Set<string>): MealInsertRow 
     fat_g: Math.round(raw.fat_g * 10) / 10,
     fiber_g: Math.round(raw.fiber_g * 10) / 10,
     serving_size: raw.serving_size.trim(),
-    ingredients: raw.ingredients.map((i) => i.trim()).filter(Boolean),
+    ingredients: ingredientList,
     allergens,
     difficulty: raw.difficulty,
     preparation_time_minutes: Math.round(raw.preparation_time_minutes),

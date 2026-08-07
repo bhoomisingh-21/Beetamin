@@ -55,7 +55,7 @@ async function restartGeneratingReport(args: {
       reportId: args.reportId,
       userId: args.userId,
       detailedAssessmentId: args.detailedAssessmentId,
-    }),
+    }).catch((e) => console.error('[generate-report] background generation', e)),
   )
   return true
 }
@@ -308,7 +308,7 @@ export async function POST(req: Request) {
             reportId: rid,
             userId,
             detailedAssessmentId: detailedId,
-          }),
+          }).catch((e) => console.error('[generate-report] background generation', e)),
         )
 
         return NextResponse.json({
@@ -384,7 +384,7 @@ export async function POST(req: Request) {
                 reportId: failed.report_id,
                 userId,
                 detailedAssessmentId: detailedId,
-              }),
+              }).catch((e) => console.error('[generate-report] background generation', e)),
             )
           }
 
@@ -404,7 +404,7 @@ export async function POST(req: Request) {
         reportId,
         userId,
         detailedAssessmentId: detailedId,
-      }),
+      }).catch((e) => console.error('[generate-report] background generation', e)),
     )
 
     return NextResponse.json({

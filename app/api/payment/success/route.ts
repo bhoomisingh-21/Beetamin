@@ -294,7 +294,7 @@ export async function POST(req: NextRequest) {
           reportId: reportSlug,
           userId,
           detailedAssessmentId: assessmentId,
-        }),
+        }).catch((e) => console.error('[payment/success] background generation', e)),
       )
     }
 

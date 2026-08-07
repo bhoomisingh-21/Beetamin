@@ -11,6 +11,9 @@ import { renderRecoveryReportV2PdfBuffer } from '@/lib/render-recovery-report-v2
 import { sendRecoveryReportEmail } from '@/lib/send-report-email'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
+/** Prevent duplicate waitUntil invocations for the same report within one warm lambda. */
+const activeGenerationKeys = new Set<string>()
+
 function readAssessmentMeta(am: unknown): { age?: string; diet?: string; goal?: string } {
   if (!am || typeof am !== 'object') return {}
   const o = am as Record<string, unknown>
@@ -29,12 +32,24 @@ async function markFailed(reportId: string, userId: string) {
     .eq('user_id', userId)
 }
 
+function logTiming(reportId: string, phase: string, startedMs: number) {
+  console.log(`[run-paid-report-generation] ${reportId} ${phase} +${Date.now() - startedMs}ms`)
+}
+
 export async function runPaidReportGeneration(args: {
   reportId: string
   userId: string
   detailedAssessmentId: string
 }) {
   const { reportId, userId, detailedAssessmentId } = args
+  const dedupeKey = `${userId}:${reportId}`
+  if (activeGenerationKeys.has(dedupeKey)) {
+    console.warn('[run-paid-report-generation] duplicate invocation skipped', reportId)
+    return
+  }
+  activeGenerationKeys.add(dedupeKey)
+
+  const pipelineStarted = Date.now()
 
   try {
     const { data: jobRow, error: jobErr } = await supabaseAdmin
@@ -52,6 +67,8 @@ export async function runPaidReportGeneration(args: {
       console.warn('[run-paid-report-generation] skip, status is', jobRow.status)
       return
     }
+
+    logTiming(reportId, 'claimed', pipelineStarted)
 
     const storagePath = `${userId}/${reportId}.pdf`
 
@@ -165,10 +182,12 @@ export async function runPaidReportGeneration(args: {
       reportId,
     }
 
+    const parallelStarted = Date.now()
     const [groqSettled, mealSettled] = await Promise.allSettled([
       generateRecoveryReportV2Payload(reportGenerationInput),
       generateEngineMealPlan(reportGenerationInput),
     ])
+    logTiming(reportId, 'groq+meals parallel', parallelStarted)
 
     if (groqSettled.status === 'rejected') {
       console.error('[run-paid-report-generation] Groq', groqSettled.reason)
@@ -203,6 +222,7 @@ export async function runPaidReportGeneration(args: {
     const deficiencySummary = deficiencySummaryFromV2(reportData)
 
     let pdfBuffer: Buffer
+    const pdfStarted = Date.now()
     try {
       pdfBuffer = await renderRecoveryReportV2PdfBuffer(reportData)
     } catch (pdfError) {
@@ -210,7 +230,9 @@ export async function runPaidReportGeneration(args: {
       await markFailed(reportId, userId)
       return
     }
+    logTiming(reportId, 'pdf render', pdfStarted)
 
+    const uploadStarted = Date.now()
     const { error: upErr } = await supabaseAdmin.storage
       .from('reports')
       .upload(storagePath, pdfBuffer, { contentType: 'application/pdf', upsert: true })
@@ -220,6 +242,7 @@ export async function runPaidReportGeneration(args: {
       await markFailed(reportId, userId)
       return
     }
+    logTiming(reportId, 'storage upload', uploadStarted)
 
     const { error: upRowErr } = await supabaseAdmin
       .from('paid_reports')
@@ -238,30 +261,41 @@ export async function runPaidReportGeneration(args: {
       return
     }
 
-    const { data: signed, error: signErr } = await supabaseAdmin.storage
-      .from('reports')
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+    logTiming(reportId, 'pipeline complete', pipelineStarted)
 
-    if (signErr || !signed?.signedUrl) {
-      console.error('[run-paid-report-generation] signed URL for email', signErr)
-      return
-    }
+    // Email is best-effort — never block the ready status the client polls for.
+    void (async () => {
+      try {
+        const { data: signed, error: signErr } = await supabaseAdmin.storage
+          .from('reports')
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
 
-    const emailResult = await sendRecoveryReportEmail({
-      to: email,
-      name: patientName,
-      reportId,
-      signedDownloadUrl: signed.signedUrl,
-      pdfBuffer,
-    })
+        if (signErr || !signed?.signedUrl) {
+          console.error('[run-paid-report-generation] signed URL for email', signErr)
+          return
+        }
 
-    if (!emailResult.ok) {
-      console.error('[run-paid-report-generation] email', emailResult.error)
-    } else {
-      console.log('[run-paid-report-generation] Email sent successfully')
-    }
+        const emailResult = await sendRecoveryReportEmail({
+          to: email,
+          name: patientName,
+          reportId,
+          signedDownloadUrl: signed.signedUrl,
+          pdfBuffer,
+        })
+
+        if (!emailResult.ok) {
+          console.error('[run-paid-report-generation] email', emailResult.error)
+        } else {
+          console.log('[run-paid-report-generation] Email sent successfully')
+        }
+      } catch (emailErr) {
+        console.error('[run-paid-report-generation] email unhandled', emailErr)
+      }
+    })()
   } catch (e) {
     console.error('[run-paid-report-generation] unhandled', e)
     await markFailed(reportId, userId)
+  } finally {
+    activeGenerationKeys.delete(dedupeKey)
   }
 }

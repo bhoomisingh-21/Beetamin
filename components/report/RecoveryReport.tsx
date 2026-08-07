@@ -396,7 +396,6 @@ function MealNutritionCard({ m }: { m: RecoveryReportV2Data['mealPlan'][number][
         </View>
         <View style={styles.mealNameRow}>
           <Text style={styles.mealNameText}>{m.food}</Text>
-          {m.cuisine ? <Text style={styles.mealCuisineText}>{m.cuisine.replace(/_/g, ' ')}</Text> : null}
         </View>
         {m.servingSize ? (
           <View style={styles.mealServingPill}>

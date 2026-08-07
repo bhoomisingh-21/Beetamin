@@ -8,8 +8,184 @@ import type { HealthTag, MealRow, UserNutritionProfile } from './types'
 /** condition/deficiency/goal keyword -> health tags it should boost, with a relative weight. */
 export type TagBoost = { tag: HealthTag; weight: number; source: string }
 
+/** Fried/refined/sugar-heavy items — excluded for PCOS/diabetes/weight-loss unless clearly a healthy variant. */
+const UNHEALTHY_MEAL_KEYWORDS = [
+  'bhature',
+  'bhatura',
+  'chole bhature',
+  'puri',
+  'ghevar',
+  'misal',
+  'misal pav',
+  'jalebi',
+  'samosa',
+  'pakora',
+  'pakoda',
+  'vada pav',
+  'pav bhaji',
+  'kachori',
+  'ladoo',
+  'laddu',
+  'gulab jamun',
+  'barfi',
+  'malpua',
+  'rabri',
+  'deep fried',
+  'deep-fried',
+  'fried bread',
+  'maida puri',
+  'bedmi',
+  'bedmi puri',
+  'medu vada',
+  'medu vada',
+  'bajra puri',
+  'methi puri',
+  'shakarpara',
+  'soan papdi',
+  'mysore pak',
+  'halwa',
+  'sheera',
+  'suji halwa',
+  'motichoor',
+  'imarti',
+  'balushahi',
+  'peda',
+  'sandesh',
+  'rasgulla',
+  'rasmalai',
+  'kulfi',
+  'falooda',
+] as const
+
+/** If present alongside an unhealthy keyword, the dish may still be acceptable (e.g. baked samosa). */
+const HEALTHY_VARIANT_HINTS = [
+  'baked',
+  'steamed',
+  'grilled',
+  'roasted',
+  'air-fried',
+  'air fried',
+  'whole wheat',
+  'multigrain',
+  'ragi',
+  'millet',
+  'oats',
+  'sprout',
+  'salad',
+  'soup',
+  'dal',
+  'sabzi',
+  'light',
+  'low oil',
+  'no oil',
+] as const
+
+/** Keywords that earn extra score when present in meal name/ingredients. */
+export const HEALTHY_MEAL_KEYWORDS = [
+  'dal',
+  'sprout',
+  'grilled',
+  'steamed',
+  'salad',
+  'oats',
+  'ragi',
+  'millet',
+  'bajra',
+  'jowar',
+  'quinoa',
+  'paneer tikka',
+  'tandoori',
+  'soup',
+  'chilla',
+  'moong',
+  'besan',
+  'sabzi',
+  'palak',
+  'methi',
+  'lauki',
+  'turai',
+  'fish',
+  'chicken breast',
+  'egg white',
+  'curd',
+  'chaas',
+  'buttermilk',
+] as const
+
+/** Tags a meal must carry when the profile needs strict metabolic/PCOS-safe filtering. */
+const STRICT_PROFILE_REQUIRED_TAGS: HealthTag[] = [
+  'pcos',
+  'low_gi',
+  'high_fiber',
+  'gut_friendly',
+  'weight_loss',
+  'low_carb',
+  'high_protein',
+  'heart_healthy',
+  'diabetes',
+]
+
+function normalizeToken(value: string): string {
+  return value.toLowerCase().replace(/['"]/g, '').trim()
+}
+
+function mealTextBlob(meal: MealRow): string {
+  return [meal.meal_name, ...meal.ingredients, meal.preparation_notes ?? ''].join(' ').toLowerCase()
+}
+
+function textContainsKeyword(text: string, keyword: string): boolean {
+  return text.includes(keyword)
+}
+
+/** True when free text (name + ingredients) matches fried/junk patterns without a healthy variant hint. */
+export function textContainsExcludedFood(text: string): boolean {
+  const lower = text.toLowerCase()
+  const hit = UNHEALTHY_MEAL_KEYWORDS.some((kw) => textContainsKeyword(lower, kw))
+  if (!hit) return false
+  return !HEALTHY_VARIANT_HINTS.some((hint) => lower.includes(hint))
+}
+
+/** True when this meal row should be hard-excluded for metabolic/PCOS profiles (handles bad DB tags). */
+export function mealContainsExcludedFood(meal: MealRow): boolean {
+  return textContainsExcludedFood(mealTextBlob(meal))
+}
+
+export function profileRequiresStrictHealthFiltering(profile: UserNutritionProfile): boolean {
+  const conditions = profile.medicalConditions.map(normalizeToken)
+  if (conditions.some((c) => c.includes('pcos') || c.includes('pcod'))) return true
+  if (conditions.some((c) => c.includes('diabetes'))) return true
+  if (profile.goal === 'weight_loss') return true
+  return false
+}
+
+/** Hard gate for PCOS/diabetes/weight-loss: require appropriate health tags and reject junk/fried rows. */
+export function mealMeetsStrictHealthRequirements(meal: MealRow, profile: UserNutritionProfile): boolean {
+  if (!profileRequiresStrictHealthFiltering(profile)) return true
+  if (mealContainsExcludedFood(meal)) return false
+  return meal.health_tags.some((t) => STRICT_PROFILE_REQUIRED_TAGS.includes(t))
+}
+
 const CONDITION_TAG_RULES: { pattern: string; boosts: Array<{ tag: HealthTag; weight: number }> }[] = [
-  { pattern: 'pcos', boosts: [{ tag: 'low_gi', weight: 3 }, { tag: 'gut_friendly', weight: 2 }, { tag: 'high_fiber', weight: 2 }] },
+  {
+    pattern: 'pcos',
+    boosts: [
+      { tag: 'pcos', weight: 4 },
+      { tag: 'low_gi', weight: 3 },
+      { tag: 'gut_friendly', weight: 2 },
+      { tag: 'high_fiber', weight: 2 },
+      { tag: 'weight_loss', weight: 2 },
+    ],
+  },
+  {
+    pattern: 'pcod',
+    boosts: [
+      { tag: 'pcos', weight: 4 },
+      { tag: 'low_gi', weight: 3 },
+      { tag: 'gut_friendly', weight: 2 },
+      { tag: 'high_fiber', weight: 2 },
+      { tag: 'weight_loss', weight: 2 },
+    ],
+  },
   { pattern: 'diabetes', boosts: [{ tag: 'low_gi', weight: 3 }, { tag: 'low_carb', weight: 3 }, { tag: 'high_fiber', weight: 1 }] },
   { pattern: 'thyroid', boosts: [{ tag: 'iron_rich', weight: 2 }, { tag: 'high_fiber', weight: 2 }, { tag: 'low_gi', weight: 1 }] },
   { pattern: 'hypertension', boosts: [{ tag: 'heart_healthy', weight: 3 }, { tag: 'low_gi', weight: 1 }] },
@@ -39,8 +215,10 @@ const GOAL_TAG_RULES: Record<string, Array<{ tag: HealthTag; weight: number }>> 
 
 /** Human-readable label for a boost source, used to build the per-meal `reason` string. */
 export function labelForBoostSource(source: string): string {
+  const clean = normalizeToken(source).replace(/\s+/g, '_')
   const known: Record<string, string> = {
     pcos: 'PCOS',
+    pcod: 'PCOS',
     diabetes: 'diabetes management',
     thyroid: 'thyroid support',
     hypertension: 'heart-healthy eating',
@@ -52,7 +230,7 @@ export function labelForBoostSource(source: string): string {
     weight_loss: 'your weight-loss goal',
     muscle_gain: 'your muscle-gain goal',
   }
-  return known[source] ?? source
+  return known[clean] ?? clean.replace(/_/g, ' ')
 }
 
 /**
@@ -62,7 +240,7 @@ export function labelForBoostSource(source: string): string {
 export function getBoostedHealthTags(profile: UserNutritionProfile): Map<HealthTag, TagBoost> {
   const boosts: TagBoost[] = []
 
-  const conditionsLower = profile.medicalConditions.map((c) => c.toLowerCase())
+  const conditionsLower = profile.medicalConditions.map(normalizeToken)
   for (const rule of CONDITION_TAG_RULES) {
     if (conditionsLower.some((c) => c.includes(rule.pattern))) {
       for (const b of rule.boosts) boosts.push({ tag: b.tag, weight: b.weight, source: rule.pattern })
@@ -127,10 +305,11 @@ export function mealMatchesDietType(meal: MealRow, dietType: UserNutritionProfil
   return meal.diet_type.includes(dietType)
 }
 
-/** Hard filter: diet-type compatible AND allergen-safe. Meals failing this must never be selectable. */
+/** Hard filter: diet-type compatible, allergen-safe, and condition-appropriate. Meals failing this must never be selectable. */
 export function isMealEligible(meal: MealRow, profile: UserNutritionProfile): boolean {
   if (!meal.is_active) return false
   if (!mealMatchesDietType(meal, profile.dietType)) return false
   if (mealViolatesAllergies(meal, profile.allergies)) return false
+  if (!mealMeetsStrictHealthRequirements(meal, profile)) return false
   return true
 }

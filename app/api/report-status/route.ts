@@ -1,12 +1,25 @@
 import { auth } from '@clerk/nextjs/server'
+import { waitUntil } from '@vercel/functions'
 import { NextResponse } from 'next/server'
+import { REPORT_GENERATION_STALE_MS } from '@/lib/report-generation-config'
+import { runPaidReportGeneration } from '@/lib/run-paid-report-generation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
+const restartedReports = new Set<string>()
+
+function isStaleGenerating(row: { status?: string | null; created_at?: string | null }): boolean {
+  if (String(row.status) !== 'generating') return false
+  const createdAt = row.created_at ? new Date(row.created_at).getTime() : NaN
+  return Number.isFinite(createdAt) && Date.now() - createdAt > REPORT_GENERATION_STALE_MS
+}
+
 /**
  * Status polling for /report/[reportId]. Uses Clerk + service role so the UI
  * works even when browser Supabase + RLS / JWT template are not configured.
+ *
+ * If a job is stale (waitUntil dropped on Vercel), re-queue generation once per report.
  */
 export async function GET(req: Request) {
   try {
@@ -31,6 +44,21 @@ export async function GET(req: Request) {
     if (error) {
       console.error('[report-status]', error)
       return NextResponse.json({ error: 'Could not load report' }, { status: 502 })
+    }
+
+    if (row && isStaleGenerating(row) && row.assessment_id) {
+      const restartKey = `${userId}:${reportId}`
+      if (!restartedReports.has(restartKey)) {
+        restartedReports.add(restartKey)
+        console.warn('[report-status] stale generating — re-queue', reportId)
+        waitUntil(
+          runPaidReportGeneration({
+            reportId,
+            userId,
+            detailedAssessmentId: String(row.assessment_id),
+          }).catch((e) => console.error('[report-status] background generation', e)),
+        )
+      }
     }
 
     return NextResponse.json({
