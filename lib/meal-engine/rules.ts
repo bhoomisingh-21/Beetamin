@@ -93,6 +93,7 @@ export const HEALTHY_MEAL_KEYWORDS = [
   'bajra',
   'jowar',
   'quinoa',
+  'quinoa bowl',
   'paneer tikka',
   'tandoori',
   'soup',
@@ -100,6 +101,7 @@ export const HEALTHY_MEAL_KEYWORDS = [
   'moong',
   'besan',
   'sabzi',
+  'vegetable',
   'palak',
   'methi',
   'lauki',
@@ -110,7 +112,93 @@ export const HEALTHY_MEAL_KEYWORDS = [
   'curd',
   'chaas',
   'buttermilk',
+  'upma',
+  'khichdi',
+  'brown rice',
+  'whole wheat',
+  'smoothie bowl',
+  'bowl',
 ] as const
+
+/**
+ * Regional specialty / festival / street-food dish patterns — penalized at selection time so
+ * everyday clinical staples win even when legacy DB rows carry the right health tags.
+ */
+const REGIONAL_SPECIALTY_KEYWORDS = [
+  'undhiyu',
+  'undhiya',
+  'shukto',
+  'shukton',
+  'misal',
+  'misal pav',
+  'dhokla',
+  'khaman',
+  'khandvi',
+  'handvo',
+  'patra',
+  'fafda',
+  'thepla',
+  'biryani',
+  'biriyani',
+  'pulao',
+  'pulav',
+  'pilaf',
+  'thali',
+  'chettinad',
+  'avial',
+  'kosha mangsho',
+  'machher jhol',
+  'shorshe ilish',
+  'pani puri',
+  'gol gappa',
+  'sev puri',
+  'bhel puri',
+  'bhel',
+  'dabeli',
+  'pav bhaji',
+  'vada pav',
+  'modak',
+  'puran poli',
+  'basundi',
+  'shrikhand',
+  'chole bhature',
+  'litti chokha',
+  'dal baati',
+  'ker sangri',
+  'pakhala',
+  'roshogolla',
+  'rasgulla',
+  'sandesh',
+  'mishti doi',
+  'payesh',
+  'pitha',
+  'pav',
+] as const
+
+/** When these appear alongside a regional keyword, treat it as an acceptable everyday variant. */
+const REGIONAL_SPECIALTY_EXCEPTIONS = [
+  'steamed',
+  'moong dal',
+  'whole wheat',
+  'multigrain',
+  'methi',
+  'oats',
+  'ragi',
+  'brown rice',
+  'millet',
+  'grilled',
+  'baked',
+  'low oil',
+  'no oil',
+  'salad',
+  'sprout',
+] as const
+
+/** Score penalty per regional-specialty keyword hit (applied in generate-plan scoring). */
+export const REGIONAL_SPECIALTY_PENALTY = 28
+
+/** Score boost per everyday healthy keyword hit (applied in generate-plan scoring). */
+export const HEALTHY_KEYWORD_BOOST = 4
 
 /** Tags a meal must carry when the profile needs strict metabolic/PCOS-safe filtering. */
 const STRICT_PROFILE_REQUIRED_TAGS: HealthTag[] = [
@@ -139,6 +227,39 @@ export function textContainsExcludedFood(text: string): boolean {
   const hit = UNHEALTHY_MEAL_KEYWORDS.some((kw) => textContainsKeyword(lower, kw))
   if (!hit) return false
   return !HEALTHY_VARIANT_HINTS.some((hint) => lower.includes(hint))
+}
+
+/** True when text looks like a regional specialty / festival dish rather than everyday clinical food. */
+export function textContainsRegionalSpecialty(text: string): boolean {
+  const lower = text.toLowerCase()
+  const hit = REGIONAL_SPECIALTY_KEYWORDS.some((kw) => textContainsKeyword(lower, kw))
+  if (!hit) return false
+  return !REGIONAL_SPECIALTY_EXCEPTIONS.some((hint) => lower.includes(hint))
+}
+
+export function mealContainsRegionalSpecialty(meal: MealRow): boolean {
+  return textContainsRegionalSpecialty(mealTextBlob(meal))
+}
+
+/** Count of healthy-keyword hits in meal text — used for selection scoring boosts. */
+export function countHealthyMealKeywords(text: string): number {
+  const lower = text.toLowerCase()
+  let count = 0
+  for (const kw of HEALTHY_MEAL_KEYWORDS) {
+    if (textContainsKeyword(lower, kw)) count += 1
+  }
+  return count
+}
+
+/** Count of regional-specialty keyword hits — used for selection scoring penalties. */
+export function countRegionalSpecialtyKeywords(text: string): number {
+  const lower = text.toLowerCase()
+  if (REGIONAL_SPECIALTY_EXCEPTIONS.some((hint) => lower.includes(hint))) return 0
+  let count = 0
+  for (const kw of REGIONAL_SPECIALTY_KEYWORDS) {
+    if (textContainsKeyword(lower, kw)) count += 1
+  }
+  return count
 }
 
 /** True when this meal row should be hard-excluded for metabolic/PCOS profiles (handles bad DB tags). */

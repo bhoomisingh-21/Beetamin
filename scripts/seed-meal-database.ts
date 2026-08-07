@@ -1,5 +1,5 @@
 /**
- * One-time seed: author ~150-200 diverse, authentic Indian meals into public.meals via Groq,
+ * One-time seed: author ~150-200 everyday clinical nutrition meals into public.meals via Groq,
  * validated against the schema, then inserted with the Supabase service role key.
  *
  * The `meals` table + RLS must already exist — run supabase/migrations/20260802120000_create_meals_table.sql
@@ -20,9 +20,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
-import { textContainsExcludedFood } from '../lib/meal-engine/rules'
+import { textContainsExcludedFood, textContainsRegionalSpecialty } from '../lib/meal-engine/rules'
 
 const MEAL_TYPES = ['breakfast', 'mid_morning_snack', 'lunch', 'evening_snack', 'dinner'] as const
+/** Internal DB metadata only — not shown to users; meals must NOT be cuisine-branded in names. */
 const CUISINES = [
   'north_indian',
   'south_indian',
@@ -32,6 +33,17 @@ const CUISINES = [
   'bengali',
   'rajasthani',
   'indian_fusion',
+] as const
+/** Clinical nutrition focus areas used to batch-generate everyday therapeutic meals. */
+const HEALTH_FOCUS_AREAS = [
+  'iron_recovery',
+  'pcos_metabolic',
+  'high_fiber_gut',
+  'high_protein_lean',
+  'low_gi_diabetes',
+  'calcium_bone',
+  'vitamin_d_support',
+  'balanced_clinical',
 ] as const
 const DIET_TYPES = ['vegetarian', 'vegan', 'jain', 'non_vegetarian'] as const
 const HEALTH_TAGS = [
@@ -56,6 +68,7 @@ const KNOWN_ALLERGENS = ['nuts', 'dairy', 'gluten', 'soy', 'eggs', 'seafood']
 
 type MealType = (typeof MEAL_TYPES)[number]
 type Cuisine = (typeof CUISINES)[number]
+type HealthFocus = (typeof HEALTH_FOCUS_AREAS)[number]
 
 /** kcal sanity band per meal type — anything outside this is rejected. */
 const CALORIE_RANGE: Record<MealType, [number, number]> = {
@@ -134,15 +147,15 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// ─── batch plan: 5 meal types x 8 cuisines, grouped ~3 combos / call ───────
+// ─── batch plan: 5 meal types x 8 health-focus areas, grouped ~3 combos / call ───────
 
-type ComboCount = { mealType: MealType; cuisine: Cuisine; count: number }
+type ComboCount = { mealType: MealType; healthFocus: HealthFocus; count: number }
 
 function buildComboMatrix(): ComboCount[] {
   const combos: ComboCount[] = []
   for (const mealType of MEAL_TYPES) {
-    for (const cuisine of CUISINES) {
-      combos.push({ mealType, cuisine, count: 5 })
+    for (const healthFocus of HEALTH_FOCUS_AREAS) {
+      combos.push({ mealType, healthFocus, count: 5 })
     }
   }
   return combos
@@ -162,9 +175,19 @@ function getGroq(): Groq {
   return new Groq({ apiKey: key })
 }
 
-const SYSTEM_PROMPT = `You are a senior Indian clinical nutritionist authoring a tagged meal database for a nutrition app.
-Author authentic, everyday Indian home-kitchen dishes only — no western dishes (no quinoa, avocado, kale, oats bowls, sandwiches, pasta, pizza, smoothie bowls, protein bars).
-Every meal must be realistic, commonly eaten in Indian households, and match the assigned meal_type + cuisine exactly.
+const SYSTEM_PROMPT = `You are a senior Indian clinical nutritionist authoring a tagged meal database for a personalized nutrition SaaS.
+Author EVERYDAY CLINICAL NUTRITION meals — therapeutic, home-kitchen dishes that a dietitian would prescribe for deficiencies, PCOS, diabetes, and gut health.
+
+CRITICAL — meal_name format (this is what patients see on their diet plan):
+- Lead with the health purpose, NOT the regional dish name.
+- Good: "Iron-Rich Spinach Moong Dal with Brown Rice", "Low-GI Ragi Vegetable Upma", "PCOS-Friendly Moong Sprout Salad", "High-Fiber Oats Moong Chilla with Curd"
+- Bad: "Undhiyu", "Misal Pav", "Shukto", "Dhokla", "Bengali Thali", "Gujarati Thali", "Chettinad Chicken", "Pav Bhaji", "Biryani", "Puran Poli"
+- NEVER use festival foods, street food, regional thali names, sweets, or "food tourism" dish names.
+- NEVER brand meals by state/cuisine in the name (no "Bengali", "Gujarati", "Maharashtrian", "Punjabi" in meal_name).
+- Use simple Indian home ingredients: dal, moong, ragi, oats, millets, sprouts, steamed/grilled vegetables, curd, buttermilk, brown rice, whole wheat roti.
+- No western dishes (no quinoa bowls, avocado, kale, sandwiches, pasta, pizza, protein bars).
+
+The "cuisine" field is internal metadata only — assign one of ${JSON.stringify(CUISINES)} based on ingredient style, but meal_name must NEVER read like a regional specialty.
 
 CALORIE TARGETS (per serving) — every meal MUST land inside its meal_type's range:
 - breakfast: 150-450 kcal
@@ -172,9 +195,9 @@ CALORIE TARGETS (per serving) — every meal MUST land inside its meal_type's ra
 - lunch: 350-700 kcal
 - evening_snack: 80-250 kcal
 - dinner: 350-700 kcal
-For lunch and dinner this means meal_name must describe a COMPLETE plate/thali, not one side dish alone — combine 2-4 components under one meal_name (e.g. "Dal Tadka + Jeera Rice + Aloo Gobi + Roti", "Fish Curry + Steamed Rice + Salad") so the total naturally lands in 350-700 kcal. A single roti or a single side dish alone is NEVER a valid lunch/dinner entry. Snacks (mid_morning_snack, evening_snack) must be one complete snack portion (e.g. "Poha", "Sprouts Chaat", "Roasted Chana") — never a lone accompaniment like papad or pickle by itself.
+For lunch and dinner, meal_name must describe a COMPLETE therapeutic plate (2-4 components) so total calories land in 350-700 kcal — e.g. "High-Protein Masoor Dal + Brown Rice + Steamed Lauki Sabzi + 2 Whole Wheat Roti". A single side dish alone is NEVER valid lunch/dinner.
 
-TAG VALUES ARE CLOSED VOCABULARIES — use ONLY the exact strings listed for diet_type, health_tags, allergens, and difficulty below. Never invent new tag names (no "high_carb", "low_fiber", "gluten_free", etc. — if none of the listed health_tags genuinely fit, still pick the closest honest one(s) rather than inventing new ones).
+TAG VALUES ARE CLOSED VOCABULARIES — use ONLY the exact strings listed for diet_type, health_tags, allergens, and difficulty below.
 
 Output STRICT JSON only, matching this exact shape (no markdown, no comments, no extra keys):
 {
@@ -183,37 +206,38 @@ Output STRICT JSON only, matching this exact shape (no markdown, no comments, no
       "meal_name": string,
       "meal_type": one of ${JSON.stringify(MEAL_TYPES)},
       "cuisine": one of ${JSON.stringify(CUISINES)},
-      "diet_type": array of one or more of ${JSON.stringify(DIET_TYPES)} (a dish can satisfy several — e.g. a fruit bowl is vegan+vegetarian+jain),
-      "health_tags": array of one or more of ${JSON.stringify(HEALTH_TAGS)} (only tags this dish genuinely supports),
-      "calories": number (kcal per serving),
+      "diet_type": array of one or more of ${JSON.stringify(DIET_TYPES)},
+      "health_tags": array of one or more of ${JSON.stringify(HEALTH_TAGS)},
+      "calories": number,
       "protein_g": number,
       "carbs_g": number,
       "fat_g": number,
       "fiber_g": number,
-      "serving_size": string (Indian units, e.g. "2 rotis + 1 katori sabzi", "1 bowl (200g)"),
+      "serving_size": string,
       "ingredients": array of 3-8 short ingredient names,
-      "allergens": array, subset of ${JSON.stringify(KNOWN_ALLERGENS)} (empty array if none apply),
+      "allergens": array, subset of ${JSON.stringify(KNOWN_ALLERGENS)},
       "difficulty": one of ${JSON.stringify(DIFFICULTIES)},
       "preparation_time_minutes": integer 5-90,
       "preparation_notes": short 1-line prep tip or null,
-      "hydration_tip": short 1-line hydration tip relevant to this meal (never null),
-      "healthy_alternative": short 1-line lighter/healthier swap suggestion, or null if this dish is already the healthy version
+      "hydration_tip": short 1-line hydration tip (never null),
+      "healthy_alternative": short 1-line lighter swap, or null if already optimal
     }
   ]
 }
 
 Rules:
-- jain diet_type means NO onion, garlic, or root vegetables (potato/carrot/beetroot etc.) — only tag jain if the dish genuinely has none of these.
-- non_vegetarian diet_type only for dishes containing egg/chicken/fish/meat/seafood; never tag vegetarian/vegan/jain on those.
-- Calories must be realistic for an Indian home portion of that meal_type.
-- health_tags must be honest — e.g. only tag "high_protein" if protein_g is genuinely high for the calorie count; only tag "diabetes" or "low_gi" if the dish is genuinely low-glycemic (whole grains, dal, vegetables — not white-rice/refined-sugar heavy dishes).
-- Every meal_name in a single response must be unique.`
+- jain diet_type: NO onion, garlic, or root vegetables — only tag jain if genuinely compliant.
+- non_vegetarian only for egg/chicken/fish/meat dishes.
+- health_tags must be honest — tag "pcos"/"low_gi" only for genuinely low-glycemic whole-food meals.
+- Every meal_name in a single response must be unique.
+- Match the assigned health_focus with appropriate health_tags and ingredients.`
 
 function buildUserPrompt(combos: ComboCount[]): string {
   const lines = combos.map(
-    (c) => `- meal_type="${c.mealType}", cuisine="${c.cuisine}": produce exactly ${c.count} distinct meals`,
+    (c) =>
+      `- meal_type="${c.mealType}", health_focus="${c.healthFocus}": produce exactly ${c.count} distinct clinical nutrition meals`,
   )
-  return `Generate meals for these assignments. Return ONLY the JSON object described in the system prompt — the "meals" array must contain exactly ${combos.reduce((s, c) => s + c.count, 0)} objects, matching each assignment's meal_type and cuisine exactly:\n${lines.join('\n')}`
+  return `Generate everyday clinical nutrition meals for these assignments. Return ONLY the JSON object — the "meals" array must contain exactly ${combos.reduce((s, c) => s + c.count, 0)} objects, matching each assignment's meal_type exactly:\n${lines.join('\n')}`
 }
 
 async function requestMealBatch(groq: Groq, combos: ComboCount[]): Promise<RawMeal[]> {
@@ -321,6 +345,10 @@ function validateMeal(raw: RawMeal, seenNamesLower: Set<string>): MealInsertRow 
   if (healthTags.some((t) => (metabolicTags as readonly string[]).includes(t)) && textContainsExcludedFood(mealText)) {
     return null
   }
+  if (textContainsRegionalSpecialty(mealText)) return null
+  if (/bengali|gujarati|maharashtrian|punjabi|rajasthani|chettinad|thali|street/i.test(raw.meal_name.trim())) {
+    return null
+  }
 
   return {
     meal_name: raw.meal_name.trim(),
@@ -413,7 +441,7 @@ async function main() {
       break
     }
 
-    const comboDesc = combos.map((c) => `${c.mealType}/${c.cuisine}`).join(', ')
+    const comboDesc = combos.map((c) => `${c.mealType}/${c.healthFocus}`).join(', ')
     console.log(`\nBatch ${batchNum}/${comboBatches.length} — requesting meals for: ${comboDesc}`)
 
     let rawMeals: RawMeal[]
@@ -463,7 +491,7 @@ async function main() {
     console.log(`Inserted ${inserted}/${validatedRows.length}`)
   }
 
-  console.log(`\nDone. Inserted ${inserted} tagged Indian meals into public.meals.`)
+  console.log(`\nDone. Inserted ${inserted} clinical nutrition meals into public.meals.`)
 }
 
 main().catch((err) => {

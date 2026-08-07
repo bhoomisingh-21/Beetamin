@@ -625,6 +625,24 @@ export const styles = StyleSheet.create({
   gutIssueLine: { fontSize: 8.5, color: COLORS.gray700, marginBottom: 3, lineHeight: 1.4 },
   mealPlanCompactRow: { paddingVertical: 4 },
   mealPlanCompactHeader: { paddingVertical: 5, paddingHorizontal: 6 },
+  /** Clinical dietitian weekly plan layout */
+  dietPlanDayBlock: { marginBottom: 12 },
+  dietPlanDayHeader: {
+    backgroundColor: COLORS.dark,
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginBottom: 4,
+  },
+  dietPlanDayTitle: { fontSize: 9, fontWeight: 700, color: COLORS.white },
+  dietPlanDayFocus: { fontSize: 7.5, color: COLORS.emerald, marginTop: 2, fontWeight: 700 },
+  dietPlanTableHeader: { paddingVertical: 5, paddingHorizontal: 6, marginTop: 2 },
+  dietPlanMealRow: { paddingVertical: 5, paddingHorizontal: 6 },
+  dietPlanTimingCell: { fontSize: 7.5, color: COLORS.gray500, lineHeight: 1.35 },
+  dietPlanMealCell: { fontSize: 8.5, fontWeight: 700, color: COLORS.gray900, lineHeight: 1.35 },
+  dietPlanTargetCell: { fontSize: 8, fontWeight: 700, color: COLORS.emerald, lineHeight: 1.35 },
+  dietPlanKcalCell: { fontSize: 8, fontWeight: 700, color: COLORS.gray900, lineHeight: 1.35 },
+  dietPlanMacroCell: { fontSize: 7, color: COLORS.gray700, lineHeight: 1.35 },
   /** Nutrition-card meal layout (lib/meal-engine output) */
   mealNutritionCard: {
     backgroundColor: COLORS.cardBg,

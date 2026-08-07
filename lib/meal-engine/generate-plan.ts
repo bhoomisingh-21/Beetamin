@@ -9,11 +9,15 @@
 import { MEAL_TYPE_CALORIE_SHARE, calculateDailyTargets } from './targets'
 import {
   buildSelectionTargets,
+  countHealthyMealKeywords,
+  countRegionalSpecialtyKeywords,
   getBoostedHealthTags,
   isMealEligible,
   mealContainsExcludedFood,
   mealMatchesTarget,
   mealTextBlob,
+  HEALTHY_KEYWORD_BOOST,
+  REGIONAL_SPECIALTY_PENALTY,
   type SelectionTarget,
   type TagBoost,
 } from './rules'
@@ -37,6 +41,23 @@ const SLOT_TARGET_INGREDIENT_WEIGHT = 7
 const SECONDARY_TARGET_TAG_WEIGHT = 4
 const SECONDARY_TARGET_INGREDIENT_WEIGHT = 3
 const GLOBAL_BOOST_WEIGHT = 2
+const HEALTHY_KEYWORD_CAP = 6
+
+/** Short health-quality labels derived from meal tags for PDF display names. */
+const TAG_DISPLAY_LABELS: Partial<Record<HealthTag, string>> = {
+  iron_rich: 'Iron-Rich',
+  low_gi: 'Low-GI',
+  high_fiber: 'High-Fiber',
+  high_protein: 'High-Protein',
+  pcos: 'PCOS-Friendly',
+  gut_friendly: 'Gut-Support',
+  calcium_rich: 'Calcium-Rich',
+  vitamin_d: 'Vitamin D',
+  vitamin_b12: 'B12-Support',
+  heart_healthy: 'Heart-Healthy',
+  weight_loss: 'Weight-Loss',
+  diabetes: 'Diabetes-Safe',
+}
 
 /** Deterministically turns an arbitrary seed string into a 32-bit integer for tie-breaking. */
 function hashSeedToInt(seed: string): number {
@@ -104,6 +125,12 @@ function scoreMealForSlot(
     else if (diffRatio <= 0.3) score += 1
   }
 
+  const healthyHits = Math.min(HEALTHY_KEYWORD_CAP, countHealthyMealKeywords(text))
+  score += healthyHits * HEALTHY_KEYWORD_BOOST
+
+  const regionalHits = countRegionalSpecialtyKeywords(text)
+  score -= regionalHits * REGIONAL_SPECIALTY_PENALTY
+
   return Math.max(0, score)
 }
 
@@ -170,18 +197,51 @@ function buildReason(
   }
 }
 
+function buildHealthFocusedDisplayName(
+  meal: MealRow,
+  slotTarget: SelectionTarget,
+  deficiencyTarget: string,
+  mealType: MealType,
+): string {
+  const raw = meal.meal_name.trim()
+
+  if (/iron-rich|low-gi|pcos-friendly|high-fiber|high-protein|vitamin|clinical|recovery/i.test(raw)) {
+    return raw
+  }
+
+  const tagLabels = meal.health_tags
+    .map((tag) => TAG_DISPLAY_LABELS[tag])
+    .filter((label): label is string => Boolean(label))
+    .slice(0, 2)
+
+  const healthPrefix = tagLabels.length > 0 ? tagLabels.join(' ') : slotTarget.label
+  const timingShort = TIMING_LABEL[mealType]
+  const targets = deficiencyTarget
+    .split('+')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(' + ')
+
+  const simplified = raw
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (targets) {
+    return `${healthPrefix} ${timingShort}: ${simplified} (${targets})`
+  }
+  return `${healthPrefix} ${timingShort}: ${simplified}`
+}
+
 function dayFocusLabel(day: number, targets: SelectionTarget[]): string {
-  if (targets.length === 0) return 'Steady, balanced nutrition for your day.'
+  if (targets.length === 0) return 'Balanced nutrition'
 
   const dayStartIndex = ((day - 1) * MEAL_TYPES_ORDERED.length) % targets.length
   const dayTargets = MEAL_TYPES_ORDERED.map((_, i) => targets[(dayStartIndex + i) % targets.length])
   const uniqueLabels = [...new Set(dayTargets.map((t) => t.label))]
 
-  if (uniqueLabels.length === 1) {
-    return `${uniqueLabels[0]} — every meal today is scored to support this priority.`
-  }
-
-  return `${uniqueLabels.slice(0, 3).join(', ')} — meals rotate through your top deficiency and condition targets.`
+  return uniqueLabels.slice(0, 3).join(', ')
 }
 
 /**
@@ -270,10 +330,11 @@ export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: Mea
       used.add(chosen.id)
 
       const { deficiencyTarget, reason } = buildReason(chosen, slotTarget, selectionTargets)
+      const displayName = buildHealthFocusedDisplayName(chosen, slotTarget, deficiencyTarget, mealType)
 
       dayMeals.push({
         timing: TIMING_LABEL[mealType],
-        mealName: chosen.meal_name,
+        mealName: displayName,
         mealType,
         cuisine: chosen.cuisine,
         calories: chosen.calories,
