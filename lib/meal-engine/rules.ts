@@ -262,6 +262,79 @@ export function countRegionalSpecialtyKeywords(text: string): number {
   return count
 }
 
+/** Regional cuisine labels that should never lead a patient-facing meal title. */
+const REGIONAL_CUISINE_LABELS = [
+  'north indian',
+  'south indian',
+  'gujarati',
+  'maharashtrian',
+  'punjabi',
+  'bengali',
+  'rajasthani',
+  'indian fusion',
+  'madras',
+  'kerala',
+  'goan',
+  'chettinad',
+  'awadhi',
+  'mughlai',
+  'hyderabadi',
+  'kashmiri',
+  'assamese',
+  'odia',
+  'bihari',
+] as const
+
+const CLINICAL_LABEL_PATTERN =
+  /high-fiber|gut-support|low-gi|pcos-friendly|iron-rich|high-protein|calcium|vitamin|b12|heart-healthy|weight-loss|diabetes|clinical|breakfast|lunch|dinner|snack|recovery|support/i
+
+/** Strip health-label chains, timing prefixes, regional tags, and trailing (PCOS) from DB meal names. */
+export function cleanMealDisplayName(rawName: string): string {
+  let name = rawName.trim()
+  if (!name) return rawName.trim()
+
+  for (let pass = 0; pass < 3; pass++) {
+    const colon = name.match(/^([^:]{4,100}):\s*(.+)$/)
+    if (!colon) break
+    if (CLINICAL_LABEL_PATTERN.test(colon[1])) {
+      name = colon[2].trim()
+      continue
+    }
+    break
+  }
+
+  name = name.replace(
+    /^((iron-rich|low-gi|pcos-friendly|high-fiber|high-protein|gut-support|calcium-rich|vitamin d|b12-support|heart-healthy|weight-loss|diabetes-safe|clinical)\s+)+/gi,
+    '',
+  )
+  name = name.replace(/^(breakfast|lunch|dinner|mid-morning snack|evening snack):\s*/i, '')
+
+  for (let i = 0; i < 2; i++) {
+    for (const region of REGIONAL_CUISINE_LABELS) {
+      const re = new RegExp(`^${region.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+`, 'i')
+      if (re.test(name)) {
+        name = name.replace(re, '')
+        break
+      }
+    }
+  }
+
+  name = name.replace(/\s*\([^)]*\)\s*$/, '')
+  name = name.replace(/\s+/g, ' ').trim()
+
+  return name || rawName.trim()
+}
+
+/** Penalize meals whose title still carries a regional cuisine label. */
+export function countRegionalCuisineLabelHits(text: string): number {
+  const lower = text.toLowerCase()
+  let count = 0
+  for (const region of REGIONAL_CUISINE_LABELS) {
+    if (lower.startsWith(`${region} `) || lower.includes(` ${region} `)) count += 1
+  }
+  return count
+}
+
 /** True when this meal row should be hard-excluded for metabolic/PCOS profiles (handles bad DB tags). */
 export function mealContainsExcludedFood(meal: MealRow): boolean {
   return textContainsExcludedFood(mealTextBlob(meal))

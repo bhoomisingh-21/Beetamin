@@ -640,6 +640,7 @@ export const styles = StyleSheet.create({
   dietPlanMealRow: { paddingVertical: 5, paddingHorizontal: 6 },
   dietPlanTimingCell: { fontSize: 7.5, color: COLORS.gray500, lineHeight: 1.35 },
   dietPlanMealCell: { fontSize: 8.5, fontWeight: 700, color: COLORS.gray900, lineHeight: 1.35 },
+  dietPlanMealReason: { fontSize: 7, color: COLORS.gray500, marginTop: 2, lineHeight: 1.35 },
   dietPlanTargetCell: { fontSize: 8, fontWeight: 700, color: COLORS.emerald, lineHeight: 1.35 },
   dietPlanKcalCell: { fontSize: 8, fontWeight: 700, color: COLORS.gray900, lineHeight: 1.35 },
   dietPlanMacroCell: { fontSize: 7, color: COLORS.gray700, lineHeight: 1.35 },

@@ -391,9 +391,12 @@ function DietPlanMealRow({
       : '—'
 
   return (
-    <View style={[styles.tableRow, styles.dietPlanMealRow, altRow ? styles.tableRowAlt : {}]} wrap={false}>
+    <View style={[styles.tableRow, styles.dietPlanMealRow, altRow ? styles.tableRowAlt : {}]}>
       <Text style={[styles.dietPlanTimingCell, { width: '18%' }]}>{m.timing}</Text>
-      <Text style={[styles.dietPlanMealCell, { width: '38%' }]}>{m.food}</Text>
+      <View style={{ width: '38%' }}>
+        <Text style={styles.dietPlanMealCell}>{m.food}</Text>
+        {m.reason ? <Text style={styles.dietPlanMealReason}>{m.reason}</Text> : null}
+      </View>
       <Text style={[styles.dietPlanTargetCell, { width: '16%' }]}>{m.deficiencyTarget}</Text>
       <Text style={[styles.dietPlanKcalCell, { width: '10%' }]}>{kcal}</Text>
       <Text style={[styles.dietPlanMacroCell, { width: '18%' }]}>{macros}</Text>
@@ -470,9 +473,14 @@ function MealCompactRow({
   altRow: boolean
 }) {
   return (
-    <View style={[styles.tableRow, styles.mealPlanCompactRow, altRow ? styles.tableRowAlt : {}]} wrap={false}>
+    <View style={[styles.tableRow, styles.mealPlanCompactRow, altRow ? styles.tableRowAlt : {}]}>
       <Text style={[styles.tableCellText, { width: '24%', fontSize: 7.5, color: COLORS.gray500 }]}>{m.timing}</Text>
-      <Text style={[styles.tableCellText, { width: '48%', fontSize: 8.5, fontWeight: 700 }]}>{m.food}</Text>
+      <View style={{ width: '48%' }}>
+        <Text style={[styles.tableCellText, { fontSize: 8.5, fontWeight: 700 }]}>{m.food}</Text>
+        {m.reason ? (
+          <Text style={[styles.tableCellText, { fontSize: 7, color: COLORS.gray500, marginTop: 2 }]}>{m.reason}</Text>
+        ) : null}
+      </View>
       <Text style={[styles.tableCellText, { width: '28%', fontSize: 8, color: COLORS.emerald, fontWeight: 700 }]}>
         {m.deficiencyTarget}
       </Text>
