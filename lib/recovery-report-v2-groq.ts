@@ -8,6 +8,10 @@ import type {
   NutritionGoal,
   UserNutritionProfile,
 } from '@/lib/meal-engine/types'
+import {
+  normalizeDeficiencyList,
+  type CanonicalDeficiency,
+} from '@/lib/meal-engine/rules'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
 import type {
   GutHealthV2,
@@ -853,6 +857,105 @@ function extractPrimaryDeficienciesFromFreeAssessment(freeAssessment: unknown): 
   return out
 }
 
+/** Infer likely deficiency targets from detailed lifestyle answers when free quiz names are sparse. */
+function inferDeficienciesFromDetailed(detailed?: DetailedAssessmentPayload | null): CanonicalDeficiency[] {
+  if (!detailed) return []
+
+  const inferred: CanonicalDeficiency[] = []
+  const add = (key: CanonicalDeficiency) => {
+    if (!inferred.includes(key)) inferred.push(key)
+  }
+
+  const symptoms = detailed.physical_symptoms ?? []
+  if (symptoms.includes('hair_loss')) {
+    add('iron')
+    add('biotin')
+    add('zinc')
+  }
+  if (symptoms.includes('brittle_nails')) {
+    add('biotin')
+    add('calcium')
+  }
+  if (symptoms.includes('dry_skin')) {
+    add('omega3')
+    add('vitamin_a')
+    add('vitamin_e')
+  }
+  if (symptoms.includes('dry_eyes')) {
+    add('omega3')
+    add('vitamin_a')
+  }
+  if (symptoms.includes('gum_issues')) {
+    add('vitamin_c')
+  }
+  if (symptoms.includes('joint_issues')) {
+    add('omega3')
+    add('vitamin_d')
+  }
+  if (symptoms.includes('colds')) {
+    add('vitamin_c')
+    add('zinc')
+    add('vitamin_d')
+  }
+  if (symptoms.includes('headaches')) {
+    add('magnesium')
+  }
+
+  const digestion = (detailed.digestion ?? '').toLowerCase()
+  if (/poor|bloat|acid|constip|gas|irregular|reflux|heartburn/.test(digestion)) {
+    add('gut_health')
+  }
+
+  const sun = (detailed.sun_exposure ?? '').toLowerCase()
+  if (/rare|minimal|indoor|little|low|never|seldom/.test(sun)) {
+    add('vitamin_d')
+  }
+
+  const food = detailed.food_frequency
+  if (food) {
+    if (food.green_vegetables === 'rarely') add('iron')
+    if (food.dairy === 'rarely') {
+      add('calcium')
+      add('vitamin_b12')
+    }
+    if (food.eggs_or_nonveg === 'rarely') {
+      add('vitamin_b12')
+      add('protein')
+    }
+    if (food.nuts_seeds === 'rarely') {
+      add('magnesium')
+      add('omega3')
+      add('zinc')
+    }
+    if (food.fresh_fruits === 'rarely') add('vitamin_c')
+  }
+
+  const dietType = (detailed.diet_type ?? '').toLowerCase()
+  if (dietType.includes('vegan') || dietType.includes('vegetarian')) {
+    add('vitamin_b12')
+    add('iron')
+    add('omega3')
+  }
+
+  return inferred
+}
+
+function buildPrimaryDeficienciesForEngine(input: GenerateRecoveryReportV2Input): string[] {
+  const fromFree = extractPrimaryDeficienciesFromFreeAssessment(input.freeAssessment)
+  const normalizedFree = normalizeDeficiencyList(fromFree)
+  const inferred = inferDeficienciesFromDetailed(input.detailed)
+
+  const merged: CanonicalDeficiency[] = []
+  const seen = new Set<string>()
+  for (const key of [...normalizedFree, ...inferred]) {
+    if (!seen.has(key)) {
+      seen.add(key)
+      merged.push(key)
+    }
+  }
+  return merged
+}
+
 function buildNutritionProfileForEngine(input: GenerateRecoveryReportV2Input): UserNutritionProfile {
   const detailed = input.detailed
 
@@ -870,11 +973,9 @@ function buildNutritionProfileForEngine(input: GenerateRecoveryReportV2Input): U
           .filter(Boolean)
       : [],
     allergies: detailed?.allergies ?? [],
-    primaryDeficiencies: extractPrimaryDeficienciesFromFreeAssessment(input.freeAssessment),
+    primaryDeficiencies: buildPrimaryDeficienciesForEngine(input),
     stressLevel: detailed?.stress_level ?? null,
     weightLossTargetKg: detailed?.weight_loss_target_kg ?? null,
-    // Stable per-report, differs-per-user seed. patientName + reportId is the best identifier pair
-    // in scope here; falls back to a fixed string only if both are somehow missing.
     seed: `${input.patientName || 'patient'}|${input.reportId || 'no-report-id'}`,
   }
 }

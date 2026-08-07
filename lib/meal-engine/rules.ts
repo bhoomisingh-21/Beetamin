@@ -129,10 +129,6 @@ function normalizeToken(value: string): string {
   return value.toLowerCase().replace(/['"]/g, '').trim()
 }
 
-function mealTextBlob(meal: MealRow): string {
-  return [meal.meal_name, ...meal.ingredients, meal.preparation_notes ?? ''].join(' ').toLowerCase()
-}
-
 function textContainsKeyword(text: string, keyword: string): boolean {
   return text.includes(keyword)
 }
@@ -192,6 +188,373 @@ const CONDITION_TAG_RULES: { pattern: string; boosts: Array<{ tag: HealthTag; we
   { pattern: 'heart', boosts: [{ tag: 'heart_healthy', weight: 3 }] },
 ]
 
+/** Canonical deficiency keys used internally after normalizing free-quiz nutrient names. */
+export type CanonicalDeficiency =
+  | 'iron'
+  | 'vitamin_d'
+  | 'vitamin_b12'
+  | 'calcium'
+  | 'magnesium'
+  | 'omega3'
+  | 'zinc'
+  | 'vitamin_c'
+  | 'biotin'
+  | 'folate'
+  | 'vitamin_a'
+  | 'vitamin_e'
+  | 'b_vitamins'
+  | 'protein'
+  | 'gut_health'
+
+export type SelectionTarget = {
+  id: string
+  label: string
+  kind: 'deficiency' | 'condition' | 'goal' | 'symptom'
+  healthTagBoosts: Array<{ tag: HealthTag; weight: number }>
+  ingredientKeywords: string[]
+}
+
+type DeficiencySpec = {
+  label: string
+  healthTagBoosts: Array<{ tag: HealthTag; weight: number }>
+  ingredientKeywords: string[]
+}
+
+const DEFICIENCY_SPECS: Record<CanonicalDeficiency, DeficiencySpec> = {
+  iron: {
+    label: 'Iron',
+    healthTagBoosts: [
+      { tag: 'iron_rich', weight: 5 },
+      { tag: 'high_protein', weight: 2 },
+    ],
+    ingredientKeywords: [
+      'spinach',
+      'palak',
+      'methi',
+      'beetroot',
+      'chukandar',
+      'dal',
+      'masoor',
+      'moong',
+      'rajma',
+      'chana',
+      'sprout',
+      'jaggery',
+      'gur',
+      'pomegranate',
+      'anar',
+      'dates',
+      'khajoor',
+      'sesame',
+      'til',
+    ],
+  },
+  vitamin_d: {
+    label: 'Vitamin D',
+    healthTagBoosts: [{ tag: 'vitamin_d', weight: 5 }],
+    ingredientKeywords: ['egg', 'anda', 'mushroom', 'ghee', 'fortified', 'fish', 'bangda', 'rohu', 'katla', 'sunflower'],
+  },
+  vitamin_b12: {
+    label: 'Vitamin B12',
+    healthTagBoosts: [{ tag: 'vitamin_b12', weight: 5 }],
+    ingredientKeywords: ['egg', 'anda', 'curd', 'dahi', 'paneer', 'milk', 'doodh', 'fortified', 'nutritional yeast'],
+  },
+  calcium: {
+    label: 'Calcium',
+    healthTagBoosts: [{ tag: 'calcium_rich', weight: 5 }],
+    ingredientKeywords: ['curd', 'dahi', 'paneer', 'milk', 'doodh', 'ragi', 'sesame', 'til', 'amaranth', 'rajgeera', 'moringa'],
+  },
+  magnesium: {
+    label: 'Magnesium',
+    healthTagBoosts: [{ tag: 'gut_friendly', weight: 1 }],
+    ingredientKeywords: [
+      'almond',
+      'badam',
+      'walnut',
+      'akhrot',
+      'pumpkin seed',
+      'sunflower seed',
+      'ragi',
+      'bajra',
+      'spinach',
+      'palak',
+      'banana',
+      'kela',
+      'cocoa',
+      'dark chocolate',
+    ],
+  },
+  omega3: {
+    label: 'Omega-3',
+    healthTagBoosts: [{ tag: 'heart_healthy', weight: 2 }],
+    ingredientKeywords: [
+      'fish',
+      'bangda',
+      'rohu',
+      'katla',
+      'sardine',
+      'surmai',
+      'flax',
+      'alsi',
+      'walnut',
+      'akhrot',
+      'chia',
+      'hemp',
+    ],
+  },
+  zinc: {
+    label: 'Zinc',
+    healthTagBoosts: [{ tag: 'high_protein', weight: 2 }],
+    ingredientKeywords: ['pumpkin seed', 'sesame', 'til', 'chana', 'moong', 'peanut', 'mungfali', 'cashew', 'kaju', 'lentil', 'dal'],
+  },
+  vitamin_c: {
+    label: 'Vitamin C',
+    healthTagBoosts: [{ tag: 'iron_rich', weight: 1 }],
+    ingredientKeywords: ['amla', 'lemon', 'nimbu', 'orange', 'mosambi', 'guava', 'amrud', 'tomato', 'bell pepper', 'capsicum', 'coriander'],
+  },
+  biotin: {
+    label: 'Biotin',
+    healthTagBoosts: [{ tag: 'high_protein', weight: 1 }],
+    ingredientKeywords: ['egg', 'anda', 'almond', 'badam', 'walnut', 'sweet potato', 'shakarkandi', 'spinach', 'palak', 'peanut'],
+  },
+  folate: {
+    label: 'Folate',
+    healthTagBoosts: [{ tag: 'iron_rich', weight: 2 }],
+    ingredientKeywords: ['spinach', 'palak', 'methi', 'beetroot', 'chukandar', 'moong', 'sprout', 'rajma', 'chana', 'lettuce'],
+  },
+  vitamin_a: {
+    label: 'Vitamin A',
+    healthTagBoosts: [{ tag: 'gut_friendly', weight: 1 }],
+    ingredientKeywords: ['carrot', 'gajar', 'sweet potato', 'shakarkandi', 'spinach', 'palak', 'mango', 'aam', 'papaya', 'pumpkin', 'kaddu'],
+  },
+  vitamin_e: {
+    label: 'Vitamin E',
+    healthTagBoosts: [{ tag: 'heart_healthy', weight: 1 }],
+    ingredientKeywords: ['almond', 'badam', 'sunflower seed', 'peanut', 'mungfali', 'spinach', 'palak', 'mustard', 'sarson'],
+  },
+  b_vitamins: {
+    label: 'B vitamins',
+    healthTagBoosts: [{ tag: 'vitamin_b12', weight: 2 }, { tag: 'high_protein', weight: 2 }],
+    ingredientKeywords: ['dal', 'whole grain', 'brown rice', 'oats', 'egg', 'anda', 'peanut', 'mungfali', 'spinach', 'palak', 'nutritional yeast'],
+  },
+  protein: {
+    label: 'Protein',
+    healthTagBoosts: [{ tag: 'high_protein', weight: 5 }, { tag: 'muscle_gain', weight: 2 }],
+    ingredientKeywords: ['paneer', 'dal', 'chana', 'moong', 'rajma', 'soya', 'tofu', 'egg', 'anda', 'chicken', 'fish', 'sprout', 'quinoa'],
+  },
+  gut_health: {
+    label: 'Gut health',
+    healthTagBoosts: [{ tag: 'gut_friendly', weight: 5 }, { tag: 'high_fiber', weight: 3 }],
+    ingredientKeywords: ['curd', 'dahi', 'chaas', 'buttermilk', 'ferment', 'sprout', 'fiber', 'oats', 'isabgol', 'psyllium', 'ginger', 'adrak'],
+  },
+}
+
+const CONDITION_SPECS: Record<string, Omit<SelectionTarget, 'id' | 'kind'>> = {
+  pcos: {
+    label: 'PCOS',
+    healthTagBoosts: [
+      { tag: 'pcos', weight: 5 },
+      { tag: 'low_gi', weight: 4 },
+      { tag: 'high_fiber', weight: 3 },
+      { tag: 'gut_friendly', weight: 2 },
+    ],
+    ingredientKeywords: ['millet', 'bajra', 'ragi', 'jowar', 'oats', 'sprout', 'dal', 'palak', 'methi'],
+  },
+  pcod: {
+    label: 'PCOS',
+    healthTagBoosts: [
+      { tag: 'pcos', weight: 5 },
+      { tag: 'low_gi', weight: 4 },
+      { tag: 'high_fiber', weight: 3 },
+      { tag: 'gut_friendly', weight: 2 },
+    ],
+    ingredientKeywords: ['millet', 'bajra', 'ragi', 'jowar', 'oats', 'sprout', 'dal', 'palak', 'methi'],
+  },
+  diabetes: {
+    label: 'Diabetes',
+    healthTagBoosts: [
+      { tag: 'low_gi', weight: 5 },
+      { tag: 'low_carb', weight: 4 },
+      { tag: 'high_fiber', weight: 3 },
+      { tag: 'diabetes', weight: 3 },
+    ],
+    ingredientKeywords: ['millet', 'bajra', 'ragi', 'oats', 'dal', 'vegetable', 'sabzi'],
+  },
+  thyroid: {
+    label: 'Thyroid',
+    healthTagBoosts: [
+      { tag: 'thyroid', weight: 4 },
+      { tag: 'iron_rich', weight: 2 },
+      { tag: 'high_fiber', weight: 2 },
+      { tag: 'low_gi', weight: 2 },
+    ],
+    ingredientKeywords: ['brazil nut', 'selenium', 'iodine', 'seaweed', 'ragi', 'oats', 'dal'],
+  },
+  hypertension: {
+    label: 'Heart health',
+    healthTagBoosts: [{ tag: 'heart_healthy', weight: 5 }, { tag: 'low_gi', weight: 2 }],
+    ingredientKeywords: ['beetroot', 'chukandar', 'garlic', 'lasan', 'oats', 'fish', 'leafy'],
+  },
+  heart: {
+    label: 'Heart health',
+    healthTagBoosts: [{ tag: 'heart_healthy', weight: 5 }],
+    ingredientKeywords: ['oats', 'fish', 'walnut', 'akhrot', 'flax', 'alsi', 'olive'],
+  },
+}
+
+const GOAL_SPECS: Partial<Record<string, Omit<SelectionTarget, 'id' | 'kind'>>> = {
+  weight_loss: {
+    label: 'Weight loss',
+    healthTagBoosts: [
+      { tag: 'weight_loss', weight: 4 },
+      { tag: 'high_protein', weight: 3 },
+      { tag: 'high_fiber', weight: 3 },
+    ],
+    ingredientKeywords: ['sprout', 'dal', 'salad', 'grilled', 'steamed', 'oats', 'millet'],
+  },
+  muscle_gain: {
+    label: 'Muscle gain',
+    healthTagBoosts: [
+      { tag: 'muscle_gain', weight: 4 },
+      { tag: 'high_protein', weight: 5 },
+    ],
+    ingredientKeywords: ['paneer', 'egg', 'anda', 'chicken', 'fish', 'dal', 'soya', 'peanut'],
+  },
+  energy: {
+    label: 'Energy',
+    healthTagBoosts: [{ tag: 'iron_rich', weight: 2 }, { tag: 'high_protein', weight: 2 }],
+    ingredientKeywords: ['dates', 'khajoor', 'jaggery', 'gur', 'banana', 'kela', 'sprout', 'dal'],
+  },
+  immunity: {
+    label: 'Immunity',
+    healthTagBoosts: [{ tag: 'gut_friendly', weight: 2 }],
+    ingredientKeywords: ['amla', 'turmeric', 'haldi', 'ginger', 'adrak', 'garlic', 'lasan', 'curd', 'dahi'],
+  },
+  hormones: {
+    label: 'Hormone balance',
+    healthTagBoosts: [{ tag: 'pcos', weight: 2 }, { tag: 'high_fiber', weight: 2 }],
+    ingredientKeywords: ['flax', 'alsi', 'sesame', 'til', 'moringa', 'ashwagandha'],
+  },
+}
+
+/** Maps free-quiz nutrient strings ("Vitamin D3", "Ferritin (Iron Storage)") to canonical keys. */
+export function normalizeDeficiencyKey(raw: string): CanonicalDeficiency | null {
+  const t = raw.toLowerCase().trim()
+  if (!t) return null
+
+  if (/ferritin|iron|anaemi|anemi|hemoglobin|haemoglobin/.test(t)) return 'iron'
+  if (/vitamin d|vitamin d3|\bd3\b|25-oh|cholecalciferol/.test(t)) return 'vitamin_d'
+  if (/b12|b-12|methylcobalamin|cobalamin|vitamin b12/.test(t)) return 'vitamin_b12'
+  if (/calcium/.test(t)) return 'calcium'
+  if (/magnesium/.test(t)) return 'magnesium'
+  if (/omega|dha|epa|fish oil/.test(t)) return 'omega3'
+  if (/zinc/.test(t)) return 'zinc'
+  if (/vitamin c|ascorbic/.test(t)) return 'vitamin_c'
+  if (/biotin/.test(t)) return 'biotin'
+  if (/folate|folic|\bb9\b/.test(t)) return 'folate'
+  if (/vitamin a|retinol|beta.?carotene/.test(t)) return 'vitamin_a'
+  if (/vitamin e|tocopherol/.test(t)) return 'vitamin_e'
+  if (/b1|thiamin|b3|niacin|b5|pantothen|b6|b vitamin|b-complex|b complex/.test(t)) return 'b_vitamins'
+  if (/protein|amino acid/.test(t)) return 'protein'
+  if (/gut|digest|microbiome|probiotic/.test(t)) return 'gut_health'
+
+  const underscored = t.replace(/\s+/g, '_')
+  if (underscored in DEFICIENCY_SPECS) return underscored as CanonicalDeficiency
+
+  return null
+}
+
+/** Deduped canonical deficiency keys from raw nutrient names. */
+export function normalizeDeficiencyList(rawList: string[]): CanonicalDeficiency[] {
+  const out: CanonicalDeficiency[] = []
+  const seen = new Set<string>()
+  for (const raw of rawList) {
+    const key = normalizeDeficiencyKey(raw)
+    if (key && !seen.has(key)) {
+      seen.add(key)
+      out.push(key)
+    }
+  }
+  return out
+}
+
+function deficiencyToTarget(key: CanonicalDeficiency): SelectionTarget {
+  const spec = DEFICIENCY_SPECS[key]
+  return { id: key, kind: 'deficiency', ...spec }
+}
+
+function conditionToTarget(condition: string): SelectionTarget | null {
+  const lower = normalizeToken(condition)
+  for (const [pattern, spec] of Object.entries(CONDITION_SPECS)) {
+    if (lower.includes(pattern)) {
+      return { id: pattern, kind: 'condition', ...spec }
+    }
+  }
+  return null
+}
+
+/**
+ * Ordered rotation targets for meal selection — deficiencies first, then conditions, then goal.
+ * Each slot picks from this list so the week cycles through the user's actual needs.
+ */
+export function buildSelectionTargets(profile: UserNutritionProfile): SelectionTarget[] {
+  const targets: SelectionTarget[] = []
+  const seen = new Set<string>()
+
+  const add = (t: SelectionTarget) => {
+    if (seen.has(t.id)) return
+    seen.add(t.id)
+    targets.push(t)
+  }
+
+  for (const key of normalizeDeficiencyList(profile.primaryDeficiencies)) {
+    add(deficiencyToTarget(key))
+  }
+
+  for (const condition of profile.medicalConditions) {
+    const t = conditionToTarget(condition)
+    if (t) add(t)
+  }
+
+  if (profile.goal && GOAL_SPECS[profile.goal]) {
+    const spec = GOAL_SPECS[profile.goal]!
+    add({ id: profile.goal, kind: 'goal', ...spec })
+  }
+
+  if (targets.length === 0) {
+    add({
+      id: 'balanced',
+      kind: 'symptom',
+      label: 'Balanced nutrition',
+      healthTagBoosts: [{ tag: 'high_fiber', weight: 2 }, { tag: 'gut_friendly', weight: 1 }],
+      ingredientKeywords: ['dal', 'vegetable', 'sabzi', 'sprout'],
+    })
+  }
+
+  return targets
+}
+
+export function mealTextBlob(meal: MealRow): string {
+  return [meal.meal_name, ...meal.ingredients, meal.preparation_notes ?? ''].join(' ').toLowerCase()
+}
+
+/** How strongly a meal matches a selection target (tags + ingredient keywords). */
+export function mealMatchesTargetStrength(meal: MealRow, target: SelectionTarget): number {
+  let strength = 0
+  for (const { tag, weight } of target.healthTagBoosts) {
+    if (meal.health_tags.includes(tag)) strength += weight
+  }
+  const text = mealTextBlob(meal)
+  for (const kw of target.ingredientKeywords) {
+    if (text.includes(kw)) strength += 2
+  }
+  return strength
+}
+
+export function mealMatchesTarget(meal: MealRow, target: SelectionTarget): boolean {
+  return mealMatchesTargetStrength(meal, target) >= 2
+}
+
 const DEFICIENCY_TAG_RULES: Record<string, HealthTag> = {
   iron: 'iron_rich',
   vitamin_d: 'vitamin_d',
@@ -199,6 +562,15 @@ const DEFICIENCY_TAG_RULES: Record<string, HealthTag> = {
   vitamin_b12: 'vitamin_b12',
   b12: 'vitamin_b12',
   calcium: 'calcium_rich',
+  magnesium: 'gut_friendly',
+  omega3: 'heart_healthy',
+  zinc: 'high_protein',
+  vitamin_c: 'iron_rich',
+  biotin: 'high_protein',
+  folate: 'iron_rich',
+  gut_health: 'gut_friendly',
+  b_vitamins: 'vitamin_b12',
+  protein: 'high_protein',
 }
 
 const GOAL_TAG_RULES: Record<string, Array<{ tag: HealthTag; weight: number }>> = {
@@ -219,16 +591,31 @@ export function labelForBoostSource(source: string): string {
   const known: Record<string, string> = {
     pcos: 'PCOS',
     pcod: 'PCOS',
-    diabetes: 'diabetes management',
-    thyroid: 'thyroid support',
-    hypertension: 'heart-healthy eating',
-    heart: 'heart health',
-    iron: 'iron deficiency',
-    vitamin_d: 'vitamin D deficiency',
-    vitamin_b12: 'vitamin B12 deficiency',
-    calcium: 'calcium needs',
-    weight_loss: 'your weight-loss goal',
-    muscle_gain: 'your muscle-gain goal',
+    diabetes: 'Diabetes',
+    thyroid: 'Thyroid',
+    hypertension: 'Heart health',
+    heart: 'Heart health',
+    iron: 'Iron',
+    vitamin_d: 'Vitamin D',
+    vitamin_b12: 'Vitamin B12',
+    calcium: 'Calcium',
+    magnesium: 'Magnesium',
+    omega3: 'Omega-3',
+    zinc: 'Zinc',
+    vitamin_c: 'Vitamin C',
+    biotin: 'Biotin',
+    folate: 'Folate',
+    vitamin_a: 'Vitamin A',
+    vitamin_e: 'Vitamin E',
+    b_vitamins: 'B vitamins',
+    protein: 'Protein',
+    gut_health: 'Gut health',
+    weight_loss: 'Weight loss',
+    muscle_gain: 'Muscle gain',
+    energy: 'Energy',
+    immunity: 'Immunity',
+    hormones: 'Hormone balance',
+    balanced: 'Balanced nutrition',
   }
   return known[clean] ?? clean.replace(/_/g, ' ')
 }
@@ -247,10 +634,11 @@ export function getBoostedHealthTags(profile: UserNutritionProfile): Map<HealthT
     }
   }
 
-  const deficienciesLower = profile.primaryDeficiencies.map((d) => d.toLowerCase().replace(/\s+/g, '_'))
-  for (const deficiency of deficienciesLower) {
-    const tag = DEFICIENCY_TAG_RULES[deficiency] ?? DEFICIENCY_TAG_RULES[deficiency.replace(/_/g, ' ')]
-    if (tag) boosts.push({ tag, weight: 3, source: deficiency })
+  for (const key of normalizeDeficiencyList(profile.primaryDeficiencies)) {
+    const spec = DEFICIENCY_SPECS[key]
+    for (const b of spec.healthTagBoosts) {
+      boosts.push({ tag: b.tag, weight: b.weight, source: key })
+    }
   }
 
   if (profile.goal && GOAL_TAG_RULES[profile.goal]) {

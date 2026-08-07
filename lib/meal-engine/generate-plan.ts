@@ -1,15 +1,20 @@
 /**
  * Deterministic weekly meal plan generator. Pure function over data passed in — no network/DB
  * calls here; fetching `meals` from Supabase is the integration layer's job.
+ *
+ * Selection is deficiency/condition-driven: each meal slot targets a rotating priority need
+ * (iron, PCOS, vitamin D, etc.) and picks the highest-scoring eligible meal — not random variety.
  */
 
 import { MEAL_TYPE_CALORIE_SHARE, calculateDailyTargets } from './targets'
 import {
-  HEALTHY_MEAL_KEYWORDS,
+  buildSelectionTargets,
   getBoostedHealthTags,
   isMealEligible,
-  labelForBoostSource,
   mealContainsExcludedFood,
+  mealMatchesTarget,
+  mealTextBlob,
+  type SelectionTarget,
   type TagBoost,
 } from './rules'
 import type { HealthTag, MealPlanDayV3, MealPlanMealV3, MealRow, MealType, UserNutritionProfile } from './types'
@@ -26,9 +31,16 @@ const TIMING_LABEL: Record<MealType, string> = {
 
 const DAYS_PER_WEEK = 7
 
-/** Deterministically turns an arbitrary seed string into a 32-bit integer for the PRNG. */
+/** Slot-level weight multiplier for the day's primary target vs secondary profile needs. */
+const SLOT_TARGET_TAG_WEIGHT = 10
+const SLOT_TARGET_INGREDIENT_WEIGHT = 7
+const SECONDARY_TARGET_TAG_WEIGHT = 4
+const SECONDARY_TARGET_INGREDIENT_WEIGHT = 3
+const GLOBAL_BOOST_WEIGHT = 2
+
+/** Deterministically turns an arbitrary seed string into a 32-bit integer for tie-breaking. */
 function hashSeedToInt(seed: string): number {
-  let h = 2166136261 // FNV-1a offset basis
+  let h = 2166136261
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i)
     h = Math.imul(h, 16777619)
@@ -36,7 +48,7 @@ function hashSeedToInt(seed: string): number {
   return h >>> 0
 }
 
-/** mulberry32 — small, fast, seeded PRNG. Same seed always produces the same sequence. */
+/** mulberry32 — small, fast, seeded PRNG. Used only to break ties among equally good meals. */
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0
   return function next() {
@@ -47,96 +59,173 @@ function mulberry32(seed: number): () => number {
   }
 }
 
-/** Weighted random pick from `candidates` using `weights` (same length/order), via the seeded PRNG. */
-function weightedPick<T>(candidates: T[], weights: number[], rng: () => number): number {
-  const total = weights.reduce((sum, w) => sum + w, 0)
-  if (total <= 0) return Math.floor(rng() * candidates.length)
-
-  let roll = rng() * total
-  for (let i = 0; i < candidates.length; i++) {
-    roll -= weights[i]
-    if (roll <= 0) return i
-  }
-  return candidates.length - 1
+function slotTargetIndex(day: number, slotIndex: number, targetCount: number): number {
+  if (targetCount === 0) return 0
+  return ((day - 1) * MEAL_TYPES_ORDERED.length + slotIndex) % targetCount
 }
 
-function scoreMeal(
+function scoreMealForSlot(
   meal: MealRow,
-  boostedTags: Map<HealthTag, TagBoost>,
+  slotTarget: SelectionTarget,
+  allTargets: SelectionTarget[],
+  globalBoosts: Map<HealthTag, TagBoost>,
   targetCaloriesForSlot: number,
 ): number {
-  let score = 1
+  if (mealContainsExcludedFood(meal)) return 0
 
-  for (const tag of meal.health_tags) {
-    const boost = boostedTags.get(tag)
-    if (boost) score += boost.weight
+  let score = 0
+  const text = mealTextBlob(meal)
+
+  for (const { tag, weight } of slotTarget.healthTagBoosts) {
+    if (meal.health_tags.includes(tag)) score += weight * SLOT_TARGET_TAG_WEIGHT
+  }
+  for (const kw of slotTarget.ingredientKeywords) {
+    if (text.includes(kw)) score += SLOT_TARGET_INGREDIENT_WEIGHT
   }
 
-  const text = [meal.meal_name, ...meal.ingredients].join(' ').toLowerCase()
-  if (mealContainsExcludedFood(meal)) score = 0
-  else {
-    for (const kw of HEALTHY_MEAL_KEYWORDS) {
-      if (text.includes(kw)) score += 0.75
+  for (const target of allTargets) {
+    if (target.id === slotTarget.id) continue
+    for (const { tag, weight } of target.healthTagBoosts) {
+      if (meal.health_tags.includes(tag)) score += weight * SECONDARY_TARGET_TAG_WEIGHT
     }
+    for (const kw of target.ingredientKeywords) {
+      if (text.includes(kw)) score += SECONDARY_TARGET_INGREDIENT_WEIGHT
+    }
+  }
+
+  for (const tag of meal.health_tags) {
+    const boost = globalBoosts.get(tag)
+    if (boost) score += boost.weight * GLOBAL_BOOST_WEIGHT
   }
 
   if (targetCaloriesForSlot > 0) {
     const diffRatio = Math.abs(meal.calories - targetCaloriesForSlot) / targetCaloriesForSlot
-    if (diffRatio <= 0.15) score += 1.5
-    else if (diffRatio <= 0.3) score += 0.5
+    if (diffRatio <= 0.15) score += 3
+    else if (diffRatio <= 0.3) score += 1
   }
 
-  return Math.max(0.1, score)
+  return Math.max(0, score)
+}
+
+function matchedIngredientHints(meal: MealRow, target: SelectionTarget, max = 2): string[] {
+  const text = mealTextBlob(meal)
+  const hits: string[] = []
+  for (const kw of target.ingredientKeywords) {
+    if (text.includes(kw)) {
+      hits.push(kw)
+      if (hits.length >= max) break
+    }
+  }
+  return hits
 }
 
 function buildReason(
   meal: MealRow,
-  boostedTags: Map<HealthTag, TagBoost>,
+  slotTarget: SelectionTarget,
+  allTargets: SelectionTarget[],
 ): { deficiencyTarget: string; reason: string } {
-  let best: TagBoost | null = null
-  for (const tag of meal.health_tags) {
-    const boost = boostedTags.get(tag)
-    if (boost && (!best || boost.weight > best.weight)) best = boost
+  const matchedLabels: string[] = []
+
+  if (mealMatchesTarget(meal, slotTarget)) {
+    matchedLabels.push(slotTarget.label)
   }
 
-  if (!best) {
-    return {
-      deficiencyTarget: 'Balance',
-      reason: `A balanced, nutrient-dense pick to keep your daily targets on track.`,
+  for (const target of allTargets) {
+    if (target.id === slotTarget.id) continue
+    if (target.kind === 'condition' && mealMatchesTarget(meal, target)) {
+      matchedLabels.push(target.label)
     }
   }
 
-  const label = labelForBoostSource(best.source)
-  const tagLabel = best.tag.replace(/_/g, ' ')
+  if (matchedLabels.length === 0) {
+    for (const target of allTargets) {
+      if (target.id === slotTarget.id) continue
+      if (mealMatchesTarget(meal, target)) {
+        matchedLabels.push(target.label)
+      }
+    }
+  }
+
+  const deficiencyTarget =
+    matchedLabels.length > 0 ? matchedLabels.join(' + ') : slotTarget.label
+
+  const hints = matchedIngredientHints(meal, slotTarget)
+  const ingredientNote =
+    hints.length > 0
+      ? ` — rich in ${hints.join(', ')} for your ${slotTarget.label.toLowerCase()} focus`
+      : ''
+
+  const tagHits = slotTarget.healthTagBoosts
+    .filter(({ tag }) => meal.health_tags.includes(tag))
+    .map(({ tag }) => tag.replace(/_/g, ' '))
+
+  const tagNote =
+    tagHits.length > 0 && hints.length === 0
+      ? ` — ${tagHits.slice(0, 2).join(' + ')} profile supports ${slotTarget.label.toLowerCase()}`
+      : ''
+
   return {
-    deficiencyTarget: label,
-    reason: `Chosen for its ${tagLabel} profile — directly supports ${label}.`,
+    deficiencyTarget,
+    reason: `Selected to target ${slotTarget.label}${ingredientNote || tagNote || ' based on your assessment priorities'}.`,
   }
 }
 
-function dayFocusLabel(day: number, profile: UserNutritionProfile): string {
-  const rotationSources = [...profile.primaryDeficiencies, ...profile.medicalConditions, profile.goal].filter(
-    (x): x is string => typeof x === 'string' && x.trim().length > 0,
-  )
-  if (rotationSources.length === 0) return 'Steady, balanced nutrition for your day.'
+function dayFocusLabel(day: number, targets: SelectionTarget[]): string {
+  if (targets.length === 0) return 'Steady, balanced nutrition for your day.'
 
-  const source = rotationSources[(day - 1) % rotationSources.length]
-  const label = labelForBoostSource(source.toLowerCase().replace(/\s+/g, '_'))
-  return `${label.charAt(0).toUpperCase() + label.slice(1)} — today's meals are weighted to support this.`
+  const dayStartIndex = ((day - 1) * MEAL_TYPES_ORDERED.length) % targets.length
+  const dayTargets = MEAL_TYPES_ORDERED.map((_, i) => targets[(dayStartIndex + i) % targets.length])
+  const uniqueLabels = [...new Set(dayTargets.map((t) => t.label))]
+
+  if (uniqueLabels.length === 1) {
+    return `${uniqueLabels[0]} — every meal today is scored to support this priority.`
+  }
+
+  return `${uniqueLabels.slice(0, 3).join(', ')} — meals rotate through your top deficiency and condition targets.`
+}
+
+/**
+ * Picks the highest-scoring meal. Among near-ties (≥92% of max), prefers meals not yet used
+ * this week; remaining ties broken deterministically via seeded RNG.
+ */
+function pickBestMeal(
+  candidates: MealRow[],
+  scoreFn: (meal: MealRow) => number,
+  used: Set<string>,
+  rng: () => number,
+): MealRow {
+  const scored = candidates.map((meal) => ({ meal, score: scoreFn(meal) }))
+  const maxScore = Math.max(...scored.map((s) => s.score))
+
+  if (maxScore <= 0) {
+    const unused = candidates.filter((m) => !used.has(m.id))
+    const pool = unused.length > 0 ? unused : candidates
+    return pool[Math.floor(rng() * pool.length)]
+  }
+
+  const threshold = maxScore * 0.92
+  let top = scored.filter((s) => s.score >= threshold)
+
+  const unusedTop = top.filter((s) => !used.has(s.meal.id))
+  if (unusedTop.length > 0) top = unusedTop
+
+  top.sort((a, b) => b.score - a.score)
+  const bestScore = top[0].score
+  const ties = top.filter((s) => s.score === bestScore)
+  return ties[Math.floor(rng() * ties.length)].meal
 }
 
 /**
  * Generates a 7-day x 5-meal-slot plan for the given profile from the supplied meal pool.
  *
  * - Hard-filters ineligible meals (diet-type mismatch, allergen conflict) before any selection.
- * - Boosts meals whose `health_tags` match the profile's conditions/deficiencies/goal.
- * - Seeded weighted-random selection avoids repeats until the eligible pool for a slot is
- *   exhausted, then resets — so a small catalog still produces a full 7-day plan.
- * - Health + condition appropriateness drive selection (not regional cuisine variety).
+ * - Each slot rotates through the user's deficiencies, conditions, and goal as primary targets.
+ * - Picks the best-scoring eligible meal for that slot's target — not random regional variety.
  */
 export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: MealRow[]): MealPlanDayV3[] {
   const rng = mulberry32(hashSeedToInt(profile.seed || 'default-seed'))
-  const boostedTags = getBoostedHealthTags(profile)
+  const selectionTargets = buildSelectionTargets(profile)
+  const globalBoosts = getBoostedHealthTags(profile)
   const dailyTargets = calculateDailyTargets(profile)
 
   const eligibleByType = new Map<MealType, MealRow[]>()
@@ -147,7 +236,6 @@ export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: Mea
     )
   }
 
-  // Track which meal ids have already been used per slot this week; reset once a slot's pool is exhausted.
   const usedByType = new Map<MealType, Set<string>>()
   for (const mealType of MEAL_TYPES_ORDERED) usedByType.set(mealType, new Set())
 
@@ -164,20 +252,24 @@ export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: Mea
       const used = usedByType.get(mealType)!
       let candidates = pool.filter((m) => !used.has(m.id))
       if (candidates.length === 0) {
-        // Eligible pool exhausted for this slot — reset so the week can keep filling this slot.
         used.clear()
         candidates = pool
       }
 
+      const slotTarget = selectionTargets[slotTargetIndex(day, slotIndex, selectionTargets.length)]
       const targetCaloriesForSlot = dailyTargets.calories * (MEAL_TYPE_CALORIE_SHARE[mealType] ?? 0.2)
 
-      const weights = candidates.map((m) => scoreMeal(m, boostedTags, targetCaloriesForSlot))
-      const pickIndex = weightedPick(candidates, weights, rng)
-      const chosen = candidates[pickIndex]
+      const chosen = pickBestMeal(
+        candidates,
+        (meal) =>
+          scoreMealForSlot(meal, slotTarget, selectionTargets, globalBoosts, targetCaloriesForSlot),
+        used,
+        rng,
+      )
 
       used.add(chosen.id)
 
-      const { deficiencyTarget, reason } = buildReason(chosen, boostedTags)
+      const { deficiencyTarget, reason } = buildReason(chosen, slotTarget, selectionTargets)
 
       dayMeals.push({
         timing: TIMING_LABEL[mealType],
@@ -198,7 +290,7 @@ export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: Mea
       })
     }
 
-    days.push({ day, focus: dayFocusLabel(day, profile), meals: dayMeals })
+    days.push({ day, focus: dayFocusLabel(day, selectionTargets), meals: dayMeals })
   }
 
   return days
