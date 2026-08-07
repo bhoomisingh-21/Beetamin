@@ -707,7 +707,7 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
         max_tokens,
         response_format: { type: 'json_object' },
       }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 90000)),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 60000)),
     ])
 
     return { content: completion.choices[0]?.message?.content }
@@ -743,7 +743,7 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
 
   let maxCeiling = 6144
 
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const { content } = await tryComplete(maxCeiling)
       if (!content) throw new Error('Empty response from report generation')
@@ -755,8 +755,8 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
       stringCap = Math.max(350, Math.floor(stringCap * 0.52))
       maxCeiling = Math.max(3072, Math.floor(maxCeiling * 0.72))
 
-      if (attempt >= 2) await sleep(24000)
-      else await sleep(groqFailureStatus(e) === 429 ? 2600 : 450)
+      if (attempt >= 2) await sleep(8000)
+      else await sleep(groqFailureStatus(e) === 429 ? 1500 : 400)
     }
   }
 

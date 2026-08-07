@@ -286,7 +286,9 @@ export async function POST(req: NextRequest) {
         console.error('[payment/success] generating update', updErr)
         return NextResponse.redirect(`${base}/sessions?error=server_error`, { status: 302 })
       }
+    }
 
+    if (currentStatus === 'pending' || currentStatus === 'generating') {
       waitUntil(
         runPaidReportGeneration({
           reportId: reportSlug,

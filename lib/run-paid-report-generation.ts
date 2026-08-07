@@ -1,7 +1,6 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import { resolvePatientDiet } from '@/lib/patient-diet'
 import type { DetailedAssessmentPayload } from '@/lib/recovery-report-types'
-import type { MealPlanDayV2 } from '@/lib/recovery-report-v2-types'
 import {
   coerceRecoveryReportV2,
   deficiencySummaryFromV2,
@@ -166,24 +165,26 @@ export async function runPaidReportGeneration(args: {
       reportId,
     }
 
-    let raw: Record<string, unknown>
-    try {
-      raw = await generateRecoveryReportV2Payload(reportGenerationInput)
-    } catch (e) {
-      console.error('[run-paid-report-generation] Groq', e)
+    const [groqSettled, mealSettled] = await Promise.allSettled([
+      generateRecoveryReportV2Payload(reportGenerationInput),
+      generateEngineMealPlan(reportGenerationInput),
+    ])
+
+    if (groqSettled.status === 'rejected') {
+      console.error('[run-paid-report-generation] Groq', groqSettled.reason)
       await markFailed(reportId, userId)
       return
     }
 
-    let mealPlan: MealPlanDayV2[]
-    try {
-      mealPlan = await generateEngineMealPlan(reportGenerationInput)
-    } catch (e) {
+    if (mealSettled.status === 'rejected') {
       // Loud + traceable: meals table empty/missing, or engine failure — never ship a broken/empty plan.
-      console.error('[run-paid-report-generation] meal engine', e)
+      console.error('[run-paid-report-generation] meal engine', mealSettled.reason)
       await markFailed(reportId, userId)
       return
     }
+
+    const raw = groqSettled.value
+    const mealPlan = mealSettled.value
 
     const generatedAt = new Date().toISOString()
     const reportData = coerceRecoveryReportV2(

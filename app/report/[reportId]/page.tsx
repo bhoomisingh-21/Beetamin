@@ -9,6 +9,7 @@ import { ReportAppHeader } from '@/components/report/ReportAppHeader'
 import Footer from '@/components/sections/Footer'
 import PremiumLoadingScreen, { FULL_REPORT_LOADING_MESSAGES } from '@/components/PremiumLoadingScreen'
 import { trackEvent } from '@/lib/analytics'
+import { REPORT_POLL_MS, REPORT_UI_SOFT_TIMEOUT_MS, REPORT_GENERATION_STALE_MS } from '@/lib/report-generation-config'
 import { ReportReadyLayout } from './ReportReadyLayout'
 
 type PollStatus = 'generating' | 'ready' | 'failed' | 'generated' | string | null
@@ -19,10 +20,11 @@ type PaidReportRow = {
   email: string | null
   report_id: string | null
   assessment_id: string | null
+  created_at: string | null
 }
 
-const POLL_MS = 4000
-const TIMEOUT_MS = 180000
+const POLL_MS = REPORT_POLL_MS
+const TIMEOUT_MS = REPORT_UI_SOFT_TIMEOUT_MS
 
 function isReadyStatus(s: PollStatus): boolean {
   return s === 'ready' || s === 'generated'
@@ -142,6 +144,7 @@ function ReportPageInner() {
   const downloadBusyRef = useRef(false)
   const [retryBusy, setRetryBusy] = useState(false)
   const [retryMessage, setRetryMessage] = useState<string | null>(null)
+  const staleKickRef = useRef(false)
 
   const pollPaidReport = useCallback(async (): Promise<{ data: PaidReportRow | null; error: boolean }> => {
     if (!reportId) return { data: null, error: true }
@@ -167,6 +170,7 @@ function ReportPageInner() {
       report_id: json.report_id ?? null,
       assessment_id:
         json.assessment_id != null && json.assessment_id !== '' ? String(json.assessment_id) : null,
+      created_at: typeof json.created_at === 'string' ? json.created_at : null,
     }
     return { data, error: false }
   }, [reportId, router])
@@ -269,7 +273,7 @@ function ReportPageInner() {
   }, [view, reportId, isSignedIn, pollPaidReport])
 
   useEffect(() => {
-    if (view !== 'generating' || !reportId) return
+    if ((view !== 'generating' && view !== 'timeout') || !reportId) return
 
     const interval = setInterval(async () => {
       const { data, error } = await pollPaidReport()
@@ -285,16 +289,53 @@ function ReportPageInner() {
       }
     }, POLL_MS)
 
-    const timeout = setTimeout(() => {
+    return () => {
       clearInterval(interval)
+    }
+  }, [view, reportId, pollPaidReport])
+
+  useEffect(() => {
+    if (view !== 'generating' || !reportId) return
+
+    const timeout = setTimeout(() => {
       setView((v) => (v === 'generating' ? 'timeout' : v))
     }, TIMEOUT_MS)
 
     return () => {
-      clearInterval(interval)
       clearTimeout(timeout)
     }
-  }, [view, reportId, pollPaidReport])
+  }, [view, reportId])
+
+  useEffect(() => {
+    if (view !== 'timeout' || !pollData?.assessment_id || pollData.status !== 'generating') return
+    const createdAt = pollData.created_at ? new Date(pollData.created_at).getTime() : NaN
+    if (!Number.isFinite(createdAt) || Date.now() - createdAt < REPORT_GENERATION_STALE_MS) return
+    if (staleKickRef.current) return
+    staleKickRef.current = true
+
+    void (async () => {
+      let freeAssessmentResult: unknown = null
+      try {
+        const raw = localStorage.getItem('assessmentResult')
+        if (raw) freeAssessmentResult = JSON.parse(raw) as unknown
+      } catch {
+        /* ignore bad JSON */
+      }
+      try {
+        await fetch('/api/generate-report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            detailedAssessmentId: pollData.assessment_id,
+            freeAssessmentResult,
+          }),
+        })
+      } catch (e) {
+        console.error('[report page] stale generation kick', e)
+        staleKickRef.current = false
+      }
+    })()
+  }, [view, pollData?.assessment_id, pollData?.created_at, pollData?.status])
 
   useEffect(() => {
     return () => {
@@ -478,8 +519,8 @@ function ReportPageInner() {
           </div>
           <h1 className="mt-6 text-xl font-bold tracking-tight text-stone-900 md:text-2xl">Still working on it</h1>
           <p className="mt-3 text-sm leading-relaxed text-stone-600">
-            Your report is taking longer than usual. We&apos;ll email it to you when it&apos;s ready. You can close this
-            page safely.
+            Your report is taking longer than usual. We&apos;re still working on it and will email it when it&apos;s
+            ready — this page will update automatically. You can close it safely.
           </p>
           <p className="mt-4 font-mono text-xs text-stone-500">Report ID: {displayReportId}</p>
           <Link

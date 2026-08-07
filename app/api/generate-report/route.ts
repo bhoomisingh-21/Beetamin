@@ -3,6 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import { randomBytes } from 'crypto'
 import { NextResponse } from 'next/server'
 import { resolveFreeAssessmentForCheckout } from '@/lib/resolve-free-assessment'
+import { REPORT_GENERATION_STALE_MS } from '@/lib/report-generation-config'
 import { runPaidReportGeneration } from '@/lib/run-paid-report-generation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -16,6 +17,47 @@ function makeReportId() {
   const d = String(now.getDate()).padStart(2, '0')
   const suffix = randomBytes(2).toString('hex').toUpperCase()
   return `BT-${y}${m}${d}-${suffix}`
+}
+
+function isStaleGenerating(row: { status?: string | null; created_at?: string | null }): boolean {
+  if (String(row.status) !== 'generating') return false
+  const createdAt = row.created_at ? new Date(row.created_at).getTime() : NaN
+  return Number.isFinite(createdAt) && Date.now() - createdAt > REPORT_GENERATION_STALE_MS
+}
+
+async function restartGeneratingReport(args: {
+  reportId: string
+  userId: string
+  detailedAssessmentId: string
+  freeAssessment: object
+  email: string
+}) {
+  const storagePath = `${args.userId}/${args.reportId}.pdf`
+  const { error: retryErr } = await supabaseAdmin
+    .from('paid_reports')
+    .update({
+      status: 'generating',
+      free_assessment_snapshot: args.freeAssessment,
+      deficiency_summary: null,
+      email: args.email,
+      pdf_url: storagePath,
+    })
+    .eq('report_id', args.reportId)
+    .eq('user_id', args.userId)
+
+  if (retryErr) {
+    console.error('[generate-report] restart generating', retryErr)
+    return false
+  }
+
+  waitUntil(
+    runPaidReportGeneration({
+      reportId: args.reportId,
+      userId: args.userId,
+      detailedAssessmentId: args.detailedAssessmentId,
+    }),
+  )
+  return true
 }
 
 /** Persist free quiz JSON so Groq PDF jobs always see it (`runPaidReportGeneration` reads DB). */
@@ -218,6 +260,20 @@ export async function POST(req: Request) {
         ['ready', 'generated', 'generating', 'pending'].includes(String(r.status)),
       )
       if (existingActive?.report_id) {
+        if (isStaleGenerating(existingActive)) {
+          const restarted = await restartGeneratingReport({
+            reportId: existingActive.report_id,
+            userId,
+            detailedAssessmentId: detailedId,
+            freeAssessment,
+            email: emailResolved,
+          })
+          return NextResponse.json({
+            reportId: existingActive.report_id,
+            status: 'generating',
+            restartedStale: restarted,
+          })
+        }
         return NextResponse.json({
           reportId: existingActive.report_id,
           alreadyExists: true,
