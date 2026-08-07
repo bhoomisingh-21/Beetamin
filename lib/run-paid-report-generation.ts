@@ -24,12 +24,23 @@ function readAssessmentMeta(am: unknown): { age?: string; diet?: string; goal?: 
   }
 }
 
-async function markFailed(reportId: string, userId: string) {
+async function markFailed(reportId: string, userId: string, reason: string) {
+  console.error(`[run-paid-report-generation] FAILED ${reportId}: ${reason}`)
   await supabaseAdmin
     .from('paid_reports')
     .update({ status: 'failed' })
     .eq('report_id', reportId)
     .eq('user_id', userId)
+}
+
+function failureReason(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  try {
+    return JSON.stringify(error)
+  } catch {
+    return 'Unknown error'
+  }
 }
 
 function logTiming(reportId: string, phase: string, startedMs: number) {
@@ -81,7 +92,7 @@ export async function runPaidReportGeneration(args: {
 
     if (dErr || !detailed) {
       console.error('[run-paid-report-generation] detailed', dErr)
-      await markFailed(reportId, userId)
+      await markFailed(reportId, userId, dErr?.message ?? 'Detailed assessment not found')
       return
     }
 
@@ -106,7 +117,7 @@ export async function runPaidReportGeneration(args: {
 
     if (!freeAssessment || typeof freeAssessment !== 'object') {
       console.error('[run-paid-report-generation] missing free assessment (no snapshot & no profile JSON)')
-      await markFailed(reportId, userId)
+      await markFailed(reportId, userId, 'Missing free assessment snapshot and profile JSON')
       return
     }
 
@@ -191,14 +202,14 @@ export async function runPaidReportGeneration(args: {
 
     if (groqSettled.status === 'rejected') {
       console.error('[run-paid-report-generation] Groq', groqSettled.reason)
-      await markFailed(reportId, userId)
+      await markFailed(reportId, userId, `Groq: ${failureReason(groqSettled.reason)}`)
       return
     }
 
     if (mealSettled.status === 'rejected') {
       // Loud + traceable: meals table empty/missing, or engine failure — never ship a broken/empty plan.
       console.error('[run-paid-report-generation] meal engine', mealSettled.reason)
-      await markFailed(reportId, userId)
+      await markFailed(reportId, userId, `Meal engine: ${failureReason(mealSettled.reason)}`)
       return
     }
 
@@ -227,7 +238,7 @@ export async function runPaidReportGeneration(args: {
       pdfBuffer = await renderRecoveryReportV2PdfBuffer(reportData)
     } catch (pdfError) {
       console.error('[run-paid-report-generation] PDF', pdfError)
-      await markFailed(reportId, userId)
+      await markFailed(reportId, userId, `PDF render: ${failureReason(pdfError)}`)
       return
     }
     logTiming(reportId, 'pdf render', pdfStarted)
@@ -239,7 +250,7 @@ export async function runPaidReportGeneration(args: {
 
     if (upErr) {
       console.error('[run-paid-report-generation] storage upload', upErr)
-      await markFailed(reportId, userId)
+      await markFailed(reportId, userId, `Storage upload: ${upErr.message}`)
       return
     }
     logTiming(reportId, 'storage upload', uploadStarted)
@@ -257,7 +268,7 @@ export async function runPaidReportGeneration(args: {
 
     if (upRowErr) {
       console.error('[run-paid-report-generation] paid_reports update', upRowErr)
-      await markFailed(reportId, userId)
+      await markFailed(reportId, userId, `DB update: ${upRowErr.message}`)
       return
     }
 
@@ -294,7 +305,7 @@ export async function runPaidReportGeneration(args: {
     })()
   } catch (e) {
     console.error('[run-paid-report-generation] unhandled', e)
-    await markFailed(reportId, userId)
+    await markFailed(reportId, userId, `Unhandled: ${failureReason(e)}`)
   } finally {
     activeGenerationKeys.delete(dedupeKey)
   }

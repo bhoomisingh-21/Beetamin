@@ -13,6 +13,7 @@ import {
   countRegionalSpecialtyKeywords,
   getBoostedHealthTags,
   isMealEligible,
+  MIN_STRICT_POOL_PER_SLOT,
   mealContainsExcludedFood,
   mealMatchesTarget,
   mealTextBlob,
@@ -290,10 +291,22 @@ export function generateWeeklyMealPlan(profile: UserNutritionProfile, meals: Mea
 
   const eligibleByType = new Map<MealType, MealRow[]>()
   for (const mealType of MEAL_TYPES_ORDERED) {
-    eligibleByType.set(
-      mealType,
-      meals.filter((m) => m.meal_type === mealType && isMealEligible(m, profile)),
-    )
+    const typeMeals = meals.filter((m) => m.meal_type === mealType)
+    const strictPool = typeMeals.filter((m) => isMealEligible(m, profile))
+    if (strictPool.length >= MIN_STRICT_POOL_PER_SLOT) {
+      eligibleByType.set(mealType, strictPool)
+      continue
+    }
+
+    const relaxedPool = typeMeals.filter((m) => isMealEligible(m, profile, { relaxStrictHealth: true }))
+    if (relaxedPool.length > strictPool.length) {
+      console.warn(
+        `[meal-engine] ${mealType}: strict pool=${strictPool.length} — using relaxed fallback (${relaxedPool.length})`,
+      )
+      eligibleByType.set(mealType, relaxedPool)
+    } else {
+      eligibleByType.set(mealType, strictPool)
+    }
   }
 
   const usedByType = new Map<MealType, Set<string>>()

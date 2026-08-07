@@ -814,11 +814,29 @@ export function mealMatchesDietType(meal: MealRow, dietType: UserNutritionProfil
   return meal.diet_type.includes(dietType)
 }
 
+export type MealEligibilityOptions = {
+  /** When strict PCOS/diabetes filtering leaves too few candidates, still exclude junk but skip tag gate. */
+  relaxStrictHealth?: boolean
+}
+
 /** Hard filter: diet-type compatible, allergen-safe, and condition-appropriate. Meals failing this must never be selectable. */
-export function isMealEligible(meal: MealRow, profile: UserNutritionProfile): boolean {
+export function isMealEligible(
+  meal: MealRow,
+  profile: UserNutritionProfile,
+  options?: MealEligibilityOptions,
+): boolean {
   if (!meal.is_active) return false
   if (!mealMatchesDietType(meal, profile.dietType)) return false
   if (mealViolatesAllergies(meal, profile.allergies)) return false
+
+  if (options?.relaxStrictHealth) {
+    if (profileRequiresStrictHealthFiltering(profile) && mealContainsExcludedFood(meal)) return false
+    return true
+  }
+
   if (!mealMeetsStrictHealthRequirements(meal, profile)) return false
   return true
 }
+
+/** Minimum strict-eligible meals per slot before we widen to relaxed (junk-free) pool. */
+export const MIN_STRICT_POOL_PER_SLOT = 5

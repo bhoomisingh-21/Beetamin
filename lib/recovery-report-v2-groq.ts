@@ -672,17 +672,69 @@ function maxCompletionTokensForPrompt(promptCharLength: number): number {
   return Math.min(6144, Math.max(1536, room))
 }
 
+const GROQ_REPORT_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const
+const GROQ_REPORT_MAX_ATTEMPTS = 6
+
+function groqErrorBlob(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const msg = (error as { message: unknown }).message
+    if (typeof msg === 'string') return msg
+  }
+  try {
+    return JSON.stringify(error)
+  } catch {
+    return String(error)
+  }
+}
+
+function groqFailureStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined
+  const err = error as Record<string, unknown>
+  if (typeof err.status === 'number') return err.status
+  const resp = err.response as { status?: number } | undefined
+  return resp?.status
+}
+
+function looksLikeGroqRateLimit(error: unknown): boolean {
+  const status = groqFailureStatus(error)
+  if (status === 413 || status === 429) return true
+  const b = groqErrorBlob(error).toLowerCase()
+  return (
+    b.includes('rate_limit_exceeded') ||
+    b.includes('tokens per minute') ||
+    b.includes('tokens per day') ||
+    (b.includes('request too large') && b.includes('tpm'))
+  )
+}
+
+function groqRetryAfterMs(error: unknown): number | null {
+  const match = groqErrorBlob(error).match(/try again in (\d+(?:\.\d+)?)\s*s/i)
+  if (!match) return null
+  return Math.ceil(parseFloat(match[1]) * 1000) + 400
+}
+
+function groqRateLimitKind(error: unknown): 'tpd' | 'tpm' | 'other' {
+  const b = groqErrorBlob(error).toLowerCase()
+  if (b.includes('tokens per day') || b.includes('tpd')) return 'tpd'
+  if (b.includes('tokens per minute') || b.includes('tpm')) return 'tpm'
+  return 'other'
+}
+
 export async function generateRecoveryReportV2Payload(input: GenerateRecoveryReportV2Input): Promise<Record<string, unknown>> {
   const groq = getGroq()
 
   let stringCap = 2800
+  let maxCeiling = 4096
+  let modelIndex = 0
+  let lastRateLimitError: unknown = null
 
-  const tryComplete = async (maxCeiling: number): Promise<{ content: string | null | undefined }> => {
+  const tryComplete = async (model: string, maxCeilingLocal: number): Promise<{ content: string | null | undefined }> => {
     const userPayload = buildUserPayloadForGroq(input, stringCap)
     const userJson = JSON.stringify(userPayload)
     const promptChars =
       RECOVERY_REPORT_V2_SYSTEM_PROMPT.length + USER_PAYLOAD_INSTRUCTION_PREFIX.length + userJson.length
-    let max_tokens = Math.min(maxCeiling, maxCompletionTokensForPrompt(promptChars))
+    let max_tokens = Math.min(maxCeilingLocal, maxCompletionTokensForPrompt(promptChars))
 
     /** Still over budget — shrink assessment strings further */
     while (max_tokens < 2048 && stringCap > 500) {
@@ -690,7 +742,7 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
       const shrunk = JSON.stringify(buildUserPayloadForGroq(input, stringCap))
       const chars =
         RECOVERY_REPORT_V2_SYSTEM_PROMPT.length + USER_PAYLOAD_INSTRUCTION_PREFIX.length + shrunk.length
-      max_tokens = Math.min(maxCeiling, maxCompletionTokensForPrompt(chars))
+      max_tokens = Math.min(maxCeilingLocal, maxCompletionTokensForPrompt(chars))
       if (stringCap <= 500) break
     }
 
@@ -699,7 +751,7 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
 
     const completion = await Promise.race([
       groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model,
         messages: [
           { role: 'system', content: RECOVERY_REPORT_V2_SYSTEM_PROMPT },
           {
@@ -711,59 +763,58 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
         max_tokens,
         response_format: { type: 'json_object' },
       }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 45_000)),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Groq timeout after 60s')), 60_000)),
     ])
 
     return { content: completion.choices[0]?.message?.content }
   }
 
-  function groqFailureStatus(error: unknown): number | undefined {
-    if (!error || typeof error !== 'object') return undefined
-    const err = error as Record<string, unknown>
-    if (typeof err.status === 'number') return err.status
-    const resp = err.response as { status?: number } | undefined
-    return resp?.status
-  }
-
-  function looksLikeGroqLowTpmBudget(error: unknown): boolean {
-    const status = groqFailureStatus(error)
-    if (status === 413 || status === 429) return true
-    const blob =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'object' &&
-            error !== null &&
-            'message' in error &&
-            typeof (error as { message: unknown }).message === 'string'
-          ? (error as { message: string }).message
-          : JSON.stringify(error)
-    const b = blob.toLowerCase()
-    return (
-      b.includes('rate_limit_exceeded') ||
-      b.includes('tokens per minute') ||
-      (b.includes('request too large') && b.includes('tpm'))
-    )
-  }
-
-  let maxCeiling = 4096
-
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < GROQ_REPORT_MAX_ATTEMPTS; attempt++) {
+    const model = GROQ_REPORT_MODELS[modelIndex] ?? GROQ_REPORT_MODELS[0]
     try {
-      const { content } = await tryComplete(maxCeiling)
+      const { content } = await tryComplete(model, maxCeiling)
       if (!content) throw new Error('Empty response from report generation')
+      if (modelIndex > 0) {
+        console.warn(`[recovery-report-v2-groq] succeeded on fallback model ${model} after ${attempt + 1} attempt(s)`)
+      }
       return parseRecoveryReportV2Json(content)
     } catch (e: unknown) {
-      const tpmHit = looksLikeGroqLowTpmBudget(e)
-      if (!tpmHit) throw e
+      if (!looksLikeGroqRateLimit(e)) throw e
 
+      lastRateLimitError = e
+      const kind = groqRateLimitKind(e)
       stringCap = Math.max(350, Math.floor(stringCap * 0.52))
-      maxCeiling = Math.max(2048, Math.floor(maxCeiling * 0.72))
+      maxCeiling = Math.max(1536, Math.floor(maxCeiling * 0.72))
 
-      await sleep(groqFailureStatus(e) === 429 ? 1200 : 300)
+      /** Daily quota on primary model — switch to lighter fallback with its own quota. */
+      if (kind === 'tpd' && modelIndex < GROQ_REPORT_MODELS.length - 1) {
+        modelIndex += 1
+        console.warn(
+          `[recovery-report-v2-groq] ${model} daily quota hit — falling back to ${GROQ_REPORT_MODELS[modelIndex]}`,
+        )
+        continue
+      }
+
+      /** TPM burst — honour Groq retry-after when present, else exponential backoff. */
+      const retryAfter = groqRetryAfterMs(e)
+      const backoffMs =
+        retryAfter ??
+        Math.min(30_000, 1500 * 2 ** attempt + (groqFailureStatus(e) === 429 ? 800 : 0))
+      console.warn(
+        `[recovery-report-v2-groq] rate limit (${kind}) on ${model}, attempt ${attempt + 1}/${GROQ_REPORT_MAX_ATTEMPTS}, waiting ${backoffMs}ms`,
+      )
+      await sleep(backoffMs)
     }
   }
 
-  throw new Error('Groq rate limit / TPM exceeded after retries — try again shortly or shorten assessment payload.')
+  const detail = groqErrorBlob(lastRateLimitError)
+  const kind = lastRateLimitError ? groqRateLimitKind(lastRateLimitError) : 'other'
+  if (kind === 'tpd') {
+    throw new Error(
+      `Groq daily token quota exhausted for all report models — retry in ~1 hour or upgrade Groq tier. (${detail.slice(0, 200)})`,
+    )
+  }
+  throw new Error(`Groq rate limit exceeded after ${GROQ_REPORT_MAX_ATTEMPTS} retries — try again shortly. (${detail.slice(0, 200)})`)
 }
 
 /**
