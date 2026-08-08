@@ -54,6 +54,67 @@ function entryNames(entries: MealPlanEntryRow[]): string {
     .join(', ')
 }
 
+const qtyInputClassName =
+  'w-24 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base font-semibold text-gray-900 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:opacity-70'
+
+function MealEntryQtyEditor({
+  entry,
+  saving,
+  onSave,
+}: {
+  entry: MealPlanEntryRow
+  saving: boolean
+  onSave: (qtyGrams: number) => Promise<void>
+}) {
+  const [draftQty, setDraftQty] = useState(String(entry.qty_grams))
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    setDraftQty(String(entry.qty_grams))
+  }, [entry.qty_grams, entry.id])
+
+  const commit = async () => {
+    const parsed = Number(draftQty)
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setError('Enter grams above 0')
+      setDraftQty(String(entry.qty_grams))
+      return
+    }
+    if (Math.round(parsed) === Math.round(entry.qty_grams)) return
+    setError('')
+    await onSave(parsed)
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <input
+        type="number"
+        min={1}
+        step={1}
+        inputMode="numeric"
+        value={draftQty}
+        onChange={(e) => {
+          setDraftQty(e.target.value)
+          setError('')
+        }}
+        onBlur={() => void commit()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            void commit()
+          }
+        }}
+        className={qtyInputClassName}
+        aria-label={`Grams for ${entry.foods?.name ?? 'food'}`}
+      />
+      <span className="text-sm font-medium text-gray-600">g</span>
+      <span className="text-sm font-bold text-emerald-700">{formatKcal(entry.kcal)}</span>
+      {saving ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" aria-label="Saving" /> : null}
+      {error ? <span className="text-xs font-medium text-red-600">{error}</span> : null}
+    </div>
+  )
+}
+
 export function MealPlanFoodCell({
   mealPlanId,
   entryDate,
@@ -80,6 +141,7 @@ export function MealPlanFoodCell({
   const [mounted, setMounted] = useState(false)
   const [showCustomFood, setShowCustomFood] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [savingQtyId, setSavingQtyId] = useState<string | null>(null)
   const [quickBusy, setQuickBusy] = useState<string | null>(null)
   const [copyTarget, setCopyTarget] = useState('')
   const anchorRef = useRef<HTMLButtonElement>(null)
@@ -198,14 +260,14 @@ export function MealPlanFoodCell({
 
   const handleGramsChange = async (entryId: string, qtyGrams: number) => {
     if (qtyGrams <= 0) return
-    setBusyId(entryId)
+    setSavingQtyId(entryId)
     try {
       const res = await updateMealPlanEntryQty({ entryId, mealPlanId, qtyGrams })
       if (!res.ok) return
       const next = entries.map((e) => (e.id === entryId ? res.entry : e))
       onEntriesChange(next)
     } finally {
-      setBusyId(null)
+      setSavingQtyId(null)
     }
   }
 
@@ -217,7 +279,7 @@ export function MealPlanFoodCell({
           ref={popoverRef}
           role="dialog"
           aria-label={`Edit ${slotLabel}`}
-          className="fixed z-[201] max-h-[min(420px,70vh)] overflow-y-auto rounded-xl border border-emerald-200 bg-white p-4 shadow-2xl"
+          className="fixed z-[201] max-h-[min(420px,70vh)] overflow-y-auto rounded-xl border border-emerald-200 bg-white p-4 text-gray-900 shadow-2xl"
           style={{ top: pos.top, left: pos.left, width: pos.width }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -244,22 +306,11 @@ export function MealPlanFoodCell({
                     <p className="text-base font-semibold leading-snug text-gray-900">
                       {entry.foods?.name ?? 'Food'}
                     </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <input
-                        type="number"
-                        min={1}
-                        step={1}
-                        defaultValue={entry.qty_grams}
-                        disabled={busyId === entry.id}
-                        onBlur={(e) => {
-                          const g = Number(e.target.value)
-                          if (g !== entry.qty_grams) void handleGramsChange(entry.id, g)
-                        }}
-                        className="w-20 rounded border border-gray-200 px-2 py-1 text-sm"
-                      />
-                      <span className="text-sm text-gray-500">g</span>
-                      <span className="text-sm font-bold text-emerald-700">{formatKcal(entry.kcal)}</span>
-                    </div>
+                    <MealEntryQtyEditor
+                      entry={entry}
+                      saving={savingQtyId === entry.id}
+                      onSave={(qty) => handleGramsChange(entry.id, qty)}
+                    />
                   </div>
                   <button
                     type="button"
@@ -286,7 +337,7 @@ export function MealPlanFoodCell({
                 value={copyTarget}
                 onChange={(e) => setCopyTarget(e.target.value)}
                 disabled={copying}
-                className="min-w-0 flex-1 rounded-md border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700 disabled:opacity-60"
+                className="min-w-0 flex-1 rounded-md border border-emerald-200 bg-white px-2 py-1.5 text-sm text-slate-800 disabled:opacity-60"
               >
                 <option value="">Copy this meal to…</option>
                 {copyTargets.map((t) => (
