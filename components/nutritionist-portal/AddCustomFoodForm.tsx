@@ -4,7 +4,7 @@ import { useId, useState, useTransition } from 'react'
 import { Loader2, Plus } from 'lucide-react'
 import { createCustomFood } from '@/lib/food-actions'
 import type { CreateCustomFoodInput, FoodRow } from '@/lib/food-db-types'
-import { FOOD_CATEGORY_SUGGESTIONS, formatFoodKcalLabel } from '@/lib/food-db-types'
+import { FOOD_CATEGORY_SUGGESTIONS, FOOD_UNIT_OPTIONS } from '@/lib/food-db-types'
 
 type Props = {
   onCreated?: (food: FoodRow) => void
@@ -28,7 +28,7 @@ type NumericFields = {
   fiber_g_per_100g: string
 }
 
-const emptyTextForm = (): TextFields => ({ name: '', category: '', default_unit: 'g' })
+const emptyTextForm = (): TextFields => ({ name: '', category: '', default_unit: 'gm' })
 const emptyNumForm = (): NumericFields => ({
   default_qty_grams: '100',
   kcal_per_100g: '',
@@ -138,13 +138,18 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
           <label htmlFor={`${formId}-unit`} className="mb-1 block text-xs font-semibold text-emerald-900">
             Default unit
           </label>
-          <input
+          <select
             id={`${formId}-unit`}
             value={text.default_unit}
             onChange={(e) => setTextField('default_unit', e.target.value)}
-            placeholder="g, cup, bowl…"
             className={inputClass}
-          />
+          >
+            {FOOD_UNIT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -29,6 +29,14 @@ export type CreateCustomFoodInput = {
   fiber_g_per_100g?: number
 }
 
+/** Dropdown options for custom food default serving unit. */
+export const FOOD_UNIT_OPTIONS = [
+  { value: 'gm', label: 'gm' },
+  { value: 'cup', label: 'cup' },
+  { value: 'glass', label: 'glass' },
+  { value: 'katori bowl', label: 'katori bowl' },
+] as const
+
 /** Display label: kcal per default serving or per 100g. */
 export function formatFoodKcalLabel(food: Pick<FoodRow, 'kcal_per_100g' | 'default_qty_grams' | 'default_unit'>): string {
   const kcal100 = food.kcal_per_100g
@@ -38,7 +46,7 @@ export function formatFoodKcalLabel(food: Pick<FoodRow, 'kcal_per_100g' | 'defau
   if (qty != null && qty > 0) {
     const kcal = Math.round((kcal100 * qty) / 100)
     const unit = food.default_unit?.trim().toLowerCase()
-    if (!unit || unit === 'g') return `${kcal} kcal · ${Math.round(qty)}g`
+    if (!unit || unit === 'g' || unit === 'gm') return `${kcal} kcal · ${Math.round(qty)}g`
     if (unit === 'serving') return `${kcal} kcal · ${Math.round(qty)}g serving`
     return `${kcal} kcal · ${Math.round(qty)} ${food.default_unit?.trim()}`
   }

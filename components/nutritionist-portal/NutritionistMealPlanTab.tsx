@@ -270,7 +270,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
                     onClick={() => openPlan(plan.id)}
                     className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
                   >
-                    {plan.status === 'published' ? 'View' : 'Edit'}
+                    Edit
                   </button>
                   {plan.status !== 'published' && (
                     <button
@@ -313,8 +313,10 @@ function PlanActionSuccess({
   const copy =
     mode === 'saved'
       ? {
-          title: 'Diet plan saved',
-          body: `Your changes are saved. ${clientName} won't see this plan until you publish it.`,
+          title: isPublished ? 'Changes saved' : 'Diet plan saved',
+          body: isPublished
+            ? 'Your updates are saved. Re-publish when you want the client to see the latest version.'
+            : `Your changes are saved. ${clientName} won't see this plan until you publish it.`,
         }
       : mode === 'template'
         ? {
@@ -322,8 +324,10 @@ function PlanActionSuccess({
             body: 'A reusable copy was added to this client\'s plan list. You can publish the current plan when ready.',
           }
         : {
-            title: `Published to ${clientName}`,
-            body: 'They\'ll get an email and can view the plan on their sessions dashboard.',
+            title: isPublished ? `Re-published to ${clientName}` : `Published to ${clientName}`,
+            body: isPublished
+              ? 'The client will see your latest plan updates on their profile.'
+              : 'They\'ll get an email and can view the plan on their sessions dashboard.',
           }
 
   return (
@@ -345,7 +349,7 @@ function PlanActionSuccess({
             Back to plans
           </button>
 
-          {mode !== 'published' && !isPublished && (
+          {mode !== 'published' && (
             <button
               type="button"
               onClick={onPublish}
@@ -353,7 +357,7 @@ function PlanActionSuccess({
               className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-50"
             >
               {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              Publish plan
+              {isPublished ? 'Re-publish to client' : 'Publish plan'}
             </button>
           )}
 
@@ -481,7 +485,7 @@ function PlanBuilder({
       : '—'
 
   const canGoPrevWeek = weekPage > 0
-  const canGoNextWeek = weekEnd < days.length - 1 || (!isPublished && days.length < 31)
+  const canGoNextWeek = weekEnd < days.length - 1 || days.length < 31
 
   /** Every editable (non-skipped) day in the plan, for the copy-to-day pickers. */
   const allDayOptions = useMemo(() => {
@@ -501,7 +505,7 @@ function PlanBuilder({
     sourceDate: string,
     targetDate: string,
   ) {
-    if (sourceDate === targetDate || isPublished) return
+    if (sourceDate === targetDate) return
     const key = entryCellKey(targetDate, slot)
     setCopyBusyKey(key)
     setActionError('')
@@ -528,7 +532,6 @@ function PlanBuilder({
   }
 
   function handleCellDragStart(dayIdx: number, slot: keyof MealSlots, date: string) {
-    if (isPublished) return
     setDragSource({ dayIdx, slot, date })
   }
 
@@ -538,7 +541,7 @@ function PlanBuilder({
   }
 
   function handleCellDragOver(slot: keyof MealSlots, date: string) {
-    if (!dragSource || isPublished || dragSource.slot !== slot) return
+    if (!dragSource || dragSource.slot !== slot) return
     setDragOverKey(entryCellKey(date, slot))
   }
 
@@ -619,7 +622,7 @@ function PlanBuilder({
   function goNextWeek() {
     const nextStart = (weekPage + 1) * WEEK_DAYS
     if (nextStart >= days.length) {
-      if (isPublished || days.length >= 31) return
+      if (days.length >= 31) return
       setDays((prev) => {
         const next = [...prev]
         let iso =
@@ -861,16 +864,12 @@ function PlanBuilder({
             <ArrowLeft size={14} />
             Back
           </button>
-          {!isPublished ? (
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="min-w-[180px] flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            />
-          ) : (
-            <p className="truncate text-sm font-semibold text-slate-800">{title}</p>
-          )}
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="min-w-[180px] flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          />
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-xs text-slate-600">
@@ -882,8 +881,7 @@ function PlanBuilder({
               step={50}
               value={targetCalories}
               onChange={(e) => setTargetCalories(Number(e.target.value) || 1800)}
-              disabled={isPublished}
-              className="w-16 rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm font-bold text-slate-800 disabled:opacity-60"
+              className="w-16 rounded-lg border border-emerald-200 bg-white px-2 py-1 text-sm font-bold text-slate-800"
             />
           </label>
           {saving && (
@@ -923,8 +921,7 @@ function PlanBuilder({
           </button>
         </div>
 
-        {!isPublished && (
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
             <select
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
@@ -961,11 +958,9 @@ function PlanBuilder({
               Copy previous week
             </button>
           </div>
-        )}
 
         <span className="ml-auto text-sm text-slate-500">
-          Week {weekPage + 1} · scroll → to see all 7 days
-          {!isPublished ? ' · drag a meal cell onto another day to copy it' : ''}
+          Week {weekPage + 1} · scroll → to see all 7 days · drag a meal cell onto another day to copy it
         </span>
       </div>
 
@@ -1004,7 +999,7 @@ function PlanBuilder({
                 ) : (
                   <p className="text-sm font-bold text-emerald-900">Day {abs + 1}</p>
                 )}
-                {!isPublished && d && (
+                {d && (
                   <input
                     type="date"
                     value={d.plan_date ?? ''}
@@ -1012,7 +1007,7 @@ function PlanBuilder({
                     className="mt-1 w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
                   />
                 )}
-                {!isPublished && d && (
+                {d && (
                   <button
                     type="button"
                     onClick={() => toggleSkipDay(abs)}
@@ -1062,16 +1057,14 @@ function PlanBuilder({
                 key={`${slot.key}-label`}
                 className="sticky left-0 z-20 flex items-center gap-1 border-r border-t border-emerald-200 bg-white px-2 py-2"
               >
-                {!isPublished && (
-                  <button
-                    type="button"
-                    onClick={() => clearMealRow(slot.key)}
-                    className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    title={`Clear ${slot.label}`}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => clearMealRow(slot.key)}
+                  className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                  title={`Clear ${slot.label}`}
+                >
+                  <Trash2 size={12} />
+                </button>
                 <div className="min-w-0">
                   <p className="text-sm font-bold leading-tight text-emerald-900">{slot.label}</p>
                   <p className="text-xs text-slate-400">{slot.time}</p>
@@ -1102,7 +1095,6 @@ function PlanBuilder({
                           day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key, abs)
                         }
                         entries={entriesByCell.get(entryCellKey(entryDateIso, slot.key)) ?? []}
-                        disabled={isPublished}
                         isOpen={openCellKey === entryCellKey(entryDateIso, slot.key)}
                         onOpenChange={(open) =>
                           setOpenCellKey(open ? entryCellKey(entryDateIso, slot.key) : null)
@@ -1114,7 +1106,7 @@ function PlanBuilder({
                         copyTargets={allDayOptions.filter((o) => o.date !== entryDateIso)}
                         onCopyTo={(targetDate) => void copyCellTo(abs, slot.key, entryDateIso, targetDate)}
                         copying={copyBusyKey === entryCellKey(entryDateIso, slot.key)}
-                        draggable={!isPublished}
+                        draggable
                         isDragOver={dragOverKey === entryCellKey(entryDateIso, slot.key)}
                         onDragStartCell={() => handleCellDragStart(abs, slot.key, entryDateIso)}
                         onDragEndCell={handleCellDragEnd}
@@ -1131,8 +1123,7 @@ function PlanBuilder({
         </div>
       </div>
 
-      {!isPublished && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-100 bg-emerald-50/40 px-4 py-2 text-sm text-slate-600">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-100 bg-emerald-50/40 px-4 py-2 text-sm text-slate-600">
           <span>
             Week {weekPage + 1} · <span className="font-semibold text-emerald-800">{activeDays}</span> active
             days in plan
@@ -1149,7 +1140,6 @@ function PlanBuilder({
             + Add another week
           </button>
         </div>
-      )}
 
       {copyToast && !actionError && (
         <div className="flex items-center gap-2 border-t border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
@@ -1162,7 +1152,7 @@ function PlanBuilder({
         <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-sm text-red-700">{actionError}</div>
       )}
 
-      {showSaveTemplate && !isPublished ? (
+      {showSaveTemplate ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button
             type="button"
@@ -1235,57 +1225,33 @@ function PlanBuilder({
         />
       ) : (
         <div className="flex flex-wrap items-center justify-center gap-4 border-t border-emerald-200 bg-slate-50 px-4 py-5">
-          {!isPublished ? (
-            <>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || publishing || templating}
-                className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                Save Diet Plan
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateTemplate}
-                disabled={templating || saving || publishing}
-                className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-                Save as Template
-              </button>
-              <button
-                type="button"
-                onClick={handlePublish}
-                disabled={publishing || saving || templating}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
-              >
-                {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                Publish to Client
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={onBack}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-8 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-              >
-                <ArrowLeft size={16} />
-                Back to plans
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateTemplate}
-                disabled={templating}
-                className="flex min-w-[160px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
-                Save as Template
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || publishing || templating}
+            className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            Save Diet Plan
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateTemplate}
+            disabled={templating || saving || publishing}
+            className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+            Save as Template
+          </button>
+          <button
+            type="button"
+            onClick={handlePublish}
+            disabled={publishing || saving || templating}
+            className="flex min-w-[180px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+          >
+            {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {isPublished ? 'Re-publish to Client' : 'Publish to Client'}
+          </button>
         </div>
       )}
     </div>
