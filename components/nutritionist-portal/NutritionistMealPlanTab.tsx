@@ -257,7 +257,7 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                    className={`rounded-full px-2.5 py-0.5 text-sm font-bold ${
                       plan.status === 'published'
                         ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
                         : 'border border-amber-200 bg-amber-50 text-amber-700'
@@ -963,7 +963,7 @@ function PlanBuilder({
           </div>
         )}
 
-        <span className="ml-auto text-[10px] text-slate-500">
+        <span className="ml-auto text-sm text-slate-500">
           Week {weekPage + 1} · scroll → to see all 7 days
           {!isPublished ? ' · drag a meal cell onto another day to copy it' : ''}
         </span>
@@ -978,11 +978,11 @@ function PlanBuilder({
       {/* Days as columns (horizontal calendar) */}
       <div className="overflow-x-auto overscroll-x-contain">
         <div
-          className="grid min-w-[1080px] border-b border-emerald-200"
-          style={{ gridTemplateColumns: `132px repeat(${WEEK_DAYS}, minmax(128px, 1fr))` }}
+          className="grid min-w-[1280px] border-b border-emerald-200"
+          style={{ gridTemplateColumns: `148px repeat(${WEEK_DAYS}, minmax(148px, 1fr))` }}
         >
           {/* Corner */}
-          <div className="sticky left-0 z-20 border-r border-emerald-200 bg-emerald-50/80 px-2 py-2 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+          <div className="sticky left-0 z-20 border-r border-emerald-200 bg-emerald-50/80 px-2 py-2 text-sm font-bold uppercase tracking-wide text-emerald-800">
             Meal time
           </div>
 
@@ -998,25 +998,25 @@ function PlanBuilder({
                 }`}
               >
                 {date ? (
-                  <p className="text-[10px] font-bold leading-tight text-emerald-900">
+                  <p className="text-sm font-bold leading-tight text-emerald-900">
                     {formatGridDayColumn(date)}
                   </p>
                 ) : (
-                  <p className="text-[10px] font-bold text-emerald-900">Day {abs + 1}</p>
+                  <p className="text-sm font-bold text-emerald-900">Day {abs + 1}</p>
                 )}
                 {!isPublished && d && (
                   <input
                     type="date"
                     value={d.plan_date ?? ''}
                     onChange={(e) => updateDayDate(abs, e.target.value)}
-                    className="mt-1 w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-[9px] focus:border-emerald-400 focus:outline-none"
+                    className="mt-1 w-full rounded border border-emerald-200 bg-white px-1 py-0.5 text-xs focus:border-emerald-400 focus:outline-none"
                   />
                 )}
                 {!isPublished && d && (
                   <button
                     type="button"
                     onClick={() => toggleSkipDay(abs)}
-                    className={`mt-1 w-full rounded px-1.5 py-0.5 text-[9px] font-bold ${
+                    className={`mt-1 w-full rounded px-1.5 py-0.5 text-xs font-bold ${
                       d.skipped ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-emerald-800'
                     }`}
                   >
@@ -1024,7 +1024,7 @@ function PlanBuilder({
                   </button>
                 )}
                 {d?.skipped ? (
-                  <div className="mt-2 rounded border border-dashed border-slate-300 bg-slate-100 p-2 text-center text-[9px] text-slate-500">
+                  <div className="mt-2 rounded border border-dashed border-slate-300 bg-slate-100 p-2 text-center text-xs text-slate-500">
                     Day off
                   </div>
                 ) : (
@@ -1038,11 +1038,11 @@ function PlanBuilder({
                             {Math.round(eaten.kcal).toLocaleString('en-IN')} /{' '}
                             {targetCalories.toLocaleString('en-IN')} Kcal
                           </p>
-                          <p className="mt-1 text-[9px] text-slate-600">
+                          <p className="mt-1 text-xs text-slate-600">
                             C {Math.round(eaten.carbs)} · F {Math.round(eaten.fat)} · P{' '}
                             {Math.round(eaten.protein)}
                           </p>
-                          <p className="mt-1 text-[9px] text-slate-500">
+                          <p className="mt-1 text-xs text-slate-500">
                             Target C {dailyMacros.carbs} · F {dailyMacros.fat} · P{' '}
                             {dailyMacros.protein}
                           </p>
@@ -1073,8 +1073,8 @@ function PlanBuilder({
                   </button>
                 )}
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold leading-tight text-emerald-900">{slot.label}</p>
-                  <p className="text-[9px] text-slate-400">{slot.time}</p>
+                  <p className="text-sm font-bold leading-tight text-emerald-900">{slot.label}</p>
+                  <p className="text-xs text-slate-400">{slot.time}</p>
                 </div>
               </div>
               {visibleColumns.map((day, localIdx) => {
@@ -1089,7 +1089,7 @@ function PlanBuilder({
                     }`}
                   >
                     {!day || day.skipped ? (
-                      <div className="flex min-h-[48px] items-center justify-center rounded border border-dashed border-slate-200 bg-slate-100 text-[10px] text-slate-400">
+                      <div className="flex min-h-[56px] items-center justify-center rounded border border-dashed border-slate-200 bg-slate-100 text-sm text-slate-400">
                         —
                       </div>
                     ) : (
@@ -1132,7 +1132,7 @@ function PlanBuilder({
       </div>
 
       {!isPublished && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-100 bg-emerald-50/40 px-4 py-2 text-[10px] text-slate-600">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-100 bg-emerald-50/40 px-4 py-2 text-sm text-slate-600">
           <span>
             Week {weekPage + 1} · <span className="font-semibold text-emerald-800">{activeDays}</span> active
             days in plan

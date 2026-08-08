@@ -12,7 +12,9 @@
     "build:ifct-csv": "node scripts/build-ifct-csv.js",
     "seed:ifct": "node scripts/build-ifct-csv.js && node scripts/seed-foods.js",
     "seed:prepared-meals": "node scripts/seed-prepared-meals.js",
-    "seed:foods:all": "npm run seed:ifct && npm run seed:prepared-meals"
+    "build:indb-csv": "python scripts/convert-anuvaad-xlsx-to-csv.py",
+    "seed:indb": "node scripts/seed-indb-foods.js",
+    "seed:foods:all": "npm run seed:ifct && npm run seed:prepared-meals && npm run seed:indb"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.2.1",

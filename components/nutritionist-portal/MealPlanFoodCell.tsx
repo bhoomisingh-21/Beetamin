@@ -368,9 +368,9 @@ export function MealPlanFoodCell({
   if (disabled) {
     return (
       <div className="flex min-h-[72px] flex-col justify-center rounded-lg border border-emerald-100/80 bg-slate-50 px-3 py-2">
-        <span className="line-clamp-2 text-sm font-medium text-gray-700">{cellLabel}</span>
+        <span className="line-clamp-2 text-base font-medium text-gray-700">{cellLabel}</span>
         {showKcal > 0 ? (
-          <span className="mt-1 text-xs font-semibold text-emerald-600">
+          <span className="mt-1 text-sm font-semibold text-emerald-600">
             {formatKcal(showKcal)}
             {!hasEntries ? ' est.' : ''}
           </span>
@@ -415,16 +415,16 @@ export function MealPlanFoodCell({
               : 'border-emerald-100/80 bg-white/60 hover:border-emerald-300 hover:bg-emerald-50/80'
         }`}
       >
-        <span className="line-clamp-2 text-sm font-medium text-gray-800 group-hover:text-emerald-900">
+        <span className="line-clamp-2 text-base font-medium text-gray-800 group-hover:text-emerald-900">
           {cellLabel}
         </span>
         {showKcal > 0 ? (
-          <span className="mt-1 text-xs font-semibold text-emerald-600">
+          <span className="mt-1 text-sm font-semibold text-emerald-600">
             {formatKcal(showKcal)}
             {!hasEntries ? ' est.' : ''}
           </span>
         ) : (
-          <span className="mt-1 text-xs text-gray-400">Tap to edit</span>
+          <span className="mt-1 text-sm text-gray-400">Tap to edit</span>
         )}
       </button>
       {popover && createPortal(popover, document.body)}

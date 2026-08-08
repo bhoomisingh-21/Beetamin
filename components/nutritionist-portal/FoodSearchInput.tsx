@@ -19,7 +19,7 @@ const DEBOUNCE_MS = 300
 
 export function FoodSearchInput({
   onSelect,
-  placeholder = 'Search prepared meals (Poha, Paratha…) + IFCT + custom…',
+  placeholder = 'Search INDB meals, IFCT ingredients, or custom foods…',
   disabled = false,
   className = '',
   defaultShowAddForm = false,
