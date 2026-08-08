@@ -103,7 +103,7 @@ export function MealPlanFoodCell({
     const el = anchorRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const width = Math.min(360, Math.max(280, rect.width))
+    const width = Math.min(480, Math.max(340, rect.width))
     let left = rect.left
     if (left + width > window.innerWidth - 12) {
       left = window.innerWidth - width - 12
@@ -222,7 +222,7 @@ export function MealPlanFoodCell({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800">{slotLabel}</h4>
+            <h4 className="text-sm font-bold uppercase tracking-wider text-emerald-800">{slotLabel}</h4>
             <button
               type="button"
               onClick={close}
@@ -241,10 +241,10 @@ export function MealPlanFoodCell({
                   className="flex items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50/50 p-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">
+                    <p className="text-base font-semibold leading-snug text-gray-900">
                       {entry.foods?.name ?? 'Food'}
                     </p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       <input
                         type="number"
                         min={1}
@@ -255,10 +255,10 @@ export function MealPlanFoodCell({
                           const g = Number(e.target.value)
                           if (g !== entry.qty_grams) void handleGramsChange(entry.id, g)
                         }}
-                        className="w-16 rounded border border-gray-200 px-2 py-0.5 text-xs"
+                        className="w-20 rounded border border-gray-200 px-2 py-1 text-sm"
                       />
-                      <span className="text-xs text-gray-500">g</span>
-                      <span className="text-xs font-semibold text-emerald-700">{formatKcal(entry.kcal)}</span>
+                      <span className="text-sm text-gray-500">g</span>
+                      <span className="text-sm font-bold text-emerald-700">{formatKcal(entry.kcal)}</span>
                     </div>
                   </div>
                   <button

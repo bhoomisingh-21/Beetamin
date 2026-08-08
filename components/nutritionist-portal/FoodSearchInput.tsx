@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Loader2, Plus, Search } from 'lucide-react'
 import { searchFoods } from '@/lib/food-actions'
 import type { FoodRow } from '@/lib/food-db-types'
-import { formatFoodKcalLabel } from '@/lib/food-db-types'
+import { formatFoodKcalLabel, formatFoodMetaLine } from '@/lib/food-db-types'
 import { AddCustomFoodForm } from '@/components/nutritionist-portal/AddCustomFoodForm'
 
 type Props = {
@@ -120,7 +120,7 @@ export function FoodSearchInput({
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          className="w-full rounded-lg border border-emerald-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
+          className="w-full rounded-lg border border-emerald-200 bg-white py-3 pl-10 pr-3 text-base text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
         />
         {loading ? (
           <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-emerald-600" />
@@ -139,15 +139,15 @@ export function FoodSearchInput({
             </div>
           ) : (
             <>
-              <ul id={listId} role="listbox" className="max-h-64 overflow-y-auto py-1">
+              <ul id={listId} role="listbox" className="max-h-[min(420px,60vh)] overflow-y-auto py-1">
                 {error ? (
-                  <li className="px-3 py-2 text-xs text-red-600">{error}</li>
+                  <li className="px-4 py-3 text-sm text-red-600">{error}</li>
                 ) : query.trim().length < 1 ? (
-                  <li className="px-3 py-2 text-xs text-slate-500">Type to search the food database…</li>
+                  <li className="px-4 py-3 text-sm text-slate-500">Type to search the food database…</li>
                 ) : loading ? (
-                  <li className="px-3 py-2 text-xs text-slate-500">Searching…</li>
+                  <li className="px-4 py-3 text-sm text-slate-500">Searching…</li>
                 ) : results.length === 0 ? (
-                  <li className="px-3 py-2 text-xs text-slate-500">No foods found. Add a custom food below.</li>
+                  <li className="px-4 py-3 text-sm text-slate-500">No foods found. Add a custom food below.</li>
                 ) : (
                   results.map((food, index) => (
                     <li key={food.id} role="option" aria-selected={index === highlightIndex}>
@@ -155,19 +155,15 @@ export function FoodSearchInput({
                         type="button"
                         onMouseEnter={() => setHighlightIndex(index)}
                         onClick={() => pickFood(food)}
-                        className={`flex w-full items-start justify-between gap-2 px-3 py-2.5 text-left text-sm transition ${
+                        className={`flex w-full flex-col gap-1.5 px-4 py-3 text-left transition ${
                           index === highlightIndex ? 'bg-emerald-50' : 'hover:bg-emerald-50/70'
                         }`}
                       >
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium text-slate-800">{food.name}</span>
-                          <span className="mt-0.5 block text-[11px] text-slate-500">
-                            {[food.category, food.source === 'prepared' || food.tags?.includes('prepared_meal') ? 'Prepared meal' : food.source === 'ifct' ? 'IFCT' : 'Custom'].filter(Boolean).join(' · ')}
-                          </span>
-                        </span>
-                        <span className="shrink-0 text-xs font-semibold text-emerald-700">
-                          {formatFoodKcalLabel(food)}
-                        </span>
+                        <span className="text-base font-semibold leading-snug text-slate-900">{food.name}</span>
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                          <span className="text-sm text-slate-500">{formatFoodMetaLine(food)}</span>
+                          <span className="text-sm font-bold text-emerald-700">{formatFoodKcalLabel(food)}</span>
+                        </div>
                       </button>
                     </li>
                   ))
@@ -177,7 +173,7 @@ export function FoodSearchInput({
                 <button
                   type="button"
                   onClick={() => setShowAddForm(true)}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
                 >
                   <Plus size={14} />
                   Add custom food

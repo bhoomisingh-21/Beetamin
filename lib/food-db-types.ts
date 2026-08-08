@@ -37,12 +37,29 @@ export function formatFoodKcalLabel(food: Pick<FoodRow, 'kcal_per_100g' | 'defau
   const qty = food.default_qty_grams
   if (qty != null && qty > 0) {
     const kcal = Math.round((kcal100 * qty) / 100)
-    const unit = food.default_unit?.trim()
-    const qtyLabel = unit && unit !== 'g' ? `${qty}${unit}` : `${qty}g`
-    return `${kcal} kcal / ${qtyLabel}`
+    const unit = food.default_unit?.trim().toLowerCase()
+    if (!unit || unit === 'g') return `${kcal} kcal · ${Math.round(qty)}g`
+    if (unit === 'serving') return `${kcal} kcal · ${Math.round(qty)}g serving`
+    return `${kcal} kcal · ${Math.round(qty)} ${food.default_unit?.trim()}`
   }
 
-  return `${kcal100} kcal / 100g`
+  return `${Math.round(kcal100)} kcal · 100g`
+}
+
+/** Short badge for food search rows — avoids duplicate "Prepared Meal · Prepared meal". */
+export function formatFoodSourceBadge(food: Pick<FoodRow, 'source' | 'tags'>): string {
+  if (food.source === 'prepared' || food.tags?.includes('prepared_meal')) return 'Prepared meal'
+  if (food.source === 'ifct') return 'IFCT ingredient'
+  return 'Custom food'
+}
+
+export function formatFoodMetaLine(food: Pick<FoodRow, 'category' | 'source' | 'tags'>): string {
+  const badge = formatFoodSourceBadge(food)
+  const category = food.category?.trim()
+  if (!category) return badge
+  if (category.toLowerCase() === badge.toLowerCase()) return badge
+  if (category.toLowerCase() === 'prepared meal' && badge === 'Prepared meal') return badge
+  return `${category} · ${badge}`
 }
 
 export const FOOD_CATEGORY_SUGGESTIONS = [
