@@ -5,6 +5,16 @@ const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID?.trim()
 const ahrefsKey =
   process.env.NEXT_PUBLIC_AHREFS_ANALYTICS_KEY?.trim() ?? 'eYgU9ROqNXH0iR+6UTsSkQ'
 
+/** Ahrefs expects the script tag in `<head>` for installation verification. */
+export function AhrefsAnalyticsHead() {
+  if (!ahrefsKey) return null
+
+  return (
+    // eslint-disable-next-line @next/next/no-sync-scripts
+    <script src="https://analytics.ahrefs.com/analytics.js" data-key={ahrefsKey} async />
+  )
+}
+
 export function AnalyticsScripts() {
   return (
     <>
@@ -34,14 +44,6 @@ export function AnalyticsScripts() {
             })(window, document, "clarity", "script", "${clarityId}");
           `}
         </Script>
-      ) : null}
-      {ahrefsKey ? (
-        <Script
-          id="ahrefs-analytics"
-          src="https://analytics.ahrefs.com/analytics.js"
-          data-key={ahrefsKey}
-          strategy="afterInteractive"
-        />
       ) : null}
     </>
   )

@@ -8,7 +8,11 @@ import {
   SiteNavigationJsonLd,
   WebSiteJsonLd,
 } from '@/components/JsonLd'
-import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
+import { AhrefsAnalyticsHead, AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
+import {
+  GoogleTagManagerBody,
+  GoogleTagManagerHead,
+} from '@/components/analytics/GoogleTagManager'
 import { AssessmentProfileSync } from '@/components/AssessmentProfileSync'
 import { DeficiencyPopup } from '@/components/DeficiencyPopup'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -130,7 +134,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       allowedRedirectOrigins={allowedRedirectOrigins}
     >
       <html lang="en" className="antialiased">
+        <head>
+          <GoogleTagManagerHead />
+          <AhrefsAnalyticsHead />
+        </head>
         <body className={`${inter.className} bg-[#010803] text-white overflow-x-hidden`}>
+          <GoogleTagManagerBody />
           <AnalyticsScripts />
           <WebSiteJsonLd />
           <OrganizationJsonLd />
