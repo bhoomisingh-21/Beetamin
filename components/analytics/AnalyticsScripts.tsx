@@ -2,6 +2,8 @@ import Script from 'next/script'
 
 const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
 const clarityId = process.env.NEXT_PUBLIC_CLARITY_ID?.trim()
+const ahrefsKey =
+  process.env.NEXT_PUBLIC_AHREFS_ANALYTICS_KEY?.trim() ?? 'eYgU9ROqNXH0iR+6UTsSkQ'
 
 export function AnalyticsScripts() {
   return (
@@ -32,6 +34,14 @@ export function AnalyticsScripts() {
             })(window, document, "clarity", "script", "${clarityId}");
           `}
         </Script>
+      ) : null}
+      {ahrefsKey ? (
+        <Script
+          id="ahrefs-analytics"
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key={ahrefsKey}
+          strategy="afterInteractive"
+        />
       ) : null}
     </>
   )
