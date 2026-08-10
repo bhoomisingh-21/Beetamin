@@ -1,6 +1,9 @@
 import { SITE_URL } from '@/lib/seo-site-url'
 import { SITE_FAQS } from '@/lib/faq-content'
 
+const PRODUCT_IMAGE_CORE = `${SITE_URL}/og-image.png`
+const PRODUCT_IMAGE_BOOSTER = `${SITE_URL}/logo.png`
+
 export function PricingProductsJsonLd() {
   const schema = {
     '@context': 'https://schema.org',
@@ -11,6 +14,7 @@ export function PricingProductsJsonLd() {
         name: 'Core Transformation — Full Recovery Plan',
         description:
           '6 expert nutrition sessions over 3 months with WhatsApp support, doctor-reviewed guidance, and a personalised vitamin plan for Indians.',
+        image: PRODUCT_IMAGE_CORE,
         brand: { '@type': 'Brand', name: 'TheBeetamin' },
         offers: {
           '@type': 'Offer',
@@ -27,6 +31,7 @@ export function PricingProductsJsonLd() {
         name: 'Single Booster Session',
         description:
           'One 30-minute expert nutrition session with doctor-reviewed guidance — try before committing to the full plan.',
+        image: PRODUCT_IMAGE_BOOSTER,
         brand: { '@type': 'Brand', name: 'TheBeetamin' },
         offers: {
           '@type': 'Offer',

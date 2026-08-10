@@ -1,6 +1,9 @@
 /** Shared FAQ copy — homepage accordion, /faq page, and FAQPage JSON-LD stay in sync. */
 export type FaqItem = { q: string; a: string }
 
+export const REFUND_POLICY_ANSWER =
+  "If after attending 3 of your 6 scheduled sessions you feel the programme isn't working for you, we'll refund the remaining unused amount — no questions asked. You only pay for the value you've actually received."
+
 export const SITE_FAQS: FaqItem[] = [
   {
     q: 'How is Beetamin different from other nutrition apps?',
@@ -20,7 +23,7 @@ export const SITE_FAQS: FaqItem[] = [
   },
   {
     q: 'What is your refund policy?',
-    a: "If you're unsatisfied after your first session, contact us at hi@thebeetamin.com within 7 days of purchase for a full refund. No questions asked.",
+    a: REFUND_POLICY_ANSWER,
   },
   {
     q: 'Who exactly will be my nutritionist?',

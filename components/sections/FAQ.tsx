@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { SITE_FAQS } from "@/lib/faq-content";
 
 const FAQS = SITE_FAQS;
@@ -49,20 +49,20 @@ export default function FAQ() {
                 />
               </div>
 
-              <AnimatePresence initial={false}>
-                {open === i && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <p className="px-4 sm:px-5 pb-4 sm:pb-5 text-gray-500 text-sm leading-relaxed">
-                      {faq.a}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <motion.div
+                initial={false}
+                animate={{
+                  height: open === i ? "auto" : 0,
+                  opacity: open === i ? 1 : 0,
+                }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+                aria-hidden={open !== i}
+              >
+                <p className="px-4 sm:px-5 pb-4 sm:pb-5 text-gray-500 text-sm leading-relaxed">
+                  {faq.a}
+                </p>
+              </motion.div>
             </div>
           ))}
         </div>

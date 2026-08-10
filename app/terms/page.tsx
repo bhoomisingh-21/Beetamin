@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { buildPageMetadata } from '@/lib/seo-metadata'
+import { REFUND_POLICY_ANSWER } from '@/lib/faq-content'
 
 export function generateMetadata(): Metadata {
   return buildPageMetadata({
     title: 'Terms of Service',
     description:
-      'TheBeetamin terms: service scope, ₹3,999 plan payment, 7-day refund policy, and medical disclaimer for nutrition guidance in India.',
+      'TheBeetamin terms: service scope, ₹3,999 plan payment, pro-rata refund after 3 of 6 sessions, and medical disclaimer for nutrition guidance in India.',
     path: '/terms',
   })
 }
@@ -53,11 +54,11 @@ export default function TermsPage() {
           <section>
             <h2 className="text-white text-xl font-bold mb-3">4. Refund Policy</h2>
             <p>
-              We offer a <strong className="text-white">7-day satisfaction guarantee</strong>. If you are unsatisfied after your first session, you may request a full refund within 7 days of your purchase by emailing{' '}
+              {REFUND_POLICY_ANSWER} To request a refund, email{' '}
               <a href="mailto:hi@thebeetamin.com" className="text-emerald-400 hover:underline">
                 hi@thebeetamin.com
               </a>{' '}
-              with the subject line &quot;Refund Request&quot;. Refunds are not available after 7 days or after more than one session has been conducted, whichever comes first. Report purchases (₹39) are non-refundable once the report has been generated.
+              with the subject line &quot;Refund Request&quot;. Report purchases (₹39) are non-refundable once the report has been generated.
             </p>
           </section>
 
