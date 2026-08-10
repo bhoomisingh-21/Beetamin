@@ -1,5 +1,7 @@
 import { randomBytes, randomUUID } from 'crypto'
 
+import { clerkClient } from '@clerk/nextjs/server'
+
 import { paymentAppBaseUrl } from '@/lib/payment-app-base-url'
 import { makePayUTxnId } from '@/lib/payu'
 import { runPaidReportGeneration } from '@/lib/run-paid-report-generation'
@@ -41,9 +43,102 @@ export async function getClientGiftedAccess(clerkUserId: string): Promise<Client
 }
 
 /** Placeholder clerk_user_id prefixes used for clients who haven't signed up yet. */
-function isPlaceholderClerkId(clerkUserId: string | null | undefined): boolean {
+export function isPlaceholderClerkId(clerkUserId: string | null | undefined): boolean {
   const id = String(clerkUserId ?? '')
   return !id || id.startsWith('pending_gift_') || id.startsWith('invite_pending_')
+}
+
+type ClientGiftLookupRow = {
+  id: string
+  clerk_user_id: string
+  email: string
+  name: string | null
+  status: string | null
+  sessions_total: number | null
+  sessions_remaining: number | null
+  plan_end_date: string | null
+}
+
+async function findClerkUserByEmail(email: string): Promise<{ id: string; name: string } | null> {
+  try {
+    const cc = await clerkClient()
+    const { data } = await cc.users.getUserList({ emailAddress: [email], limit: 1 })
+    const user = data[0]
+    if (!user?.id) return null
+    const name =
+      [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ||
+      user.username?.trim() ||
+      email.split('@')[0]
+    return { id: user.id, name }
+  } catch (e) {
+    console.error('[findClerkUserByEmail]', e)
+    return null
+  }
+}
+
+async function findClientByEmail(email: string): Promise<ClientGiftLookupRow | null> {
+  const normalized = email.trim().toLowerCase()
+  const { data, error } = await supabaseAdmin
+    .from('clients')
+    .select('id, clerk_user_id, email, name, status, sessions_total, sessions_remaining, plan_end_date')
+    .ilike('email', normalized)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[findClientByEmail]', error)
+    return null
+  }
+  if (!data) return null
+  return data as ClientGiftLookupRow
+}
+
+/** Link a pending-gift / invite row to a real Clerk account when the person has already signed up. */
+export async function reconcilePendingClientWithClerk(
+  client: Pick<ClientGiftLookupRow, 'id' | 'clerk_user_id' | 'email' | 'name'>,
+): Promise<boolean> {
+  if (!isPlaceholderClerkId(client.clerk_user_id)) return true
+
+  const email = String(client.email ?? '')
+    .trim()
+    .toLowerCase()
+  if (!email) return false
+
+  const clerkUser = await findClerkUserByEmail(email)
+  if (!clerkUser) return false
+
+  const patch: Record<string, unknown> = {
+    clerk_user_id: clerkUser.id,
+    email,
+  }
+  if (!String(client.name ?? '').trim()) {
+    patch.name = clerkUser.name
+  }
+
+  const { error } = await supabaseAdmin.from('clients').update(patch).eq('id', client.id)
+  if (error) {
+    console.error('[reconcilePendingClientWithClerk]', error)
+    return false
+  }
+  return true
+}
+
+function fullPlanSessionPatch(client: ClientGiftLookupRow): Record<string, unknown> | null {
+  const noSessionsLeft =
+    Number(client.sessions_total ?? 0) <= 0 || Number(client.sessions_remaining ?? 0) <= 0
+  const planExpired = !client.plan_end_date || new Date(client.plan_end_date) < new Date()
+  if (!noSessionsLeft && !planExpired && client.status === 'active') return null
+
+  const startDate = new Date()
+  const endDate = new Date()
+  endDate.setMonth(endDate.getMonth() + 3)
+  return {
+    status: 'active',
+    sessions_total: 6,
+    sessions_used: 0,
+    sessions_remaining: 6,
+    plan_start_date: startDate.toISOString().slice(0, 10),
+    plan_end_date: endDate.toISOString().slice(0, 10),
+  }
 }
 
 export function giftedPlanMatchesPayment(
@@ -176,7 +271,7 @@ export type GiftedAccessListRow = {
 export async function listGiftedClients(): Promise<GiftedAccessListRow[]> {
   const { data, error } = await supabaseAdmin
     .from('clients')
-    .select('id, clerk_user_id, email, gifted_plan, gifted_note, gifted_at')
+    .select('id, clerk_user_id, email, name, gifted_plan, gifted_note, gifted_at')
     .eq('is_gifted_access', true)
     .not('gifted_plan', 'is', null)
     .order('gifted_at', { ascending: false })
@@ -186,7 +281,28 @@ export async function listGiftedClients(): Promise<GiftedAccessListRow[]> {
     return []
   }
 
-  return (data || []).map((row) => ({
+  const rows = data || []
+  await Promise.all(
+    rows
+      .filter((row) => isPlaceholderClerkId(String(row.clerk_user_id ?? '')))
+      .map((row) =>
+        reconcilePendingClientWithClerk({
+          id: String(row.id),
+          clerk_user_id: String(row.clerk_user_id ?? ''),
+          email: String(row.email ?? ''),
+          name: row.name != null ? String(row.name) : null,
+        }),
+      ),
+  )
+
+  const { data: refreshed } = await supabaseAdmin
+    .from('clients')
+    .select('id, clerk_user_id, email, gifted_plan, gifted_note, gifted_at')
+    .eq('is_gifted_access', true)
+    .not('gifted_plan', 'is', null)
+    .order('gifted_at', { ascending: false })
+
+  return (refreshed || rows).map((row) => ({
     id: String(row.id),
     clerk_user_id: String(row.clerk_user_id ?? ''),
     email: String(row.email ?? ''),
@@ -206,15 +322,12 @@ export async function grantGiftAccessByEmail(args: {
   const email = args.email.trim().toLowerCase()
   if (!email) return { ok: false, error: 'Email is required.' }
 
-  const { data: client, error } = await supabaseAdmin
-    .from('clients')
-    .select('id, clerk_user_id, email, status, sessions_total, sessions_remaining, plan_end_date')
-    .eq('email', email)
-    .maybeSingle()
+  let client = await findClientByEmail(email)
+  const clerkUser = await findClerkUserByEmail(email)
 
-  if (error) {
-    console.error('[grantGiftAccessByEmail]', error)
-    return { ok: false, error: 'Database error. Try again.' }
+  if (client && isPlaceholderClerkId(client.clerk_user_id)) {
+    await reconcilePendingClientWithClerk(client)
+    client = await findClientByEmail(email)
   }
 
   const giftFields = {
@@ -225,25 +338,11 @@ export async function grantGiftAccessByEmail(args: {
   }
 
   if (client) {
-    const patch: Record<string, unknown> = { ...giftFields }
+    const patch: Record<string, unknown> = { ...giftFields, email }
 
-    // Nutritionist-added clients (and anyone whose plan lapsed) start with 0 sessions.
-    // A full_plan grant should actually unlock the 6 sessions / 3 months it promises —
-    // otherwise "Grant access" succeeds but booking still fails with "No sessions remaining".
     if (args.plan === 'full_plan') {
-      const noSessionsLeft = Number(client.sessions_total ?? 0) <= 0 || Number(client.sessions_remaining ?? 0) <= 0
-      const planExpired = !client.plan_end_date || new Date(client.plan_end_date as string) < new Date()
-      if (noSessionsLeft || planExpired || client.status !== 'active') {
-        const startDate = new Date()
-        const endDate = new Date()
-        endDate.setMonth(endDate.getMonth() + 3)
-        patch.status = 'active'
-        patch.sessions_total = 6
-        patch.sessions_used = 0
-        patch.sessions_remaining = 6
-        patch.plan_start_date = startDate.toISOString().slice(0, 10)
-        patch.plan_end_date = endDate.toISOString().slice(0, 10)
-      }
+      const sessionPatch = fullPlanSessionPatch(client)
+      if (sessionPatch) Object.assign(patch, sessionPatch)
     }
 
     const { error: updErr } = await supabaseAdmin.from('clients').update(patch).eq('id', client.id)
@@ -251,14 +350,44 @@ export async function grantGiftAccessByEmail(args: {
       console.error('[grantGiftAccessByEmail] update', updErr)
       return { ok: false, error: 'Could not grant access.' }
     }
-    const pending = isPlaceholderClerkId(client.clerk_user_id)
+
+    const refreshed = await findClientByEmail(email)
+    const pending = isPlaceholderClerkId(refreshed?.clerk_user_id ?? client.clerk_user_id)
     return { ok: true, email, plan: args.plan, pending }
   }
 
-  // No account yet — create a placeholder client row keyed by email. Once they sign up
-  // and complete onboarding, the email-conflict upsert in createClientProfile / the free
-  // assessment flow re-links this same row to their real clerk_user_id, keeping these
-  // gifted fields intact so they can book immediately.
+  if (clerkUser) {
+    const startDate = new Date()
+    const endDate = new Date()
+    endDate.setMonth(endDate.getMonth() + 3)
+    const name = args.name?.trim() || clerkUser.name
+
+    const { error: upsertErr } = await supabaseAdmin.from('clients').upsert(
+      {
+        clerk_user_id: clerkUser.id,
+        name,
+        email,
+        phone: '',
+        plan_start_date: startDate.toISOString().slice(0, 10),
+        plan_end_date: endDate.toISOString().slice(0, 10),
+        status: 'active',
+        sessions_total: args.plan === 'full_plan' ? 6 : 0,
+        sessions_used: 0,
+        sessions_remaining: args.plan === 'full_plan' ? 6 : 0,
+        ...giftFields,
+      },
+      { onConflict: 'email' },
+    )
+
+    if (upsertErr) {
+      console.error('[grantGiftAccessByEmail] upsert existing clerk user', upsertErr)
+      return { ok: false, error: 'Could not grant access to this signed-in user.' }
+    }
+
+    return { ok: true, email, plan: args.plan, pending: false }
+  }
+
+  // No Clerk account yet — create a placeholder row keyed by email.
   const startDate = new Date()
   const endDate = new Date()
   endDate.setMonth(endDate.getMonth() + 3)
