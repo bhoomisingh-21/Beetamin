@@ -7,6 +7,7 @@ import type { LucideIcon } from "lucide-react";
 
 interface ProblemCard {
   image: string;
+  imageAlt: string;
   icon: LucideIcon;
   title: string;
   stat: string;
@@ -17,6 +18,7 @@ interface ProblemCard {
 const CARDS: ProblemCard[] = [
   {
     image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=800&q=80",
+    imageAlt: "Indian woman with dull skin and hair loss linked to vitamin C and zinc deficiency",
     icon: User,
     title: "Skin & Hair",
     stat: "COLLAGEN SUPPORT",
@@ -25,6 +27,7 @@ const CARDS: ProblemCard[] = [
   },
   {
     image: "https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80",
+    imageAlt: "Low mood and mental fatigue from B6 and serotonin pathway nutrient gaps",
     icon: Battery,
     title: "Mood & Mental",
     stat: "MOOD & SEROTONIN",
@@ -33,6 +36,7 @@ const CARDS: ProblemCard[] = [
   },
   {
     image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80",
+    imageAlt: "Chronic fatigue and low energy from iron and mitochondrial dysfunction in Indians",
     icon: Zap,
     title: "Energy Levels",
     stat: "FATIGUE STARTS AT THE CELL",
@@ -41,6 +45,7 @@ const CARDS: ProblemCard[] = [
   },
   {
     image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80",
+    imageAlt: "Brain fog and poor focus from B12 and Omega-3 deficiency affecting cognition",
     icon: Brain,
     title: "Focus & Memory",
     stat: "COGNITIVE PERFORMANCE",
@@ -89,7 +94,7 @@ export default function ProblemSection() {
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
                     src={card.image}
-                    alt={card.title}
+                    alt={card.imageAlt}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
@@ -157,7 +162,7 @@ export default function ProblemSection() {
                 <div className="relative h-48 w-full overflow-hidden">
                   <Image
                     src={card.image}
-                    alt={card.title}
+                    alt={card.imageAlt}
                     fill
                     className="object-cover"
                   />

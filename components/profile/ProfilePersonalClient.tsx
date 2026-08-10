@@ -229,7 +229,7 @@ export default function ProfilePersonalClient({
         <div className={`${profileCard} overflow-hidden p-0`}>
           {/* Mobile: image first */}
           <div className="relative h-[160px] w-full md:hidden">
-            <Image src={HERO_IMG} alt="" fill className="object-cover" sizes="100vw" priority />
+            <Image src={HERO_IMG} alt="Personalised Indian nutrition and deficiency recovery dashboard hero" fill className="object-cover" sizes="100vw" priority />
             <div
               className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(15,22,35,0.2),#0F1623)]"
               aria-hidden
@@ -296,7 +296,7 @@ export default function ProfilePersonalClient({
             </div>
 
             <div className="relative hidden min-h-[280px] w-[40%] md:block">
-              <Image src={HERO_IMG} alt="" fill className="object-cover" sizes="40vw" priority />
+              <Image src={HERO_IMG} alt="TheBeetamin client profile — personalised deficiency recovery plan" fill className="object-cover" sizes="40vw" priority />
               <div
                 className="absolute inset-0 bg-[linear-gradient(to_right,#0F1623_0%,transparent_42%)]"
                 aria-hidden

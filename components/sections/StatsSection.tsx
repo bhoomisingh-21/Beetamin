@@ -83,7 +83,7 @@ const PrecisionBento: React.FC = () => {
             <div className="h-[250px] lg:aspect-square rounded-3xl sm:rounded-[40px] overflow-hidden border border-slate-100 shadow-sm lg:self-end w-full lg:w-[85%]">
               <img
                 src="https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?q=80&w=764&auto=format&fit=crop"
-                alt="Clinical Research"
+                alt="Clinical nutrition research supporting Indian micronutrient deficiency recovery"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -122,7 +122,7 @@ const PrecisionBento: React.FC = () => {
             <div className="h-[220px] sm:h-[260px] rounded-3xl sm:rounded-[40px] overflow-hidden border border-slate-100 shadow-sm lg:self-end w-full lg:w-[90%] translate-x-0 lg:-translate-x-4">
               <img
                 src="https://images.unsplash.com/photo-1543362906-acfc16c67564?q=80&w=765&auto=format&fit=crop"
-                alt="Healthy ingredients"
+                alt="Iron-rich and B12-friendly Indian ingredients for deficiency recovery meal plans"
                 className="w-full h-full object-cover"
               />
             </div>

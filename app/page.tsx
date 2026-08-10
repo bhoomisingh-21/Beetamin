@@ -18,15 +18,17 @@ import PageLoader from "@/components/PageLoader";
 import ScrollProgress from "@/components/ScrollProgress";
 import StickyMobileCTA from "@/components/sections/StickyMobileCTA";
 import { hasActiveFullPlanPurchase } from "@/lib/plan-access";
+import { buildPageMetadata } from '@/lib/seo-metadata'
 
-export const metadata: Metadata = {
-  title: {
-    absolute: 'TheBeetamin — Free Deficiency Assessment + ₹39 PDF Report for India',
-  },
-  description:
-    'Take a free 7-question deficiency assessment. Get a 12-page personalised PDF report covering Vitamin D, Iron, B12 & Omega-3 — with Indian meal plan — for just ₹39. Built for India.',
-  alternates: { canonical: 'https://www.thebeetamin.com' },
-};
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Free Deficiency Assessment + ₹39 PDF Report',
+    description:
+      'Take a free 7-question deficiency assessment. Get a 12-page personalised PDF covering Vitamin D, Iron, B12 & Omega-3 with an Indian meal plan — for ₹39.',
+    path: '/',
+    absoluteTitle: true,
+  })
+}
 
 export default async function Home() {
   const { userId } = await auth()

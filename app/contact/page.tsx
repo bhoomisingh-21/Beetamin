@@ -1,9 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Contact Us — TheBeetamin',
-  description: 'Get in touch with the TheBeetamin team for support, queries, or partnership enquiries.',
+import { buildPageMetadata } from '@/lib/seo-metadata'
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Contact TheBeetamin Support',
+    description:
+      'Email hi@thebeetamin.com for plan support, nutritionist booking help, or partnership enquiries — we reply within hours on weekdays.',
+    path: '/contact',
+  })
 }
 
 export default function ContactPage() {

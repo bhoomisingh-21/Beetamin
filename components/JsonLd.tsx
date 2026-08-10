@@ -1,5 +1,7 @@
 import { SITE_URL } from '@/lib/seo-site-url'
 import { CORE_SITE_NAV_LINKS, SITE_SITELINKS } from '@/lib/site-navigation'
+import { FAQJsonLdFromContent } from '@/components/seo/PricingProductsJsonLd'
+import { PricingProductsJsonLd } from '@/components/seo/PricingProductsJsonLd'
 
 export function WebSiteJsonLd() {
   const schema = {
@@ -16,9 +18,9 @@ export function WebSiteJsonLd() {
       name: 'TheBeetamin',
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/favicon-96.png`,
-        width: 96,
-        height: 96,
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
       },
     },
     inLanguage: 'en-IN',
@@ -93,9 +95,9 @@ export function OrganizationJsonLd() {
     url: SITE_URL,
     logo: {
       '@type': 'ImageObject',
-      url: `${SITE_URL}/favicon-96.png`,
-      width: 96,
-      height: 96,
+      url: `${SITE_URL}/og-image.png`,
+      width: 1200,
+      height: 630,
     },
     description:
       'Personalised nutrient deficiency recovery platform for Indians. Expert nutrition sessions and clinician-reviewed deficiency reports.',
@@ -179,49 +181,7 @@ export function MedicalServiceJsonLd() {
 }
 
 export function FAQJsonLd() {
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: [
-      {
-        '@type': 'Question',
-        name: 'What is TheBeetamin?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'TheBeetamin is a personalised nutrition platform that identifies your nutrient deficiencies and gives you an Indian food-based recovery plan with expert nutritionist support.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'How does the deficiency report work?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'You take a free assessment quiz about your symptoms and lifestyle. Our system generates a personalised report with your deficiencies, a 7-day Indian meal plan, supplement protocol, and lab test recommendations.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'Is TheBeetamin available across India?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'Yes, TheBeetamin is fully online and available across all of India. Sessions are conducted via video call.',
-        },
-      },
-      {
-        '@type': 'Question',
-        name: 'What does the ₹3,999 plan include?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'The Core Transformation plan includes 6 expert nutrition sessions of 30 minutes each, 3 months validity, WhatsApp support between sessions, personalised vitamin and supplement plan, and session recordings.',
-        },
-      },
-    ],
-  }
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  )
+  return <FAQJsonLdFromContent />
 }
+
+export { PricingProductsJsonLd }

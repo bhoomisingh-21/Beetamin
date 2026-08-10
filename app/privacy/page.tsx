@@ -1,9 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy — TheBeetamin',
-  description: 'TheBeetamin Privacy Policy — how we collect, use, and protect your personal data.',
+import { buildPageMetadata } from '@/lib/seo-metadata'
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Privacy Policy',
+    description:
+      'How TheBeetamin collects, uses, and protects your health and personal data on our Indian deficiency recovery platform.',
+    path: '/privacy',
+  })
 }
 
 export default function PrivacyPage() {

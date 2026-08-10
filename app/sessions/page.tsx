@@ -3,14 +3,18 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 
 import { getClientDashboard } from '@/lib/booking-actions'
+import { buildPageMetadata } from '@/lib/seo-metadata'
 
 import SessionsPageClient from './SessionsPageClient'
 
-export const metadata: Metadata = {
-  title: 'Expert Nutritionist Consultation',
-  description:
-    'Book online nutrition sessions from home — structured follow-ups, WhatsApp support, and a clear path from report to habit change. Dr. Priya Sharma. Built for India.',
-  alternates: { canonical: 'https://www.thebeetamin.com/sessions' },
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Book Nutritionist Session — Online India',
+    description:
+      'Schedule 1-on-1 video sessions with a certified nutritionist. Structured follow-ups, WhatsApp support, and plans tailored to Indian diets.',
+    path: '/sessions',
+    noIndex: true,
+  })
 }
 
 export default async function SessionsPage() {

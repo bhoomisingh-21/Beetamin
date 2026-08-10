@@ -42,7 +42,11 @@ export default function PricingSection({ hasFullPlan }: Props) {
         <p className="text-gray-400 mt-4 sm:mt-5 px-2 text-sm sm:text-base leading-relaxed md:leading-[1.85] max-w-5xl mx-auto md:whitespace-nowrap">
           Most clients choose the full programme —{" "}
           <span className="text-emerald-400 font-semibold">₹3,999 one-time</span>, 6 sessions, 90
-          days. No subscription.
+          days. Includes a{" "}
+          <Link href="/deficiency-recovery-report" className="text-emerald-400 underline-offset-2 hover:underline">
+            personalised deficiency report
+          </Link>
+          . No subscription.
         </p>
       </div>
 

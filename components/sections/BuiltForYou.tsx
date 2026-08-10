@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { Users, Zap, User, Brain, Heart, FlaskConical, Scale } from "lucide-react";
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='92'><rect width='80' height='92' fill='%23060a0e'/><polygon points='40,3 77,22 77,70 40,89 3,70 3,22' fill='%23060a0e' stroke='%2311181f' stroke-width='1.5'/></svg>`;
@@ -13,7 +15,7 @@ interface Card {
   iconColor: string;
   badge: string;
   title: string;
-  desc: string;
+  desc: string | ReactNode;
 }
 
 const CARDS: Card[] = [
@@ -39,7 +41,15 @@ const CARDS: Card[] = [
     iconColor: "text-blue-400",
     badge: "COGNITIVE",
     title: "Brain Fog & Low Focus",
-    desc: "Can't concentrate? B12 and Omega-3 deficiency are directly linked to cognitive slowdown. We fix the root cause.",
+    desc: (
+      <>
+        Can&apos;t concentrate?{' '}
+        <Link href="/nutrient-deficiency" className="text-emerald-400/90 underline-offset-2 hover:underline">
+          B12 and Omega-3 deficiency
+        </Link>{' '}
+        are directly linked to cognitive slowdown. We fix the root cause.
+      </>
+    ),
   },
   {
     icon: Heart,

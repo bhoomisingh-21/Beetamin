@@ -231,7 +231,7 @@ export function DeficiencyPopup() {
                 <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#00C16A]/30">
                   <Image
                     src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=120&auto=format&fit=crop&q=80"
-                    alt=""
+                    alt="Certified nutritionist offering personalised Indian deficiency recovery consultation"
                     width={44}
                     height={44}
                     className="h-full w-full object-cover"

@@ -1,9 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Terms of Service — TheBeetamin',
-  description: 'TheBeetamin Terms of Service — service description, payment terms, refund policy, and medical disclaimer.',
+import { buildPageMetadata } from '@/lib/seo-metadata'
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Terms of Service',
+    description:
+      'TheBeetamin terms: service scope, ₹3,999 plan payment, 7-day refund policy, and medical disclaimer for nutrition guidance in India.',
+    path: '/terms',
+  })
 }
 
 export default function TermsPage() {

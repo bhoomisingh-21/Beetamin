@@ -1,9 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Cookie Policy — TheBeetamin',
-  description: 'TheBeetamin Cookie Policy — what cookies we use and how to manage them.',
+import { buildPageMetadata } from '@/lib/seo-metadata'
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Cookie Policy',
+    description:
+      'Cookies used on TheBeetamin — analytics (GTM, Ahrefs), session auth, and how to manage preferences.',
+    path: '/cookies',
+  })
 }
 
 export default function CookiesPage() {

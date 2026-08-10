@@ -1,9 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
-export const metadata: Metadata = {
-  title: 'Careers — TheBeetamin',
-  description: 'Join the TheBeetamin team and help build India\'s leading deficiency recovery platform.',
+import { buildPageMetadata } from '@/lib/seo-metadata'
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Careers at TheBeetamin',
+    description:
+      'Join TheBeetamin — build India\'s leading personalised deficiency recovery platform with nutritionists, doctors, and health technologists.',
+    path: '/careers',
+  })
 }
 
 export default function CareersPage() {

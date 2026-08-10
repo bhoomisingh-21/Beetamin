@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { SITE_URL } from '@/lib/seo-site-url'
+import { RESOURCE_TOPICS } from '@/lib/faq-content'
 import { SITE_SITELINKS } from '@/lib/site-navigation'
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -11,6 +12,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: 'monthly' as const,
     priority: 0.75,
   }))
+
+  const resourceEntries: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.55 },
+    { url: `${SITE_URL}/resources`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    ...RESOURCE_TOPICS.flatMap((topic) => [
+      {
+        url: `${SITE_URL}/resources/${topic.slug}`,
+        lastModified: now,
+        changeFrequency: 'monthly' as const,
+        priority: 0.5,
+      },
+      {
+        url: `${SITE_URL}/blog/${topic.slug}`,
+        lastModified: now,
+        changeFrequency: 'monthly' as const,
+        priority: 0.45,
+      },
+    ]),
+  ]
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: SITE_URL, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
@@ -30,5 +50,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/deficiency-recovery-report`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
   ]
 
-  return [...staticPages, ...sitelinkEntries]
+  return [...staticPages, ...sitelinkEntries, ...resourceEntries]
 }

@@ -131,8 +131,8 @@ export default function Hero() {
                 </span>
               </motion.div>
 
-              {/* Headline */}
-              <motion.h1
+              {/* Headline — sr-only H1 lives in HomePageSeoHead for primary keyword */}
+              <motion.h2
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.08 }}
@@ -144,7 +144,7 @@ export default function Hero() {
                 We know
                 <br />
                 <span style={{ color: "#00E676" }}>exactly why.</span>
-              </motion.h1>
+              </motion.h2>
 
               {/* Deficiency ticker */}
               <motion.div
@@ -203,7 +203,11 @@ export default function Hero() {
                 <strong style={{ color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>
                   personalised 12-page PDF
                 </strong>{" "}
-                with Indian foods and a meal plan — for just ₹39.
+                with Indian foods and a{" "}
+                <Link href="/personalised-meal-plan" className="text-emerald-400/90 underline-offset-2 hover:underline">
+                  meal plan
+                </Link>{" "}
+                — for just ₹39.
               </motion.p>
 
               {/* MOBILE IMAGE — shown only on small screens */}
@@ -216,7 +220,7 @@ export default function Hero() {
               >
                 <Image
                   src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800"
-                  alt="Personalised Indian nutrition bowl"
+                  alt="Indian thali with dal, vegetables and roti — personalised meal plan for nutrient deficiency recovery"
                   width={800}
                   height={500}
                   className="w-full object-cover"
@@ -345,7 +349,7 @@ export default function Hero() {
                   />
                   <Image
                     src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800"
-                    alt="Personalised Indian nutrition bowl"
+                    alt="Indian thali with dal, vegetables and roti — personalised meal plan for nutrient deficiency recovery"
                     width={600}
                     height={700}
                     className="object-cover w-full"

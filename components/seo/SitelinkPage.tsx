@@ -28,11 +28,16 @@ export function SitelinkPage({ link }: Props) {
         </h1>
         <p className="mt-5 text-base leading-relaxed text-zinc-400">{link.description}</p>
         {'sections' in link && link.sections?.length ? (
-          <ul className="mt-6 list-disc space-y-3 pl-5 text-base leading-relaxed text-zinc-400">
-            {link.sections.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+          <div className="mt-6 space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">
+              What you get
+            </h2>
+            <ul className="list-disc space-y-3 pl-5 text-base leading-relaxed text-zinc-400">
+              {link.sections.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
         <Link
           href={link.ctaHref}

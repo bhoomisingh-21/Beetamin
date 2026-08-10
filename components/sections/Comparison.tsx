@@ -1,22 +1,27 @@
 "use client";
 
+import Link from "next/link";
 import { X, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+
 const ROWS = [
   {
     feature: "Consultation Type",
     typical: "AI chatbot / generic advice",
     beetamin: "1-on-1 certified nutritionist",
+    beetaminHref: "/expert-nutritionist-consultation",
   },
   {
     feature: "Diet Plans",
     typical: "Generic templates",
     beetamin: "Fully personalized to your body",
+    beetaminHref: "/personalised-meal-plan",
   },
   {
     feature: "Vitamin Guidance",
     typical: "None or generic multivitamin",
     beetamin: "Targeted micronutrient optimization",
+    beetaminHref: "/nutrient-deficiency",
   },
   {
     feature: "Doctor Review",
@@ -39,6 +44,15 @@ const ROWS = [
     beetamin: "Nutritionist-guided 90-day tracking",
   },
 ];
+
+function BeetaminCell({ text, href }: { text: string; href?: string }) {
+  if (!href) return <>{text}</>;
+  return (
+    <Link href={href} className="underline-offset-2 hover:underline">
+      {text}
+    </Link>
+  );
+}
 
 export default function Comparison() {
   return (
@@ -105,7 +119,9 @@ export default function Comparison() {
                 <div className={`p-4 border-b ${i % 2 === 0 ? "bg-[#F1FDF6]" : "bg-white"}`}>
                   <div className="flex gap-2">
                     <CheckCircle2 size={14} className="text-[#2DD48F] mt-1" />
-                    <p className="text-xs font-semibold text-[#050B0D]">{row.beetamin}</p>
+                    <p className="text-xs font-semibold text-[#050B0D]">
+                      <BeetaminCell text={row.beetamin} href={row.beetaminHref} />
+                    </p>
                   </div>
                 </div>
 
@@ -194,7 +210,7 @@ export default function Comparison() {
                 >
                   <CheckCircle2 size={17} className="text-[#2DD48F]" />
                   <span className="text-[#050B0D] font-semibold text-sm">
-                    {row.beetamin}
+                    <BeetaminCell text={row.beetamin} href={row.beetaminHref} />
                   </span>
                 </motion.div>
               ))}

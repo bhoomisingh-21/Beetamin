@@ -141,7 +141,7 @@ function ExpertCardContent({ expert }: { expert: (typeof EXPERTS)[number] }) {
       <div className="relative h-[320px] w-full overflow-hidden group">
         <Image
           src={expert.image}
-          alt={expert.name}
+          alt={`${expert.name} — certified Indian nutritionist specialising in ${expert.specialty.toLowerCase()}`}
           fill
           className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 80vw, 33vw"

@@ -1,10 +1,19 @@
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Free Deficiency Assessment — TheBeetamin',
-  description:
-    'Take the free 2-minute quiz to find out which nutrients you are deficient in. Get a personalised Indian meal plan and recovery report instantly.',
-  alternates: { canonical: 'https://www.thebeetamin.com/assessment' },
+import { buildPageMetadata } from '@/lib/seo-metadata'
+
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Free Deficiency Assessment Quiz — 2 Minutes',
+    description:
+      'Take the free 2-minute quiz to find likely Vitamin D, Iron, B12 & Omega-3 gaps. Instant summary plus option to unlock a full Indian recovery PDF for ₹39.',
+    path: '/assessment',
+    keywords: [
+      'free deficiency assessment',
+      'vitamin deficiency quiz India',
+      'nutrient gap test online',
+    ],
+  })
 }
 
 export default function AssessmentLayout({ children }: { children: React.ReactNode }) {

@@ -3,12 +3,16 @@ import type { Metadata } from 'next'
 
 import BookingPageClient from '@/app/booking/BookingPageClient'
 import { getSessionBookingAccess } from '@/lib/session-booking-access'
+import { buildPageMetadata } from '@/lib/seo-metadata'
 
-export const metadata: Metadata = {
-  title: 'Personalised Recovery Plan',
-  description:
-    'Core Transformation — 6 expert nutrition sessions over 3 months, WhatsApp support, and a personalised vitamin plan with Indian meal guidance. ₹3,999.',
-  alternates: { canonical: 'https://www.thebeetamin.com/booking' },
+export function generateMetadata(): Metadata {
+  return buildPageMetadata({
+    title: 'Recovery Plans & Pricing — ₹3,999 Full Plan',
+    description:
+      'Core Transformation: 6 expert sessions over 3 months, WhatsApp support & personalised vitamin plan. Single Booster session ₹499. One-time payment.',
+    path: '/booking',
+    keywords: ['nutrition plan price India', 'online dietitian plan ₹3999', 'nutrition session ₹499'],
+  })
 }
 
 export default async function BookingPage() {

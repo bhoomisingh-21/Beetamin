@@ -1,16 +1,14 @@
 import type { Metadata } from 'next'
+
 import { SitelinkPage } from '@/components/seo/SitelinkPage'
 import { SitelinkPageJsonLd } from '@/components/seo/SitelinkPageJsonLd'
-import { SITE_URL } from '@/lib/seo-site-url'
+import { servicePageMetadata } from '@/lib/seo-metadata'
 import { getSitelinkBySlug } from '@/lib/site-navigation'
 
 const link = getSitelinkBySlug('expert-nutritionist-consultation')!
 
-export const metadata: Metadata = {
-  title: link.label,
-  description: link.description,
-  alternates: { canonical: `${SITE_URL}${link.href}` },
-  robots: { index: true, follow: true },
+export function generateMetadata(): Metadata {
+  return servicePageMetadata('expert-nutritionist-consultation', link.href)
 }
 
 export default function ExpertNutritionistConsultationPage() {

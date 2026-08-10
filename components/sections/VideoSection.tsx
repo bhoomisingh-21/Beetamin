@@ -62,7 +62,7 @@ export default function VideoSection() {
             <div className="rounded-xl sm:rounded-2xl overflow-hidden relative h-48 sm:h-64 lg:h-80">
               <Image
                 src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600"
-                alt="Nutritionist consultation"
+                alt="Online nutritionist video consultation for Indian deficiency recovery plans"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"

@@ -5,6 +5,7 @@ import {
   FAQJsonLd,
   MedicalServiceJsonLd,
   OrganizationJsonLd,
+  PricingProductsJsonLd,
   SiteNavigationJsonLd,
   WebSiteJsonLd,
 } from '@/components/JsonLd'
@@ -146,6 +147,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MedicalServiceJsonLd />
           <SiteNavigationJsonLd />
           <FAQJsonLd />
+          <PricingProductsJsonLd />
           <CrawlableSiteNav />
           <AssessmentProfileSync />
           <DeficiencyPopup />

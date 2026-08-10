@@ -4,13 +4,21 @@ import type { SiteSitelink } from '@/lib/site-navigation'
 export function SitelinkPageJsonLd({ link }: { link: SiteSitelink }) {
   const schema = {
     '@context': 'https://schema.org',
-    '@type': 'WebPage',
+    '@type': 'MedicalWebPage',
     '@id': `${SITE_URL}${link.href}`,
     name: link.label,
     description: link.description,
     url: `${SITE_URL}${link.href}`,
     isPartOf: { '@id': `${SITE_URL}/#website` },
     inLanguage: 'en-IN',
+    about: {
+      '@type': 'MedicalCondition',
+      name: 'Nutrient deficiency',
+    },
+    audience: {
+      '@type': 'PeopleAudience',
+      geographicArea: { '@type': 'Country', name: 'India' },
+    },
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [

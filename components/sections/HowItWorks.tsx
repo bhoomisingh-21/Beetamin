@@ -164,7 +164,7 @@ export default function TransformationJourney() {
       <div className="relative w-full lg:w-[500px] xl:w-[580px] h-48 sm:h-64 lg:aspect-[16/10] lg:h-auto rounded-xl sm:rounded-[24px] overflow-hidden group cursor-pointer shadow-2xl shrink-0 order-1 lg:order-2">
         <Image
           src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800"
-          alt="Nutritionist at work"
+          alt="Certified nutritionist reviewing a personalised Indian diet plan on video call"
           fill
           className="object-cover transition-transform duration-700 group-hover:scale-105"
           sizes="(max-width: 1024px) 100vw, 580px"
