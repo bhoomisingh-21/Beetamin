@@ -2,7 +2,7 @@
 export type FaqItem = { q: string; a: string }
 
 export const REFUND_POLICY_ANSWER =
-  "If after attending 3 of your 6 scheduled sessions you feel the programme isn't working for you, we'll refund the remaining unused amount — no questions asked. You only pay for the value you've actually received."
+  'We offer a 7-day satisfaction guarantee. If you are unsatisfied after your first session, you may request a full refund within 7 days of your purchase by emailing hi@thebeetamin.com. Refunds are not available after 7 days or after more than one session has been conducted, whichever comes first.'
 
 export const SITE_FAQS: FaqItem[] = [
   {
