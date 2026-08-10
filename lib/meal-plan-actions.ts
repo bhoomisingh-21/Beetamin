@@ -117,7 +117,7 @@ export async function publishMealPlan(input: {
 
   const { data: planRow, error: fetchErr } = await supabaseAdmin
     .from('meal_plans')
-    .select('title, client_email')
+    .select('title, client_email, client_id')
     .eq('id', input.planId)
     .eq('nutritionist_id', nut.id)
     .single()
@@ -141,6 +141,21 @@ export async function publishMealPlan(input: {
     return { ok: false, error: error.message }
   }
 
+  let downloadUrl: string | undefined
+  try {
+    const { generateAndStoreMealPlanPdf, createMealPlanPdfSignedUrl } = await import(
+      '@/lib/meal-plan-pdf-service'
+    )
+    const pdfRes = await generateAndStoreMealPlanPdf(input.planId)
+    if (pdfRes.ok) {
+      downloadUrl = (await createMealPlanPdfSignedUrl(input.planId, 60 * 60 * 24 * 7)) ?? undefined
+    } else {
+      console.error('[publishMealPlan] pdf', pdfRes.error)
+    }
+  } catch (pdfErr) {
+    console.error('[publishMealPlan] pdf', pdfErr)
+  }
+
   const emailTo = input.clientEmail || String(planRow.client_email || '')
   if (emailTo && !emailTo.endsWith('@beetamin.internal')) {
     const emailRes = await sendNutritionistDietPlanEmail({
@@ -148,6 +163,7 @@ export async function publishMealPlan(input: {
       name: input.clientName,
       nutritionistName: nut.name,
       planTitle: String(planRow.title || 'Personalised Diet Plan'),
+      downloadUrl,
     })
     if (!emailRes.ok) {
       console.error('[publishMealPlan] email', emailRes.error)
@@ -155,7 +171,10 @@ export async function publishMealPlan(input: {
   }
 
   revalidatePath('/sessions')
-  revalidatePath(`/nutritionist/clients/${input.planId}`)
+  revalidatePath('/profile/diet-plan')
+  if (planRow.client_id) {
+    revalidatePath(`/nutritionist/clients/${planRow.client_id}`)
+  }
   return { ok: true }
 }
 

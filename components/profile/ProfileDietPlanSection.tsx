@@ -137,6 +137,15 @@ function ProfileMealPlanCard({
             </p>
           </div>
         </div>
+        <a
+          href={`/api/meal-plan/pdf?planId=${encodeURIComponent(plan.id)}&mode=download`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black text-black hover:bg-emerald-400"
+        >
+          <FileText size={14} />
+          Download PDF
+        </a>
       </div>
 
       {planNote ? (

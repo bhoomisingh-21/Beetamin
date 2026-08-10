@@ -89,7 +89,7 @@ export async function sendNutritionistDietPlanEmail(input: {
                 Your nutritionist <strong>${input.nutritionistName}</strong> has sent you a new diet plan — <strong>${title}</strong>.
               </p>
               <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#475569;">
-                Open your sessions page to see day-by-day meals, or download the PDF if one was attached.
+                Open your sessions page to see day-by-day meals, or download the PDF for your full plan.
               </p>
               ${primaryCta}
               <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;">

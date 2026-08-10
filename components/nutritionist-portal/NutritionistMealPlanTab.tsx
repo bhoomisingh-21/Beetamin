@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  FileText,
   LayoutTemplate,
   Loader2,
   Plus,
@@ -265,6 +266,14 @@ export function NutritionistMealPlanTab({ clientId, clientEmail, clientName, cli
                   >
                     {plan.status === 'published' ? 'Published' : 'Draft'}
                   </span>
+                  <a
+                    href={`/api/meal-plan/pdf?planId=${encodeURIComponent(plan.id)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                  >
+                    View PDF
+                  </a>
                   <button
                     type="button"
                     onClick={() => openPlan(plan.id)}
@@ -469,6 +478,7 @@ function PlanBuilder({
   const [saving, startSave] = useTransition()
   const [publishing, startPublish] = useTransition()
   const [templating, startTemplate] = useTransition()
+  const [previewing, startPreview] = useTransition()
   const [success, setSuccess] = useState<SuccessMode | null>(null)
   const [actionError, setActionError] = useState('')
 
@@ -662,6 +672,23 @@ function PlanBuilder({
         return
       }
       setSuccess('saved')
+    })
+  }
+
+  function handlePreviewPdf() {
+    setActionError('')
+    startPreview(async () => {
+      const saveRes = await updateMealPlan({
+        planId: initialPlan.id,
+        title,
+        nutritionist_notes: buildMetaNote() ?? undefined,
+        days,
+      })
+      if (!saveRes.ok) {
+        setActionError(saveRes.error)
+        return
+      }
+      window.open(`/api/meal-plan/pdf?planId=${encodeURIComponent(initialPlan.id)}`, '_blank', 'noopener,noreferrer')
     })
   }
 
@@ -1227,8 +1254,17 @@ function PlanBuilder({
         <div className="flex flex-wrap items-center justify-center gap-4 border-t border-emerald-200 bg-slate-50 px-4 py-5">
           <button
             type="button"
+            onClick={handlePreviewPdf}
+            disabled={previewing || saving || publishing || templating}
+            className="flex min-w-[180px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+          >
+            {previewing ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+            Preview PDF
+          </button>
+          <button
+            type="button"
             onClick={handleSave}
-            disabled={saving || publishing || templating}
+            disabled={saving || publishing || templating || previewing}
             className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
@@ -1237,7 +1273,7 @@ function PlanBuilder({
           <button
             type="button"
             onClick={handleCreateTemplate}
-            disabled={templating || saving || publishing}
+            disabled={templating || saving || publishing || previewing}
             className="flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
           >
             {templating ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
@@ -1246,7 +1282,7 @@ function PlanBuilder({
           <button
             type="button"
             onClick={handlePublish}
-            disabled={publishing || saving || templating}
+            disabled={publishing || saving || templating || previewing}
             className="flex min-w-[180px] items-center justify-center gap-2 rounded-full border-2 border-emerald-600 bg-white px-6 py-3 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
           >
             {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}

@@ -84,6 +84,8 @@ export type MealPlan = {
   published_at: string | null
   created_at: string
   updated_at: string
+  pdf_storage_path?: string | null
+  target_kcal?: number | null
 }
 
 /** Lightweight list item (no days JSON). */
