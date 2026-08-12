@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { buildPageMetadata } from '@/lib/seo-metadata'
+import { REFUND_POLICY_ANSWER } from '@/lib/faq-content'
 
 export function generateMetadata(): Metadata {
   return buildPageMetadata({
@@ -52,12 +53,14 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white text-xl font-bold mb-3">4. Refund Policy</h2>
-            <p>
-              We offer a <strong className="text-white">7-day satisfaction guarantee</strong>. If you are unsatisfied after your first session, you may request a full refund within 7 days of your purchase by emailing{' '}
+            <p>{REFUND_POLICY_ANSWER}</p>
+            <p className="mt-3">
+              Email{' '}
               <a href="mailto:hi@thebeetamin.com" className="text-emerald-400 hover:underline">
                 hi@thebeetamin.com
               </a>{' '}
-              with the subject line &quot;Refund Request&quot;. Refunds are not available after 7 days or after more than one session has been conducted, whichever comes first. Report purchases (₹39) are non-refundable once the report has been generated.
+              with the subject line &quot;Refund Request&quot; to start a refund. Report purchases (₹39) are
+              non-refundable once the report has been generated.
             </p>
           </section>
 

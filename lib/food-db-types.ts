@@ -29,6 +29,28 @@ export type CreateCustomFoodInput = {
   fiber_g_per_100g?: number
 }
 
+/** Convert per-serving macro values (for default_qty_grams) into DB per-100g columns. */
+export function servingMacroToPer100g(
+  valuePerServing: number | undefined,
+  servingGrams: number,
+): number | undefined {
+  if (valuePerServing === undefined || valuePerServing === null || Number.isNaN(valuePerServing)) {
+    return undefined
+  }
+  if (servingGrams <= 0) return valuePerServing
+  return (valuePerServing * 100) / servingGrams
+}
+
+/** Kcal for a food row at a given gram quantity (matches DB meal_plan_entries trigger). */
+export function foodKcalAtQty(
+  food: Pick<FoodRow, 'kcal_per_100g'>,
+  qtyGrams: number,
+): number {
+  const kcal100 = food.kcal_per_100g
+  if (kcal100 == null || Number.isNaN(kcal100) || qtyGrams <= 0) return 0
+  return Math.round((kcal100 * qtyGrams) / 100)
+}
+
 /** Dropdown options for custom food default serving unit. */
 export const FOOD_UNIT_OPTIONS = [
   { value: 'gm', label: 'gm' },

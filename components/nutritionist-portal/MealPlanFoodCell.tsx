@@ -13,6 +13,7 @@ import {
 import type { MealPlanEntryRow } from '@/lib/meal-plan-entry-types'
 import { searchFoods } from '@/lib/food-actions'
 import type { FoodRow } from '@/lib/food-db-types'
+import { foodKcalAtQty } from '@/lib/food-db-types'
 import { findQuickPick, MEAL_SLOT_QUICK_FOODS, estimateServingKcal, type QuickFoodPick } from '@/lib/meal-slot-suggestions'
 import type { MealSlots } from '@/lib/meal-plan-types'
 
@@ -199,9 +200,20 @@ export function MealPlanFoodCell({
     onLegacyChange(nextEntries.length ? entryNames(nextEntries) : displayLabel)
   }
 
-  const handleAddFood = async (food: FoodRow, qtyGrams = food.default_qty_grams ?? 100) => {
+  const handleAddFood = async (
+    food: FoodRow,
+    qtyGrams = food.default_qty_grams ?? 100,
+    opts?: { replaceExisting?: boolean },
+  ) => {
     setBusyId('add')
     try {
+      if (opts?.replaceExisting) {
+        for (const entry of entries) {
+          const del = await deleteMealPlanEntry({ entryId: entry.id, mealPlanId })
+          if (!del.ok) return
+        }
+      }
+
       const res = await addMealPlanFoodEntry({
         mealPlanId,
         entryDate,
@@ -210,7 +222,26 @@ export function MealPlanFoodCell({
         qtyGrams,
       })
       if (!res.ok) return
-      const next = [...entries, res.entry]
+      let entry = res.entry
+      if ((entry.kcal == null || entry.kcal === 0) && food.kcal_per_100g != null) {
+        entry = {
+          ...entry,
+          kcal: foodKcalAtQty(food, qtyGrams),
+          carbs_g:
+            food.carbs_g_per_100g != null
+              ? Math.round(((food.carbs_g_per_100g * qtyGrams) / 100) * 100) / 100
+              : entry.carbs_g,
+          protein_g:
+            food.protein_g_per_100g != null
+              ? Math.round(((food.protein_g_per_100g * qtyGrams) / 100) * 100) / 100
+              : entry.protein_g,
+          fat_g:
+            food.fat_g_per_100g != null
+              ? Math.round(((food.fat_g_per_100g * qtyGrams) / 100) * 100) / 100
+              : entry.fat_g,
+        }
+      }
+      const next = opts?.replaceExisting ? [entry] : [...entries, entry]
       onEntriesChange(next)
       syncLegacy(next)
     } finally {
@@ -389,7 +420,7 @@ export function MealPlanFoodCell({
               <AddCustomFoodForm
                 onCreated={(food) => {
                   setShowCustomFood(false)
-                  void handleAddFood(food)
+                  void handleAddFood(food, food.default_qty_grams ?? 100, { replaceExisting: true })
                 }}
                 onCancel={() => setShowCustomFood(false)}
               />

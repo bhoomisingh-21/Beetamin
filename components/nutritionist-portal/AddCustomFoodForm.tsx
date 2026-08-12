@@ -4,7 +4,7 @@ import { useId, useState, useTransition } from 'react'
 import { Loader2, Plus } from 'lucide-react'
 import { createCustomFood } from '@/lib/food-actions'
 import type { CreateCustomFoodInput, FoodRow } from '@/lib/food-db-types'
-import { FOOD_CATEGORY_SUGGESTIONS, FOOD_UNIT_OPTIONS } from '@/lib/food-db-types'
+import { FOOD_CATEGORY_SUGGESTIONS, FOOD_UNIT_OPTIONS, servingMacroToPer100g } from '@/lib/food-db-types'
 
 type Props = {
   onCreated?: (food: FoodRow) => void
@@ -18,24 +18,24 @@ type TextFields = {
   default_unit: string
 }
 
-/** Numeric fields are tracked as raw strings while typing so decimals/backspacing never get clobbered by re-renders. */
+/** Numeric fields — values are for the default serving above, not per 100g. */
 type NumericFields = {
   default_qty_grams: string
-  kcal_per_100g: string
-  carbs_g_per_100g: string
-  protein_g_per_100g: string
-  fat_g_per_100g: string
-  fiber_g_per_100g: string
+  kcal_per_serving: string
+  carbs_g_per_serving: string
+  protein_g_per_serving: string
+  fat_g_per_serving: string
+  fiber_g_per_serving: string
 }
 
 const emptyTextForm = (): TextFields => ({ name: '', category: '', default_unit: 'gm' })
 const emptyNumForm = (): NumericFields => ({
   default_qty_grams: '100',
-  kcal_per_100g: '',
-  carbs_g_per_100g: '',
-  protein_g_per_100g: '',
-  fat_g_per_100g: '',
-  fiber_g_per_100g: '',
+  kcal_per_serving: '',
+  carbs_g_per_serving: '',
+  protein_g_per_serving: '',
+  fat_g_per_serving: '',
+  fiber_g_per_serving: '',
 })
 
 /** Allow only what a person typing a positive decimal would type: digits and at most one dot. */
@@ -73,16 +73,17 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    const servingGrams = toOptionalNumber(nums.default_qty_grams) ?? 100
     const form: CreateCustomFoodInput = {
       name: text.name,
       category: text.category,
       default_unit: text.default_unit,
-      default_qty_grams: toOptionalNumber(nums.default_qty_grams),
-      kcal_per_100g: toOptionalNumber(nums.kcal_per_100g),
-      carbs_g_per_100g: toOptionalNumber(nums.carbs_g_per_100g),
-      protein_g_per_100g: toOptionalNumber(nums.protein_g_per_100g),
-      fat_g_per_100g: toOptionalNumber(nums.fat_g_per_100g),
-      fiber_g_per_100g: toOptionalNumber(nums.fiber_g_per_100g),
+      default_qty_grams: servingGrams,
+      kcal_per_100g: servingMacroToPer100g(toOptionalNumber(nums.kcal_per_serving), servingGrams),
+      carbs_g_per_100g: servingMacroToPer100g(toOptionalNumber(nums.carbs_g_per_serving), servingGrams),
+      protein_g_per_100g: servingMacroToPer100g(toOptionalNumber(nums.protein_g_per_serving), servingGrams),
+      fat_g_per_100g: servingMacroToPer100g(toOptionalNumber(nums.fat_g_per_serving), servingGrams),
+      fiber_g_per_100g: servingMacroToPer100g(toOptionalNumber(nums.fiber_g_per_serving), servingGrams),
     }
     startTransition(async () => {
       const res = await createCustomFood(form)
@@ -155,7 +156,7 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
 
       <div>
         <label htmlFor={`${formId}-qty`} className="mb-1 block text-xs font-semibold text-emerald-900">
-          Default qty (grams)
+          Default serving size (grams)
         </label>
         <input
           id={`${formId}-qty`}
@@ -167,15 +168,17 @@ export function AddCustomFoodForm({ onCreated, onCancel, className = '' }: Props
         />
       </div>
 
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Macros per 100g</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        Nutrition for this serving (not per 100g)
+      </p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {(
           [
-            ['kcal_per_100g', 'Kcal'],
-            ['carbs_g_per_100g', 'Carbs'],
-            ['protein_g_per_100g', 'Protein'],
-            ['fat_g_per_100g', 'Fat'],
-            ['fiber_g_per_100g', 'Fiber'],
+            ['kcal_per_serving', 'Kcal'],
+            ['carbs_g_per_serving', 'Carbs (g)'],
+            ['protein_g_per_serving', 'Protein (g)'],
+            ['fat_g_per_serving', 'Fat (g)'],
+            ['fiber_g_per_serving', 'Fiber (g)'],
           ] as const
         ).map(([key, label]) => (
           <div key={key}>

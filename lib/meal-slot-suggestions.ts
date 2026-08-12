@@ -187,7 +187,7 @@ export function estimatePickMacros(pick: QuickFoodPick): DayMacroTotals {
   }
 }
 
-const MEAL_SLOTS_ORDER: (keyof MealSlots)[] = [
+export const MEAL_SLOTS_ORDER: (keyof MealSlots)[] = [
   'early_morning',
   'breakfast',
   'mid_morning',

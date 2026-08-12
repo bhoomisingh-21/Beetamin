@@ -34,7 +34,7 @@ import {
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
-import { defaultMealLabelForSlot, defaultMealsForDay, estimateDayTotalsFromMeals } from '@/lib/meal-slot-suggestions'
+import { defaultMealLabelForSlot, defaultMealsForDay, estimateDayTotalsFromMeals, estimatePickMacros, findQuickPick, MEAL_SLOTS_ORDER } from '@/lib/meal-slot-suggestions'
 import type { MealPlan, MealPlanDay, MealPlanListItem, MealSlots } from '@/lib/meal-plan-types'
 import {
   MEAL_SLOT_META,
@@ -48,6 +48,7 @@ import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import type { PortalClientBundle } from '@/lib/nutritionist-types'
 import { copyMealPlanCell, listMealPlanEntries, seedDefaultMealPlanEntries } from '@/lib/meal-plan-entry-actions'
 import {
+  emptyDayTotals,
   entryCellKey,
   sumDayTotals,
   type MealPlanEntryRow,
@@ -95,9 +96,9 @@ type ViewState = 'list' | 'builder'
 
 const WEEK_DAYS = 7
 
-function isPreparedDishFood(food: { category: string | null } | null | undefined): boolean {
-  const cat = food?.category?.toLowerCase() ?? ''
-  return cat.includes('prepared')
+/** Any saved meal item (custom, IFCT, or prepared) — do not auto-seed over it. */
+function cellHasSavedEntries(entries: MealPlanEntryRow[]): boolean {
+  return entries.length > 0
 }
 
 function dayWithDefaultMeals(dayNumber: number, planDate?: string): MealPlanDay {
@@ -466,13 +467,36 @@ function PlanBuilder({
   }
 
   function dayTotalsForDate(entryDate: string | undefined, day?: MealPlanDay, dayIndex?: number) {
-    if (!entryDate) return sumDayTotals([])
-    const fromDb = sumDayTotals(planEntries.filter((e) => e.entry_date === entryDate))
-    if (fromDb.kcal > 0) return fromDb
-    if (day && !day.skipped && dayIndex != null) {
-      return estimateDayTotalsFromMeals(day.meals, dayIndex)
+    if (!entryDate || !day || day.skipped) return emptyDayTotals()
+
+    const entriesForDay = planEntries.filter((e) => e.entry_date === entryDate)
+    const totals = emptyDayTotals()
+
+    for (const slot of MEAL_SLOTS_ORDER) {
+      const cellEntries = entriesForDay.filter((e) => e.meal_slot === slot)
+      if (cellEntries.length > 0) {
+        const slotTotals = sumDayTotals(cellEntries)
+        totals.kcal += slotTotals.kcal
+        totals.carbs += slotTotals.carbs
+        totals.protein += slotTotals.protein
+        totals.fat += slotTotals.fat
+        continue
+      }
+
+      const label = day.meals[slot]?.trim()
+      if (!label || dayIndex == null) continue
+      const pick = findQuickPick(slot, label, dayIndex)
+      if (!pick?.kcalPer100g) continue
+      const estimated = estimatePickMacros(pick)
+      totals.kcal += estimated.kcal
+      totals.carbs += estimated.carbs
+      totals.protein += estimated.protein
+      totals.fat += estimated.fat
     }
-    return fromDb
+
+    if (totals.kcal > 0) return totals
+    if (dayIndex != null) return estimateDayTotalsFromMeals(day.meals, dayIndex)
+    return totals
   }
 
   const [saving, startSave] = useTransition()
@@ -578,8 +602,7 @@ function PlanBuilder({
       for (const slot of MEAL_SLOT_META) {
         const key = entryCellKey(entryDate, slot.key)
         const cellEntries = entriesByCell.get(key) ?? []
-        const hasPrepared = cellEntries.some((e) => isPreparedDishFood(e.foods))
-        if (hasPrepared) continue
+        if (cellHasSavedEntries(cellEntries)) continue
         missing.push({
           entryDate,
           mealSlot: slot.key,

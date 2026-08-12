@@ -240,7 +240,7 @@ export async function seedDefaultMealPlanEntries(input: {
 
   const { data: existing, error: listErr } = await supabaseAdmin
     .from('meal_plan_entries')
-    .select('id, entry_date, meal_slot, food_id, foods(tags, source)')
+    .select('id, entry_date, meal_slot')
     .eq('meal_plan_id', input.mealPlanId)
 
   if (listErr) {
@@ -251,16 +251,7 @@ export async function seedDefaultMealPlanEntries(input: {
   const occupied = new Set<string>()
   for (const row of existing ?? []) {
     const key = `${row.entry_date}|${row.meal_slot}`
-    const foods = row.foods as { tags?: string[] | null; source?: string } | { tags?: string[] | null; source?: string }[] | null
-    const food = Array.isArray(foods) ? foods[0] : foods
-    const isPrepared =
-      food?.source === 'prepared' ||
-      (Array.isArray(food?.tags) && food.tags.includes('prepared_meal'))
-    if (isPrepared) {
-      occupied.add(key)
-      continue
-    }
-    await supabaseAdmin.from('meal_plan_entries').delete().eq('id', row.id)
+    occupied.add(key)
   }
 
   let added = 0
