@@ -14,6 +14,10 @@ import type { MealPlan, MealPlanDay } from '@/lib/meal-plan-types'
 import { MEAL_SLOT_META } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import {
+  formatFoodQuantityForPdf,
+  stripTrailingQuantityFromFoodName,
+} from '@/lib/food-db-types'
+import {
   DEFAULT_MEAL_PLAN_INSTRUCTIONS,
   PDF_MEAL_SLOT_LABELS,
   type MealPlanPdfDay,
@@ -22,7 +26,7 @@ import {
 } from '@/lib/meal-plan-pdf-types'
 
 const ENTRY_SELECT =
-  'id, meal_plan_id, entry_date, meal_slot, food_id, recipe_id, qty_grams, kcal, carbs_g, protein_g, fat_g, created_at, updated_at, foods(name, category)'
+  'id, meal_plan_id, entry_date, meal_slot, food_id, recipe_id, qty_grams, kcal, carbs_g, protein_g, fat_g, created_at, updated_at, foods(name, category, default_unit, default_qty_grams)'
 
 function estimateFiber(kcal: number, targetKcal: number, targetFiber: number): number {
   if (kcal <= 0 || targetKcal <= 0) return 0
@@ -76,9 +80,19 @@ function entryDateForDay(day: MealPlanDay, columnDate: Date): string {
 }
 
 function formatEntryLine(entry: MealPlanEntryRow): string {
-  const name = entry.foods?.name?.trim() || 'Food item'
+  const rawName = entry.foods?.name?.trim() || 'Food item'
+  const name = stripTrailingQuantityFromFoodName(rawName)
   const qty = entry.qty_grams
-  if (qty > 0) return `${name} (${Math.round(qty)} g)`
+  if (qty > 0) {
+    const qtyLabel = formatFoodQuantityForPdf({
+      qtyGrams: qty,
+      defaultUnit: entry.foods?.default_unit,
+      defaultServingGrams: entry.foods?.default_qty_grams,
+      foodName: rawName,
+      category: entry.foods?.category,
+    })
+    return qtyLabel ? `${name} (${qtyLabel})` : name
+  }
   return name
 }
 

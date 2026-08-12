@@ -15,12 +15,12 @@ const C = {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 36, fontFamily: 'Helvetica', fontSize: 10, color: C.text, lineHeight: 1.4 },
+  page: { padding: 36, fontFamily: 'Helvetica', fontSize: 12, color: C.text, lineHeight: 1.45 },
   brandBar: { height: 4, backgroundColor: C.emerald, marginBottom: 18 },
-  brand: { fontSize: 11, fontWeight: 700, color: C.emeraldDark, letterSpacing: 1.2, marginBottom: 4 },
-  title: { fontSize: 18, fontWeight: 700, color: C.dark, marginBottom: 4 },
-  subtitle: { fontSize: 11, color: C.muted, marginBottom: 16 },
-  sectionTitle: { fontSize: 12, fontWeight: 700, color: C.emeraldDark, marginBottom: 8, marginTop: 4 },
+  brand: { fontSize: 13, fontWeight: 700, color: C.emeraldDark, letterSpacing: 1.2, marginBottom: 4 },
+  title: { fontSize: 22, fontWeight: 700, color: C.dark, marginBottom: 4 },
+  subtitle: { fontSize: 13, color: C.muted, marginBottom: 16 },
+  sectionTitle: { fontSize: 14, fontWeight: 700, color: C.emeraldDark, marginBottom: 8, marginTop: 4 },
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   summaryCard: {
     width: '48%',
@@ -30,20 +30,20 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: C.rowBg,
   },
-  summaryLabel: { fontSize: 8, color: C.muted, textTransform: 'uppercase', marginBottom: 2 },
-  summaryValue: { fontSize: 11, fontWeight: 700, color: C.text },
+  summaryLabel: { fontSize: 10, color: C.muted, textTransform: 'uppercase', marginBottom: 2 },
+  summaryValue: { fontSize: 13, fontWeight: 700, color: C.text },
   macroRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   macroChip: {
     flexGrow: 1,
     borderWidth: 1,
     borderColor: C.border,
     borderRadius: 6,
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 8,
     alignItems: 'center',
   },
-  macroChipLabel: { fontSize: 8, color: C.muted },
-  macroChipValue: { fontSize: 10, fontWeight: 700, marginTop: 2 },
+  macroChipLabel: { fontSize: 10, color: C.muted },
+  macroChipValue: { fontSize: 12, fontWeight: 700, marginTop: 2 },
   dayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -53,17 +53,17 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
     marginBottom: 10,
   },
-  dayTitle: { fontSize: 13, fontWeight: 700, color: C.dark },
-  dayKcal: { fontSize: 11, fontWeight: 700, color: C.emeraldDark },
+  dayTitle: { fontSize: 16, fontWeight: 700, color: C.dark },
+  dayKcal: { fontSize: 13, fontWeight: 700, color: C.emeraldDark },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: C.emeraldDark,
-    paddingVertical: 6,
+    paddingVertical: 7,
     paddingHorizontal: 8,
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
   },
-  tableHeaderCell: { color: C.white, fontSize: 9, fontWeight: 700 },
+  tableHeaderCell: { color: C.white, fontSize: 11, fontWeight: 700 },
   mealCol: { width: '32%' },
   descCol: { width: '68%' },
   mealRow: {
@@ -73,13 +73,13 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: C.border,
-    paddingVertical: 7,
+    paddingVertical: 8,
     paddingHorizontal: 8,
-    minHeight: 28,
+    minHeight: 32,
   },
   mealRowAlt: { backgroundColor: C.rowBg },
-  mealLabel: { width: '32%', fontSize: 9, fontWeight: 700, color: C.emeraldDark, paddingRight: 6 },
-  mealDesc: { width: '68%', fontSize: 9, color: C.text },
+  mealLabel: { width: '32%', fontSize: 11, fontWeight: 700, color: C.emeraldDark, paddingRight: 6 },
+  mealDesc: { width: '68%', fontSize: 11, color: C.text },
   footer: {
     position: 'absolute',
     bottom: 24,
@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
     borderTopColor: C.border,
     paddingTop: 8,
   },
-  footerText: { fontSize: 8, color: C.muted },
-  instructionItem: { fontSize: 9, color: C.text, marginBottom: 6, paddingLeft: 8 },
+  footerText: { fontSize: 9, color: C.muted },
+  instructionItem: { fontSize: 11, color: C.text, marginBottom: 7, paddingLeft: 8 },
 })
 
 function MacroChips({ macros }: { macros: MealPlanPdfPayload['targetMacros'] }) {
@@ -134,7 +134,7 @@ function SummaryPage({ data }: { data: MealPlanPdfPayload }) {
       </Text>
 
       <Text style={styles.sectionTitle}>Diet Plan Summary</Text>
-      <Text style={{ fontSize: 10, marginBottom: 10 }}>
+      <Text style={{ fontSize: 12, marginBottom: 10 }}>
         {sanitizeForPdf(c.name)}
         {profileLine ? ` · ${profileLine}` : ''}
       </Text>
@@ -159,7 +159,7 @@ function SummaryPage({ data }: { data: MealPlanPdfPayload }) {
       </View>
 
       <Text style={styles.sectionTitle}>Suggested Plan for You</Text>
-      <Text style={{ fontSize: 10, marginBottom: 6 }}>
+      <Text style={{ fontSize: 12, marginBottom: 6 }}>
         Nutrition macros requirement · {data.targetCalories} Kcal
       </Text>
       <MacroChips macros={data.targetMacros} />

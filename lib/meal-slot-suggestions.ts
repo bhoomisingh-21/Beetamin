@@ -12,6 +12,9 @@ export type QuickFoodPick = {
   fatPer100g?: number
 }
 
+/** Slots left empty until the nutritionist adds a meal (not auto-seeded). */
+export const OPTIONAL_MEAL_SLOTS: (keyof MealSlots)[] = ['post_workout']
+
 /** Fitrofy-style: these rows stay the same all week. */
 export const SAME_DAILY_SLOTS: (keyof MealSlots)[] = ['early_morning', 'bedtime']
 
@@ -49,6 +52,15 @@ export const MEAL_SLOT_QUICK_FOODS: Record<keyof MealSlots, QuickFoodPick[]> = {
     p('Egg Omelette Sandwich', 130, 220, 18, 14, 10),
     p('Oats Vegetable Upma', 150, 135, 20, 4.5, 4),
     p('Dosa with sambar', 180, 125, 23, 4.2, 1.8),
+  ],
+  post_workout: [
+    p('Banana (medium)', 120, 89, 23, 1.1, 0.3),
+    p('Boiled eggs (2)', 100, 155, 1.1, 13, 11),
+    p('Protein shake with milk', 250, 85, 8, 12, 2),
+    p('Sprouts chaat', 120, 95, 14, 7, 2),
+    p('Roasted chana', 50, 360, 58, 19, 6),
+    p('Peanut butter toast', 80, 280, 32, 10, 14),
+    p('Curd with banana', 150, 95, 15, 5, 2.5),
   ],
   mid_morning: [
     p('Barley water', 200, 35, 7.5, 1, 0.3),
@@ -107,6 +119,7 @@ export function defaultMealsForDay(dayIndex: number): MealSlots {
   return {
     early_morning: pickForSlot('early_morning', dayIndex).label,
     breakfast: pickForSlot('breakfast', dayIndex).label,
+    post_workout: '',
     mid_morning: pickForSlot('mid_morning', dayIndex).label,
     lunch: pickForSlot('lunch', dayIndex).label,
     evening_snack: pickForSlot('evening_snack', dayIndex).label,
@@ -128,6 +141,7 @@ export function hydrateMealSlotsForDay(
   return {
     early_morning: src.early_morning?.trim() || dayDefaults.early_morning,
     breakfast: src.breakfast?.trim() || dayDefaults.breakfast,
+    post_workout: src.post_workout?.trim() ?? '',
     mid_morning: src.mid_morning?.trim() || dayDefaults.mid_morning,
     lunch: src.lunch?.trim() || dayDefaults.lunch,
     evening_snack: src.evening_snack?.trim() || dayDefaults.evening_snack,
@@ -190,6 +204,7 @@ export function estimatePickMacros(pick: QuickFoodPick): DayMacroTotals {
 export const MEAL_SLOTS_ORDER: (keyof MealSlots)[] = [
   'early_morning',
   'breakfast',
+  'post_workout',
   'mid_morning',
   'lunch',
   'evening_snack',

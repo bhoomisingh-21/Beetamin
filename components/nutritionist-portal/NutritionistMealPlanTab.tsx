@@ -34,7 +34,7 @@ import {
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
-import { defaultMealLabelForSlot, defaultMealsForDay, estimateDayTotalsFromMeals, estimatePickMacros, findQuickPick, MEAL_SLOTS_ORDER } from '@/lib/meal-slot-suggestions'
+import { defaultMealLabelForSlot, defaultMealsForDay, estimateDayTotalsFromMeals, estimatePickMacros, findQuickPick, MEAL_SLOTS_ORDER, OPTIONAL_MEAL_SLOTS } from '@/lib/meal-slot-suggestions'
 import type { MealPlan, MealPlanDay, MealPlanListItem, MealSlots } from '@/lib/meal-plan-types'
 import {
   MEAL_SLOT_META,
@@ -600,13 +600,15 @@ function PlanBuilder({
       if (!day || day.skipped) continue
       const entryDate = entryDateForDay(day, planDates[abs])
       for (const slot of MEAL_SLOT_META) {
+        const mealText = day.meals[slot.key]?.trim()
+        if (!mealText && OPTIONAL_MEAL_SLOTS.includes(slot.key)) continue
         const key = entryCellKey(entryDate, slot.key)
         const cellEntries = entriesByCell.get(key) ?? []
         if (cellHasSavedEntries(cellEntries)) continue
         missing.push({
           entryDate,
           mealSlot: slot.key,
-          label: day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key, abs),
+          label: mealText || defaultMealLabelForSlot(slot.key, abs),
           dayIndex: abs,
         })
       }
@@ -819,6 +821,7 @@ function PlanBuilder({
                 meals: {
                   early_morning: '',
                   breakfast: '',
+                  post_workout: '',
                   mid_morning: '',
                   lunch: '',
                   evening_snack: '',

@@ -52,6 +52,7 @@ export type MealPlanPdfPayload = {
 export const PDF_MEAL_SLOT_LABELS: Record<keyof MealSlots, string> = {
   early_morning: 'When You Wake up',
   breakfast: 'Breakfast',
+  post_workout: 'Post Workout',
   mid_morning: 'Mid Day Meal',
   lunch: 'Lunch',
   evening_snack: 'Evening Snack',

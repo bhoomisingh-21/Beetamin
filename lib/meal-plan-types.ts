@@ -2,6 +2,7 @@
 export type MealSlots = {
   early_morning: string
   breakfast: string
+  post_workout: string
   mid_morning: string
   lunch: string
   evening_snack: string
@@ -24,6 +25,7 @@ export function emptyMealSlots(): MealSlots {
   return {
     early_morning: '',
     breakfast: '',
+    post_workout: '',
     mid_morning: '',
     lunch: '',
     evening_snack: '',
@@ -64,6 +66,7 @@ export function activePlanDayCount(days: MealPlanDay[]): number {
 export const MEAL_SLOT_META: { key: keyof MealSlots; label: string; time: string; emoji: string }[] = [
   { key: 'early_morning', label: 'Early Morning', time: '6–7 AM', emoji: '🌅' },
   { key: 'breakfast', label: 'Breakfast', time: '8–9 AM', emoji: '🍽️' },
+  { key: 'post_workout', label: 'Post Workout', time: '9:30 AM', emoji: '💪' },
   { key: 'mid_morning', label: 'Mid-Morning Snack', time: '11 AM', emoji: '🥤' },
   { key: 'lunch', label: 'Lunch', time: '1–2 PM', emoji: '🌿' },
   { key: 'evening_snack', label: 'Evening Snack', time: '5 PM', emoji: '🫖' },

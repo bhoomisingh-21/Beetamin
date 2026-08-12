@@ -1,4 +1,9 @@
-export type FoodJoinRow = { name: string; category: string | null }
+export type FoodJoinRow = {
+  name: string
+  category: string | null
+  default_unit: string | null
+  default_qty_grams: number | null
+}
 
 export type MealPlanEntryRow = {
   id: string

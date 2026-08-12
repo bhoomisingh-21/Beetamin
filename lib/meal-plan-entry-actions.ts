@@ -13,7 +13,7 @@ import { resolveFoodId } from '@/lib/food-search'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const ENTRY_SELECT =
-  'id, meal_plan_id, entry_date, meal_slot, food_id, recipe_id, qty_grams, kcal, carbs_g, protein_g, fat_g, created_at, updated_at, foods(name, category)'
+  'id, meal_plan_id, entry_date, meal_slot, food_id, recipe_id, qty_grams, kcal, carbs_g, protein_g, fat_g, created_at, updated_at, foods(name, category, default_unit, default_qty_grams)'
 
 async function portalNutritionist() {
   const { userId } = await auth()
