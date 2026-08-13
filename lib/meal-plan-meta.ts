@@ -1,14 +1,37 @@
 /** Optional metadata stored inside `nutritionist_notes` as JSON. */
 import type { MealPlanDay } from '@/lib/meal-plan-types'
 import { emptyDay, nextIsoDate, renumberPlanDays, todayIsoDate } from '@/lib/meal-plan-types'
+import { DEFAULT_MEAL_PLAN_INSTRUCTIONS } from '@/lib/meal-plan-pdf-types'
 import { hydrateMealSlotsForDay, spreadWeeklyVariety } from '@/lib/meal-slot-suggestions'
 
 export type MealPlanMeta = {
+  /** @deprecated Use customInstructions — kept for older saved plans. */
   note?: string
+  customInstructions?: string[]
   targetCalories?: number
 }
 
 const META_PREFIX = '{"__mealPlanMeta":'
+
+/** Normalise stored meta into printable instruction lines. */
+export function parseCustomInstructions(meta: MealPlanMeta): string[] {
+  if (meta.customInstructions?.length) {
+    return meta.customInstructions.map((line) => line.trim()).filter(Boolean)
+  }
+  if (meta.note?.trim()) {
+    return meta.note
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+  }
+  return []
+}
+
+/** Default plan guidelines plus any nutritionist custom lines — matches PDF instructions page. */
+export function getDietPlanInstructionsForClient(rawNotes: string | null | undefined): string[] {
+  const custom = parseCustomInstructions(parseMealPlanMeta(rawNotes))
+  return [...DEFAULT_MEAL_PLAN_INSTRUCTIONS, ...custom]
+}
 
 export function parseMealPlanMeta(raw: string | null | undefined): MealPlanMeta {
   if (!raw?.trim()) return {}
@@ -25,12 +48,12 @@ export function parseMealPlanMeta(raw: string | null | undefined): MealPlanMeta 
 }
 
 export function serializeMealPlanMeta(meta: MealPlanMeta): string | null {
-  const note = meta.note?.trim() ?? ''
+  const customInstructions = parseCustomInstructions(meta)
   const hasCalories = typeof meta.targetCalories === 'number' && meta.targetCalories > 0
-  if (!note && !hasCalories) return null
+  if (customInstructions.length === 0 && !hasCalories) return null
   return JSON.stringify({
     __mealPlanMeta: {
-      ...(note ? { note } : {}),
+      ...(customInstructions.length > 0 ? { customInstructions } : {}),
       ...(hasCalories ? { targetCalories: meta.targetCalories } : {}),
     },
   })

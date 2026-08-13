@@ -11,8 +11,10 @@ import {
   estimateDailyMacros,
   formatGridDayColumn,
   formatWeekRangeLabel,
+  getDietPlanInstructionsForClient,
   parseMealPlanMeta,
 } from '@/lib/meal-plan-meta'
+import { DietPlanInstructionsBox } from '@/components/profile/DietPlanInstructionsBox'
 import { profileCard } from '@/components/profile/profile-dark-styles'
 
 const WEEK_DAYS = 7
@@ -43,6 +45,13 @@ export function ProfileDietPlanSection({
 
   return (
     <div className="space-y-6">
+      {mealPlans.length > 0 ? (
+        <DietPlanInstructionsBox
+          instructions={getDietPlanInstructionsForClient(mealPlans[0].nutritionist_notes)}
+          title="Your diet plan instructions"
+        />
+      ) : null}
+
       {dietPlans.length > 0 && (
         <div className={`${profileCard} p-6 md:p-8`}>
           <p className="mb-4 text-xs font-bold uppercase tracking-wider text-[#8B9AB0]">PDF plans</p>
@@ -75,7 +84,13 @@ export function ProfileDietPlanSection({
       )}
 
       {mealPlans.map((plan, planIdx) => (
-        <ProfileMealPlanCard key={plan.id} plan={plan} showPlanLabel={mealPlans.length > 1} index={planIdx} />
+        <ProfileMealPlanCard
+          key={plan.id}
+          plan={plan}
+          showPlanLabel={mealPlans.length > 1}
+          showInstructions={mealPlans.length > 1}
+          index={planIdx}
+        />
       ))}
     </div>
   )
@@ -84,16 +99,18 @@ export function ProfileDietPlanSection({
 function ProfileMealPlanCard({
   plan,
   showPlanLabel,
+  showInstructions = false,
   index,
 }: {
   plan: MealPlanCustomerDTO
   showPlanLabel: boolean
+  showInstructions?: boolean
   index: number
 }) {
   const [weekPage, setWeekPage] = useState(0)
   const [expanded, setExpanded] = useState(false)
   const days: MealPlanDay[] = plan.days ?? []
-  const planNote = parseMealPlanMeta(plan.nutritionist_notes).note
+  const instructions = getDietPlanInstructionsForClient(plan.nutritionist_notes)
   const targetCalories = parseMealPlanMeta(plan.nutritionist_notes).targetCalories ?? 1800
   const dailyMacros = estimateDailyMacros(targetCalories)
   const planDates = useMemo(
@@ -148,10 +165,12 @@ function ProfileMealPlanCard({
         </a>
       </div>
 
-      {planNote ? (
-        <div className="border-b border-white/[0.06] bg-[#060910] px-4 py-3 sm:px-6">
-          <p className="text-sm italic text-[#8B9AB0]">📌 {planNote}</p>
-        </div>
+      {showInstructions ? (
+        <DietPlanInstructionsBox
+          instructions={instructions}
+          title="Instructions for this plan"
+          className="border-b border-white/[0.06] rounded-none border-x-0 border-t-0"
+        />
       ) : null}
 
       {days.length === 0 ? (

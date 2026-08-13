@@ -13,7 +13,7 @@ import {
 import type { MealPlanEntryRow } from '@/lib/meal-plan-entry-types'
 import { searchFoods } from '@/lib/food-actions'
 import type { FoodRow } from '@/lib/food-db-types'
-import { foodKcalAtQty } from '@/lib/food-db-types'
+import { foodKcalAtQty, formatFoodUnitLabel, pieceCountToQtyGrams, qtyGramsToPieceCount } from '@/lib/food-db-types'
 import { findQuickPick, MEAL_SLOT_QUICK_FOODS, estimateServingKcal, type QuickFoodPick } from '@/lib/meal-slot-suggestions'
 import type { MealSlots } from '@/lib/meal-plan-types'
 
@@ -67,23 +67,44 @@ function MealEntryQtyEditor({
   saving: boolean
   onSave: (qtyGrams: number) => Promise<void>
 }) {
-  const [draftQty, setDraftQty] = useState(String(entry.qty_grams))
+  const food = entry.foods
+  const unitLabel = formatFoodUnitLabel(food?.default_unit)
+  const usesPieceCount = unitLabel === 'piece'
+  const servingGrams = food?.default_qty_grams ?? null
+  const foodName = food?.name ?? ''
+
+  const [draftQty, setDraftQty] = useState(() =>
+    usesPieceCount
+      ? String(qtyGramsToPieceCount(entry.qty_grams, servingGrams, foodName))
+      : String(entry.qty_grams),
+  )
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setDraftQty(String(entry.qty_grams))
-  }, [entry.qty_grams, entry.id])
+    setDraftQty(
+      usesPieceCount
+        ? String(qtyGramsToPieceCount(entry.qty_grams, servingGrams, foodName))
+        : String(entry.qty_grams),
+    )
+  }, [entry.qty_grams, entry.id, usesPieceCount, servingGrams, foodName])
 
   const commit = async () => {
     const parsed = Number(draftQty)
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setError('Enter grams above 0')
-      setDraftQty(String(entry.qty_grams))
+      setError(`Enter ${unitLabel} above 0`)
+      setDraftQty(
+        usesPieceCount
+          ? String(qtyGramsToPieceCount(entry.qty_grams, servingGrams, foodName))
+          : String(entry.qty_grams),
+      )
       return
     }
-    if (Math.round(parsed) === Math.round(entry.qty_grams)) return
+    const nextQtyGrams = usesPieceCount
+      ? pieceCountToQtyGrams(parsed, servingGrams, foodName)
+      : parsed
+    if (Math.round(nextQtyGrams) === Math.round(entry.qty_grams)) return
     setError('')
-    await onSave(parsed)
+    await onSave(nextQtyGrams)
   }
 
   return (
@@ -106,9 +127,9 @@ function MealEntryQtyEditor({
           }
         }}
         className={qtyInputClassName}
-        aria-label={`Grams for ${entry.foods?.name ?? 'food'}`}
+        aria-label={`${unitLabel} for ${entry.foods?.name ?? 'food'}`}
       />
-      <span className="text-sm font-medium text-gray-600">g</span>
+      <span className="text-sm font-medium text-gray-600">{unitLabel}</span>
       <span className="text-sm font-bold text-emerald-700">{formatKcal(entry.kcal)}</span>
       {saving ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" aria-label="Saving" /> : null}
       {error ? <span className="text-xs font-medium text-red-600">{error}</span> : null}

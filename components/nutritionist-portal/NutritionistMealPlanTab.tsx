@@ -31,6 +31,7 @@ import {
   formatGridDayColumn,
   formatWeekRangeLabel,
   initialWeekDays,
+  parseCustomInstructions,
   parseMealPlanMeta,
   serializeMealPlanMeta,
 } from '@/lib/meal-plan-meta'
@@ -40,6 +41,8 @@ import {
   MEAL_SLOT_META,
   activePlanDayCount,
   emptyDay,
+  entryDateForPlanDay,
+  isoFromLocalDate,
   nextIsoDate,
   renumberPlanDays,
   todayIsoDate,
@@ -60,19 +63,6 @@ import {
 } from '@/lib/template-actions'
 import { TEMPLATE_CONDITION_TAGS, type TemplateListItem } from '@/lib/template-types'
 import { MealPlanFoodCell } from '@/components/nutritionist-portal/MealPlanFoodCell'
-
-function isoFromPlanDate(date: Date | undefined, fallback: string): string {
-  if (!date) return fallback
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function entryDateForDay(day: MealPlanDay | undefined, columnDate: Date | undefined): string {
-  if (day?.plan_date?.trim()) return day.plan_date.trim()
-  return isoFromPlanDate(columnDate, todayIsoDate())
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -404,6 +394,9 @@ function PlanBuilder({
   const parsedMeta = parseMealPlanMeta(initialPlan.nutritionist_notes)
   const [title, setTitle] = useState(initialPlan.title)
   const [targetCalories, setTargetCalories] = useState(parsedMeta.targetCalories ?? 1800)
+  const [customInstructionsText, setCustomInstructionsText] = useState(() =>
+    parseCustomInstructions(parsedMeta).join('\n'),
+  )
   const [days, setDays] = useState<MealPlanDay[]>(() =>
     initialWeekDays(initialPlan.days.length > 0 ? initialPlan.days : [], WEEK_DAYS),
   )
@@ -526,7 +519,7 @@ function PlanBuilder({
     const out: { date: string; label: string }[] = []
     days.forEach((d, idx) => {
       if (!d || d.skipped) return
-      const date = entryDateForDay(d, planDates[idx])
+      const date = entryDateForPlanDay(d, planDates[idx])
       const columnLabel = planDates[idx] ? formatGridDayColumn(planDates[idx]) : date
       out.push({ date, label: `Day ${idx + 1} · ${columnLabel}` })
     })
@@ -556,7 +549,7 @@ function PlanBuilder({
     }
     setCellEntries(targetDate, slot, res.entries)
     const targetDayIdx = days.findIndex(
-      (d, idx) => !!d && !d.skipped && entryDateForDay(d, planDates[idx]) === targetDate,
+      (d, idx) => !!d && !d.skipped && entryDateForPlanDay(d, planDates[idx]) === targetDate,
     )
     const sourceLabel = days[sourceDayIdx]?.meals[slot] ?? ''
     if (targetDayIdx >= 0) updateMealCell(targetDayIdx, slot, sourceLabel)
@@ -598,7 +591,7 @@ function PlanBuilder({
     for (let abs = 0; abs < days.length; abs++) {
       const day = days[abs]
       if (!day || day.skipped) continue
-      const entryDate = entryDateForDay(day, planDates[abs])
+      const entryDate = entryDateForPlanDay(day, planDates[abs])
       for (const slot of MEAL_SLOT_META) {
         const mealText = day.meals[slot.key]?.trim()
         if (!mealText && OPTIONAL_MEAL_SLOTS.includes(slot.key)) continue
@@ -635,7 +628,11 @@ function PlanBuilder({
   }, [loadingEntries, isPublished, days, planDates, planEntries, entriesByCell, initialPlan.id, refreshEntries])
 
   function buildMetaNote() {
-    return serializeMealPlanMeta({ targetCalories, note: parsedMeta.note })
+    const customInstructions = customInstructionsText
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+    return serializeMealPlanMeta({ targetCalories, customInstructions })
   }
 
   function ensureDaysThrough(endIndex: number) {
@@ -774,7 +771,7 @@ function PlanBuilder({
       setActionError('Choose a template first.')
       return
     }
-    const startDate = isoFromPlanDate(planDates[weekStart], todayIsoDate())
+    const startDate = isoFromLocalDate(planDates[weekStart] ?? new Date())
     setActionError('')
     setCopyingTemplate(true)
     const res = await applyTemplateToMealPlan({
@@ -1078,7 +1075,7 @@ function PlanBuilder({
                 ) : (
                   <div className="mt-2 rounded border border-rose-200 bg-rose-50/90 p-2">
                     {(() => {
-                      const dateIso = entryDateForDay(d, date)
+                      const dateIso = entryDateForPlanDay(d, date)
                       const eaten = dayTotalsForDate(dateIso, d, abs)
                       return (
                         <>
@@ -1126,7 +1123,9 @@ function PlanBuilder({
               {visibleColumns.map((day, localIdx) => {
                 const abs = absoluteDayIndex(localIdx)
                 const columnDate = planDates[abs]
-                const entryDateIso = entryDateForDay(day, columnDate)
+                const entryDateIso = entryDateForPlanDay(day, columnDate)
+                const cellEntries = entriesByCell.get(entryCellKey(entryDateIso, slot.key)) ?? []
+                const hasCellEntries = cellEntries.length > 0
                 return (
                   <div
                     key={`${slot.key}-${abs}`}
@@ -1145,9 +1144,12 @@ function PlanBuilder({
                         mealSlot={slot.key}
                         slotLabel={slot.label}
                         displayLabel={
-                          day.meals[slot.key]?.trim() || defaultMealLabelForSlot(slot.key, abs)
+                          day.meals[slot.key]?.trim() ||
+                          (OPTIONAL_MEAL_SLOTS.includes(slot.key) && !hasCellEntries
+                            ? ''
+                            : defaultMealLabelForSlot(slot.key, abs))
                         }
-                        entries={entriesByCell.get(entryCellKey(entryDateIso, slot.key)) ?? []}
+                        entries={cellEntries}
                         isOpen={openCellKey === entryCellKey(entryDateIso, slot.key)}
                         onOpenChange={(open) =>
                           setOpenCellKey(open ? entryCellKey(entryDateIso, slot.key) : null)
@@ -1193,6 +1195,23 @@ function PlanBuilder({
             + Add another week
           </button>
         </div>
+
+      <div className="border-b border-emerald-100 bg-white px-4 py-4">
+        <label htmlFor="custom-instructions" className="block text-sm font-bold text-emerald-900">
+          Custom instructions
+          <span className="ml-2 text-xs font-normal text-slate-500">
+            Shown on the PDF instructions page — one line per instruction
+          </span>
+        </label>
+        <textarea
+          id="custom-instructions"
+          value={customInstructionsText}
+          onChange={(e) => setCustomInstructionsText(e.target.value)}
+          rows={4}
+          placeholder={'Take Vitamin D after lunch\nAvoid fried food on workout days\nDrink 500 ml water during workout'}
+          className="mt-2 w-full resize-y rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm leading-relaxed text-slate-800 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+        />
+      </div>
 
       {copyToast && !actionError && (
         <div className="flex items-center gap-2 border-t border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">

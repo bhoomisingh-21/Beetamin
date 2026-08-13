@@ -8,10 +8,10 @@ import {
   type MealPlanEntryDbRow,
   type MealPlanEntryRow,
 } from '@/lib/meal-plan-entry-types'
-import { datesForPlanDays, estimateDailyMacros, formatHeight, parseMealPlanMeta } from '@/lib/meal-plan-meta'
+import { datesForPlanDays, estimateDailyMacros, formatHeight, getDietPlanInstructionsForClient, parseMealPlanMeta } from '@/lib/meal-plan-meta'
 import { estimateDayTotalsFromMeals } from '@/lib/meal-slot-suggestions'
 import type { MealPlan, MealPlanDay } from '@/lib/meal-plan-types'
-import { MEAL_SLOT_META } from '@/lib/meal-plan-types'
+import { entryDateForPlanDay, MEAL_SLOT_META, normalizeMealSlots } from '@/lib/meal-plan-types'
 import type { ClientRow, ProgressLogRow } from '@/lib/booking-types'
 import {
   formatFoodQuantityForPdf,
@@ -74,14 +74,39 @@ function weekdayLabel(iso: string): string {
   return new Date(`${iso}T12:00:00`).toLocaleDateString('en-IN', { weekday: 'long' })
 }
 
-function entryDateForDay(day: MealPlanDay, columnDate: Date): string {
-  if (day.plan_date) return day.plan_date
-  return columnDate.toISOString().slice(0, 10)
+function buildMealRows(
+  day: MealPlanDay,
+  entryDate: string,
+  entriesByCell: Map<string, MealPlanEntryRow[]>,
+): MealPlanPdfDay['meals'] {
+  const rows: MealPlanPdfDay['meals'] = []
+  const meals = normalizeMealSlots(day.meals)
+
+  for (const slot of MEAL_SLOT_META) {
+    const cellEntries = entriesByCell.get(entryCellKey(entryDate, slot.key)) ?? []
+    const text = meals[slot.key]?.trim() ?? ''
+
+    if (cellEntries.length === 0 && !text) continue
+
+    let description = ''
+    if (cellEntries.length > 0) {
+      description = cellEntries.map(formatEntryLine).join('\n')
+    } else {
+      description = mealLinesFromText(text).join('\n')
+    }
+
+    rows.push({
+      slotLabel: PDF_MEAL_SLOT_LABELS[slot.key],
+      description,
+    })
+  }
+
+  return rows
 }
 
 function formatEntryLine(entry: MealPlanEntryRow): string {
   const rawName = entry.foods?.name?.trim() || 'Food item'
-  const name = stripTrailingQuantityFromFoodName(rawName)
+  const name = stripTrailingQuantityFromFoodName(rawName, entry.foods?.default_unit)
   const qty = entry.qty_grams
   if (qty > 0) {
     const qtyLabel = formatFoodQuantityForPdf({
@@ -102,35 +127,6 @@ function mealLinesFromText(raw: string): string[] {
     .flatMap((line) => line.split(/,\s*(?=[A-Za-z])/))
     .map((s) => s.trim())
     .filter(Boolean)
-}
-
-function buildMealRows(
-  day: MealPlanDay,
-  entryDate: string,
-  entriesByCell: Map<string, MealPlanEntryRow[]>,
-): MealPlanPdfDay['meals'] {
-  const rows: MealPlanPdfDay['meals'] = []
-
-  for (const slot of MEAL_SLOT_META) {
-    const cellEntries = entriesByCell.get(entryCellKey(entryDate, slot.key)) ?? []
-    const text = day.meals[slot.key]?.trim() ?? ''
-
-    if (cellEntries.length === 0 && !text) continue
-
-    let description = ''
-    if (cellEntries.length > 0) {
-      description = cellEntries.map(formatEntryLine).join('\n')
-    } else {
-      description = mealLinesFromText(text).join('\n')
-    }
-
-    rows.push({
-      slotLabel: PDF_MEAL_SLOT_LABELS[slot.key],
-      description,
-    })
-  }
-
-  return rows
 }
 
 async function fetchClientContext(clientId: string, clientEmail: string) {
@@ -244,7 +240,7 @@ export async function loadMealPlanPdfPayload(planId: string): Promise<MealPlanPd
 
   days.forEach((day, index) => {
     const columnDate = planDates[index] ?? new Date()
-    const entryDate = entryDateForDay(day, columnDate)
+    const entryDate = entryDateForPlanDay(day, columnDate)
     const skipped = !!day.skipped
 
     let macros: MealPlanPdfDayMacros
@@ -271,10 +267,11 @@ export async function loadMealPlanPdfPayload(planId: string): Promise<MealPlanPd
     })
   })
 
-  const noteText = meta.note?.trim() ?? ''
-  const instructions = noteText
-    ? [...DEFAULT_MEAL_PLAN_INSTRUCTIONS.slice(0, 7), noteText, ...DEFAULT_MEAL_PLAN_INSTRUCTIONS.slice(7)]
-    : [...DEFAULT_MEAL_PLAN_INSTRUCTIONS]
+  const customInstructions = getDietPlanInstructionsForClient(plan.nutritionist_notes).slice(
+    DEFAULT_MEAL_PLAN_INSTRUCTIONS.length,
+  )
+  const instructions = getDietPlanInstructionsForClient(plan.nutritionist_notes)
+  const notesText = customInstructions.join('\n')
 
   return {
     planId: plan.id,
@@ -304,6 +301,6 @@ export async function loadMealPlanPdfPayload(planId: string): Promise<MealPlanPd
     },
     days: pdfDays.filter((d) => !d.skipped),
     instructions,
-    notes: noteText,
+    notes: notesText,
   }
 }

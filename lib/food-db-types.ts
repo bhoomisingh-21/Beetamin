@@ -94,11 +94,54 @@ function normalizeFoodUnit(unit: string | null | undefined): string | null {
 }
 
 function extractPieceCountFromName(name: string): number | null {
-  const paren = name.match(/\((\d+)\s*(?:halves|pieces|pcs|almonds|eggs|rotis|idli|dosa)?\)/i)
+  const paren = name.match(
+    /\((\d+)\s*(?:halves|pieces|pcs|almonds|eggs|rotis|idli|dosa|chilla|chillas)?\)/i,
+  )
   if (paren) return Number(paren[1])
-  const inline = name.match(/\b(\d+)\s*(?:halves|pieces|pcs|almonds|eggs)\b/i)
+  const inline = name.match(
+    /\b(\d+)\s*(?:halves|pieces|pcs|almonds|eggs|chillas?|rotis?|idli|dosas?)\b/i,
+  )
   if (inline) return Number(inline[1])
+  const trailing = name.match(/\s(\d+)\s*$/)
+  if (trailing) {
+    const n = Number(trailing[1])
+    if (n > 0 && n <= 24) return n
+  }
   return null
+}
+
+/** Piece count baked into the food name/serving (e.g. "besan chilla 2" → 2). */
+export function foodPiecesPerServing(foodName: string): number {
+  return extractPieceCountFromName(foodName) ?? 1
+}
+
+export function qtyGramsToPieceCount(
+  qtyGrams: number,
+  servingGrams: number | null | undefined,
+  foodName: string,
+): number {
+  const piecesPerServing = foodPiecesPerServing(foodName)
+  if (!servingGrams || servingGrams <= 0) return piecesPerServing
+  return roundServingCount((qtyGrams / servingGrams) * piecesPerServing)
+}
+
+export function pieceCountToQtyGrams(
+  pieceCount: number,
+  servingGrams: number | null | undefined,
+  foodName: string,
+): number {
+  const piecesPerServing = foodPiecesPerServing(foodName)
+  if (!servingGrams || servingGrams <= 0) return Math.max(1, Math.round(pieceCount))
+  return Math.max(1, Math.round((pieceCount / piecesPerServing) * servingGrams))
+}
+
+export function formatFoodUnitLabel(unit: string | null | undefined): string {
+  const normalized = normalizeFoodUnit(unit)
+  if (normalized === 'piece') return 'piece'
+  if (normalized === 'ml') return 'ml'
+  if (normalized === 'cup') return 'cup'
+  if (normalized === 'glass') return 'glass'
+  return 'gm'
 }
 
 function isLiquidFood(name: string, category: string): boolean {
@@ -164,9 +207,12 @@ export function formatFoodQuantityForPdf(input: FormatFoodQuantityInput): string
     case 'ml':
       return `${Math.round(qty)} ml`
     case 'piece': {
-      const fromName = extractPieceCountFromName(input.foodName ?? '')
-      const count = serving ? qty / serving : fromName ?? 1
-      return `${roundServingCount(count)} piece`
+      const piecesPerServing = foodPiecesPerServing(input.foodName ?? '')
+      if (serving && qty > 0) {
+        const count = (qty / serving) * piecesPerServing
+        return `${roundServingCount(count)} piece`
+      }
+      return `${roundServingCount(piecesPerServing)} piece`
     }
     case 'gm':
     default:
@@ -174,9 +220,13 @@ export function formatFoodQuantityForPdf(input: FormatFoodQuantityInput): string
   }
 }
 
-/** Strip a trailing "(123 g)" style suffix so PDF lines do not duplicate units. */
-export function stripTrailingQuantityFromFoodName(name: string): string {
-  return name.replace(/\s*\(\s*\d+(?:\.\d+)?\s*(?:g|gm|gms?|ml)\s*\)\s*$/i, '').trim()
+/** Strip trailing quantity hints from food names for PDF display. */
+export function stripTrailingQuantityFromFoodName(name: string, defaultUnit?: string | null): string {
+  let cleaned = name.replace(/\s*\(\s*\d+(?:\.\d+)?\s*(?:g|gm|gms?|ml)\s*\)\s*$/i, '').trim()
+  if (normalizeFoodUnit(defaultUnit) === 'piece' && extractPieceCountFromName(name) != null) {
+    cleaned = cleaned.replace(/\s+\d+\s*$/, '').trim()
+  }
+  return cleaned
 }
 
 /** Display label: kcal per default serving or per 100g. */

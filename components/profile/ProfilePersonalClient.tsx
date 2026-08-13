@@ -28,6 +28,8 @@ import {
   textSecondary,
 } from '@/components/profile/profile-dark-styles'
 import { consumeRedirectAfterAuth } from '@/app/profile/redirect-actions'
+import { DietPlanInstructionsBox } from '@/components/profile/DietPlanInstructionsBox'
+import { getDietPlanInstructionsForClient } from '@/lib/meal-plan-meta'
 import { formatReportHeadingDate } from '@/components/profile/profile-helpers'
 import { clientProfileContactComplete, resolveClientProfileFields } from '@/lib/assessment-profile-fields'
 import { syncLocalAssessmentToProfile } from '@/lib/sync-local-assessment-client'
@@ -324,6 +326,15 @@ export default function ProfilePersonalClient({
             </div>
           ))}
         </div>
+
+        {hasDietPlans && mealPlans.length > 0 ? (
+          <DietPlanInstructionsBox
+            className="mt-8"
+            compact
+            instructions={getDietPlanInstructionsForClient(mealPlans[0].nutritionist_notes)}
+            title="Your diet plan instructions"
+          />
+        ) : null}
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           {hasDietPlans ? (

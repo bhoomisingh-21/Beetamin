@@ -34,6 +34,22 @@ export function emptyMealSlots(): MealSlots {
   }
 }
 
+/** Ensure every slot key exists when reading legacy plan JSON from the DB. */
+export function normalizeMealSlots(meals: Partial<MealSlots> | undefined): MealSlots {
+  const base = emptyMealSlots()
+  if (!meals) return base
+  return {
+    early_morning: meals.early_morning ?? base.early_morning,
+    breakfast: meals.breakfast ?? base.breakfast,
+    post_workout: meals.post_workout ?? base.post_workout,
+    mid_morning: meals.mid_morning ?? base.mid_morning,
+    lunch: meals.lunch ?? base.lunch,
+    evening_snack: meals.evening_snack ?? base.evening_snack,
+    dinner: meals.dinner ?? base.dinner,
+    bedtime: meals.bedtime ?? base.bedtime,
+  }
+}
+
 export function emptyDay(dayNumber: number, planDate?: string, skipped = false): MealPlanDay {
   return {
     day: dayNumber,
@@ -46,13 +62,31 @@ export function emptyDay(dayNumber: number, planDate?: string, skipped = false):
 }
 
 export function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
+  return isoFromLocalDate(new Date())
+}
+
+/** Local calendar date as YYYY-MM-DD (avoids UTC shift from toISOString). */
+export function isoFromLocalDate(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** Resolve the entry_date key used for meal_plan_entries and PDF lookups. */
+export function entryDateForPlanDay(
+  day: Pick<MealPlanDay, 'plan_date'>,
+  columnDate: Date,
+  fallbackIso = todayIsoDate(),
+): string {
+  if (day.plan_date?.trim()) return day.plan_date.trim()
+  return isoFromLocalDate(columnDate) || fallbackIso
 }
 
 export function nextIsoDate(iso: string): string {
   const d = new Date(`${iso}T12:00:00`)
   d.setDate(d.getDate() + 1)
-  return d.toISOString().slice(0, 10)
+  return isoFromLocalDate(d)
 }
 
 export function renumberPlanDays(dayList: MealPlanDay[]): MealPlanDay[] {

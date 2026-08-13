@@ -26,6 +26,8 @@ import type {
   PaidReportSummary,
 } from '@/lib/booking-types'
 import { FullPlanBookingLink } from '@/components/payment/FullPlanBookingLink'
+import { DietPlanInstructionsBox } from '@/components/profile/DietPlanInstructionsBox'
+import { getDietPlanInstructionsForClient } from '@/lib/meal-plan-meta'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG.replace(/'/g, '%27'))}`
@@ -420,18 +422,27 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-5 py-4"
+            className="mt-6 space-y-4"
           >
-            <p className="text-sm text-emerald-100">
-              Your nutritionist has shared a diet plan with you.
-            </p>
-            <Link
-              href="/profile/diet-plan"
-              className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-emerald-400 hover:underline"
-            >
-              <UtensilsCrossed size={16} />
-              Open diet plan in Profile
-            </Link>
+            {mealPlans.length > 0 ? (
+              <DietPlanInstructionsBox
+                compact
+                instructions={getDietPlanInstructionsForClient(mealPlans[0].nutritionist_notes)}
+                title="Your diet plan instructions"
+              />
+            ) : null}
+            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-5 py-4">
+              <p className="text-sm text-emerald-100">
+                Your nutritionist has shared a diet plan with you.
+              </p>
+              <Link
+                href="/profile/diet-plan"
+                className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-emerald-400 hover:underline"
+              >
+                <UtensilsCrossed size={16} />
+                Open full diet plan in Profile
+              </Link>
+            </div>
           </motion.div>
         )}
 
