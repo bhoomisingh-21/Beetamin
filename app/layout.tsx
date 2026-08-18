@@ -9,7 +9,8 @@ import {
   SiteNavigationJsonLd,
   WebSiteJsonLd,
 } from '@/components/JsonLd'
-import { AhrefsAnalyticsHead, AnalyticsScripts } from '@/components/analytics/AnalyticsScripts'
+import { AhrefsAnalyticsHead, AnalyticsScripts, MetaPixelHead, MetaPixelNoscript } from '@/components/analytics/AnalyticsScripts'
+import { MetaPixelPageView } from '@/components/analytics/MetaPixelPageView'
 import {
   GoogleTagManagerBody,
   GoogleTagManagerHead,
@@ -138,10 +139,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <head>
           <GoogleTagManagerHead />
           <AhrefsAnalyticsHead />
+          <MetaPixelHead />
         </head>
         <body className={`${inter.className} bg-[#010803] text-white overflow-x-hidden`}>
+          <MetaPixelNoscript />
           <GoogleTagManagerBody />
           <AnalyticsScripts />
+          <MetaPixelPageView />
           <WebSiteJsonLd />
           <OrganizationJsonLd />
           <MedicalServiceJsonLd />
