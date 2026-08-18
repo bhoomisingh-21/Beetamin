@@ -1,5 +1,6 @@
 import Groq from 'groq-sdk'
 import { NextRequest, NextResponse } from 'next/server'
+import { buildFreeAssessmentFallback } from '@/lib/free-assessment-fallback'
 import { validateAssessmentInput } from '@/lib/utils'
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
@@ -159,6 +160,26 @@ THEIR EXACT ANSWERS:
 
 Use the scoring formula and answer interpretation guide to generate a precise, honest, personalized report for ${name}. Reference their exact answers in your reasoning. If their answers suggest they are healthy, say so clearly with a low score.`
 
+  const fallbackPayload = {
+    name,
+    age,
+    diet,
+    goal,
+    answers: answers as {
+      energyLevel?: string
+      sleepQuality?: string
+      physicalSymptoms?: string[]
+      mentalClarity?: string
+      muscleRecovery?: string
+      immuneHealth?: string
+    },
+  }
+
+  if (!process.env.GROQ_API_KEY?.trim()) {
+    console.warn('[assessment] GROQ_API_KEY missing — using rule-based fallback')
+    return NextResponse.json(buildFreeAssessmentFallback(fallbackPayload))
+  }
+
   try {
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
@@ -172,11 +193,15 @@ Use the scoring formula and answer interpretation guide to generate a precise, h
     })
 
     const raw = completion.choices[0].message.content || '{}'
-    const result = JSON.parse(raw)
+    const result = JSON.parse(raw) as Record<string, unknown>
+    if (typeof result.deficiencyScore !== 'number' || Number.isNaN(result.deficiencyScore)) {
+      console.warn('[assessment] Groq returned invalid JSON — using rule-based fallback')
+      return NextResponse.json(buildFreeAssessmentFallback(fallbackPayload))
+    }
     return NextResponse.json(result)
 
   } catch (error) {
     console.error('Groq API error:', error)
-    return NextResponse.json({ error: 'Analysis failed' }, { status: 500 })
+    return NextResponse.json(buildFreeAssessmentFallback(fallbackPayload))
   }
 }

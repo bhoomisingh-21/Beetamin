@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Zap, Shield, ChevronRight, ChevronLeft, FlaskConical, Check, ShieldCheck, UserCheck, Clock } from 'lucide-react'
 import { writeAssessmentBundle } from '@/lib/assessment-local-storage'
+import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
 import { trackEvent } from '@/lib/analytics'
 import PremiumLoadingScreen, { TEASER_LOADING_MESSAGES } from '@/components/PremiumLoadingScreen'
 
@@ -53,6 +54,7 @@ export default function AssessmentPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [direction, setDirection] = useState<'next' | 'back'>('next')
   const [isLoading, setIsLoading] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [answers, setAnswers] = useState({
     name: '',
     email: '',
@@ -71,6 +73,7 @@ export default function AssessmentPage() {
 
   async function handleSubmit() {
     trackEvent('quiz_completed')
+    setSubmitError(null)
     setIsLoading(true)
     try {
       const res = await fetch('/api/assessment', {
@@ -92,6 +95,13 @@ export default function AssessmentPage() {
         }),
       })
       const result = await res.json()
+      if (!res.ok) {
+        throw new Error(typeof result?.error === 'string' ? result.error : 'Could not generate your report. Please try again.')
+      }
+      const normalized = normalizeFreeAssessment(result)
+      if (!normalized) {
+        throw new Error('We received an invalid report. Please try again.')
+      }
       const meta = {
         name: answers.name,
         email: answers.email,
@@ -101,7 +111,7 @@ export default function AssessmentPage() {
         age: answers.age,
       }
       writeAssessmentBundle({
-        assessmentResult: result as Record<string, unknown>,
+        assessmentResult: normalized,
         assessmentMeta: meta,
       })
       if (answers.email) {
@@ -115,7 +125,7 @@ export default function AssessmentPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: answers.email,
-            assessmentResult: result,
+            assessmentResult: normalized,
             assessmentMeta: meta,
           }),
         }).catch(() => {})
@@ -123,6 +133,7 @@ export default function AssessmentPage() {
       router.push('/assessment/results')
     } catch (e) {
       console.error(e)
+      setSubmitError(e instanceof Error ? e.message : 'Could not generate your report. Please try again.')
       setIsLoading(false)
     }
   }
@@ -672,7 +683,11 @@ export default function AssessmentPage() {
                   </div>
 
                   {/* Navigation Buttons */}
-                  <div className="px-5 md:px-8 pb-6 md:pb-8 flex items-center justify-between gap-3">
+                  <div className="px-5 md:px-8 pb-6 md:pb-8">
+                    {submitError ? (
+                      <p className="mb-4 text-sm text-red-600 text-center font-medium">{submitError}</p>
+                    ) : null}
+                    <div className="flex items-center justify-between gap-3">
                     <button
                       onClick={() => { setDirection('back'); setCurrentStep(p => p - 1) }}
                       className={`border border-gray-200 text-gray-500 rounded-full px-4 md:px-6 py-2.5 md:py-3 hover:border-gray-400 transition flex items-center gap-2 text-base font-medium flex-shrink-0 ${currentStep === 1 ? 'invisible' : ''}`}
@@ -709,6 +724,7 @@ export default function AssessmentPage() {
                         Get My Deficiency Report 🧬
                       </button>
                     )}
+                    </div>
                   </div>
                 </>
               )}
