@@ -6,12 +6,12 @@ const ahrefsKey =
   process.env.NEXT_PUBLIC_AHREFS_ANALYTICS_KEY?.trim() ?? 'eYgU9ROqNXH0iR+6UTsSkQ'
 const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() ?? '1927548154604288'
 
-/** Meta Pixel base code — install in `<head>` per Meta docs. */
+/** Meta Pixel base code — `beforeInteractive` so fbq exists on first paint (Pixel Helper / Meta verification). */
 export function MetaPixelHead() {
   if (!metaPixelId) return null
 
   return (
-    <Script id="meta-pixel" strategy="afterInteractive">
+    <Script id="meta-pixel" strategy="beforeInteractive">
       {`
         !function(f,b,e,v,n,t,s)
         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
