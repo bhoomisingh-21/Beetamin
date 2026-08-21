@@ -10,6 +10,7 @@ import {
   payuMerchantConfigured,
 } from '@/lib/payment-app-base-url'
 import { giftedPlanMatchesPayment, grantGiftedFullPlan, grantGiftedReport } from '@/lib/gifted-access'
+import { requireFullPlanCheckoutVerification } from '@/lib/full-plan-checkout-profile'
 import { hasActiveFullPlanPurchase } from '@/lib/plan-access'
 import { resolveFreeAssessmentForCheckout } from '@/lib/resolve-free-assessment'
 import { reserveUpgradePurchase } from '@/lib/reserve-upgrade-purchase'
@@ -118,6 +119,14 @@ export async function POST(req: Request) {
         console.error('[payment/initiate] gifted full plan', err)
         return NextResponse.json({ error: 'Could not apply gifted plan access.' }, { status: 500 })
       }
+    }
+
+    const verification = await requireFullPlanCheckoutVerification(sessionUserId)
+    if (verification) {
+      return NextResponse.json(
+        { error: verification.error, code: verification.code },
+        { status: 403 },
+      )
     }
 
     const amountRupees = Math.round(rupeesServer)

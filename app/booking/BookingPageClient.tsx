@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
@@ -16,7 +17,6 @@ import {
   User,
 } from 'lucide-react'
 import { getClientDashboard, saveAssessmentToProfile } from '@/lib/booking-actions'
-import { UpgradePlanButton } from '@/components/payment/UpgradePlanButton'
 import { trackEvent } from '@/lib/analytics'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'><path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='%2322C55E' stroke-width='0.5' stroke-opacity='0.18'/></svg>`
@@ -47,7 +47,6 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
   const { isLoaded, isSignedIn, user } = useUser()
   const router = useRouter()
   const [showPaywall, setShowPaywall] = useState(false)
-  const [checkoutError, setCheckoutError] = useState('')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -248,24 +247,18 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
                 🔥 60% off — Limited spots available
               </div>
 
-              {checkoutError ? (
-                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-900">
-                  {checkoutError}
-                </p>
-              ) : null}
-
               {signedIn ? (
-                <UpgradePlanButton
-                  onError={setCheckoutError}
+                <Link
+                  href="/booking/checkout"
                   className="mt-5 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center gap-2"
                 >
                   Get Started — ₹3,999
                   <ArrowRight size={20} />
-                </UpgradePlanButton>
+                </Link>
               ) : (
                 <>
                   <a
-                    href="/sign-in?redirect_after_auth=%2Fbooking"
+                    href="/sign-in?redirect_after_auth=%2Fbooking%2Fcheckout"
                     className="mt-5 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center gap-2"
                   >
                     Get Started — ₹3,999
@@ -273,13 +266,17 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
                   </a>
 
                   <a
-                    href="/sign-up?redirect_after_auth=%2Fbooking"
+                    href="/sign-up?redirect_after_auth=%2Fbooking%2Fcheckout"
                     className="mt-3 block text-center text-emerald-600 hover:text-emerald-500 text-sm font-semibold"
                   >
                     New here? Create an account
                   </a>
                 </>
               )}
+
+              <p className="text-gray-500 text-xs mt-3 text-center">
+                You&apos;ll enter details &amp; verify your phone before PayU checkout.
+              </p>
 
               <p className="text-gray-400 text-[10px] sm:text-xs mt-3 text-center whitespace-nowrap max-md:tracking-tight">
                 Secure checkout via PayU · Card, UPI &amp; net banking

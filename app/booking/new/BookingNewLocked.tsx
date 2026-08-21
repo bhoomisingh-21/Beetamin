@@ -29,7 +29,7 @@ export function BookingNewLocked() {
             Upgrade to Full Plan
           </FullPlanBookingLink>
           <p className="mt-4 text-xs text-gray-400">
-            Review plan details on the next page, then complete secure PayU checkout.
+            Enter your details and verify your phone before secure PayU checkout.
           </p>
         </div>
       </div>

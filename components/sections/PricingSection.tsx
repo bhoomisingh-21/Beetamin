@@ -110,7 +110,7 @@ export default function PricingSection({ hasFullPlan }: Props) {
             </FullPlanBookingLink>
           ) : (
             <a
-              href="/sign-up?redirect_after_auth=%2Fbooking"
+              href="/sign-up?redirect_after_auth=%2Fbooking%2Fcheckout"
               className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2 text-center"
             >
               Book 90-Day Plan — ₹3,999

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { getClientAssessmentFlags } from "@/lib/booking-actions";
 
-const BOOKING_SIGN_UP = "/sign-up?redirect_after_auth=%2Fbooking";
+const BOOKING_SIGN_UP = "/sign-up?redirect_after_auth=%2Fbooking%2Fcheckout";
 
 type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
 

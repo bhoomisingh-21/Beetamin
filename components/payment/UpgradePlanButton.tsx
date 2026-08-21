@@ -49,6 +49,11 @@ export function UpgradePlanButton({
         return
       }
 
+      if (res.status === 403 && body.code === 'CHECKOUT_VERIFICATION_REQUIRED') {
+        window.location.href = '/booking/checkout'
+        return
+      }
+
       const result = handlePaymentInitiateResponse(body, res.ok)
       if (result.kind === 'error') {
         console.error('[UpgradePlanButton] checkout failed', res.status, body.code, body)

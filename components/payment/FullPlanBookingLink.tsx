@@ -10,11 +10,11 @@ type Props = {
   className?: string
 }
 
-/** Full Recovery Plan (₹3,999) — always land on /booking first; PayU starts from that page only. */
+/** Full Recovery Plan (₹3,999) — profile + verification before PayU. */
 export function FullPlanBookingLink({ children, className }: Props) {
   return (
     <Link
-      href="/booking"
+      href="/booking/checkout"
       className={className}
       onClick={() => trackEvent('upgrade_clicked', { plan: 'full_plan', amount: 3999 })}
     >

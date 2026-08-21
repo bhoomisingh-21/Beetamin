@@ -156,7 +156,7 @@ export default function BookingCTA() {
               </a>
             ) : (
               <a
-                href="/booking"
+                href="/booking/checkout"
                 className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl px-8 py-4 transition text-base"
               >
                 Book Your Sessions
