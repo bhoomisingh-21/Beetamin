@@ -1,6 +1,7 @@
 import Groq from 'groq-sdk'
 import { NextRequest, NextResponse } from 'next/server'
 import { buildFreeAssessmentFallback } from '@/lib/free-assessment-fallback'
+import { GROQ_FREE_ASSESSMENT_MODEL } from '@/lib/groq-models'
 import { validateAssessmentInput } from '@/lib/utils'
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
@@ -182,7 +183,7 @@ Use the scoring formula and answer interpretation guide to generate a precise, h
 
   try {
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_FREE_ASSESSMENT_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage }

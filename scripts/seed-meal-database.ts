@@ -20,6 +20,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
+import { GROQ_PRIMARY_MODEL } from '../lib/groq-models'
 import { textContainsExcludedFood, textContainsRegionalSpecialty } from '../lib/meal-engine/rules'
 
 const MEAL_TYPES = ['breakfast', 'mid_morning_snack', 'lunch', 'evening_snack', 'dinner'] as const
@@ -242,7 +243,7 @@ function buildUserPrompt(combos: ComboCount[]): string {
 
 async function requestMealBatch(groq: Groq, combos: ComboCount[]): Promise<RawMeal[]> {
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: GROQ_PRIMARY_MODEL,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: buildUserPrompt(combos) },

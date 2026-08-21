@@ -6,11 +6,8 @@ import { useUser } from '@clerk/nextjs'
 import { getClientAssessmentFlags } from '@/lib/booking-actions'
 import { signInReturnForPaidReport } from '@/lib/assessment-auth-links'
 import { markAssessmentAuthReturn } from '@/lib/assessment-local-storage'
-import { startReport39Payment } from '@/lib/start-report-payment-client'
 import {
   fetchRestoredAssessmentBundle,
-  readLocalAssessmentMeta,
-  readLocalFreeAssessmentSnapshot,
   syncLocalAssessmentToProfile,
 } from '@/lib/sync-local-assessment-client'
 import { motion } from 'framer-motion'
@@ -110,19 +107,16 @@ export default function ResultsPage() {
   const [meta, setMeta] = useState<any>({})
   const [scoreAnimated, setScoreAnimated] = useState(0)
   const [flags, setFlags] = useState<AssessmentFlags | null>(null)
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
-  const [generateError, setGenerateError] = useState<string | null>(null)
+  const [isContinuing, setIsContinuing] = useState(false)
+  const [continueError, setContinueError] = useState<string | null>(null)
   const assessmentSyncedRef = useRef(false)
   const [resultsLoading, setResultsLoading] = useState(true)
   const router = useRouter()
   const { isLoaded, isSignedIn, user } = useUser()
 
-  /** ₹39 — opens PayU directly (no leave-site popup). */
-  async function generateAndSendReport(userEmail: string, userName: string) {
-    void userEmail
-    void userName
-    setGenerateError(null)
-    trackEvent('payment_initiated', { plan: 'report', amount: 39, source: 'results_page' })
+  /** Continue to detailed follow-up quiz; PayU runs only after that questionnaire. */
+  async function continueToDetailedAssessment() {
+    setContinueError(null)
     if (!isSignedIn) {
       try {
         sessionStorage.setItem('beetamin.continue39', '1')
@@ -130,20 +124,6 @@ export default function ResultsPage() {
         /* ignore */
       }
       router.push(signInReturnForPaidReport())
-      return
-    }
-
-    const synced = await syncLocalAssessmentToProfile(user?.id)
-    if (!synced) {
-      setGenerateError(
-        'We could not find your free quiz on this device. Open your results right after the free assessment (same browser), or retake the free quiz below.',
-      )
-      return
-    }
-
-    const detailedId = flags?.latestDetailedAssessmentId
-    if (!detailedId) {
-      router.push('/detailed-assessment')
       return
     }
 
@@ -156,23 +136,33 @@ export default function ResultsPage() {
       router.push(`/report/${encodeURIComponent(existing.report_id)}`)
       return
     }
-
-    setIsGeneratingReport(true)
-    try {
-      const paymentError = await startReport39Payment({
-        detailedAssessmentId: detailedId,
-        mode: 'new',
-        freeAssessmentSnapshot: readLocalFreeAssessmentSnapshot() ?? result,
-        assessmentMeta: readLocalAssessmentMeta(),
-      })
-      if (paymentError) {
-        setGenerateError(paymentError)
+    if (!flags?.latestDetailedAssessmentId) {
+      if (flags?.recoveryReportReady) {
+        router.push(`/report/${encodeURIComponent(flags.recoveryReportReady.report_id)}`)
+        return
       }
+      if (flags?.recoveryReportGenerating) {
+        router.push(`/report/${encodeURIComponent(flags.recoveryReportGenerating.report_id)}`)
+        return
+      }
+    }
+
+    setIsContinuing(true)
+    try {
+      const synced = await syncLocalAssessmentToProfile(user?.id)
+      if (!synced) {
+        setContinueError(
+          'We could not find your free quiz on this device. Open your results right after the free assessment (same browser), or retake the free quiz below.',
+        )
+        return
+      }
+      trackEvent('quiz_started', { source: 'results_to_detailed' })
+      router.push('/detailed-assessment')
     } catch (e) {
-      console.error('[assessment/results] generateAndSendReport', e)
-      setGenerateError(e instanceof Error ? e.message : 'Could not start checkout.')
+      console.error('[assessment/results] continueToDetailedAssessment', e)
+      setContinueError(e instanceof Error ? e.message : 'Could not continue. Please try again.')
     } finally {
-      setIsGeneratingReport(false)
+      setIsContinuing(false)
     }
   }
 
@@ -682,7 +672,13 @@ export default function ResultsPage() {
 
                 <div className="mt-4 md:mt-6 rounded-xl bg-emerald-50/80 border border-emerald-100 px-3 py-3 sm:px-4">
                   <p className="text-sm sm:text-base text-emerald-900 font-medium leading-relaxed">
-                    Next: a short follow-up questionnaire (about 2 minutes). Your personalised PDF is prepared right after you complete secure PayU checkout (₹39).
+                    <span className="font-bold">Step 1:</span> Short follow-up questionnaire (~2 min) — diet, symptoms, and lifestyle.
+                    <span className="block mt-1.5">
+                      <span className="font-bold">Step 2:</span> Secure PayU checkout (₹39).
+                    </span>
+                    <span className="block mt-1.5">
+                      <span className="font-bold">Step 3:</span> Your personalised PDF is emailed and ready to download.
+                    </span>
                   </p>
                 </div>
 
@@ -692,26 +688,25 @@ export default function ResultsPage() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    void generateAndSendReport(
-                      user?.primaryEmailAddress?.emailAddress ?? '',
-                      meta.name?.trim() || user?.fullName?.trim() || user?.firstName?.trim() || 'Patient',
-                    )
-                  }
-                  disabled={isGeneratingReport}
+                  onClick={() => void continueToDetailedAssessment()}
+                  disabled={isContinuing}
                   className="mt-5 md:mt-8 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-black py-3.5 sm:py-4 md:py-5 rounded-xl font-black text-base sm:text-lg md:text-xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
                 >
-                  {isGeneratingReport ? (
+                  {isContinuing ? (
                     <span className="inline-flex items-center justify-center gap-2">
                       <Loader2 className="h-5 w-5 animate-spin shrink-0" />
-                      Opening secure payment…
+                      Loading follow-up…
                     </span>
+                  ) : generatingReportId ? (
+                    'View report in progress →'
+                  ) : readyReportId ? (
+                    'Open your PDF report →'
                   ) : (
-                    'Get Paid Report — ₹39'
+                    'Start Follow-up Questionnaire →'
                   )}
                 </button>
-                {generateError ? (
-                  <p className="mt-3 text-sm text-red-600 text-center font-medium">{generateError}</p>
+                {continueError ? (
+                  <p className="mt-3 text-sm text-red-600 text-center font-medium">{continueError}</p>
                 ) : null}
 
                 <p className="mt-3 text-xs sm:text-sm text-gray-400">
@@ -719,9 +714,9 @@ export default function ResultsPage() {
                 </p>
 
                 <div className="mt-2 flex justify-center gap-2.5 text-xs sm:text-sm text-gray-400 flex-wrap">
-                  <span>✔ Quick questions first</span>
-                  <span>✔ Instant PDF</span>
-                  <span>✔ Secure PayU checkout</span>
+                  <span>✔ Questionnaire first</span>
+                  <span>✔ Then ₹39 checkout</span>
+                  <span>✔ PDF to your inbox</span>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">

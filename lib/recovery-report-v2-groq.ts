@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk'
+import { GROQ_REPORT_MODELS } from '@/lib/groq-models'
 import { resolvePatientDiet } from '@/lib/patient-diet'
 import { generateWeeklyMealPlan } from '@/lib/meal-engine/generate-plan'
 import type {
@@ -672,7 +673,6 @@ function maxCompletionTokensForPrompt(promptCharLength: number): number {
   return Math.min(6144, Math.max(1536, room))
 }
 
-const GROQ_REPORT_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const
 const GROQ_REPORT_MAX_ATTEMPTS = 6
 
 function groqErrorBlob(error: unknown): string {
@@ -694,6 +694,13 @@ function groqFailureStatus(error: unknown): number | undefined {
   if (typeof err.status === 'number') return err.status
   const resp = err.response as { status?: number } | undefined
   return resp?.status
+}
+
+function looksLikeGroqModelUnavailable(error: unknown): boolean {
+  const status = groqFailureStatus(error)
+  if (status === 404) return true
+  const b = groqErrorBlob(error).toLowerCase()
+  return b.includes('does not exist') || b.includes('model_not_found') || b.includes('model not found')
 }
 
 function looksLikeGroqRateLimit(error: unknown): boolean {
@@ -779,6 +786,14 @@ export async function generateRecoveryReportV2Payload(input: GenerateRecoveryRep
       }
       return parseRecoveryReportV2Json(content)
     } catch (e: unknown) {
+      if (looksLikeGroqModelUnavailable(e) && modelIndex < GROQ_REPORT_MODELS.length - 1) {
+        modelIndex += 1
+        console.warn(
+          `[recovery-report-v2-groq] model unavailable — falling back to ${GROQ_REPORT_MODELS[modelIndex]}`,
+        )
+        continue
+      }
+
       if (!looksLikeGroqRateLimit(e)) throw e
 
       lastRateLimitError = e

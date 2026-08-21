@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk'
+import { GROQ_PRIMARY_MODEL } from '@/lib/groq-models'
 import { parseRecoverySectionsJson } from './recovery-report-parse'
 import { RECOVERY_PLAN_SYSTEM_PROMPT } from './recovery-report-prompt'
 import type { DetailedAssessmentPayload, RecoveryReportSections } from './recovery-report-types'
@@ -26,7 +27,7 @@ export async function generateRecoveryReportSections(input: {
   }
 
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: GROQ_PRIMARY_MODEL,
     messages: [
       { role: 'system', content: RECOVERY_PLAN_SYSTEM_PROMPT },
       {
