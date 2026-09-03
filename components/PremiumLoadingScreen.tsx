@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CheckCircle2, Sparkles } from 'lucide-react'
+import { CheckCircle2, Loader2 } from 'lucide-react'
 
 /** Short message set for the free-assessment teaser wait (a few seconds). */
 export const TEASER_LOADING_MESSAGES: string[] = [
@@ -23,10 +23,6 @@ export const FULL_REPORT_LOADING_MESSAGES: string[] = [
   'Designing your 7-day meal plan...',
   'Almost Done...',
 ]
-
-// Subtle hexagon tile texture, matching the dark-section background pattern used elsewhere in the app.
-const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='92'><polygon points='40,3 77,22 77,70 40,89 3,70 3,22' fill='none' stroke='%23FFFFFF' stroke-width='1.4'/></svg>`
-const HEX_URL = `data:image/svg+xml,${HEX_SVG}`
 
 export type PremiumLoadingScreenProps = {
   /** Ordered list of checklist messages revealed one at a time. */
@@ -54,8 +50,6 @@ export default function PremiumLoadingScreen({
   const total = messages.length
   const [revealedCount, setRevealedCount] = useState(total > 0 ? 1 : 0)
 
-  // Reset the checklist during render (not in an effect) if the caller swaps in a
-  // different message set — the React-recommended way to adjust state on prop change.
   const [trackedMessages, setTrackedMessages] = useState(messages)
   if (trackedMessages !== messages) {
     setTrackedMessages(messages)
@@ -79,24 +73,18 @@ export default function PremiumLoadingScreen({
   const circumference = 2 * Math.PI * radius
 
   return (
-    <div
-      className="relative w-full overflow-hidden rounded-3xl border border-white/[0.06] bg-[#0A0F0A] px-6 py-14 sm:px-10 sm:py-16"
-      style={{ backgroundImage: `url("${HEX_URL}")`, backgroundSize: '80px 92px', backgroundRepeat: 'repeat' }}
-    >
-      <div className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: `url("${HEX_URL}")`, backgroundSize: '80px 92px', backgroundRepeat: 'repeat' }} />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 -translate-y-1/3 rounded-full bg-emerald-500/10 blur-3xl" />
-
-      <div className="relative z-10 mx-auto flex max-w-md flex-col items-center text-center">
-        <div className="relative flex h-32 w-32 items-center justify-center sm:h-36 sm:w-36">
+    <div className="relative w-full rounded-3xl border border-gray-100 bg-white px-6 py-12 sm:px-10 sm:py-14">
+      <div className="mx-auto flex max-w-md flex-col items-center text-center">
+        <div className="relative flex h-28 w-28 items-center justify-center sm:h-32 sm:w-32">
           <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
-            <circle cx="50" cy="50" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4" />
+            <circle cx="50" cy="50" r={radius} fill="none" stroke="#E5E7EB" strokeWidth="5" />
             <motion.circle
               cx="50"
               cy="50"
               r={radius}
               fill="none"
               stroke="#10B981"
-              strokeWidth="4"
+              strokeWidth="5"
               strokeLinecap="round"
               strokeDasharray={circumference}
               animate={{ strokeDashoffset: circumference * (1 - progress) }}
@@ -111,19 +99,18 @@ export default function PremiumLoadingScreen({
                 initial={{ opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50"
               >
-                <CheckCircle2 className="h-9 w-9 text-emerald-400" strokeWidth={2} />
+                <CheckCircle2 className="h-8 w-8 text-emerald-600" strokeWidth={2} />
               </motion.div>
             ) : (
               <motion.div
                 key="loading"
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1, rotate: 360 }}
-                transition={{ rotate: { duration: 5, repeat: Infinity, ease: 'linear' }, opacity: { duration: 0.3 }, scale: { duration: 0.3 } }}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50"
               >
-                <Sparkles className="h-8 w-8 text-emerald-400" strokeWidth={2} />
+                <Loader2 className="h-7 w-7 animate-spin text-emerald-600" strokeWidth={2.25} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -133,15 +120,15 @@ export default function PremiumLoadingScreen({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="mt-7 text-xl font-black text-white sm:text-2xl"
+          className="mt-6 text-xl font-black text-gray-900 sm:text-2xl"
         >
           {title}
         </motion.h2>
         {subtitle ? (
-          <p className="mt-2 max-w-xs text-sm text-gray-400 sm:text-base">{subtitle}</p>
+          <p className="mt-2 max-w-xs text-sm leading-relaxed text-gray-500 sm:text-base">{subtitle}</p>
         ) : null}
 
-        <div className="mt-8 w-full max-w-sm space-y-2.5 text-left">
+        <div className="mt-8 w-full max-w-sm space-y-2 text-left">
           <AnimatePresence initial={false}>
             {messages.slice(0, effectiveCount).map((message, index) => {
               const isRowComplete = isComplete || index < effectiveCount - 1
@@ -151,46 +138,29 @@ export default function PremiumLoadingScreen({
                 <motion.div
                   key={message}
                   layout
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -12 }}
-                  transition={{ duration: 0.35, ease: 'easeOut' }}
-                  className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#111810] px-4 py-3"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3"
                 >
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center">
-                    <AnimatePresence mode="wait">
-                      {isRowComplete ? (
+                    {isRowComplete ? (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600" strokeWidth={2} />
+                    ) : (
+                      <span className="relative flex h-2.5 w-2.5 items-center justify-center">
                         <motion.span
-                          key="check"
-                          initial={{ opacity: 0, scale: 0.5 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.5 }}
-                          transition={{ duration: 0.25 }}
-                        >
-                          <CheckCircle2 className="h-5 w-5 text-emerald-400" strokeWidth={2} />
-                        </motion.span>
-                      ) : (
-                        <motion.span
-                          key="pulse"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="relative flex h-2.5 w-2.5 items-center justify-center"
-                        >
-                          <motion.span
-                            animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
-                            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                            className="absolute h-2.5 w-2.5 rounded-full bg-emerald-400"
-                          />
-                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
+                          animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                          className="absolute h-2.5 w-2.5 rounded-full bg-emerald-500"
+                        />
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      </span>
+                    )}
                   </span>
                   <motion.span
                     animate={isActiveRow ? { opacity: [1, 0.55, 1] } : { opacity: 1 }}
                     transition={isActiveRow ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
-                    className={`text-sm sm:text-[15px] ${isRowComplete ? 'text-gray-300' : 'text-white font-medium'}`}
+                    className={`text-sm sm:text-[15px] ${isRowComplete ? 'text-gray-500' : 'font-medium text-gray-900'}`}
                   >
                     {message}
                   </motion.span>
@@ -207,11 +177,13 @@ export default function PremiumLoadingScreen({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="mt-6 text-sm font-semibold text-emerald-400"
+              className="mt-6 text-sm font-semibold text-emerald-600"
             >
               All set!
             </motion.p>
-          ) : null}
+          ) : (
+            <p className="mt-6 text-xs text-gray-400">Please keep this tab open. We&apos;ll take it from here.</p>
+          )}
         </AnimatePresence>
       </div>
     </div>
