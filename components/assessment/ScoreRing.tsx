@@ -7,9 +7,8 @@ export function ScoreRing({
   size = 168,
   stroke = 12,
   color,
-  track = '#F3F4F6',
+  track = 'rgba(255,255,255,0.08)',
   label,
-  suffix,
 }: {
   score: number
   size?: number
@@ -17,7 +16,6 @@ export function ScoreRing({
   color: string
   track?: string
   label?: string
-  suffix?: string
 }) {
   const clamped = Math.max(0, Math.min(100, Math.round(score)))
   const radius = (size - stroke) / 2

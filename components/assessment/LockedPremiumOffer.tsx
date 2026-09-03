@@ -1,28 +1,28 @@
 'use client'
 
-import { Lock, UtensilsCrossed, Gauge, Pill, ClipboardList, ChevronRight } from 'lucide-react'
+import { Lock, UtensilsCrossed, Gauge, Pill, ClipboardList, ChevronRight, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const LOCKED_ITEMS = [
   {
     Icon: UtensilsCrossed,
-    title: 'Your 7-Day Personalized Meal Plan',
-    subtitle: 'Indian meals built around your assessment',
+    title: 'Your 7-day Indian meal plan',
+    tease: 'Breakfast → dinner, already portioned',
   },
   {
     Icon: Gauge,
-    title: 'Your Calorie Deficit Target',
-    subtitle: 'The exact calorie target to follow',
+    title: 'Your calorie & nutrient targets',
+    tease: 'The exact numbers for your body',
   },
   {
     Icon: Pill,
-    title: 'Your Supplement Recommendations',
-    subtitle: 'Personalized, food-first guidance',
+    title: 'Your supplement stack',
+    tease: 'What to take, skip, and when',
   },
   {
     Icon: ClipboardList,
-    title: 'Your Personalized Action Plan',
-    subtitle: 'A clear daily nutrition strategy',
+    title: 'Your daily playbook',
+    tease: 'A week you can actually follow',
   },
 ] as const
 
@@ -30,78 +30,72 @@ export function LockedPremiumOffer({
   onUnlock,
   unlocking,
   error,
-  tone = 'dark',
 }: {
   onUnlock: () => void
   unlocking?: boolean
   error?: string | null
-  tone?: 'dark' | 'light'
 }) {
-  const light = tone === 'light'
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className={`relative overflow-hidden rounded-2xl md:rounded-3xl p-5 sm:p-7 md:p-10 ${
-        light
-          ? 'border border-emerald-100 bg-white shadow-sm'
-          : 'border border-emerald-500/20 bg-[#121821]'
-      }`}
+      className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-[#111810] p-5 sm:p-8"
     >
-      <div className="pointer-events-none absolute -top-16 right-0 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -top-20 right-0 h-56 w-56 rounded-full bg-emerald-500/15 blur-3xl" />
 
-      <p className={`text-xs font-bold uppercase tracking-[0.18em] ${light ? 'text-emerald-600' : 'text-emerald-400'}`}>
-        Want to know exactly what to do next?
+      <p className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
+        <Sparkles size={11} />
+        Your personalised plan
       </p>
-      <h2 className={`mt-2 text-2xl sm:text-3xl font-black leading-tight ${light ? 'text-gray-900' : 'text-white'}`}>
-        Unlock your complete
-        <span className={`block ${light ? 'text-emerald-600' : 'text-emerald-400'}`}>personalized plan</span>
+
+      <h2 className="mt-4 text-2xl font-black leading-tight text-white sm:text-3xl">
+        We already built your next 7 days.
+        <span className="block text-emerald-400">It&apos;s just sitting behind a lock.</span>
       </h2>
-      <p className={`mt-2 text-sm max-w-md ${light ? 'text-gray-500' : 'text-gray-400'}`}>
-        Your snapshot shows where to focus. The full report turns that into meals, targets, and a plan you can follow this week.
+      <p className="mt-3 max-w-md text-sm leading-relaxed text-gray-400">
+        The gaps? You&apos;ve seen them. The meals, the calories, the supplements? Those are ready.
+        Unlock the whole plan for <span className="font-bold text-emerald-400">just ₹39</span> — less than a cold coffee.
       </p>
 
-      <div className="mt-6 space-y-2.5">
-        {LOCKED_ITEMS.map(({ Icon, title, subtitle }) => (
-          <div
-            key={title}
-            className={`flex items-start gap-3 rounded-xl px-3.5 py-3 ${
-              light ? 'border border-gray-100 bg-gray-50' : 'border border-white/6 bg-black/25'
-            }`}
-          >
-            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-              light ? 'bg-emerald-50 text-emerald-600' : 'bg-emerald-500/10 text-emerald-400'
-            }`}>
-              <Icon size={16} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className={`text-sm font-semibold leading-snug ${light ? 'text-gray-900' : 'text-white/90'}`}>{title}</p>
-              <p className={`text-xs mt-0.5 ${light ? 'text-gray-500' : 'text-gray-500'}`}>{subtitle}</p>
+      <div className="relative mt-6">
+        <div className="space-y-2.5">
+          {LOCKED_ITEMS.map(({ Icon, title, tease }) => (
+            <div
+              key={title}
+              className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-black/30 px-3.5 py-3"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                <Icon size={16} />
+              </span>
+              <div className="min-w-0 flex-1 blur-[2.5px] select-none">
+                <p className="text-sm font-semibold text-white/90 leading-snug">{title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{tease}</p>
+              </div>
+              <Lock size={14} className="shrink-0 text-emerald-400/80" />
             </div>
-            <Lock size={14} className="mt-1 shrink-0 text-gray-400" />
-          </div>
-        ))}
+          ))}
+        </div>
+        <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-[#111810] via-[#111810]/40 to-transparent" />
       </div>
 
-      <div className="mt-7 flex items-end gap-3">
-        <p className="text-lg text-gray-400 line-through decoration-gray-400/80">₹199</p>
-        <p className={`text-4xl sm:text-5xl font-black leading-none ${light ? 'text-gray-900' : 'text-white'}`}>₹39</p>
-        <p className={`mb-1 text-xs font-semibold uppercase tracking-widest ${light ? 'text-emerald-600' : 'text-emerald-400'}`}>only</p>
+      <div className="relative mt-2 flex items-end gap-3">
+        <p className="text-base text-gray-500 line-through decoration-gray-500">₹199</p>
+        <p className="text-5xl font-black leading-none text-white">₹39</p>
+        <p className="mb-1 text-sm font-semibold text-emerald-400">yes, really.</p>
       </div>
-      <p className={`mt-1.5 text-sm ${light ? 'text-gray-500' : 'text-gray-400'}`}>Unlock my complete health report</p>
 
       <button
         type="button"
         onClick={onUnlock}
         disabled={unlocking}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 py-4 text-base font-black text-black shadow-[0_0_24px_rgba(16,185,129,0.25)] transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 py-4 text-base font-black text-black shadow-[0_0_24px_rgba(16,185,129,0.28)] transition hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
       >
-        {unlocking ? 'Loading…' : 'Get My 7-Day Plan for ₹39'}
+        {unlocking ? 'Loading…' : 'Unlock my plan — ₹39'}
         <ChevronRight size={18} />
       </button>
-      {error ? <p className={`mt-3 text-center text-sm font-medium ${light ? 'text-red-600' : 'text-red-400'}`}>{error}</p> : null}
-      <p className="mt-3 text-center text-xs text-gray-500">Private · Personalized PDF · Doctor-reviewed format</p>
+      {error ? <p className="mt-3 text-center text-sm font-medium text-red-400">{error}</p> : null}
+      <p className="mt-3 text-center text-xs text-gray-500">Private · Yours in minutes · No guesswork</p>
     </motion.section>
   )
 }
@@ -109,24 +103,19 @@ export function LockedPremiumOffer({
 export function MobileStickyOfferBar({
   onUnlock,
   unlocking,
-  tone = 'dark',
 }: {
   onUnlock: () => void
   unlocking?: boolean
-  tone?: 'dark' | 'light'
 }) {
-  const light = tone === 'light'
   return (
     <div
-      className={`md:hidden fixed bottom-0 inset-x-0 z-40 border-t px-4 pt-3 backdrop-blur-md ${
-        light ? 'border-gray-200 bg-white/95' : 'border-emerald-500/20 bg-[#0B0F14]/95'
-      }`}
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-emerald-500/20 bg-[#0A0F0A]/95 backdrop-blur-md px-4 pt-3"
       style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
     >
       <div className="flex items-center gap-3">
         <div className="shrink-0">
-          <p className="text-xs text-gray-400 line-through leading-none">₹199</p>
-          <p className={`text-xl font-black leading-tight ${light ? 'text-gray-900' : 'text-white'}`}>₹39</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-400">Just</p>
+          <p className="text-xl font-black text-white leading-tight">₹39</p>
         </div>
         <button
           type="button"
@@ -134,7 +123,7 @@ export function MobileStickyOfferBar({
           disabled={unlocking}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-emerald-500 py-3.5 text-sm font-black text-black disabled:opacity-60"
         >
-          {unlocking ? 'Loading…' : 'Unlock My Full Report →'}
+          {unlocking ? 'Loading…' : 'Unlock my personalised plan'}
         </button>
       </div>
     </div>

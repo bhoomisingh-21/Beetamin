@@ -178,10 +178,10 @@ export default function ResultsPage() {
 
   if (resultsLoading || !result) {
     return (
-      <div className="min-h-screen bg-[#F7F8FA] flex flex-col items-center justify-center gap-3 px-6 text-center">
+      <div className="min-h-screen bg-[#0A0F0A] flex flex-col items-center justify-center gap-3 px-6 text-center">
         <div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
         {isSignedIn ? (
-          <p className="text-base text-gray-500">Restoring your assessment results…</p>
+          <p className="text-base text-gray-400">Restoring your assessment results…</p>
         ) : null}
       </div>
     )
@@ -220,17 +220,15 @@ export default function ResultsPage() {
   const showStickyOffer = !readyReportId && !generatingReportId
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] text-gray-900">
-      <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/90 px-3 py-2.5 backdrop-blur-md md:px-4 md:py-3 flex items-center gap-2 md:gap-3">
-        <Link href="/assessment" className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition">
+    <div className="min-h-screen bg-[#0A0F0A] text-white">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0A0F0A]/90 px-4 py-3 backdrop-blur-md">
+        <Link href="/assessment" className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition">
           <ChevronLeft size={16} />
-          Retake Assessment
+          Retake
         </Link>
-        <span className="flex-1 text-center text-xs font-bold uppercase tracking-[0.14em] text-gray-400">
-          Health Assessment Report
-        </span>
-        <Link href="/" className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-800 transition" aria-label="Home">
-          <Home size={18} />
+        <Link href="/" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition">
+          <Home size={15} />
+          Home
         </Link>
       </div>
 
@@ -250,14 +248,14 @@ export default function ResultsPage() {
 
       {readyReportId ? (
         <div className="px-4 md:px-6 pb-10 md:pb-16">
-          <motion.div {...fadeUp(0)} className="mx-auto max-w-2xl rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+          <motion.div {...fadeUp(0)} className="mx-auto max-w-2xl rounded-3xl border border-white/[0.06] bg-[#111810] p-8 text-center">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
               <CheckCircle size={36} strokeWidth={2.5} />
             </div>
             <h2 className="text-3xl sm:text-5xl font-black leading-tight">
               Your personalised recovery plan is ready
             </h2>
-            <p className="mt-4 text-gray-600 text-base sm:text-lg leading-relaxed">
+            <p className="mt-4 text-gray-400 text-base sm:text-lg leading-relaxed">
               We emailed your PDF. Open your report page anytime to download or share.
             </p>
             <p className="mt-2 font-mono text-sm text-gray-500">{readyReportId}</p>
@@ -271,7 +269,7 @@ export default function ResultsPage() {
             <button
               type="button"
               onClick={() => router.push('/detailed-assessment')}
-              className="mt-6 text-base font-semibold text-emerald-700 underline underline-offset-2"
+              className="mt-6 text-base font-semibold text-emerald-400 underline underline-offset-2"
             >
               Run detailed assessment again for an updated report
             </button>
@@ -279,10 +277,10 @@ export default function ResultsPage() {
         </div>
       ) : generatingReportId ? (
         <div className="px-4 md:px-6 pb-10 md:pb-16">
-          <motion.div {...fadeUp(0)} className="mx-auto max-w-2xl rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
-            <Loader2 className="mx-auto mb-6 h-14 w-14 animate-spin text-emerald-600" strokeWidth={2.5} />
+          <motion.div {...fadeUp(0)} className="mx-auto max-w-2xl rounded-3xl border border-white/[0.06] bg-[#111810] p-8 text-center">
+            <Loader2 className="mx-auto mb-6 h-14 w-14 animate-spin text-emerald-400" strokeWidth={2.5} />
             <h2 className="text-3xl sm:text-5xl font-black">Your recovery plan is generating</h2>
-            <p className="mt-4 text-gray-600 text-base sm:text-lg">
+            <p className="mt-4 text-gray-400 text-base sm:text-lg">
               This usually takes a minute or two. Keep this tab open, or check your email when it is ready.
             </p>
             <p className="mt-2 font-mono text-sm text-gray-500">{generatingReportId}</p>
@@ -299,13 +297,12 @@ export default function ResultsPage() {
         <div className="px-4 md:px-6 pb-10 md:pb-20 max-md:pb-28">
           <div className="max-w-3xl mx-auto space-y-6">
             <LockedPremiumOffer
-              tone="light"
               onUnlock={() => void continueToDetailedAssessment()}
               unlocking={isContinuing}
               error={continueError}
             />
             <div className="hidden md:block text-center">
-              <FullPlanBookingLink className="inline-flex items-center justify-center rounded-full border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-900">
+              <FullPlanBookingLink className="inline-flex items-center justify-center rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-400 hover:text-white">
                 Or book the complete ₹3,999 plan
               </FullPlanBookingLink>
             </div>
@@ -315,7 +312,6 @@ export default function ResultsPage() {
 
       {showStickyOffer ? (
         <MobileStickyOfferBar
-          tone="light"
           onUnlock={() => void continueToDetailedAssessment()}
           unlocking={isContinuing}
         />
