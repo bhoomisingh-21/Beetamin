@@ -68,10 +68,12 @@ export default function Hero() {
     : activeFlags.hasFreeAssessment ? "View My Free Report"
     : "Take Your Free Assessment";
 
+  const bookingHref = isSignedIn ? "/booking/checkout" : BOOKING_SIGN_UP;
+
   return (
     <>
       {/* ─── MAIN HERO ─── */}
-      <section className="relative bg-[#030a04] min-h-screen overflow-hidden">
+      <section className="relative bg-[#030a04] overflow-hidden lg:min-h-screen">
 
         {/* Radial glow */}
         <div
@@ -97,7 +99,7 @@ export default function Hero() {
           aria-hidden
         />
 
-        <div className="relative mx-auto max-w-[1320px] px-5 sm:px-6 lg:px-12 min-h-[100dvh] lg:min-h-screen flex flex-col justify-center pt-[5.5rem] pb-10 sm:pt-24 sm:pb-16 lg:py-0">
+        <div className="relative mx-auto max-w-[1320px] px-5 sm:px-6 lg:px-12 flex flex-col justify-start pt-24 pb-12 sm:pt-28 sm:pb-16 lg:min-h-screen lg:justify-center lg:py-20">
 
           {/* TWO-COL GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-10 lg:gap-14 items-center">
@@ -223,7 +225,7 @@ export default function Hero() {
                 — for just ₹39.
               </motion.p>
 
-              {/* CTA — mobile: full-width primary first; desktop: original side-by-side row */}
+              {/* CTA — primary free assessment + highlighted ₹3,999 plan */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -246,40 +248,23 @@ export default function Hero() {
                   <span>{primaryLabel}</span>
                 </a>
 
-                {isSignedIn ? (
-                  <a
-                    href="/sessions"
-                    className="hidden lg:inline-flex flex-1 min-w-0 items-center justify-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm whitespace-nowrap transition-all duration-200 border border-white/10 bg-white/5 text-white/72"
-                  >
-                    <span className="truncate">My Sessions</span>
-                    <ArrowRight size={14} className="shrink-0" />
-                  </a>
-                ) : (
-                  <a
-                    href={BOOKING_SIGN_UP}
-                    className="hidden lg:inline-flex flex-1 min-w-0 items-center justify-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm whitespace-nowrap transition-all duration-200 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15"
-                  >
-                    <span className="truncate">Book ₹3,999 Consultation</span>
-                    <ArrowRight size={14} className="shrink-0" />
-                  </a>
-                )}
-
-                {!isSignedIn ? (
-                  <a
-                    href={BOOKING_SIGN_UP}
-                    className="lg:hidden text-center text-xs font-semibold text-emerald-400/80 hover:text-emerald-300"
-                  >
-                    Or book a ₹3,999 consultation →
-                  </a>
-                ) : (
-                  <a
-                    href="/sessions"
-                    className="lg:hidden text-center text-xs font-semibold text-white/55 hover:text-white/80"
-                  >
-                    My Sessions →
-                  </a>
-                )}
+                <a
+                  href={bookingHref}
+                  className="hero-plan-highlight inline-flex w-full lg:flex-1 lg:min-w-0 items-center justify-center gap-2 font-black rounded-2xl px-5 lg:px-7 py-4 text-sm whitespace-nowrap transition-all duration-200 active:scale-[0.97] border-2 border-emerald-400 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
+                >
+                  <span className="truncate">Book ₹3,999 Consultation</span>
+                  <ArrowRight size={14} className="shrink-0" />
+                </a>
               </motion.div>
+
+              {isSignedIn ? (
+                <a
+                  href="/sessions"
+                  className="mt-3 text-center lg:text-left text-xs font-semibold text-white/50 hover:text-white/80"
+                >
+                  My Sessions →
+                </a>
+              ) : null}
 
               {/* MOBILE IMAGE — below the CTA so the first viewport is the assessment action */}
               <motion.div
@@ -473,8 +458,17 @@ export default function Hero() {
           @media (min-width: 1024px) {
             .hero-cta-attention { animation: none; }
           }
+          .hero-plan-highlight {
+            box-shadow: 0 0 0 1px rgba(0,230,118,0.35), 0 0 22px rgba(0,230,118,0.22);
+            animation: heroPlanGlow 2.6s ease-in-out infinite;
+          }
+          @keyframes heroPlanGlow {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(0,230,118,0.3), 0 0 16px rgba(0,230,118,0.16); }
+            50% { box-shadow: 0 0 0 1px rgba(0,230,118,0.7), 0 0 28px rgba(0,230,118,0.38); }
+          }
           @media (prefers-reduced-motion: reduce) {
             .hero-cta-attention { animation: none; }
+            .hero-plan-highlight { animation: none; }
           }
         `}</style>
       </section>
