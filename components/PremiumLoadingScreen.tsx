@@ -38,6 +38,8 @@ export type PremiumLoadingScreenProps = {
   intervalMs?: number
   title?: string
   subtitle?: string
+  /** Sit flush inside an existing white card (quiz). Default is a standalone white panel. */
+  embedded?: boolean
 }
 
 export default function PremiumLoadingScreen({
@@ -46,6 +48,7 @@ export default function PremiumLoadingScreen({
   intervalMs = 2500,
   title = 'Analyzing Your Health Profile...',
   subtitle = "Sit tight — we're personalizing everything just for you.",
+  embedded = false,
 }: PremiumLoadingScreenProps) {
   const total = messages.length
   const [revealedCount, setRevealedCount] = useState(total > 0 ? 1 : 0)
@@ -73,7 +76,13 @@ export default function PremiumLoadingScreen({
   const circumference = 2 * Math.PI * radius
 
   return (
-    <div className="relative w-full rounded-3xl border border-gray-100 bg-white px-6 py-12 sm:px-10 sm:py-14">
+    <div
+      className={
+        embedded
+          ? 'relative w-full bg-white px-1 py-6 sm:py-8'
+          : 'relative w-full rounded-3xl border border-gray-100 bg-white px-6 py-12 sm:px-10 sm:py-14'
+      }
+    >
       <div className="mx-auto flex max-w-md flex-col items-center text-center">
         <div className="relative flex h-28 w-28 items-center justify-center sm:h-32 sm:w-32">
           <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">

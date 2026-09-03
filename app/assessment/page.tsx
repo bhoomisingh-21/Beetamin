@@ -440,9 +440,10 @@ export default function AssessmentPage() {
               {isLoading ? (
                 <div className="py-8 px-4 md:py-10 md:px-6">
                   <PremiumLoadingScreen
+                    embedded
                     messages={TEASER_LOADING_MESSAGES}
-                    title="Analyzing Your Health Profile..."
-                    subtitle="Cross-referencing your answers against 50+ nutrient deficiency markers."
+                    title="Analyzing your answers"
+                    subtitle="Building your snapshot — this usually takes a few seconds."
                   />
                 </div>
               ) : gatePhase ? (
