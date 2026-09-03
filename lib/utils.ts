@@ -15,18 +15,31 @@ export function validateLeadInput(body: unknown):
   if (!name || typeof name !== 'string' || name.trim().length < 1 || name.length > 100)
     return { valid: false, error: 'Invalid name' }
 
-  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+  const phoneStr = phone ? String(phone).trim() : ''
+  const emailStr = typeof email === 'string' ? email.trim() : ''
+
+  if (phoneStr && phoneStr.length > 20) return { valid: false, error: 'Invalid phone' }
+
+  if (emailStr && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr))
     return { valid: false, error: 'Invalid email' }
 
-  if (phone && (typeof phone !== 'string' || phone.length > 15))
-    return { valid: false, error: 'Invalid phone' }
+  if (!emailStr && !phoneStr) return { valid: false, error: 'Email or phone is required' }
+
+  const digits = phoneStr.replace(/\D/g, '')
+  const resolvedEmail = emailStr
+    ? emailStr.toLowerCase()
+    : digits
+      ? `phone.${digits}@guest.thebeetamin.com`
+      : ''
+
+  if (!resolvedEmail) return { valid: false, error: 'Email or phone is required' }
 
   return {
     valid: true,
     data: {
       name: name.trim().slice(0, 100),
-      email: email.toLowerCase().trim(),
-      phone: phone ? String(phone).slice(0, 15) : undefined,
+      email: resolvedEmail,
+      phone: phoneStr ? phoneStr.slice(0, 20) : undefined,
       source: source ? String(source).slice(0, 50) : undefined,
     },
   }

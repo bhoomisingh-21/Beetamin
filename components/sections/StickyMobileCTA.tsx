@@ -40,7 +40,7 @@ export default function StickyMobileCTA() {
         href="/assessment"
         className="flex items-center justify-center w-full bg-[#00E676] text-black font-bold rounded-full py-3.5 text-sm shadow-lg"
       >
-        Start Free Assessment →
+        Take Your Free Assessment →
       </Link>
     </div>
   );

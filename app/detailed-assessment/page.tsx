@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -39,6 +40,8 @@ import {
   syncLocalAssessmentToProfile,
 } from '@/lib/sync-local-assessment-client'
 import { assessmentMetaString } from '@/lib/assessment-profile-fields'
+import { mapFreeMetaToDetailed } from '@/lib/map-free-to-detailed'
+import { normalizeFoodFrequencyForDiet } from '@/lib/normalize-food-frequency'
 import type { DetailedAssessmentPayload, FoodFrequency, FoodFrequencyKey } from '@/lib/recovery-report-types'
 import { trackEvent } from '@/lib/analytics'
 import { startReport39Payment } from '@/lib/start-report-payment-client'
@@ -111,6 +114,34 @@ const DIABETES_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: 'gestational', label: 'Gestational' },
 ]
 
+const FOOD_DISLIKE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'bitter_veg', label: 'Bitter vegetables (karela, methi)' },
+  { value: 'dairy', label: 'Dairy' },
+  { value: 'eggs', label: 'Eggs' },
+  { value: 'fish', label: 'Fish' },
+  { value: 'very_spicy', label: 'Very spicy food' },
+  { value: 'none', label: 'None of these' },
+]
+
+const MEAL_TIMING_OPTIONS = [
+  'Regular 3 meals around the same time',
+  'I often skip breakfast',
+  'Late dinners (after 9pm)',
+  'Irregular — no fixed meal times',
+]
+
+const COOKING_HABIT_OPTIONS = [
+  'I cook most meals at home',
+  'Mix of home-cooked and ordered',
+  'Mostly tiffin / ordered / eating out',
+]
+
+const SUPPLEMENT_PREF_OPTIONS = [
+  'Prefer food-first, supplements only if needed',
+  'Open to a simple supplement plan',
+  'Already taking supplements',
+]
+
 const TRAINING_FREQUENCY_OPTIONS: { value: string; label: string }[] = [
   { value: 'rarely', label: 'Rarely' },
   { value: '1_2_per_week', label: '1–2x per week' },
@@ -128,6 +159,10 @@ type QuizKey =
   | 'personal_info'
   | 'diet'
   | 'food'
+  | 'meal_timing'
+  | 'cooking_habit'
+  | 'food_dislikes'
+  | 'supplement_preference'
   | 'medical_conditions'
   | 'pcos_followup'
   | 'diabetes_followup'
@@ -147,6 +182,10 @@ const STEP_META: Record<QuizKey, { category: string; icon: LucideIcon }> = {
   personal_info: { category: 'About You', icon: User },
   diet: { category: 'Your Diet', icon: Utensils },
   food: { category: 'Food Habits', icon: Apple },
+  meal_timing: { category: 'Meal Rhythm', icon: Clock },
+  cooking_habit: { category: 'Cooking', icon: Utensils },
+  food_dislikes: { category: 'Food Preferences', icon: Apple },
+  supplement_preference: { category: 'Supplements', icon: HeartPulse },
   medical_conditions: { category: 'Medical History', icon: HeartPulse },
   pcos_followup: { category: 'Medical History', icon: Stethoscope },
   diabetes_followup: { category: 'Medical History', icon: Stethoscope },
@@ -290,7 +329,25 @@ export default function DetailedAssessmentPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      setFreeGoal(assessmentMetaString(readLocalAssessmentMeta(), 'goal'))
+      const meta = readLocalAssessmentMeta()
+      setFreeGoal(assessmentMetaString(meta, 'goal'))
+      const mapped = mapFreeMetaToDetailed(meta)
+      if (mapped.diet) {
+        setDiet(mapped.diet)
+        setSkipDiet(true)
+      }
+      if (mapped.energy) {
+        setEnergy(mapped.energy)
+        setSkipEnergy(true)
+      }
+      if (mapped.sleep) {
+        setSleep(mapped.sleep)
+        setSkipSleep(true)
+      }
+      if (mapped.symptoms.length > 0) {
+        setSymptoms(mapped.symptoms)
+        setSkipSymptoms(true)
+      }
     } catch {
       /* defensive — missing/garbled meta must never break the quiz */
     }
@@ -304,6 +361,14 @@ export default function DetailedAssessmentPage() {
   const [weightKg, setWeightKg] = useState('')
 
   const [diet, setDiet] = useState('')
+  const [skipDiet, setSkipDiet] = useState(false)
+  const [skipSymptoms, setSkipSymptoms] = useState(false)
+  const [skipEnergy, setSkipEnergy] = useState(false)
+  const [skipSleep, setSkipSleep] = useState(false)
+  const [mealTiming, setMealTiming] = useState('')
+  const [cookingHabit, setCookingHabit] = useState('')
+  const [foodDislikes, setFoodDislikes] = useState<string[]>([])
+  const [supplementPreference, setSupplementPreference] = useState('')
   const [foodFreq, setFoodFreq] = useState<FoodFrequency>(emptyFoodFreq)
 
   // Medical history
@@ -362,15 +427,21 @@ export default function DetailedAssessmentPage() {
     freeGoal === 'weight_loss' ? 'weight_loss' : freeGoal === 'muscle_gain' ? 'muscle_gain' : null
 
   const keys = useMemo<QuizKey[]>(() => {
-    const arr: QuizKey[] = ['personal_info', 'diet', 'food', 'medical_conditions']
+    const arr: QuizKey[] = ['personal_info']
+    if (!skipDiet) arr.push('diet')
+    arr.push('food', 'meal_timing', 'cooking_habit', 'food_dislikes', 'supplement_preference', 'medical_conditions')
     if (medicalConditions.includes('pcos')) arr.push('pcos_followup')
     if (medicalConditions.includes('diabetes')) arr.push('diabetes_followup')
-    arr.push('allergies', 'stress', 'sun', 'symptoms', 'energy', 'sleep', 'digestion', 'exercise')
+    arr.push('allergies', 'stress', 'sun')
+    if (!skipSymptoms) arr.push('symptoms')
+    if (!skipEnergy) arr.push('energy')
+    if (!skipSleep) arr.push('sleep')
+    arr.push('digestion', 'exercise')
     if (goalFollowupType) arr.push('goal_followup')
     arr.push('water')
     if (showMenstrual) arr.push('menstrual')
     return arr
-  }, [medicalConditions, goalFollowupType, showMenstrual])
+  }, [medicalConditions, goalFollowupType, showMenstrual, skipDiet, skipSymptoms, skipEnergy, skipSleep])
 
   const [genError, setGenError] = useState('')
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)
@@ -439,6 +510,15 @@ export default function DetailedAssessmentPage() {
     })
   }
 
+  function toggleFoodDislike(value: string) {
+    setFoodDislikes((prev) => {
+      if (value === 'none') return ['none']
+      const withoutNone = prev.filter((x) => x !== 'none')
+      if (withoutNone.includes(value)) return withoutNone.filter((x) => x !== value)
+      return [...withoutNone, value]
+    })
+  }
+
   function toggleAllergy(value: string) {
     setAllergiesSelected((prev) => {
       if (value === 'none') return ['none']
@@ -490,13 +570,17 @@ export default function DetailedAssessmentPage() {
       details.other_allergy = allergiesOtherText.trim()
     }
     if (goalFollowupType === 'muscle_gain' && trainingFrequency) details.training_frequency = trainingFrequency
+    if (mealTiming) details.meal_timing = mealTiming
+    if (cookingHabit) details.cooking_habit = cookingHabit
+    if (foodDislikes.length) details.food_dislikes = foodDislikes.filter((d) => d !== 'none')
+    if (supplementPreference) details.supplement_preference = supplementPreference
     return details
   }
 
   function buildPayload(): DetailedAssessmentPayload {
     return {
       diet_type: diet,
-      food_frequency: foodFreq,
+      food_frequency: normalizeFoodFrequencyForDiet(diet, foodFreq),
       sun_exposure: sun,
       physical_symptoms: symptoms.filter((s) => s !== 'none'),
       energy_mood: energy,
@@ -606,10 +690,10 @@ export default function DetailedAssessmentPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <Leaf className="text-emerald-500 shrink-0" size={18} />
             <span className="text-gray-900 font-bold">TheBeetamin</span>
-          </a>
+          </Link>
         </header>
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <p className="text-gray-800 font-semibold">Sign in to continue</p>
@@ -639,10 +723,10 @@ export default function DetailedAssessmentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-emerald-50/30 flex flex-col">
       <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Leaf className="text-emerald-500 shrink-0" size={18} />
           <span className="text-gray-900 font-bold">TheBeetamin</span>
-        </a>
+        </Link>
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -871,6 +955,91 @@ export default function DetailedAssessmentPage() {
                     >
                       Next
                     </button>
+                  </div>
+                )}
+
+                {currentKey === 'meal_timing' && (
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900 leading-snug">When do you typically eat?</h1>
+                    <p className="mt-2 text-sm text-gray-500">This shapes your 7-day meal timing.</p>
+                    <div className="mt-6 space-y-2">
+                      {MEAL_TIMING_OPTIONS.map((opt) => (
+                        <SingleChoiceButton
+                          key={opt}
+                          label={opt}
+                          selected={mealTiming === opt}
+                          onClick={() => {
+                            setMealTiming(opt)
+                            scheduleAdvance()
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentKey === 'cooking_habit' && (
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900 leading-snug">How do you usually get your meals?</h1>
+                    <p className="mt-2 text-sm text-gray-500">So your plan matches real cooking time.</p>
+                    <div className="mt-6 space-y-2">
+                      {COOKING_HABIT_OPTIONS.map((opt) => (
+                        <SingleChoiceButton
+                          key={opt}
+                          label={opt}
+                          selected={cookingHabit === opt}
+                          onClick={() => {
+                            setCookingHabit(opt)
+                            scheduleAdvance()
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {currentKey === 'food_dislikes' && (
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900 leading-snug">Any foods you&apos;d rather skip?</h1>
+                    <p className="mt-2 text-sm text-gray-500">We&apos;ll keep these out of your meal plan.</p>
+                    <div className="mt-6 grid grid-cols-1 gap-2">
+                      {FOOD_DISLIKE_OPTIONS.map((opt) => (
+                        <MultiChoiceButton
+                          key={opt.value}
+                          label={opt.label}
+                          selected={foodDislikes.includes(opt.value)}
+                          onClick={() => toggleFoodDislike(opt.value)}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={foodDislikes.length === 0}
+                      onClick={goNext}
+                      className="mt-8 w-full rounded-full bg-emerald-500 py-3.5 text-sm font-bold text-black transition hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+
+                {currentKey === 'supplement_preference' && (
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900 leading-snug">How do you feel about supplements?</h1>
+                    <p className="mt-2 text-sm text-gray-500">Your report will match this preference.</p>
+                    <div className="mt-6 space-y-2">
+                      {SUPPLEMENT_PREF_OPTIONS.map((opt) => (
+                        <SingleChoiceButton
+                          key={opt}
+                          label={opt}
+                          selected={supplementPreference === opt}
+                          onClick={() => {
+                            setSupplementPreference(opt)
+                            scheduleAdvance()
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -1287,9 +1456,9 @@ export default function DetailedAssessmentPage() {
                   </button>
                   <div className="text-center sm:text-left">
                     <p className="text-emerald-600 font-bold text-sm">Assessment Complete ✓</p>
-                    <h1 className="mt-2 text-2xl font-black text-gray-900">We&apos;re ready to build your plan</h1>
+                    <h1 className="mt-2 text-2xl font-black text-gray-900">Your deeper plan is ready to unlock</h1>
                     <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                      We have everything we need to build your personalised recovery plan.
+                      We combined your free assessment with these extra details — meal timing, cooking, and preferences — to build your 7-day plan.
                     </p>
                   </div>
                   {topTags.length > 0 && (

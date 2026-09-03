@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,13 +9,19 @@ import { writeAssessmentBundle } from '@/lib/assessment-local-storage'
 import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
 import { trackEvent } from '@/lib/analytics'
 import PremiumLoadingScreen, { TEASER_LOADING_MESSAGES } from '@/components/PremiumLoadingScreen'
+import { AssessmentLeadGate, type LeadGatePhase } from '@/components/assessment/AssessmentLeadGate'
+import {
+  getOrCreateAssessmentSessionId,
+  hasVerifiedAssessmentOtp,
+  markAssessmentOtpVerified,
+} from '@/lib/assessment-otp-session'
 
 const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='60' height='70' viewBox='0 0 60 70'>
   <path d='M30 0L60 17.5V52.5L30 70L0 52.5V17.5L30 0Z' fill='none' stroke='#22C55E' stroke-width='0.5' stroke-opacity='0.18'/>
 </svg>`
 const HEX_URL = `data:image/svg+xml,${encodeURIComponent(HEX_SVG)}`
 
-const TOTAL_STEPS = 8
+const TOTAL_STEPS = 7
 
 const CATEGORY_NAMES: Record<number, string> = {
   1: 'Eating Habits',
@@ -25,7 +31,6 @@ const CATEGORY_NAMES: Record<number, string> = {
   5: 'Physical Symptoms',
   6: 'Cognitive Health',
   7: 'Physical Activity & Immunity',
-  8: 'Personal Information',
 }
 
 function StepBadge({ step, science }: { step: number; science: string }) {
@@ -55,6 +60,12 @@ export default function AssessmentPage() {
   const [direction, setDirection] = useState<'next' | 'back'>('next')
   const [isLoading, setIsLoading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [gatePhase, setGatePhase] = useState<LeadGatePhase | null>(null)
+  const [otpBusy, setOtpBusy] = useState(false)
+  const [otpError, setOtpError] = useState<string | null>(null)
+  const [otpDestination, setOtpDestination] = useState('')
+  const [otpChannel, setOtpChannel] = useState<'phone' | 'email'>('phone')
+  const advancingRef = useRef(false)
   const [answers, setAnswers] = useState({
     name: '',
     email: '',
@@ -76,6 +87,8 @@ export default function AssessmentPage() {
     setSubmitError(null)
     setIsLoading(true)
     try {
+      const phoneDigits = answers.phone.replace(/\D/g, '').slice(-10)
+      const phoneForLead = phoneDigits ? `+91 ${phoneDigits}` : answers.phone
       const res = await fetch('/api/assessment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,21 +118,33 @@ export default function AssessmentPage() {
       const meta = {
         name: answers.name,
         email: answers.email,
-        phone: answers.phone,
+        phone: phoneForLead,
         goal: answers.goal,
         diet: answers.diet,
         age: answers.age,
+        metabolicRhythm: answers.metabolicRhythm,
+        sleepArchitecture: answers.sleepArchitecture,
+        dermalMarkers: answers.dermalMarkers,
+        answers: {
+          energyLevel: answers.metabolicRhythm,
+          sleepQuality: answers.sleepArchitecture,
+          physicalSymptoms: answers.dermalMarkers,
+          mentalClarity: answers.cognitiveClarity,
+          muscleRecovery: answers.muscleRecovery,
+          immuneHealth: answers.immuneResilience,
+          diet: answers.diet,
+        },
       }
       writeAssessmentBundle({
         assessmentResult: normalized,
         assessmentMeta: meta,
       })
+      fetch('/api/save-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: answers.name, email: answers.email, phone: phoneForLead, source: 'assessment' }),
+      }).catch(() => {})
       if (answers.email) {
-        fetch('/api/save-lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: answers.name, email: answers.email, phone: answers.phone, source: 'assessment' }),
-        }).catch(() => {})
         fetch('/api/guest-free-assessment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -146,7 +171,6 @@ export default function AssessmentPage() {
     if (currentStep === 5) return answers.dermalMarkers.length > 0
     if (currentStep === 6) return answers.cognitiveClarity !== ''
     if (currentStep === 7) return answers.muscleRecovery !== '' && answers.immuneResilience !== ''
-    if (currentStep === 8) return answers.name !== '' && answers.email !== '' && answers.phone !== '' && answers.age !== ''
     return false
   }
 
@@ -164,10 +188,91 @@ export default function AssessmentPage() {
   }
 
   function scheduleAdvance() {
+    if (advancingRef.current) return
+    advancingRef.current = true
     window.setTimeout(() => {
       setDirection('next')
-      setCurrentStep((p) => p + 1)
-    }, 280)
+      setCurrentStep((p) => {
+        if (p >= TOTAL_STEPS) {
+          setGatePhase('ready')
+          advancingRef.current = false
+          return p
+        }
+        advancingRef.current = false
+        return p + 1
+      })
+    }, 220)
+  }
+
+  async function sendAssessmentOtp() {
+    setOtpError(null)
+    setOtpBusy(true)
+    try {
+      if (hasVerifiedAssessmentOtp()) {
+        await handleSubmit()
+        return
+      }
+      const sessionId = getOrCreateAssessmentSessionId()
+      const phone = answers.phone.replace(/\D/g, '').slice(-10)
+      const res = await fetch('/api/assessment/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          name: answers.name,
+          age: answers.age,
+          phone,
+          email: answers.email,
+          channel: otpChannel,
+        }),
+      })
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string
+        destinationMasked?: string
+        code?: string
+      }
+      if (!res.ok) {
+        if (json.code === 'OTP_TABLE_MISSING') {
+          markAssessmentOtpVerified()
+          await handleSubmit()
+          return
+        }
+        if (json.code === 'OTP_DELIVERY_FAILED' && otpChannel === 'phone') {
+          setOtpChannel('email')
+          setOtpError(`${json.error ?? 'SMS failed.'} Enter your email and send the code again.`)
+          setOtpBusy(false)
+          return
+        }
+        throw new Error(json.error || 'Could not send verification code.')
+      }
+      setOtpDestination(json.destinationMasked || (otpChannel === 'phone' ? 'your phone' : answers.email))
+      setGatePhase('otp')
+    } catch (e) {
+      setOtpError(e instanceof Error ? e.message : 'Could not send verification code.')
+    } finally {
+      setOtpBusy(false)
+    }
+  }
+
+  async function verifyAssessmentOtp(code: string) {
+    setOtpError(null)
+    setOtpBusy(true)
+    try {
+      const sessionId = getOrCreateAssessmentSessionId()
+      const res = await fetch('/api/assessment/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, code }),
+      })
+      const json = (await res.json().catch(() => ({}))) as { error?: string; skipped?: boolean }
+      if (!res.ok) throw new Error(json.error || 'Verification failed.')
+      markAssessmentOtpVerified()
+      setOtpBusy(false)
+      await handleSubmit()
+    } catch (e) {
+      setOtpError(e instanceof Error ? e.message : 'Verification failed.')
+      setOtpBusy(false)
+    }
   }
 
   const dietOptions = [
@@ -253,9 +358,9 @@ export default function AssessmentPage() {
       {/* Two-column layout — items-start keeps left hero from dropping when quiz grows */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 items-start">
 
-        {/* ── LEFT: Hero (sticky on lg so it stays put while right column grows) ── */}
+        {/* ── LEFT: Hero (desktop only — mobile jumps straight into the quiz) ── */}
         <div
-          className="relative flex items-start justify-center px-6 pt-16 pb-10 sm:pt-20 lg:sticky lg:top-0 lg:self-start lg:h-[calc(100dvh-2rem)] lg:overflow-hidden lg:px-10 lg:pt-24 lg:pb-16 text-center"
+          className="relative hidden lg:flex items-start justify-center px-6 pt-16 pb-10 sm:pt-20 lg:sticky lg:top-0 lg:self-start lg:h-[calc(100dvh-2rem)] lg:overflow-hidden lg:px-10 lg:pt-24 lg:pb-16 text-center"
           style={{
             backgroundImage: `url("${HEX_URL}")`,
             backgroundSize: '60px 70px',
@@ -309,7 +414,10 @@ export default function AssessmentPage() {
         </div>
 
         {/* ── RIGHT: Form ── */}
-        <div className="flex flex-col items-center justify-start px-4 py-8 lg:py-12 bg-[#0A0F14]">
+        <div className="flex flex-col items-center justify-start px-4 pt-4 pb-8 lg:py-12 bg-[#0A0F14]">
+          <p className={`lg:hidden mb-3 text-center text-white font-semibold text-base ${isLoading || gatePhase ? 'hidden' : ''}`}>
+            Let&apos;s understand your health better 👇
+          </p>
           <div className="w-full max-w-xl">
             <div className="rounded-2xl lg:rounded-3xl bg-gradient-to-b from-emerald-500/40 via-emerald-500/10 to-transparent p-[1.5px] shadow-[0_25px_70px_-20px_rgba(16,185,129,0.35)]">
               <div className="bg-white rounded-2xl lg:rounded-3xl shadow-2xl overflow-hidden">
@@ -322,6 +430,25 @@ export default function AssessmentPage() {
                     subtitle="Cross-referencing your answers against 50+ nutrient deficiency markers."
                   />
                 </div>
+              ) : gatePhase ? (
+                <AssessmentLeadGate
+                  phase={gatePhase}
+                  values={{ name: answers.name, age: answers.age, phone: answers.phone, email: answers.email }}
+                  onChange={(patch) => setAnswers((prev) => ({ ...prev, ...patch }))}
+                  onReveal={() => { setOtpError(null); setGatePhase('lead') }}
+                  onBack={() => {
+                    if (gatePhase === 'otp') setGatePhase('lead')
+                    else if (gatePhase === 'lead') setGatePhase('ready')
+                    else setGatePhase(null)
+                  }}
+                  onSendOtp={() => void sendAssessmentOtp()}
+                  onVerify={(code) => void verifyAssessmentOtp(code)}
+                  onResend={() => void sendAssessmentOtp()}
+                  busy={otpBusy}
+                  error={otpError || submitError}
+                  otpDestination={otpDestination}
+                  channel={otpChannel}
+                />
               ) : (
                 <>
                   {/* Progress Header */}
@@ -338,13 +465,13 @@ export default function AssessmentPage() {
                         style={{ width: `${(currentStep / TOTAL_STEPS) * 100}%` }}
                       />
                     </div>
-                    {currentStep >= TOTAL_STEPS - 1 && (
+                    {currentStep >= TOTAL_STEPS && !gatePhase && (
                       <motion.p
                         initial={{ opacity: 0, y: -4 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="mt-2 md:mt-3 text-emerald-600 text-sm md:text-base font-semibold flex items-center gap-1.5"
                       >
-                        🎉 Almost there — just {TOTAL_STEPS - currentStep === 0 ? 'this' : 'one more'} question!
+                        You&apos;re almost there 👀
                       </motion.p>
                     )}
                   </div>
@@ -375,6 +502,7 @@ export default function AssessmentPage() {
                                   key={opt.value}
                                   whileTap={{ scale: 0.98 }}
                                   onClick={() => {
+                                    if (!answers.diet) trackEvent('quiz_started')
                                     setAnswers(prev => ({ ...prev, diet: opt.value }))
                                     scheduleAdvance()
                                   }}
@@ -440,7 +568,10 @@ export default function AssessmentPage() {
                                 <motion.button
                                   key={opt.value}
                                   whileTap={{ scale: 0.98 }}
-                                  onClick={() => setAnswers(prev => ({ ...prev, metabolicRhythm: opt.value }))}
+                                  onClick={() => {
+                                    setAnswers(prev => ({ ...prev, metabolicRhythm: opt.value }))
+                                    scheduleAdvance()
+                                  }}
                                   className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.metabolicRhythm === opt.value
                                     ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
                                     : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
@@ -470,7 +601,10 @@ export default function AssessmentPage() {
                                 <motion.button
                                   key={opt.value}
                                   whileTap={{ scale: 0.98 }}
-                                  onClick={() => setAnswers(prev => ({ ...prev, sleepArchitecture: opt.value }))}
+                                  onClick={() => {
+                                    setAnswers(prev => ({ ...prev, sleepArchitecture: opt.value }))
+                                    scheduleAdvance()
+                                  }}
                                   className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.sleepArchitecture === opt.value
                                     ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
                                     : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
@@ -531,7 +665,10 @@ export default function AssessmentPage() {
                                 <motion.button
                                   key={opt.value}
                                   whileTap={{ scale: 0.98 }}
-                                  onClick={() => setAnswers(prev => ({ ...prev, cognitiveClarity: opt.value }))}
+                                  onClick={() => {
+                                    setAnswers(prev => ({ ...prev, cognitiveClarity: opt.value }))
+                                    scheduleAdvance()
+                                  }}
                                   className={`relative cursor-pointer rounded-xl md:rounded-2xl border-2 p-3 md:p-4 transition-all duration-200 flex items-start gap-3 text-left w-full ${answers.cognitiveClarity === opt.value
                                     ? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/15'
                                     : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-md'
@@ -566,7 +703,11 @@ export default function AssessmentPage() {
                                   <motion.button
                                     key={opt.value}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => setAnswers(prev => ({ ...prev, muscleRecovery: opt.value }))}
+                                    onClick={() => {
+                                      const willComplete = Boolean(answers.immuneResilience)
+                                      setAnswers(prev => ({ ...prev, muscleRecovery: opt.value }))
+                                      if (willComplete) scheduleAdvance()
+                                    }}
                                     className={`border-2 rounded-full px-3 md:px-4 py-2 text-sm md:text-base cursor-pointer font-medium transition-all ${answers.muscleRecovery === opt.value
                                       ? 'bg-emerald-500 text-black border-emerald-500 shadow-md shadow-emerald-500/30'
                                       : 'border-gray-300 text-gray-600 hover:border-emerald-400'
@@ -589,7 +730,11 @@ export default function AssessmentPage() {
                                   <motion.button
                                     key={opt.value}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => setAnswers(prev => ({ ...prev, immuneResilience: opt.value }))}
+                                    onClick={() => {
+                                      const willComplete = Boolean(answers.muscleRecovery)
+                                      setAnswers(prev => ({ ...prev, immuneResilience: opt.value }))
+                                      if (willComplete) scheduleAdvance()
+                                    }}
                                     className={`border-2 rounded-full px-3 md:px-4 py-2 text-sm md:text-base cursor-pointer font-medium transition-all ${answers.immuneResilience === opt.value
                                       ? 'bg-emerald-500 text-black border-emerald-500 shadow-md shadow-emerald-500/30'
                                       : 'border-gray-300 text-gray-600 hover:border-emerald-400'
@@ -603,103 +748,31 @@ export default function AssessmentPage() {
                           </div>
                         )}
 
-                        {/* Step 8 — Personal info (last, before report) */}
-                        {currentStep === 8 && (
-                          <div>
-                            <StepBadge step={8} science="🔬 PERSONALIZING YOUR ANALYSIS" />
-                            <h2 className="text-gray-900 font-bold text-xl md:text-2xl lg:text-3xl mb-2">
-                              Almost done — where should we send your report?
-                            </h2>
-                            <p className="text-gray-500 text-sm md:text-base mb-5">
-                              We only use this to personalize your results and follow up if you book a session.
-                            </p>
-                            <div className="flex flex-col gap-3">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                  <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Your first name *</label>
-                                  <input
-                                    type="text"
-                                    placeholder="e.g. Priya"
-                                    value={answers.name}
-                                    onChange={e => setAnswers(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Your age *</label>
-                                  <input
-                                    type="number"
-                                    placeholder="e.g. 28"
-                                    min={10}
-                                    max={90}
-                                    value={answers.age}
-                                    onChange={e => setAnswers(prev => ({ ...prev, age: e.target.value }))}
-                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Email address *</label>
-                                <input
-                                  type="email"
-                                  placeholder="priya@example.com"
-                                  value={answers.email}
-                                  onChange={e => setAnswers(prev => ({ ...prev, email: e.target.value }))}
-                                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition bg-white"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-gray-700 text-sm md:text-base font-medium mb-1">Phone number *</label>
-                                <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition bg-white">
-                                  <select
-                                    className="bg-transparent pl-3 pr-2 py-2.5 text-base text-gray-600 border-r border-gray-200 focus:outline-none shrink-0"
-                                    onChange={e => setAnswers(prev => ({ ...prev, phone: e.target.value + ' ' + prev.phone.split(' ').slice(1).join(' ') }))}
-                                    defaultValue="+91"
-                                  >
-                                    <option value="+91">🇮🇳 +91</option>
-                                    <option value="+1">🇺🇸 +1</option>
-                                    <option value="+44">🇬🇧 +44</option>
-                                    <option value="+971">🇦🇪 +971</option>
-                                    <option value="+65">🇸🇬 +65</option>
-                                    <option value="+61">🇦🇺 +61</option>
-                                  </select>
-                                  <input
-                                    type="tel"
-                                    placeholder="98765 43210"
-                                    className="flex-1 bg-transparent px-3 py-2.5 text-gray-900 text-base placeholder:text-gray-400 focus:outline-none min-w-0"
-                                    onChange={e => setAnswers(prev => ({
-                                      ...prev,
-                                      phone: (prev.phone.split(' ')[0] || '+91') + ' ' + e.target.value
-                                    }))}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
                       </motion.div>
                     </AnimatePresence>
                   </div>
 
-                  {/* Navigation Buttons */}
+                  {/* Navigation Buttons — Continue only when auto-next isn't enough */}
                   <div className="px-5 md:px-8 pb-6 md:pb-8">
                     {submitError ? (
                       <p className="mb-4 text-sm text-red-600 text-center font-medium">{submitError}</p>
                     ) : null}
                     <div className="flex items-center justify-between gap-3">
                     <button
-                      onClick={() => { setDirection('back'); setCurrentStep(p => p - 1) }}
+                      onClick={() => { setDirection('back'); advancingRef.current = false; setCurrentStep(p => p - 1) }}
                       className={`border border-gray-200 text-gray-500 rounded-full px-4 md:px-6 py-2.5 md:py-3 hover:border-gray-400 transition flex items-center gap-2 text-base font-medium flex-shrink-0 ${currentStep === 1 ? 'invisible' : ''}`}
                     >
                       <ChevronLeft size={16} />
                       Back
                     </button>
 
-                    {currentStep < TOTAL_STEPS ? (
+                    {(currentStep === 5 || currentStep === 7) && (
                       <button
                         onClick={() => {
-                          if (currentStep === 1) trackEvent('quiz_started')
+                          if (currentStep === 7) {
+                            setGatePhase('ready')
+                            return
+                          }
                           setDirection('next')
                           setCurrentStep((p) => p + 1)
                         }}
@@ -709,19 +782,8 @@ export default function AssessmentPage() {
                           : 'opacity-40 cursor-not-allowed'
                           }`}
                       >
-                        Continue
+                        {currentStep === 7 ? 'See My Results' : 'Continue'}
                         <ChevronRight size={16} />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleSubmit}
-                        disabled={!isStepValid()}
-                        className={`bg-emerald-500 text-black rounded-full px-5 md:px-8 py-2.5 md:py-3 font-bold text-sm md:text-base flex items-center gap-2 transition-all flex-shrink-0 ${isStepValid()
-                          ? 'hover:bg-emerald-400 hover:scale-105 cursor-pointer'
-                          : 'opacity-40 cursor-not-allowed'
-                          }`}
-                      >
-                        Get My Deficiency Report 🧬
                       </button>
                     )}
                     </div>

@@ -30,12 +30,22 @@ export function otpExpiresAt(): string {
   return new Date(Date.now() + OTP_TTL_MS).toISOString()
 }
 
-async function sendOtpEmail(to: string, code: string): Promise<{ ok: true } | { ok: false; error: string }> {
+async function sendOtpEmail(
+  to: string,
+  code: string,
+  purpose: 'checkout' | 'assessment' = 'checkout',
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.RESEND_API_KEY?.trim()
   const from = process.env.RESEND_FROM?.trim() || 'TheBeetamin <noreply@thebeetamin.com>'
   if (!apiKey) {
     return { ok: false, error: 'Email service is not configured. Contact support@thebeetamin.com.' }
   }
+
+  const intro =
+    purpose === 'assessment'
+      ? 'Use this code to securely view your personalized health assessment results:'
+      : 'Use this code to continue your ₹3,999 Full Recovery Plan purchase:'
+  const heading = purpose === 'assessment' ? 'Verify to see your results' : 'Verify before checkout'
 
   const resend = new Resend(apiKey)
   const { error } = await resend.emails.send({
@@ -44,8 +54,8 @@ async function sendOtpEmail(to: string, code: string): Promise<{ ok: true } | { 
     subject: `${code} — your TheBeetamin verification code`,
     html: `
       <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:24px">
-        <p style="color:#111;font-size:18px;font-weight:700">Verify before checkout</p>
-        <p style="color:#555;font-size:15px;line-height:1.5">Use this code to continue your ₹3,999 Full Recovery Plan purchase:</p>
+        <p style="color:#111;font-size:18px;font-weight:700">${heading}</p>
+        <p style="color:#555;font-size:15px;line-height:1.5">${intro}</p>
         <p style="font-size:32px;font-weight:900;letter-spacing:6px;color:#10B981;margin:24px 0">${code}</p>
         <p style="color:#888;font-size:13px">Valid for 10 minutes. If you did not request this, ignore this email.</p>
       </div>
@@ -103,11 +113,12 @@ export async function deliverOtp(args: {
   phoneE164?: string
   email?: string
   code: string
+  purpose?: 'checkout' | 'assessment'
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   if (args.channel === 'email') {
     const email = args.email?.trim().toLowerCase()
     if (!email) return { ok: false, error: 'Email is required.' }
-    return sendOtpEmail(email, args.code)
+    return sendOtpEmail(email, args.code, args.purpose ?? 'checkout')
   }
 
   const mobile = args.phoneE164?.trim()

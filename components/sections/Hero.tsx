@@ -26,6 +26,7 @@ export default function Hero() {
   const [flags, setFlags] = useState<AssessmentFlags | null>(null);
   const [tick, setTick] = useState(0);
   const [stickyVisible, setStickyVisible] = useState(false);
+  const [ctaInteracted, setCtaInteracted] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => (t + 1) % TICKER.length), 2200);
@@ -39,7 +40,7 @@ export default function Hero() {
   }, []);
 
   useEffect(() => {
-    if (!isSignedIn || !user?.id) { setFlags(null); return; }
+    if (!isSignedIn || !user?.id) return;
     let cancelled = false;
     getClientAssessmentFlags(user.id)
       .then((f) => { if (!cancelled) setFlags(f); })
@@ -47,23 +48,25 @@ export default function Hero() {
     return () => { cancelled = true; };
   }, [isSignedIn, user?.id]);
 
+  const activeFlags = isSignedIn ? flags : null;
+
   const assessmentHref =
     !isSignedIn ? "/assessment"
-    : flags?.recoveryReportReady
-      ? `/report/${encodeURIComponent(flags.recoveryReportReady.report_id)}`
-    : flags?.recoveryReportGenerating
-      ? `/report/${encodeURIComponent(flags.recoveryReportGenerating.report_id)}`
-    : flags?.hasFreeAssessment ? "/assessment/results"
+    : activeFlags?.recoveryReportReady
+      ? `/report/${encodeURIComponent(activeFlags.recoveryReportReady.report_id)}`
+    : activeFlags?.recoveryReportGenerating
+      ? `/report/${encodeURIComponent(activeFlags.recoveryReportGenerating.report_id)}`
+    : activeFlags?.hasFreeAssessment ? "/assessment/results"
     : "/assessment";
 
   const hasPaidReport =
-    Boolean(flags?.recoveryReportReady) || Boolean(flags?.recoveryReportGenerating);
+    Boolean(activeFlags?.recoveryReportReady) || Boolean(activeFlags?.recoveryReportGenerating);
 
   const primaryLabel =
-    !isSignedIn || flags === null ? "Start Free Assessment"
+    !isSignedIn || activeFlags === null ? "Take Your Free Assessment"
     : hasPaidReport ? "Open My PDF Report"
-    : flags.hasFreeAssessment ? "View My Free Report"
-    : "Start Free Assessment";
+    : activeFlags.hasFreeAssessment ? "View My Free Report"
+    : "Take Your Free Assessment";
 
   return (
     <>
@@ -94,7 +97,7 @@ export default function Hero() {
           aria-hidden
         />
 
-        <div className="relative mx-auto max-w-[1320px] px-6 lg:px-12 min-h-screen flex flex-col justify-center pt-24 pb-16 lg:py-0">
+        <div className="relative mx-auto max-w-[1320px] px-5 sm:px-6 lg:px-12 min-h-[100dvh] lg:min-h-screen flex flex-col justify-center pt-[5.5rem] pb-10 sm:pt-24 sm:pb-16 lg:py-0">
 
           {/* TWO-COL GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-10 lg:gap-14 items-center">
@@ -107,7 +110,7 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="mb-7"
+                className="mb-4 sm:mb-7"
               >
                 <span
                   className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-black tracking-[0.18em] uppercase"
@@ -137,7 +140,7 @@ export default function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.08 }}
                 className="font-black leading-[0.96] tracking-tight text-white"
-                style={{ fontSize: "clamp(3.2rem, 5.5vw, 5.2rem)" }}
+                style={{ fontSize: "clamp(2.35rem, 5.5vw, 5.2rem)" }}
               >
                 Tired all day.
                 <br />
@@ -151,7 +154,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="mt-5 flex items-center justify-center lg:justify-start gap-3"
+                className="mt-3 sm:mt-5 flex items-center justify-center lg:justify-start gap-3"
               >
                 <span
                   className="text-sm font-medium"
@@ -190,12 +193,22 @@ export default function Hero() {
                 </span>
               </motion.div>
 
-              {/* Body copy */}
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.38 }}
-                className="mt-5 text-[15px] leading-relaxed max-w-[420px] mx-auto lg:mx-0"
+                className="lg:hidden mt-4 text-sm leading-snug max-w-[340px] mx-auto"
+                style={{ color: "rgba(255,255,255,0.52)" }}
+              >
+                Free 2-minute health assessment. See your nutrient gaps instantly.
+              </motion.p>
+
+              {/* Body copy — desktop keeps the original paragraph */}
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.38 }}
+                className="hidden lg:block mt-5 text-[15px] leading-relaxed max-w-[420px] mx-auto lg:mx-0"
                 style={{ color: "rgba(255,255,255,0.48)" }}
               >
                 Answer 7 questions. We pinpoint your Vitamin D, Iron, B12 and Omega-3
@@ -210,11 +223,69 @@ export default function Hero() {
                 — for just ₹39.
               </motion.p>
 
-              {/* MOBILE IMAGE — shown only on small screens */}
+              {/* CTA — mobile: full-width primary first; desktop: original side-by-side row */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.46 }}
+                className="mt-6 sm:mt-8 flex w-full max-w-md lg:max-w-none flex-col lg:flex-row gap-3 justify-center lg:justify-start"
+              >
+                <a
+                  href={assessmentHref}
+                  onClick={() => setCtaInteracted(true)}
+                  className={`inline-flex w-full lg:flex-1 lg:min-w-0 items-center justify-center gap-2 font-black rounded-2xl px-5 lg:px-7 py-4 text-sm whitespace-nowrap transition-all duration-200 active:scale-[0.97] ${
+                    ctaInteracted ? "" : "hero-cta-attention lg:animate-none"
+                  }`}
+                  style={{
+                    background: "#00E676",
+                    color: "#030a04",
+                    boxShadow: "0 0 24px rgba(0,230,118,0.28)",
+                  }}
+                >
+                  <ClipboardList size={16} strokeWidth={2.8} className="shrink-0" />
+                  <span>{primaryLabel}</span>
+                </a>
+
+                {isSignedIn ? (
+                  <a
+                    href="/sessions"
+                    className="hidden lg:inline-flex flex-1 min-w-0 items-center justify-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm whitespace-nowrap transition-all duration-200 border border-white/10 bg-white/5 text-white/72"
+                  >
+                    <span className="truncate">My Sessions</span>
+                    <ArrowRight size={14} className="shrink-0" />
+                  </a>
+                ) : (
+                  <a
+                    href={BOOKING_SIGN_UP}
+                    className="hidden lg:inline-flex flex-1 min-w-0 items-center justify-center gap-2 font-bold rounded-2xl px-7 py-4 text-sm whitespace-nowrap transition-all duration-200 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15"
+                  >
+                    <span className="truncate">Book ₹3,999 Consultation</span>
+                    <ArrowRight size={14} className="shrink-0" />
+                  </a>
+                )}
+
+                {!isSignedIn ? (
+                  <a
+                    href={BOOKING_SIGN_UP}
+                    className="lg:hidden text-center text-xs font-semibold text-emerald-400/80 hover:text-emerald-300"
+                  >
+                    Or book a ₹3,999 consultation →
+                  </a>
+                ) : (
+                  <a
+                    href="/sessions"
+                    className="lg:hidden text-center text-xs font-semibold text-white/55 hover:text-white/80"
+                  >
+                    My Sessions →
+                  </a>
+                )}
+              </motion.div>
+
+              {/* MOBILE IMAGE — below the CTA so the first viewport is the assessment action */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.44 }}
+                transition={{ delay: 0.52 }}
                 className="lg:hidden mt-7 relative rounded-2xl overflow-hidden w-full"
                 style={{ border: "1px solid rgba(0,230,118,0.14)" }}
               >
@@ -223,49 +294,8 @@ export default function Hero() {
                   alt="Indian thali with dal, vegetables and roti — personalised meal plan for nutrient deficiency recovery"
                   width={800}
                   height={500}
-                  className="w-full object-cover"
-                  style={{ height: 260 }}
-                  priority
+                  className="w-full object-cover h-[200px]"
                 />
-              </motion.div>
-
-              {/* CTA row — side by side on all screen sizes */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.46 }}
-                className="mt-8 flex w-full max-w-md lg:max-w-none flex-row flex-nowrap gap-2 sm:gap-3 justify-center lg:justify-start"
-              >
-                <a
-                  href={assessmentHref}
-                  className="inline-flex flex-1 min-w-0 items-center justify-center gap-1.5 sm:gap-2.5 font-black rounded-2xl px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-sm whitespace-nowrap transition-all duration-200 active:scale-[0.97]"
-                  style={{
-                    background: "#00E676",
-                    color: "#030a04",
-                    boxShadow: "0 0 24px rgba(0,230,118,0.2)",
-                  }}
-                >
-                  <ClipboardList size={15} strokeWidth={2.8} className="shrink-0 hidden sm:block" />
-                  <span className="truncate">{primaryLabel}</span>
-                </a>
-
-                {isSignedIn ? (
-                  <a
-                    href="/sessions"
-                    className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 sm:gap-2 font-bold rounded-2xl px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-sm whitespace-nowrap transition-all duration-200 border border-white/10 bg-white/5 text-white/72"
-                  >
-                    <span className="truncate">My Sessions</span>
-                    <ArrowRight size={14} className="shrink-0" />
-                  </a>
-                ) : (
-                  <a
-                    href={BOOKING_SIGN_UP}
-                    className="inline-flex flex-1 min-w-0 items-center justify-center gap-1 sm:gap-2 font-bold rounded-2xl px-3 sm:px-7 py-3.5 sm:py-4 text-[11px] sm:text-sm whitespace-nowrap transition-all duration-200 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/15"
-                  >
-                    <span className="truncate">Book ₹3,999 Consultation</span>
-                    <ArrowRight size={14} className="shrink-0" />
-                  </a>
-                )}
               </motion.div>
 
               {/* Referral */}
@@ -431,6 +461,20 @@ export default function Hero() {
           @keyframes beetPulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
+          }
+          @keyframes heroCtaAttention {
+            0%, 100% { transform: translateY(0) rotate(0deg); box-shadow: 0 0 22px rgba(0,230,118,0.22); }
+            40% { transform: translateY(-2px) rotate(-0.6deg); box-shadow: 0 0 32px rgba(0,230,118,0.38); }
+            70% { transform: translateY(-1px) rotate(0.6deg); box-shadow: 0 0 28px rgba(0,230,118,0.3); }
+          }
+          .hero-cta-attention {
+            animation: heroCtaAttention 2.8s ease-in-out infinite;
+          }
+          @media (min-width: 1024px) {
+            .hero-cta-attention { animation: none; }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .hero-cta-attention { animation: none; }
           }
         `}</style>
       </section>

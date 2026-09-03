@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { normalizeFreeAssessment } from '@/lib/assessment-profile-fields'
+import { normalizeFoodFrequencyForDiet } from '@/lib/normalize-food-frequency'
 import { persistFreeAssessmentForClerkUser } from '@/lib/persist-free-assessment'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import type { DetailedAssessmentPayload, FoodFrequencyKey } from '@/lib/recovery-report-types'
@@ -22,9 +23,9 @@ function validatePayload(body: unknown): { ok: true; data: DetailedAssessmentPay
 
   const freq = b.food_frequency
   if (!freq || typeof freq !== 'object') return { ok: false, message: 'food_frequency is required' }
-  const f = freq as Record<string, unknown>
+  const normalizedFreq = normalizeFoodFrequencyForDiet(diet, freq as Record<string, unknown>)
   for (const key of FOOD_KEYS) {
-    const v = f[key]
+    const v = normalizedFreq[key]
     if (v !== 'daily' && v !== 'sometimes' && v !== 'rarely') {
       return { ok: false, message: `food_frequency.${key} must be daily, sometimes, or rarely` }
     }
@@ -81,7 +82,7 @@ function validatePayload(body: unknown): { ok: true; data: DetailedAssessmentPay
     ok: true,
     data: {
       diet_type: diet,
-      food_frequency: f as DetailedAssessmentPayload['food_frequency'],
+      food_frequency: normalizedFreq,
       sun_exposure: str('sun_exposure'),
       physical_symptoms: (b.physical_symptoms as string[]).filter(Boolean),
       energy_mood: str('energy_mood'),
