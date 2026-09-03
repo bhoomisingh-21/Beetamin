@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { parseLeadSnapshot } from '@/lib/assessment-lead-labels'
 import { appendVerifiedAssessmentLead } from '@/lib/assessment-leads-sheet'
+import { isMissingColumn, isMissingRelation, OTP_STORAGE_NOT_READY } from '@/lib/assessment-otp-db'
 import { hashOtpCode } from '@/lib/checkout-otp-service'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
@@ -29,7 +30,7 @@ async function alreadyAppendedToSheet(email: string): Promise<boolean> {
     .not('sheet_appended_at', 'is', null)
     .limit(1)
   if (error) {
-    if (error.code === '42703') return false
+    if (isMissingColumn(error) || isMissingRelation(error)) return false
     console.error('[assessment/verify-otp] sheet dupe check', error)
     return false
   }
@@ -68,16 +69,10 @@ export async function POST(req: NextRequest) {
 
   if (fetchErr) {
     console.error('[assessment/verify-otp] fetch', fetchErr)
-    if (fetchErr.code === '42P01') {
-      return NextResponse.json(
-        {
-          error: 'Verification storage is not ready. Apply the assessment OTP Supabase migrations.',
-          code: 'OTP_TABLE_MISSING',
-        },
-        { status: 503 },
-      )
+    if (isMissingRelation(fetchErr)) {
+      return NextResponse.json(OTP_STORAGE_NOT_READY, { status: 503 })
     }
-    if (fetchErr.code === '42703') {
+    if (isMissingColumn(fetchErr)) {
       const fallback = await supabaseAdmin
         .from('assessment_otp_challenges')
         .select('id, code_hash, expires_at, verified_at, name, email, phone, age')

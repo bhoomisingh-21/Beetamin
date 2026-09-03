@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { isValidLeadBodyMetrics, parseLeadSnapshot } from '@/lib/assessment-lead-labels'
+import { isMissingColumn, isMissingRelation, OTP_STORAGE_NOT_READY } from '@/lib/assessment-otp-db'
 import {
   deliverOtp,
   generateOtpCode,
@@ -69,19 +70,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+    console.error('[assessment/send-otp] missing Supabase admin env')
+    return NextResponse.json(OTP_STORAGE_NOT_READY, { status: 503 })
+  }
+
   const code = generateOtpCode()
   const phoneE164 = normalizeIndianPhone(phoneRaw)
-
-  const delivered = await deliverOtp({
-    channel: 'email',
-    email,
-    code,
-    purpose: 'assessment',
-  })
-
-  if (!delivered.ok) {
-    return NextResponse.json({ error: delivered.error, code: 'OTP_DELIVERY_FAILED' }, { status: 503 })
-  }
 
   const row: Record<string, unknown> = {
     session_id: sessionId,
@@ -96,28 +91,34 @@ export async function POST(req: NextRequest) {
     expires_at: otpExpiresAt(),
   }
 
-  const { error: insErr } = await supabaseAdmin.from('assessment_otp_challenges').insert(row)
+  let { error: insErr } = await supabaseAdmin.from('assessment_otp_challenges').insert(row)
+
+  if (insErr && isMissingColumn(insErr)) {
+    delete row.lead_snapshot
+    const retry = await supabaseAdmin.from('assessment_otp_challenges').insert(row)
+    insErr = retry.error
+  }
 
   if (insErr) {
-    console.error('[assessment/send-otp] insert', insErr)
-    if (insErr.code === '42P01') {
-      return NextResponse.json(
-        {
-          error: 'Verification storage is not ready. Apply the assessment OTP Supabase migrations.',
-          code: 'OTP_TABLE_MISSING',
-        },
-        { status: 503 },
-      )
+    console.error('[assessment/send-otp] insert', insErr.code, insErr.message, insErr.details)
+    if (isMissingRelation(insErr) || isMissingColumn(insErr)) {
+      return NextResponse.json(OTP_STORAGE_NOT_READY, { status: 503 })
     }
-    if (insErr.code === '42703') {
-      delete row.lead_snapshot
-      const { error: retryErr } = await supabaseAdmin.from('assessment_otp_challenges').insert(row)
-      if (retryErr) {
-        return NextResponse.json({ error: 'Could not start verification. Try again.' }, { status: 500 })
-      }
-    } else {
-      return NextResponse.json({ error: 'Could not start verification. Try again.' }, { status: 500 })
-    }
+    return NextResponse.json(
+      { error: 'Could not start verification. Try again.', code: insErr.code ?? 'OTP_INSERT_FAILED' },
+      { status: 500 },
+    )
+  }
+
+  const delivered = await deliverOtp({
+    channel: 'email',
+    email,
+    code,
+    purpose: 'assessment',
+  })
+
+  if (!delivered.ok) {
+    return NextResponse.json({ error: delivered.error, code: 'OTP_DELIVERY_FAILED' }, { status: 503 })
   }
 
   return NextResponse.json({
