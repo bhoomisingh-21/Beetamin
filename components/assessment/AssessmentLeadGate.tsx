@@ -5,11 +5,13 @@ import { ChevronLeft, Loader2 } from 'lucide-react'
 
 export type LeadGatePhase = 'ready' | 'lead' | 'otp'
 
-type LeadValues = {
+export type LeadValues = {
   name: string
   age: string
-  phone: string
   email: string
+  gender: string
+  heightCm: string
+  weightKg: string
 }
 
 export function AssessmentLeadGate({
@@ -24,7 +26,6 @@ export function AssessmentLeadGate({
   busy,
   error,
   otpDestination,
-  channel,
 }: {
   phase: LeadGatePhase
   values: LeadValues
@@ -37,16 +38,22 @@ export function AssessmentLeadGate({
   busy: boolean
   error: string | null
   otpDestination: string
-  channel: 'phone' | 'email'
 }) {
   const [otp, setOtp] = useState('')
-  const phoneDigits = values.phone.replace(/\D/g, '').slice(-10)
+  const heightNum = Number(values.heightCm)
+  const weightNum = Number(values.weightKg)
   const leadValid =
     values.name.trim().length > 0 &&
     Number(values.age) >= 10 &&
     Number(values.age) <= 120 &&
-    phoneDigits.length === 10 &&
-    (channel === 'phone' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email) &&
+    (values.gender === 'male' || values.gender === 'female' || values.gender === 'other') &&
+    Number.isFinite(heightNum) &&
+    heightNum >= 50 &&
+    heightNum <= 250 &&
+    Number.isFinite(weightNum) &&
+    weightNum >= 20 &&
+    weightNum <= 300
 
   if (phase === 'ready') {
     return (
@@ -83,7 +90,7 @@ export function AssessmentLeadGate({
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">Verify</p>
         <h2 className="mt-2 text-2xl font-black text-gray-900 leading-tight">Enter OTP</h2>
         <p className="mt-2 text-sm text-gray-500">
-          We sent a 6-digit code to {otpDestination || (channel === 'phone' ? 'your phone' : 'your email')}.
+          We sent a 6-digit code to {otpDestination || 'your email'}.
         </p>
         <input
           inputMode="numeric"
@@ -134,10 +141,10 @@ export function AssessmentLeadGate({
     <div className="px-5 md:px-8 py-8 md:py-10">
       <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">Your results are ready 👀</p>
       <h2 className="mt-2 text-2xl font-black text-gray-900 leading-tight">
-        Enter your mobile number to see your results
+        Enter a few details to see your results
       </h2>
       <p className="mt-2 text-sm text-gray-500">
-        We&apos;ll use this to securely show your personalized results.
+        We&apos;ll send a one-time code so we can securely show your personalized results.
       </p>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -164,45 +171,66 @@ export function AssessmentLeadGate({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Mobile number *</label>
-          <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 bg-white">
-            <span className="bg-gray-50 px-3 py-2.5 text-sm text-gray-600 border-r border-gray-200 shrink-0">
-              🇮🇳 +91
-            </span>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+          <input
+            type="email"
+            value={values.email}
+            onChange={(e) => onChange({ email: e.target.value })}
+            placeholder="priya@example.com"
+            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: 'male', label: 'Male' },
+              { value: 'female', label: 'Female' },
+              { value: 'other', label: 'Other' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onChange({ gender: opt.value })}
+                className={`rounded-xl py-2.5 text-sm font-semibold transition ${
+                  values.gender === opt.value
+                    ? 'bg-emerald-500 text-black shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:border-emerald-300'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm) *</label>
             <input
-              type="tel"
-              inputMode="numeric"
-              value={phoneDigits}
-              onChange={(e) => onChange({ phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-              placeholder="98765 43210"
-              className="flex-1 min-w-0 px-3 py-2.5 text-gray-900 focus:outline-none"
+              type="number"
+              inputMode="decimal"
+              min={50}
+              max={250}
+              value={values.heightCm}
+              onChange={(e) => onChange({ heightCm: e.target.value })}
+              placeholder="e.g. 165"
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg) *</label>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={20}
+              max={300}
+              value={values.weightKg}
+              onChange={(e) => onChange({ weightKg: e.target.value })}
+              placeholder="e.g. 62"
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
             />
           </div>
         </div>
-        {channel === 'email' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-            <input
-              type="email"
-              value={values.email}
-              onChange={(e) => onChange({ email: e.target.value })}
-              placeholder="priya@example.com"
-              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            />
-            <p className="mt-1 text-xs text-gray-500">SMS wasn&apos;t available — we&apos;ll send the code here instead.</p>
-          </div>
-        ) : (
-          <div>
-            <label className="block text-sm font-medium text-gray-500 mb-1">Email (optional)</label>
-            <input
-              type="email"
-              value={values.email}
-              onChange={(e) => onChange({ email: e.target.value })}
-              placeholder="We'll send a copy of your snapshot"
-              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-            />
-          </div>
-        )}
       </div>
 
       {error ? <p className="mt-3 text-sm font-medium text-red-600 text-center">{error}</p> : null}

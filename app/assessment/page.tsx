@@ -64,13 +64,15 @@ export default function AssessmentPage() {
   const [otpBusy, setOtpBusy] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
   const [otpDestination, setOtpDestination] = useState('')
-  const [otpChannel, setOtpChannel] = useState<'phone' | 'email'>('phone')
   const advancingRef = useRef(false)
   const [answers, setAnswers] = useState({
     name: '',
     email: '',
     phone: '',
     age: '',
+    gender: '',
+    heightCm: '',
+    weightKg: '',
     diet: '',
     goal: '',
     metabolicRhythm: '',
@@ -82,19 +84,22 @@ export default function AssessmentPage() {
   })
   const router = useRouter()
 
-  async function handleSubmit() {
+  async function handleSubmit(verified?: { email?: string; name?: string; age?: string }) {
     trackEvent('quiz_completed')
     setSubmitError(null)
     setIsLoading(true)
     try {
+      const name = verified?.name?.trim() || answers.name
+      const age = verified?.age?.trim() || answers.age
+      const email = (verified?.email?.trim() || answers.email).toLowerCase()
       const phoneDigits = answers.phone.replace(/\D/g, '').slice(-10)
       const phoneForLead = phoneDigits ? `+91 ${phoneDigits}` : answers.phone
       const res = await fetch('/api/assessment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: answers.name,
-          age: answers.age,
+          name,
+          age,
           diet: answers.diet,
           goal: answers.goal,
           answers: {
@@ -116,12 +121,15 @@ export default function AssessmentPage() {
         throw new Error('We received an invalid report. Please try again.')
       }
       const meta = {
-        name: answers.name,
-        email: answers.email,
+        name,
+        email,
         phone: phoneForLead,
         goal: answers.goal,
         diet: answers.diet,
-        age: answers.age,
+        age,
+        gender: answers.gender,
+        heightCm: answers.heightCm,
+        weightKg: answers.weightKg,
         metabolicRhythm: answers.metabolicRhythm,
         sleepArchitecture: answers.sleepArchitecture,
         dermalMarkers: answers.dermalMarkers,
@@ -142,14 +150,14 @@ export default function AssessmentPage() {
       fetch('/api/save-lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: answers.name, email: answers.email, phone: phoneForLead, source: 'assessment' }),
+        body: JSON.stringify({ name, email, phone: phoneForLead, source: 'assessment' }),
       }).catch(() => {})
-      if (answers.email) {
+      if (email) {
         fetch('/api/guest-free-assessment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: answers.email,
+            email,
             assessmentResult: normalized,
             assessmentMeta: meta,
           }),
@@ -213,7 +221,6 @@ export default function AssessmentPage() {
         return
       }
       const sessionId = getOrCreateAssessmentSessionId()
-      const phone = answers.phone.replace(/\D/g, '').slice(-10)
       const res = await fetch('/api/assessment/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -221,9 +228,17 @@ export default function AssessmentPage() {
           sessionId,
           name: answers.name,
           age: answers.age,
-          phone,
           email: answers.email,
-          channel: otpChannel,
+          leadSnapshot: {
+            goal: answers.goal,
+            diet: answers.diet,
+            energy: answers.metabolicRhythm,
+            sleep: answers.sleepArchitecture,
+            concerns: answers.dermalMarkers,
+            gender: answers.gender,
+            heightCm: answers.heightCm,
+            weightKg: answers.weightKg,
+          },
         }),
       })
       const json = (await res.json().catch(() => ({}))) as {
@@ -232,20 +247,9 @@ export default function AssessmentPage() {
         code?: string
       }
       if (!res.ok) {
-        if (json.code === 'OTP_TABLE_MISSING') {
-          markAssessmentOtpVerified()
-          await handleSubmit()
-          return
-        }
-        if (json.code === 'OTP_DELIVERY_FAILED' && otpChannel === 'phone') {
-          setOtpChannel('email')
-          setOtpError(`${json.error ?? 'SMS failed.'} Enter your email and send the code again.`)
-          setOtpBusy(false)
-          return
-        }
         throw new Error(json.error || 'Could not send verification code.')
       }
-      setOtpDestination(json.destinationMasked || (otpChannel === 'phone' ? 'your phone' : answers.email))
+      setOtpDestination(json.destinationMasked || answers.email)
       setGatePhase('otp')
     } catch (e) {
       setOtpError(e instanceof Error ? e.message : 'Could not send verification code.')
@@ -264,11 +268,22 @@ export default function AssessmentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, code }),
       })
-      const json = (await res.json().catch(() => ({}))) as { error?: string; skipped?: boolean }
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string
+        email?: string | null
+        name?: string | null
+        age?: string | null
+      }
       if (!res.ok) throw new Error(json.error || 'Verification failed.')
+      const verified = {
+        email: typeof json.email === 'string' ? json.email.trim().toLowerCase() : answers.email,
+        name: typeof json.name === 'string' && json.name.trim() ? json.name.trim() : answers.name,
+        age: typeof json.age === 'string' && json.age.trim() ? json.age.trim() : answers.age,
+      }
+      setAnswers((prev) => ({ ...prev, ...verified }))
       markAssessmentOtpVerified()
       setOtpBusy(false)
-      await handleSubmit()
+      await handleSubmit(verified)
     } catch (e) {
       setOtpError(e instanceof Error ? e.message : 'Verification failed.')
       setOtpBusy(false)
@@ -433,7 +448,14 @@ export default function AssessmentPage() {
               ) : gatePhase ? (
                 <AssessmentLeadGate
                   phase={gatePhase}
-                  values={{ name: answers.name, age: answers.age, phone: answers.phone, email: answers.email }}
+                  values={{
+                    name: answers.name,
+                    age: answers.age,
+                    email: answers.email,
+                    gender: answers.gender,
+                    heightCm: answers.heightCm,
+                    weightKg: answers.weightKg,
+                  }}
                   onChange={(patch) => setAnswers((prev) => ({ ...prev, ...patch }))}
                   onReveal={() => { setOtpError(null); setGatePhase('lead') }}
                   onBack={() => {
@@ -447,7 +469,6 @@ export default function AssessmentPage() {
                   busy={otpBusy}
                   error={otpError || submitError}
                   otpDestination={otpDestination}
-                  channel={otpChannel}
                 />
               ) : (
                 <>

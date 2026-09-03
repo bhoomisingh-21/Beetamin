@@ -348,6 +348,20 @@ export default function DetailedAssessmentPage() {
         setSymptoms(mapped.symptoms)
         setSkipSymptoms(true)
       }
+      if (mapped.gender) setGender(mapped.gender)
+      if (mapped.heightCm) setHeightCm(mapped.heightCm)
+      if (mapped.weightKg) setWeightKg(mapped.weightKg)
+      const h = Number(mapped.heightCm)
+      const w = Number(mapped.weightKg)
+      if (
+        mapped.gender &&
+        Number.isFinite(h) &&
+        h > 0 &&
+        Number.isFinite(w) &&
+        w > 0
+      ) {
+        setSkipPersonalInfo(true)
+      }
     } catch {
       /* defensive — missing/garbled meta must never break the quiz */
     }
@@ -362,6 +376,7 @@ export default function DetailedAssessmentPage() {
 
   const [diet, setDiet] = useState('')
   const [skipDiet, setSkipDiet] = useState(false)
+  const [skipPersonalInfo, setSkipPersonalInfo] = useState(false)
   const [skipSymptoms, setSkipSymptoms] = useState(false)
   const [skipEnergy, setSkipEnergy] = useState(false)
   const [skipSleep, setSkipSleep] = useState(false)
@@ -427,7 +442,8 @@ export default function DetailedAssessmentPage() {
     freeGoal === 'weight_loss' ? 'weight_loss' : freeGoal === 'muscle_gain' ? 'muscle_gain' : null
 
   const keys = useMemo<QuizKey[]>(() => {
-    const arr: QuizKey[] = ['personal_info']
+    const arr: QuizKey[] = []
+    if (!skipPersonalInfo) arr.push('personal_info')
     if (!skipDiet) arr.push('diet')
     arr.push('food', 'meal_timing', 'cooking_habit', 'food_dislikes', 'supplement_preference', 'medical_conditions')
     if (medicalConditions.includes('pcos')) arr.push('pcos_followup')
@@ -441,7 +457,7 @@ export default function DetailedAssessmentPage() {
     arr.push('water')
     if (showMenstrual) arr.push('menstrual')
     return arr
-  }, [medicalConditions, goalFollowupType, showMenstrual, skipDiet, skipSymptoms, skipEnergy, skipSleep])
+  }, [medicalConditions, goalFollowupType, showMenstrual, skipPersonalInfo, skipDiet, skipSymptoms, skipEnergy, skipSleep])
 
   const [genError, setGenError] = useState('')
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false)

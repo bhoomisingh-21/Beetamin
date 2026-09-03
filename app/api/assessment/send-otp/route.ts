@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { isValidLeadBodyMetrics, parseLeadSnapshot } from '@/lib/assessment-lead-labels'
 import {
   deliverOtp,
   generateOtpCode,
@@ -51,29 +52,29 @@ export async function POST(req: NextRequest) {
   const age = typeof body.age === 'string' ? body.age.trim().slice(0, 4) : String(body.age ?? '').slice(0, 4)
   const phoneRaw = typeof body.phone === 'string' ? body.phone : ''
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
-  const channel = body.channel === 'email' ? 'email' : 'phone'
+  const leadSnapshot = parseLeadSnapshot(body.leadSnapshot)
 
   if (!name) return NextResponse.json({ error: 'Please enter your first name.' }, { status: 400 })
   const ageNum = Number(age)
   if (!age || !Number.isFinite(ageNum) || ageNum < 10 || ageNum > 120) {
     return NextResponse.json({ error: 'Please enter a valid age.' }, { status: 400 })
   }
-
-  const phoneE164 = normalizeIndianPhone(phoneRaw)
-  if (channel === 'phone' && !phoneE164) {
-    return NextResponse.json({ error: 'Enter a valid 10-digit Indian mobile number.' }, { status: 400 })
-  }
-  if (channel === 'email' && (!email || !email.includes('@'))) {
+  if (!email || !email.includes('@')) {
     return NextResponse.json({ error: 'Enter a valid email to receive the code.' }, { status: 400 })
+  }
+  if (!isValidLeadBodyMetrics(leadSnapshot)) {
+    return NextResponse.json(
+      { error: 'Please enter gender, height (cm), and weight (kg).' },
+      { status: 400 },
+    )
   }
 
   const code = generateOtpCode()
-  const destination = channel === 'phone' ? phoneE164 : email
+  const phoneE164 = normalizeIndianPhone(phoneRaw)
 
   const delivered = await deliverOtp({
-    channel,
-    phoneE164: phoneE164 ?? undefined,
-    email: email || undefined,
+    channel: 'email',
+    email,
     code,
     purpose: 'assessment',
   })
@@ -82,38 +83,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: delivered.error, code: 'OTP_DELIVERY_FAILED' }, { status: 503 })
   }
 
-  const { error: insErr } = await supabaseAdmin.from('assessment_otp_challenges').insert({
+  const row: Record<string, unknown> = {
     session_id: sessionId,
-    channel,
-    destination: destination ?? email,
+    channel: 'email',
+    destination: email,
     code_hash: hashOtpCode(code),
     name,
-    email: email || null,
-    phone: phoneE164 ?? phoneRaw,
+    email,
+    phone: phoneE164 ?? (phoneRaw.trim() || null),
     age,
+    lead_snapshot: leadSnapshot,
     expires_at: otpExpiresAt(),
-  })
+  }
+
+  const { error: insErr } = await supabaseAdmin.from('assessment_otp_challenges').insert(row)
 
   if (insErr) {
     console.error('[assessment/send-otp] insert', insErr)
     if (insErr.code === '42P01') {
       return NextResponse.json(
         {
-          error: 'Verification storage is not ready.',
+          error: 'Verification storage is not ready. Apply the assessment OTP Supabase migrations.',
           code: 'OTP_TABLE_MISSING',
         },
         { status: 503 },
       )
     }
-    return NextResponse.json({ error: 'Could not start verification. Try again.' }, { status: 500 })
+    if (insErr.code === '42703') {
+      delete row.lead_snapshot
+      const { error: retryErr } = await supabaseAdmin.from('assessment_otp_challenges').insert(row)
+      if (retryErr) {
+        return NextResponse.json({ error: 'Could not start verification. Try again.' }, { status: 500 })
+      }
+    } else {
+      return NextResponse.json({ error: 'Could not start verification. Try again.' }, { status: 500 })
+    }
   }
 
   return NextResponse.json({
     ok: true,
-    channel,
-    destinationMasked:
-      channel === 'phone' && phoneE164
-        ? `+91 •••••${phoneE164.slice(-4)}`
-        : email.replace(/(.{2}).+(@.+)/, '$1••••$2'),
+    channel: 'email' as const,
+    destinationMasked: email.replace(/(.{2}).+(@.+)/, '$1••••$2'),
   })
 }

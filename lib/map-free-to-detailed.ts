@@ -35,6 +35,9 @@ export type MappedFreeToDetailed = {
   energy: string
   sleep: string
   symptoms: string[]
+  gender: string
+  heightCm: string
+  weightKg: string
 }
 
 function metaString(meta: Record<string, unknown> | null | undefined, key: string): string {
@@ -79,11 +82,20 @@ export function mapFreeMetaToDetailed(
 
   const uniqueSymptoms = [...new Set(symptoms)]
 
+  const genderRaw = metaString(meta, 'gender')
+  const gender =
+    genderRaw === 'male' || genderRaw === 'female' || genderRaw === 'other' ? genderRaw : ''
+  const heightCm = metaString(meta, 'heightCm')
+  const weightKg = metaString(meta, 'weightKg')
+
   return {
     diet: FREE_DIET_TO_DETAILED[dietKey] ?? '',
     energy: FREE_ENERGY_TO_DETAILED[energyKey] ?? '',
     sleep: FREE_SLEEP_TO_DETAILED[sleepKey] ?? '',
     symptoms: uniqueSymptoms.length > 0 ? uniqueSymptoms : [],
+    gender,
+    heightCm,
+    weightKg,
   }
 }
 

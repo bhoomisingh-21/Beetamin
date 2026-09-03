@@ -36,7 +36,10 @@ async function sendOtpEmail(
   purpose: 'checkout' | 'assessment' = 'checkout',
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.RESEND_API_KEY?.trim()
-  const from = process.env.RESEND_FROM?.trim() || 'TheBeetamin <noreply@thebeetamin.com>'
+  const from =
+    process.env.RESEND_FROM?.trim() ||
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    'TheBeetamin <noreply@thebeetamin.com>'
   if (!apiKey) {
     return { ok: false, error: 'Email service is not configured. Contact support@thebeetamin.com.' }
   }
