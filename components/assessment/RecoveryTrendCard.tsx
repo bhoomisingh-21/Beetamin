@@ -4,8 +4,8 @@ import { Heart } from 'lucide-react'
 
 export function RecoveryTrendCard() {
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-emerald-500/15 bg-emerald-500/8 px-4 py-4">
-      <p className="text-sm font-bold text-white leading-snug">Recovery is possible with the right plan.</p>
+    <div className="flex h-full flex-col rounded-2xl border border-emerald-500/15 bg-emerald-500/8 px-4 py-4 lg:px-6 lg:py-6">
+      <p className="text-sm font-bold text-white leading-snug lg:text-lg">Recovery is possible with the right plan.</p>
       <svg viewBox="0 0 220 90" className="mt-3 w-full flex-1" aria-hidden>
         <line x1="16" y1="74" x2="204" y2="74" stroke="rgba(16,185,129,0.2)" strokeWidth="2" />
         <path

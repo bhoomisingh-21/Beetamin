@@ -11,11 +11,11 @@ const TONE = {
 export function ImpactAreaCard({ area }: { area: ImpactVisual }) {
   const Icon = area.Icon
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-white/[0.06] bg-[#111810] px-3 py-4 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-400">
+    <div className="flex flex-col items-center rounded-2xl border border-white/[0.06] bg-[#111810] px-3 py-4 text-center lg:px-5 lg:py-6">
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-400 lg:h-14 lg:w-14">
         <Icon size={22} />
       </span>
-      <p className="mt-2.5 text-sm font-bold text-white">{area.title}</p>
+      <p className="mt-2.5 text-sm font-bold text-white lg:text-base">{area.title}</p>
       <div className="mt-2 flex gap-1">
         {Array.from({ length: 5 }).map((_, i) => (
           <span

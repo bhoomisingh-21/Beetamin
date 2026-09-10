@@ -221,19 +221,22 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0F0A] text-white">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0A0F0A]/90 px-4 py-3 backdrop-blur-md">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-[#0A0F0A]/90 px-4 py-3 backdrop-blur-md lg:px-10">
         <Link href="/assessment" className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition">
           <ChevronLeft size={16} />
           Retake
         </Link>
+        <p className="hidden text-xs font-bold uppercase tracking-[0.16em] text-gray-500 lg:block">
+          Health Assessment Report
+        </p>
         <Link href="/" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition">
           <Home size={15} />
           Home
         </Link>
       </div>
 
-      <div className={`px-4 md:px-6 pt-6 md:pt-10 pb-8 md:pb-12 ${showStickyOffer ? 'max-md:pb-28' : ''}`}>
-        <div className="mx-auto max-w-3xl">
+      <div className={`px-4 md:px-8 pt-6 md:pt-10 pb-8 md:pb-12 lg:px-10 lg:pt-12 ${showStickyOffer ? 'max-md:pb-28' : ''}`}>
+        <div className="mx-auto max-w-3xl lg:max-w-6xl">
           <FreeHealthReport
             name={displayName}
             score={deficiencyScore}
@@ -294,8 +297,8 @@ export default function ResultsPage() {
           </motion.div>
         </div>
       ) : (
-        <div className="px-4 md:px-6 pb-10 md:pb-20 max-md:pb-28">
-          <div className="max-w-3xl mx-auto space-y-6">
+        <div className="px-4 md:px-8 pb-10 md:pb-20 max-md:pb-28 lg:px-10">
+          <div className="mx-auto max-w-3xl space-y-6 lg:max-w-6xl">
             <LockedPremiumOffer
               onUnlock={() => void continueToDetailedAssessment()}
               unlocking={isContinuing}
