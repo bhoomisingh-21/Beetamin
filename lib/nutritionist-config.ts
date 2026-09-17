@@ -2,6 +2,7 @@
 export const ALLOWED_NUTRITIONIST_EMAILS: string[] = [
   'dtjyotidahiya@gmail.com',
   'nausheen1shaikh@gmail.com',
+  'iramkhan23497@gmail.com',
   // Occasional / backup portal access — keep is_active false unless clients should book them
   'sbhoomi23bca@student.mes.ac.in',
 ]
