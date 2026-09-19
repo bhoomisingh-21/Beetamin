@@ -86,35 +86,35 @@ begin;
 delete from public.diet_plans
 where nutritionist_id in (
   select id from public.nutritionists
-  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramkhan23497@gmail.com')
+  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramarif23497@gmail.com')
 );
 
 delete from public.client_documents
 where nutritionist_id in (
   select id from public.nutritionists
-  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramkhan23497@gmail.com')
+  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramarif23497@gmail.com')
 );
 
 delete from public.nutritionist_notes
 where nutritionist_id in (
   select id from public.nutritionists
-  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramkhan23497@gmail.com')
+  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramarif23497@gmail.com')
 );
 
 delete from public.appointments
 where nutritionist_id in (
   select id from public.nutritionists
-  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramkhan23497@gmail.com')
+  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramarif23497@gmail.com')
 );
 
 delete from public.availability
 where nutritionist_id in (
   select id from public.nutritionists
-  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramkhan23497@gmail.com')
+  where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramarif23497@gmail.com')
 );
 
 delete from public.nutritionists
-where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramkhan23497@gmail.com');
+where lower(email) not in ('dtjyotidahiya@gmail.com', 'nausheen1shaikh@gmail.com', 'iramarif23497@gmail.com');
 
 commit;
 
