@@ -589,6 +589,7 @@ export default function NutritionistClientProfileClient({
             <NutritionistDocumentsTab
               clientId={clientId}
               clientEmail={client.email.toLowerCase()}
+              clientName={client.name}
               documents={documents}
             />
           )}

@@ -54,7 +54,8 @@ function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { childre
   )
 }
 
-export function FullPlanCheckoutClient() {
+export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' | 'booster' }) {
+  const isBooster = plan === 'booster'
   const { isLoaded, isSignedIn, user } = useUser()
   const router = useRouter()
   const [step, setStep] = useState<Step>('details')
@@ -79,7 +80,11 @@ export function FullPlanCheckoutClient() {
   useEffect(() => {
     if (!isLoaded) return
     if (!isSignedIn) {
-      router.replace('/sign-in?redirect_after_auth=%2Fbooking%2Fcheckout')
+      router.replace(
+        isBooster
+          ? '/sign-in?redirect_after_auth=%2Fbooking%2Fcheckout%3Fplan%3Dbooster'
+          : '/sign-in?redirect_after_auth=%2Fbooking%2Fcheckout',
+      )
       return
     }
     setForm((f) => ({
@@ -87,7 +92,7 @@ export function FullPlanCheckoutClient() {
       name: f.name || user?.fullName?.trim() || user?.firstName?.trim() || '',
       email: f.email || user?.primaryEmailAddress?.emailAddress?.trim() || '',
     }))
-  }, [isLoaded, isSignedIn, user, router])
+  }, [isLoaded, isSignedIn, user, router, isBooster])
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -207,7 +212,7 @@ export function FullPlanCheckoutClient() {
       <div className="flex-1 px-4 py-10 max-w-xl mx-auto w-full">
         <div className="mb-8">
           <span className="inline-flex items-center gap-2 border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold tracking-widest uppercase rounded-full px-3 py-1">
-            Full Recovery Plan · ₹3,999
+            {isBooster ? 'Single Session · ₹499' : 'Full Recovery Plan · ₹3,999'}
           </span>
           <h1 className="mt-4 text-gray-900 font-black text-3xl">Complete your details</h1>
           <p className="mt-2 text-gray-500 text-sm leading-relaxed">
@@ -323,13 +328,14 @@ export function FullPlanCheckoutClient() {
                 </div>
               </div>
               <p className="text-gray-600 text-sm leading-relaxed">
-                You&apos;re ready for secure PayU checkout (₹3,999 one-time). Card, UPI, and net banking supported.
+                You&apos;re ready for secure PayU checkout ({isBooster ? '₹499 one-time' : '₹3,999 one-time'}). Card, UPI, and net banking supported.
               </p>
               <UpgradePlanButton
+                mode={isBooster ? 'booster' : 'upgrade'}
                 onError={setCheckoutError}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg rounded-2xl py-4 transition flex items-center justify-center gap-2"
               >
-                Continue to PayU — ₹3,999
+                Continue to PayU — {isBooster ? '₹499' : '₹3,999'}
                 <ArrowRight size={20} />
               </UpgradePlanButton>
               {checkoutError ? (

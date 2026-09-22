@@ -2,9 +2,17 @@ import { Resend } from 'resend'
 
 export type SendDietPlanEmailResult = { ok: true; id?: string } | { ok: false; error: string }
 
-export function sessionsDietPlanUrl(): string {
+function appOrigin(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.thebeetamin.com'
-  return `${base.replace(/\/$/, '')}/profile/diet-plan#top`
+  return base.replace(/\/$/, '')
+}
+
+export function sessionsDietPlanUrl(): string {
+  return `${appOrigin()}/profile/diet-plan#top`
+}
+
+export function clientDocumentsUrl(): string {
+  return `${appOrigin()}/profile/documents`
 }
 
 /** Sent when a nutritionist publishes a diet plan (CRM grid or PDF). */
@@ -121,6 +129,120 @@ export async function sendNutritionistDietPlanEmail(input: {
     return { ok: true, id: data?.id }
   } catch (e) {
     console.error('[sendNutritionistDietPlanEmail]', e)
+    return { ok: false, error: e instanceof Error ? e.message : 'Failed to send email' }
+  }
+}
+
+/** Sent when a nutritionist uploads a file for a client. */
+export async function sendNutritionistDocumentEmail(input: {
+  to: string
+  name: string
+  nutritionistName: string
+  fileName: string
+  downloadUrl?: string
+}): Promise<SendDietPlanEmailResult> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return { ok: false, error: 'Email service is not configured' }
+  }
+
+  const from =
+    process.env.RESEND_REPORTS_FROM_EMAIL ||
+    process.env.RESEND_FROM_EMAIL ||
+    'The Beetamin <hi@thebeetamin.com>'
+  const replyTo = process.env.RESEND_SUPPORT_EMAIL || 'support@thebeetamin.com'
+  const firstName = input.name.split(/\s+/)[0] || input.name
+  const viewUrl = clientDocumentsUrl()
+  const fileName = input.fileName.trim() || 'a document'
+
+  const resend = new Resend(apiKey)
+
+  const primaryCta = input.downloadUrl
+    ? `<table cellpadding="0" cellspacing="0" style="margin:0 auto 12px;">
+        <tr>
+          <td style="background:#10B981;border-radius:8px;text-align:center;">
+            <a href="${input.downloadUrl}" style="display:inline-block;padding:14px 28px;color:#000000;font-weight:bold;font-size:14px;text-decoration:none;">
+              Download file
+            </a>
+          </td>
+        </tr>
+      </table>
+      <table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+        <tr>
+          <td style="border:2px solid #10B981;border-radius:8px;text-align:center;">
+            <a href="${viewUrl}" style="display:inline-block;padding:12px 24px;color:#10B981;font-weight:bold;font-size:14px;text-decoration:none;">
+              View in your profile
+            </a>
+          </td>
+        </tr>
+      </table>`
+    : `<table cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+        <tr>
+          <td style="background:#10B981;border-radius:8px;text-align:center;">
+            <a href="${viewUrl}" style="display:inline-block;padding:14px 28px;color:#000000;font-weight:bold;font-size:14px;text-decoration:none;">
+              Open my documents
+            </a>
+          </td>
+        </tr>
+      </table>`
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from,
+      to: input.to,
+      replyTo,
+      subject: `New document from your nutritionist — ${fileName}`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8" /></head>
+<body style="margin:0;background:#f4f6f4;font-family:Georgia,'Times New Roman',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8e0;">
+          <tr>
+            <td style="padding:28px 32px 8px;text-align:center;border-bottom:3px solid #10B981;">
+              <p style="margin:0;font-size:18px;font-weight:bold;color:#10B981;letter-spacing:0.02em;">The Beetamin</p>
+              <p style="margin:8px 0 0;font-size:11px;color:#64748b;">Personalised Nutrition</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px;">
+              <p style="margin:0 0 16px;font-size:16px;color:#1a1a1a;">Hi ${firstName},</p>
+              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;">
+                Your nutritionist <strong>${input.nutritionistName}</strong> has shared a document with you — <strong>${fileName}</strong>.
+              </p>
+              <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#475569;">
+                You can download it from this email, or open it anytime from Documents in your profile.
+              </p>
+              ${primaryCta}
+              <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#334155;">
+                Warm wishes,<br/><span style="color:#10B981;font-weight:bold;">The Beetamin team</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px;background:#f8faf8;font-size:11px;color:#64748b;text-align:center;border-top:1px solid #e2e8e0;">
+              <a href="https://thebeetamin.com" style="color:#10B981;">thebeetamin.com</a>
+              · Reply to this email if you need any help
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+    })
+
+    if (error) {
+      console.error('[sendNutritionistDocumentEmail]', error)
+      return { ok: false, error: error.message || 'Failed to send email' }
+    }
+    return { ok: true, id: data?.id }
+  } catch (e) {
+    console.error('[sendNutritionistDocumentEmail]', e)
     return { ok: false, error: e instanceof Error ? e.message : 'Failed to send email' }
   }
 }

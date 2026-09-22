@@ -22,7 +22,7 @@ import type {
   PortalClientListRow,
   PortalHomePayload,
 } from '@/lib/nutritionist-types'
-import { sendDietPlanReadyEmail } from '@/lib/send-diet-plan-email'
+import { sendDietPlanReadyEmail, sendNutritionistDocumentEmail } from '@/lib/send-diet-plan-email'
 import {
   computeSlotStatus,
   isoTodayLocal,
@@ -906,6 +906,8 @@ export async function deleteClientDocument(
     const { error } = await supabaseAdmin.from('client_documents').delete().eq('id', docId)
     if (error) return { ok: false, error: error.message }
     revalidatePath(`/nutritionist/clients/${clientId}`)
+    revalidatePath('/profile/documents')
+    revalidatePath('/sessions')
     return { ok: true }
   } catch (e) {
     console.error('[deleteClientDocument]', e)
@@ -1001,7 +1003,33 @@ export async function uploadClientDocument(formData: FormData): Promise<{ ok: bo
       return { ok: false, error: insErr.message }
     }
 
+    if (!clientEmail.endsWith('@beetamin.internal')) {
+      try {
+        const { data: signed } = await supabaseAdmin.storage
+          .from('client-documents')
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 7)
+        const { data: clientRow } = await supabaseAdmin
+          .from('clients')
+          .select('name')
+          .eq('id', clientId)
+          .maybeSingle()
+        const res = await sendNutritionistDocumentEmail({
+          to: clientEmail,
+          name: (clientRow?.name as string) || 'there',
+          nutritionistName: nutritionist.name,
+          fileName: file.name,
+          downloadUrl: signed?.signedUrl,
+        })
+        if (!res.ok) console.error('[uploadClientDocument] email', res.error)
+      } catch (notifyErr) {
+        console.error('[uploadClientDocument] notify', notifyErr)
+      }
+    }
+
     revalidatePath(`/nutritionist/clients/${clientId}`)
+    revalidatePath('/profile/documents')
+    revalidatePath('/profile')
+    revalidatePath('/sessions')
     return { ok: true }
   } catch (e) {
     console.error('[uploadClientDocument]', e)

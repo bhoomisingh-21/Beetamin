@@ -16,6 +16,7 @@ import {
   User,
   ChevronDown,
   FileText,
+  Paperclip,
   UtensilsCrossed,
 } from 'lucide-react'
 import { getClientDashboard } from '@/lib/booking-actions'
@@ -158,6 +159,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
     paidReports: initialDashboard.paidReports ?? [],
     dietPlans: initialDashboard.dietPlans ?? [],
     mealPlans: initialDashboard.mealPlans ?? [],
+    clientDocuments: initialDashboard.clientDocuments ?? [],
     sessionBooking: initialDashboard.sessionBooking,
   })
   const [expandedNotesId, setExpandedNotesId] = useState<string | null>(null)
@@ -172,6 +174,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
       paidReports: initialDashboard.paidReports ?? [],
       dietPlans: initialDashboard.dietPlans ?? [],
       mealPlans: initialDashboard.mealPlans ?? [],
+      clientDocuments: initialDashboard.clientDocuments ?? [],
       sessionBooking: initialDashboard.sessionBooking,
     })
   }, [initialDashboard])
@@ -186,6 +189,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           paidReports: result.paidReports ?? [],
           dietPlans: result.dietPlans ?? [],
           mealPlans: result.mealPlans ?? [],
+          clientDocuments: result.clientDocuments ?? [],
           sessionBooking: result.sessionBooking,
         })
       })
@@ -216,6 +220,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
   const paidReports = data.paidReports
   const dietPlans = data.dietPlans
   const mealPlans = data.mealPlans
+  const clientDocuments = data.clientDocuments
   const hasDietPlans = dietPlans.length > 0 || mealPlans.length > 0
   const sessionBooking = data.sessionBooking
 
@@ -260,12 +265,15 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
 
   const blockingAppt = appointments.find((a) => a.status === 'pending' || a.status === 'confirmed')
 
-  const allSixSessionsComplete = useMemo(
-    () => [1, 2, 3, 4, 5, 6].every((n) => apptForSession(n)?.status === 'completed'),
-    [apptForSession, appointments],
+  const sessionSlotCount = Math.max(1, client?.sessions_total && client.sessions_total > 0 ? client.sessions_total : 6)
+  const sessionNumbers = Array.from({ length: sessionSlotCount }, (_, i) => i + 1)
+
+  const allSessionsComplete = useMemo(
+    () => Array.from({ length: sessionSlotCount }, (_, i) => i + 1).every((n) => apptForSession(n)?.status === 'completed'),
+    [apptForSession, appointments, sessionSlotCount],
   )
 
-  const planComplete = allSixSessionsComplete
+  const planComplete = allSessionsComplete
 
   const sessionBookable = (n: number) => {
     if (!canUseSessionBooking) return false
@@ -275,14 +283,14 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
     const a = apptForSession(n)
     if (a?.status === 'completed') return false
     if (a?.status === 'confirmed' || a?.status === 'pending') return false
-    return n >= 1 && n <= 6
+    return n >= 1 && n <= sessionSlotCount
   }
 
   const canBookNextSession = useMemo(() => {
     if (!canUseSessionBooking) return false
     if (!client || client.status !== 'active' || client.sessions_remaining <= 0) return false
     if (blockingAppt) return false
-    for (let n = 1; n <= 6; n++) {
+    for (let n = 1; n <= sessionSlotCount; n++) {
       if (!prevSessionCompleted(n)) continue
       const a = appointments.find((x) => x.session_number === n)
       if (a?.status === 'completed') continue
@@ -290,14 +298,14 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
       return true
     }
     return false
-  }, [client, appointments, blockingAppt, canUseSessionBooking])
+  }, [client, appointments, blockingAppt, canUseSessionBooking, sessionSlotCount])
 
   const nextBookableSessionNumber = useMemo(() => {
-    for (let n = 1; n <= 6; n++) {
+    for (let n = 1; n <= sessionSlotCount; n++) {
       if (sessionBookable(n)) return n
     }
     return null
-  }, [client, appointments, blockingAppt, apptForSession, canUseSessionBooking])
+  }, [client, appointments, blockingAppt, apptForSession, canUseSessionBooking, sessionSlotCount])
 
   const activeAppt = appointments.find((a) => a.status === 'pending' || a.status === 'confirmed')
   const confirmedAppts = appointments.filter((a) => a.status === 'confirmed')
@@ -446,6 +454,25 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
           </motion.div>
         )}
 
+        {clientDocuments.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-5 py-4"
+          >
+            <p className="text-sm text-emerald-100">
+              Your nutritionist has shared {clientDocuments.length === 1 ? 'a document' : `${clientDocuments.length} documents`} with you.
+            </p>
+            <Link
+              href="/profile/documents"
+              className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-emerald-400 hover:underline"
+            >
+              <Paperclip size={16} />
+              Open documents in Profile
+            </Link>
+          </motion.div>
+        )}
+
         {sortedPaidReports.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 14 }}
@@ -552,7 +579,7 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
             className="mt-6 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-5 text-center"
           >
             <p className="text-emerald-300 font-black text-lg md:text-xl leading-snug">
-              🎉 You&apos;ve completed all 6 sessions!
+              🎉 You&apos;ve completed all {sessionSlotCount} {sessionSlotCount === 1 ? 'session' : 'sessions'}!
             </p>
             <FullPlanBookingLink className="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-black hover:bg-emerald-400 transition">
               Start a New Plan
@@ -571,14 +598,19 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
                 🔒
               </div>
               <h2 className="text-white font-black text-xl leading-snug">
-                Sessions are part of the Full Recovery Plan
+                Book a nutritionist session
               </h2>
               <p className="text-gray-400 text-sm mt-4 leading-relaxed">
-                Nutrition sessions are included in the Full Recovery Plan (₹3,999). Your current plan includes
-                your personalised report only.
+                Nutrition sessions are included in the ₹3,999 Full Recovery Plan (6 sessions) or the ₹499 single session. Your current plan includes your personalised report only.
               </p>
               <FullPlanBookingLink className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-black text-black transition hover:bg-emerald-400">
-                Upgrade to Full Plan
+                Upgrade to Full Plan — ₹3,999
+              </FullPlanBookingLink>
+              <FullPlanBookingLink
+                plan="booster"
+                className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-emerald-400/40 bg-transparent px-6 py-3.5 text-sm font-black text-emerald-300 transition hover:bg-emerald-500/10"
+              >
+                Book 1 session — ₹499
               </FullPlanBookingLink>
             </div>
           </motion.div>
@@ -656,8 +688,8 @@ export default function SessionsPageClient({ initialDashboard }: SessionsPageCli
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-8">
-                {[1, 2, 3, 4, 5, 6].map((n) => {
+              <div className={`grid gap-4 mt-8 ${sessionSlotCount > 3 ? 'grid-cols-3 md:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                {sessionNumbers.map((n) => {
                   const appt = appointments.find((a) => a.session_number === n)
 
                   if (appt?.status === 'completed') {

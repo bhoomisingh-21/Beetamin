@@ -9,9 +9,8 @@ import {
   payuHostedActionUrl,
   payuMerchantConfigured,
 } from '@/lib/payment-app-base-url'
-import { giftedPlanMatchesPayment, grantGiftedFullPlan, grantGiftedReport } from '@/lib/gifted-access'
 import { requireFullPlanCheckoutVerification } from '@/lib/full-plan-checkout-profile'
-import { hasActiveFullPlanPurchase } from '@/lib/plan-access'
+import { giftedPlanMatchesPayment, grantGiftedFullPlan, grantGiftedReport } from '@/lib/gifted-access'
 import { resolveFreeAssessmentForCheckout } from '@/lib/resolve-free-assessment'
 import { reserveUpgradePurchase } from '@/lib/reserve-upgrade-purchase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
@@ -184,13 +183,10 @@ export async function POST(req: Request) {
   }
 
   if (mode === 'booster') {
-    const allowed = await hasActiveFullPlanPurchase(sessionUserId)
-    if (!allowed) {
+    const verification = await requireFullPlanCheckoutVerification(sessionUserId)
+    if (verification) {
       return NextResponse.json(
-        {
-          error: 'Booster is available only after purchasing the Core Transformation plan.',
-          code: 'BOOSTER_REQUIRES_FULL',
-        },
+        { error: verification.error, code: verification.code },
         { status: 403 },
       )
     }
@@ -198,7 +194,7 @@ export async function POST(req: Request) {
     const txnid = makePayUTxnId()
     const amountFormatted = `${rupeesServer.toFixed(2)}`
     const base = paymentAppBaseUrl()
-    const productinfo = 'Beetamin Booster Session'
+    const productinfo = 'Beetamin Single Session'
 
     const { data: purchaseRow, error: purchaseErr } = await supabaseAdmin
       .from('purchases')

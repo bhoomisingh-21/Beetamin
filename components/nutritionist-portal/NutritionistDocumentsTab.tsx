@@ -32,122 +32,154 @@ function formatUploaded(iso: string) {
 type Props = {
   clientId: string
   clientEmail: string
+  clientName: string
   documents: ClientDocumentDTO[]
 }
 
-export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: Props) {
+export function NutritionistDocumentsTab({
+  clientId,
+  clientEmail,
+  clientName,
+  documents,
+}: Props) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [drag, setDrag] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [progress, setProgress] = useState(0)
+  const [description, setDescription] = useState('')
+  const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const firstName = clientName.split(/\s+/)[0] || clientName
 
   async function download(docId: string) {
-    const { url, error } = await getSignedDocumentUrl(docId)
+    const { url, error: err } = await getSignedDocumentUrl(docId)
     if (!url) {
-      alert(error || 'Could not download')
+      alert(err || 'Could not download')
       return
     }
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
+  function pickFile(next: File | undefined | null) {
+    if (!next) return
+    setError('')
+    setFile(next)
+  }
+
   function doUpload() {
-    if (!file) return
+    if (!file) {
+      setError('Choose a file first, then tap Upload.')
+      inputRef.current?.click()
+      return
+    }
+    setError('')
     const fd = new FormData()
     fd.set('clientId', clientId)
     fd.set('clientEmail', clientEmail)
     fd.set('file', file)
-    setProgress(30)
+    if (description.trim()) fd.set('description', description.trim())
     start(async () => {
       const res = await uploadClientDocument(fd)
-      setProgress(100)
+      if (!res.ok) {
+        setError(res.error || 'Upload failed')
+        return
+      }
       setFile(null)
-      if (!res.ok) alert(res.error || 'Upload failed')
-      else router.refresh()
-      setTimeout(() => setProgress(0), 400)
+      setDescription('')
+      if (inputRef.current) inputRef.current.value = ''
+      router.refresh()
     })
   }
 
   return (
     <div className="space-y-8">
-      <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') inputRef.current?.click()
-        }}
-        onDragOver={(e) => {
-          e.preventDefault()
-          setDrag(true)
-        }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          e.preventDefault()
-          setDrag(false)
-          const f = e.dataTransfer.files?.[0]
-          if (f) setFile(f)
-        }}
-        onClick={() => inputRef.current?.click()}
-        className={`cursor-pointer rounded-2xl border-2 border-dashed px-6 py-12 text-center transition ${
-          drag ? 'border-emerald-400 bg-emerald-50' : 'border-slate-300 bg-slate-50'
-        }`}
-      >
-        <Upload className={`mx-auto ${portal.textMuted}`} size={36} />
-        <p className={`mt-3 font-semibold ${portal.textH}`}>Drop files here or click to browse</p>
-        <p className={`mt-1 text-xs ${portal.textMuted}`}>PDF, DOC/DOCX, images · max 10MB</p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf,.doc,.docx,image/*"
-          className="hidden"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-      </div>
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <p className={`text-sm font-bold ${portal.textH}`}>Upload a document</p>
+        <p className={`mt-1 text-xs ${portal.textMuted}`}>
+          {firstName} will see this file in their profile and get an email with a download link.
+        </p>
 
-      {file && (
-        <div className={`${portal.cardMuted} p-4`}>
-          <p className={`text-sm font-semibold ${portal.textH}`}>{file.name}</p>
-          <p className={`text-xs ${portal.textMuted}`}>{(file.size / 1024).toFixed(0)} KB</p>
-          <div className="mt-3 flex gap-3">
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional note (e.g. Week 2 lab report)"
+          rows={2}
+          className={`mt-4 ${portal.input}`}
+        />
+
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDrag(true)
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            setDrag(false)
+            pickFile(e.dataTransfer.files?.[0])
+          }}
+          className={`mt-3 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition ${
+            drag ? 'border-emerald-400 bg-emerald-50' : 'border-slate-300 bg-white'
+          }`}
+        >
+          <Upload className={`mx-auto ${portal.textMuted}`} size={32} />
+          <p className={`mt-3 font-semibold ${portal.textH}`}>
+            {file ? file.name : 'Drop a file here'}
+          </p>
+          <p className={`mt-1 text-xs ${portal.textMuted}`}>
+            {file ? `${(file.size / 1024).toFixed(0)} KB` : 'PDF, Word, or image · max 10MB'}
+          </p>
+          <label
+            htmlFor="nutritionist-client-doc-upload"
+            className={`mt-4 inline-flex cursor-pointer items-center justify-center px-5 py-2.5 ${portal.btnOutline}`}
+          >
+            Choose file
+          </label>
+          <input
+            id="nutritionist-client-doc-upload"
+            ref={inputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,image/*"
+            className="sr-only"
+            onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={doUpload}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 ${portal.btnPrimary} disabled:opacity-50`}
+          >
+            {pending ? <Loader2 className="animate-spin" size={18} /> : 'Upload & share with client'}
+          </button>
+          {file ? (
             <button
               type="button"
-              disabled={pending}
-              onClick={(e) => {
-                e.stopPropagation()
-                doUpload()
-              }}
-              className={`px-5 py-2.5 ${portal.btnPrimary} disabled:opacity-50`}
-            >
-              {pending ? <Loader2 className="animate-spin" size={18} /> : 'Upload'}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
+              onClick={() => {
                 setFile(null)
+                if (inputRef.current) inputRef.current.value = ''
               }}
               className={`px-4 py-2.5 text-sm ${portal.btnGhost}`}
             >
               Clear
             </button>
-          </div>
-          {progress > 0 && (
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
-              <div
-                className="h-full bg-emerald-600 transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          )}
+          ) : null}
         </div>
-      )}
+
+        {error ? (
+          <p className="mt-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
+      </div>
 
       {documents.length === 0 ? (
         <div className={`${portal.cardEmpty} py-12`}>
           <p className={`font-semibold ${portal.textH}`}>No documents yet</p>
           <p className={`mt-2 text-sm ${portal.textMuted}`}>
-            Upload intake forms, lab reports, or any relevant documents for this client.
+            Upload intake forms, lab reports, or any relevant documents for {firstName}.
           </p>
         </div>
       ) : (
@@ -184,6 +216,9 @@ export function NutritionistDocumentsTab({ clientId, clientEmail, documents }: P
                   )}
                   <span>{formatUploaded(doc.uploaded_at)}</span>
                   {doc.file_size_kb != null && <span>{doc.file_size_kb} KB</span>}
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-700">
+                    Visible to client
+                  </span>
                 </div>
               </div>
               <div className="flex shrink-0 gap-2">

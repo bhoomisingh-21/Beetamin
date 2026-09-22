@@ -47,7 +47,7 @@ async function sendOtpEmail(
   const intro =
     purpose === 'assessment'
       ? 'Use this code to securely view your personalized health assessment results:'
-      : 'Use this code to continue your ₹3,999 Full Recovery Plan purchase:'
+      : 'Use this code to continue your TheBeetamin purchase:'
   const heading = purpose === 'assessment' ? 'Verify to see your results' : 'Verify before checkout'
 
   const resend = new Resend(apiKey)

@@ -89,9 +89,9 @@ export async function saveFullPlanCheckoutProfile(
     plan_start_date: start.toISOString().split('T')[0],
     plan_end_date: end.toISOString().split('T')[0],
     status: 'active',
-    sessions_total: 6,
+    sessions_total: 0,
     sessions_used: 0,
-    sessions_remaining: 6,
+    sessions_remaining: 0,
   })
 
   if (error) {

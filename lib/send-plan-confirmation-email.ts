@@ -36,6 +36,17 @@ export async function sendFullPlanConfirmationEmail(input: {
     }
   })()
 
+  const planLabel =
+    input.sessionsTotal === 1 ? 'Single Session' : '90-Day Core Transformation'
+  const planIntro =
+    input.sessionsTotal === 1
+      ? 'Your payment is confirmed and your <strong>single nutritionist session</strong> is now active. You can book it from your sessions page.'
+      : 'Your payment is confirmed and your <strong>90-Day Core Transformation</strong> is now active. Welcome aboard — we\'re excited to support your recovery.'
+  const sessionsLine =
+    input.sessionsTotal === 1
+      ? '<li><strong>1 live nutritionist session</strong></li>'
+      : `<li><strong>${input.sessionsTotal} live nutritionist sessions</strong> over 90 days</li>`
+
   const resend = new Resend(apiKey)
 
   try {
@@ -43,7 +54,10 @@ export async function sendFullPlanConfirmationEmail(input: {
       from,
       to: input.to,
       replyTo,
-      subject: 'Welcome to The Core Transformation ✓ — The Beetamin',
+      subject:
+        input.sessionsTotal === 1
+          ? 'Your session is ready ✓ — The Beetamin'
+          : 'Welcome to The Core Transformation ✓ — The Beetamin',
       html: `
 <!DOCTYPE html>
 <html>
@@ -63,12 +77,12 @@ export async function sendFullPlanConfirmationEmail(input: {
             <td style="padding:28px 32px;">
               <p style="margin:0 0 16px;font-size:16px;color:#1a1a1a;">Hi ${firstName},</p>
               <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;">
-                Your payment is confirmed and your <strong>90-Day Core Transformation</strong> is now active. Welcome aboard — we're excited to support your recovery.
+                ${planIntro}
               </p>
               <div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;">
-                <p style="margin:0 0 10px;font-size:12px;font-weight:bold;color:#166534;">Your plan</p>
+                <p style="margin:0 0 10px;font-size:12px;font-weight:bold;color:#166534;">${planLabel}</p>
                 <ul style="margin:0;padding-left:18px;color:#334155;font-size:13px;line-height:1.7;">
-                  <li><strong>${input.sessionsTotal} live nutritionist sessions</strong> over 90 days</li>
+                  ${sessionsLine}
                   <li>Personalised diet plan from your nutritionist</li>
                   <li>Progress tracking &amp; check-ins</li>
                   <li>Plan valid until <strong>${planEndPretty}</strong></li>

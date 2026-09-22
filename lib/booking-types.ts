@@ -81,6 +81,23 @@ export type ProgressLogRow = {
   sleep_quality?: string | null
 }
 
+export type DietPlanCustomerDTO = {
+  id: string
+  title: string
+  file_name: string
+  published_at: string
+  nutritionistName: string | null
+}
+
+export type ClientDocumentCustomerDTO = {
+  id: string
+  file_name: string
+  description: string | null
+  file_type: string | null
+  uploaded_at: string
+  nutritionistName: string | null
+}
+
 export type DashboardBundle = {
   client: ClientRow | null
   appointments: AppointmentRow[]
@@ -96,14 +113,7 @@ export type DashboardBundle = {
   }
   dietPlans?: DietPlanCustomerDTO[]
   mealPlans?: import('@/lib/meal-plan-types').MealPlanCustomerDTO[]
-}
-
-export type DietPlanCustomerDTO = {
-  id: string
-  title: string
-  file_name: string
-  published_at: string
-  nutritionistName: string | null
+  clientDocuments?: ClientDocumentCustomerDTO[]
 }
 
 export type ClientSessionsDashboard = {
@@ -114,5 +124,6 @@ export type ClientSessionsDashboard = {
   recoveryReportGenerating: { report_id: string } | null
   dietPlans: DietPlanCustomerDTO[]
   mealPlans: import('@/lib/meal-plan-types').MealPlanCustomerDTO[]
+  clientDocuments: ClientDocumentCustomerDTO[]
   sessionBooking: SessionBookingAccess
 }

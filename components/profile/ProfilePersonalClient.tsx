@@ -17,6 +17,7 @@ import {
   X,
   Zap,
   UtensilsCrossed,
+  Paperclip,
 } from 'lucide-react'
 import { getDashboardBundle, hydrateClientProfileFromMeta, updateClientProfile } from '@/lib/booking-actions'
 import type { ClientRow, DashboardBundle } from '@/lib/booking-types'
@@ -137,9 +138,10 @@ export default function ProfilePersonalClient({
 
   if (!user) return null
 
-  const { client, paidReports, dietPlans = [], mealPlans = [] } = bundle
+  const { client, paidReports, dietPlans = [], mealPlans = [], clientDocuments = [] } = bundle
   const profileFields = resolveClientProfileFields(client)
   const hasDietPlans = dietPlans.length > 0 || mealPlans.length > 0
+  const hasDocuments = clientDocuments.length > 0
   const profileContactComplete = clientProfileContactComplete(client)
 
   const displayName =
@@ -344,6 +346,16 @@ export default function ProfilePersonalClient({
             >
               <UtensilsCrossed className="h-5 w-5 shrink-0" aria-hidden />
               View My Diet Plan
+              <ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" aria-hidden />
+            </Link>
+          ) : null}
+          {hasDocuments ? (
+            <Link
+              href="/profile/documents"
+              className="group inline-flex flex-1 items-center justify-center gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/10 py-4 text-center text-sm font-bold text-emerald-300 transition hover:bg-emerald-500/15"
+            >
+              <Paperclip className="h-5 w-5 shrink-0" aria-hidden />
+              View Documents
               <ArrowRight className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5" aria-hidden />
             </Link>
           ) : null}

@@ -35,6 +35,8 @@ export function UpgradePlanButton({
     onError?.('')
     if (mode === 'upgrade') {
       trackEvent('payment_initiated', { plan: 'full_plan', amount: 3999 })
+    } else if (mode === 'booster') {
+      trackEvent('payment_initiated', { plan: 'booster', amount: 499 })
     }
     try {
       const res = await fetch('/api/payment/initiate', {
@@ -50,7 +52,8 @@ export function UpgradePlanButton({
       }
 
       if (res.status === 403 && body.code === 'CHECKOUT_VERIFICATION_REQUIRED') {
-        window.location.href = '/booking/checkout'
+        window.location.href =
+          mode === 'booster' ? '/booking/checkout?plan=booster' : '/booking/checkout'
         return
       }
 

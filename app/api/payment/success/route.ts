@@ -193,12 +193,32 @@ export async function POST(req: NextRequest) {
         return NextResponse.redirect(`${base}/sessions?error=payment_failed`, { status: 302 })
       }
 
+      const now = new Date()
+      const endDate = new Date(now)
+      endDate.setMonth(endDate.getMonth() + 3)
+      const email =
+        (p.email ?? '').trim().toLowerCase() ||
+        `noemail_${userId.slice(-14)}@beetamin.internal`
+      const name = (p.firstname ?? '').trim() || 'Patient'
+      const phone = (p.phone ?? '').trim()
+      const hasRealEmail = !email.endsWith('@beetamin.internal')
+
+      const { data: priorBooster } = await supabaseAdmin
+        .from('purchases')
+        .select('status')
+        .eq('id', rowPk)
+        .eq('user_id', userId)
+        .eq('txnid', txnid)
+        .eq('plan', 'booster')
+        .maybeSingle()
+      const boosterWasAlreadyActive = priorBooster?.status === 'active'
+
       const { error: boosterErr } = await supabaseAdmin
         .from('purchases')
         .update({
           status: 'active',
           payment_id: mihpayid || null,
-          updated_at: new Date().toISOString(),
+          updated_at: now.toISOString(),
           sessions_total: 1,
           sessions_used: 0,
         })
@@ -212,7 +232,100 @@ export async function POST(req: NextRequest) {
         return NextResponse.redirect(`${base}/sessions?error=server_error`, { status: 302 })
       }
 
-      return NextResponse.redirect(`${base}/booking`, { status: 302 })
+      const { data: existingClient } = await supabaseAdmin
+        .from('clients')
+        .select('id, sessions_total, sessions_remaining, sessions_used, plan_end_date')
+        .eq('clerk_user_id', userId)
+        .maybeSingle()
+
+      const { data: fullPurchase } = await supabaseAdmin
+        .from('purchases')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('plan', 'full')
+        .eq('status', 'active')
+        .maybeSingle()
+
+      const hasFull = !!fullPurchase?.id
+      const currentTotal = Number(existingClient?.sessions_total ?? 0)
+      const currentRemaining = Number(existingClient?.sessions_remaining ?? 0)
+      const currentUsed = Number(existingClient?.sessions_used ?? 0)
+
+      const clientPatch = hasFull
+        ? {
+            status: 'active' as const,
+            sessions_total: currentTotal + (boosterWasAlreadyActive ? 0 : 1),
+            sessions_remaining: currentRemaining + (boosterWasAlreadyActive ? 0 : 1),
+            sessions_used: currentUsed,
+            ...(phone ? { phone } : {}),
+          }
+        : {
+            clerk_user_id: userId,
+            name,
+            email,
+            phone,
+            plan_start_date: now.toISOString().split('T')[0],
+            plan_end_date: endDate.toISOString().split('T')[0],
+            status: 'active' as const,
+            sessions_total: 1,
+            sessions_used: 0,
+            sessions_remaining: 1,
+          }
+
+      const clientResult = existingClient?.id
+        ? await supabaseAdmin
+            .from('clients')
+            .update(
+              hasFull
+                ? clientPatch
+                : {
+                    plan_start_date: now.toISOString().split('T')[0],
+                    plan_end_date: endDate.toISOString().split('T')[0],
+                    status: 'active',
+                    sessions_total: 1,
+                    sessions_used: 0,
+                    sessions_remaining: 1,
+                    ...(phone ? { phone } : {}),
+                  },
+            )
+            .eq('id', existingClient.id)
+        : await supabaseAdmin.from('clients').upsert(
+            {
+              clerk_user_id: userId,
+              name,
+              email,
+              phone,
+              plan_start_date: now.toISOString().split('T')[0],
+              plan_end_date: endDate.toISOString().split('T')[0],
+              status: 'active',
+              sessions_total: 1,
+              sessions_used: 0,
+              sessions_remaining: 1,
+            },
+            { onConflict: 'email' },
+          )
+
+      if (clientResult.error) {
+        console.error('[payment/success] activate booster client', clientResult.error)
+      }
+
+      if (!boosterWasAlreadyActive && hasRealEmail) {
+        waitUntil(
+          sendFullPlanConfirmationEmail({
+            to: email,
+            name,
+            sessionsTotal: hasFull ? currentTotal + 1 : 1,
+            planEndDate: hasFull
+              ? String(existingClient?.plan_end_date ?? endDate.toISOString().split('T')[0])
+              : endDate.toISOString().split('T')[0],
+            bookingUrl: `${base}/booking/new`,
+          }).then((res) => {
+            if (!res.ok) console.error('[payment/success] booster confirmation email', res.error)
+          }),
+        )
+      }
+
+      return NextResponse.redirect(`${base}/booking?booster_payment_success=1`, { status: 302 })
     }
 
     // ── Report modes: new / retake / regenerate ───────────────────────────────

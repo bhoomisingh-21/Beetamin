@@ -5,7 +5,6 @@ import { useUser } from "@clerk/nextjs";
 import { CheckCircle, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { FullPlanBookingLink } from "@/components/payment/FullPlanBookingLink";
-import { UpgradePlanButton } from "@/components/payment/UpgradePlanButton";
 
 const CORE_FEATURES = [
   "6 Expert Nutrition Sessions",
@@ -163,19 +162,19 @@ export default function PricingSection({ hasFullPlan }: Props) {
           </ul>
 
           {isLoaded && isSignedIn ? (
-            <UpgradePlanButton
-              mode="booster"
+            <FullPlanBookingLink
+              plan="booster"
               className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
             >
               Book a Single Session — ₹499
-            </UpgradePlanButton>
+            </FullPlanBookingLink>
           ) : (
-            <Link
-              href="/sessions"
+            <a
+              href="/sign-up?redirect_after_auth=%2Fbooking%2Fcheckout%3Fplan%3Dbooster"
               className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2 text-center"
             >
               Book a Single Session — ₹499
-            </Link>
+            </a>
           )}
         </motion.div>
       </div>

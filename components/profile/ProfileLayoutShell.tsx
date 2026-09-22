@@ -7,6 +7,7 @@ import {
   FileText,
   FlaskConical,
   LayoutDashboard,
+  Paperclip,
   Target,
   TrendingUp,
   UtensilsCrossed,
@@ -18,6 +19,7 @@ import { sidebarBg, textPrimary, textSecondary } from '@/components/profile/prof
 const NAV = [
   { href: '/profile', label: 'Overview', Icon: LayoutDashboard },
   { href: '/profile/diet-plan', label: 'Diet Plan', Icon: UtensilsCrossed },
+  { href: '/profile/documents', label: 'Documents', Icon: Paperclip },
   { href: '/profile/deficiency', label: 'Deficiency', Icon: FlaskConical },
   { href: '/profile/reports', label: 'Reports', Icon: FileText },
   { href: '/profile/progress', label: 'Progress', Icon: TrendingUp },

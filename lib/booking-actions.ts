@@ -9,6 +9,7 @@ import { supabaseAdmin } from './supabase-admin'
 import { Resend } from 'resend'
 import type {
   AppointmentRow,
+  ClientDocumentCustomerDTO,
   ClientRow,
   ClientSessionsDashboard,
   CreateClientProfileResult,
@@ -41,6 +42,77 @@ export async function getClientByClerkId(clerkUserId: string): Promise<ClientRow
     console.error('[getClientByClerkId]', e)
     return null
   }
+}
+
+function mapSharedDocuments(
+  rows: {
+    id: unknown
+    file_name: unknown
+    description?: unknown
+    file_type?: unknown
+    uploaded_at: unknown
+    nutritionistName?: string | null
+  }[],
+): ClientDocumentCustomerDTO[] {
+  return rows.map((d) => ({
+    id: String(d.id),
+    file_name: String(d.file_name),
+    description: d.description != null ? String(d.description) : null,
+    file_type: d.file_type != null ? String(d.file_type) : null,
+    uploaded_at: String(d.uploaded_at),
+    nutritionistName: d.nutritionistName ?? null,
+  }))
+}
+
+async function loadClientSharedDocuments(clientId: string, clientEmail: string) {
+  const email = clientEmail.toLowerCase().trim()
+  const cols = 'id, file_name, description, file_type, uploaded_at, nutritionist_id'
+
+  const [byIdRes, byEmailRes] = await Promise.all([
+    supabaseAdmin.from('client_documents').select(cols).eq('client_id', clientId),
+    email
+      ? supabaseAdmin.from('client_documents').select(cols).eq('client_email', email)
+      : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
+  ])
+
+  if (byIdRes.error) console.error('[loadClientSharedDocuments] id', byIdRes.error)
+  if ('error' in byEmailRes && byEmailRes.error) {
+    console.error('[loadClientSharedDocuments] email', byEmailRes.error)
+  }
+
+  const merged = new Map<string, Record<string, unknown>>()
+  for (const row of [...(byIdRes.data || []), ...((byEmailRes.data || []) as Record<string, unknown>[])]) {
+    const id = String(row.id ?? '')
+    if (id) merged.set(id, row)
+  }
+
+  const raw = [...merged.values()].sort((a, b) => {
+    const ta = new Date(String(a.uploaded_at ?? 0)).getTime()
+    const tb = new Date(String(b.uploaded_at ?? 0)).getTime()
+    return tb - ta
+  })
+
+  const nutIds = [
+    ...new Set(raw.map((r) => String(r.nutritionist_id ?? '')).filter((id) => id.length > 0)),
+  ]
+  const nameByNut: Record<string, string> = {}
+  if (nutIds.length > 0) {
+    const { data: nuts } = await supabaseAdmin.from('nutritionists').select('id, name').in('id', nutIds)
+    for (const n of nuts ?? []) {
+      nameByNut[String(n.id)] = String(n.name)
+    }
+  }
+
+  return mapSharedDocuments(
+    raw.map((r) => ({
+      id: r.id,
+      file_name: r.file_name,
+      description: r.description,
+      file_type: r.file_type,
+      uploaded_at: r.uploaded_at,
+      nutritionistName: nameByNut[String(r.nutritionist_id ?? '')] ?? null,
+    })),
+  )
 }
 
 export async function checkClientEligibility(clerkUserId: string) {
@@ -267,7 +339,7 @@ export async function requestAppointment(data: {
   const bookingAccess = await getSessionBookingAccess(userId)
   if (!bookingAccess.allowed) {
     throw new Error(
-      'Session booking is included in the Full Recovery Plan (₹3,999). Your current plan includes your personalised report only.',
+      'Session booking is included in the ₹3,999 Full Recovery Plan or the ₹499 single session. Your current plan includes your personalised report only.',
     )
   }
 
@@ -403,6 +475,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
     recoveryReportGenerating: null,
     dietPlans: [],
     mealPlans: [],
+    clientDocuments: [],
     sessionBooking,
   }
   try {
@@ -485,6 +558,8 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
       nutritionist_name: nutNameMap[String(r.nutritionist_id)] ?? null,
     }))
 
+    const clientDocuments = await loadClientSharedDocuments(client.id, client.email)
+
     return {
       client,
       appointments: appointments || [],
@@ -497,6 +572,7 @@ export async function getClientDashboard(clerkUserId: string): Promise<ClientSes
         : null,
       dietPlans,
       mealPlans,
+      clientDocuments,
       sessionBooking,
     }
   } catch (e) {
@@ -624,6 +700,7 @@ const EMPTY_DASHBOARD_BUNDLE: DashboardBundle = {
   purchaseSessions: undefined,
   dietPlans: [],
   mealPlans: [],
+  clientDocuments: [],
 }
 
 /** Copy quiz / Clerk contact fields onto the client row when top-level columns are empty. */
@@ -723,6 +800,7 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
 
     let dietPlans: DashboardBundle['dietPlans'] = []
     let mealPlans: DashboardBundle['mealPlans'] = []
+    let clientDocuments: DashboardBundle['clientDocuments'] = []
 
     if (client) {
       const { data: dietRows } = await supabaseAdmin
@@ -771,6 +849,8 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
         published_at: String(r.published_at),
         nutritionist_name: nutNameMap[String(r.nutritionist_id)] ?? null,
       }))
+
+      clientDocuments = await loadClientSharedDocuments(client.id, client.email)
     }
 
     const detailedIds = paidReports.map((p) => p.assessment_id).filter(Boolean) as string[]
@@ -796,6 +876,7 @@ export async function getDashboardBundle(clerkUserId: string): Promise<Dashboard
       purchaseSessions,
       dietPlans,
       mealPlans,
+      clientDocuments,
     }
   } catch (e) {
     console.error('[getDashboardBundle]', e)

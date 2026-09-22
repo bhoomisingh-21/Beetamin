@@ -22,11 +22,17 @@ export function BookingNewLocked() {
           </div>
           <h1 className="mt-5 text-gray-900 font-black text-xl sm:text-2xl tracking-tight">Sessions not included</h1>
           <p className="mt-3 text-gray-600 text-sm leading-relaxed">
-            Session booking is included in the Full Recovery Plan (₹3,999). Your ₹39 plan includes your personalised
+            Session booking is included in the ₹3,999 Full Recovery Plan and the ₹499 single session. Your ₹39 plan includes your personalised
             report only.
           </p>
           <FullPlanBookingLink className="mt-8 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm py-3.5 transition shadow-sm">
-            Upgrade to Full Plan
+            Upgrade to Full Plan — ₹3,999
+          </FullPlanBookingLink>
+          <FullPlanBookingLink
+            plan="booster"
+            className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-800 font-bold text-sm py-3.5 transition hover:bg-emerald-50"
+          >
+            Book 1 session — ₹499
           </FullPlanBookingLink>
           <p className="mt-4 text-xs text-gray-400">
             Enter your details and verify your phone before secure PayU checkout.

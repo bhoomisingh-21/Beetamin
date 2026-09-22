@@ -53,6 +53,9 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
     if (new URLSearchParams(window.location.search).get('full_plan_payment_success') === '1') {
       trackEvent('full_plan_payment_success', { amount: 3999 })
     }
+    if (new URLSearchParams(window.location.search).get('booster_payment_success') === '1') {
+      trackEvent('booster_payment_success', { amount: 499 })
+    }
   }, [])
 
   useEffect(() => {
