@@ -8,8 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { getClientAssessmentFlags } from "@/lib/booking-actions";
 
-const BOOKING_SIGN_UP = "/sign-up?redirect_after_auth=%2Fbooking%2Fcheckout";
-
 type AssessmentFlags = Awaited<ReturnType<typeof getClientAssessmentFlags>>;
 
 const TICKER = ["Vitamin D", "Iron", "B12", "Omega-3"];
@@ -67,8 +65,6 @@ export default function Hero() {
     : hasPaidReport ? "Open My PDF Report"
     : activeFlags.hasFreeAssessment ? "View My Free Report"
     : "Take Your Free Assessment";
-
-  const bookingHref = isSignedIn ? "/booking/checkout" : BOOKING_SIGN_UP;
 
   return (
     <>
@@ -249,10 +245,10 @@ export default function Hero() {
                 </a>
 
                 <a
-                  href={bookingHref}
+                  href="#pricing"
                   className="hero-plan-highlight inline-flex w-full lg:flex-1 lg:min-w-0 items-center justify-center gap-2 font-black rounded-2xl px-5 lg:px-7 py-4 text-sm whitespace-nowrap transition-all duration-200 active:scale-[0.97] border-2 border-emerald-400 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
                 >
-                  <span className="truncate">Book ₹3,999 Consultation</span>
+                  <span className="truncate">Book session</span>
                   <ArrowRight size={14} className="shrink-0" />
                 </a>
               </motion.div>

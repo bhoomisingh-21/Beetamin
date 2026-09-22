@@ -29,7 +29,7 @@ export default function PricingSection({ hasFullPlan }: Props) {
   const { isLoaded, isSignedIn } = useUser();
 
   return (
-    <section className="bg-[#050B0D] py-12 sm:py-24 px-4 sm:px-6 overflow-x-hidden" id="pricing">
+    <section className="scroll-mt-20 bg-[#050B0D] py-12 sm:py-24 px-4 sm:px-6 overflow-x-hidden" id="pricing">
 
       <div className="text-center">
         <h2 className="text-white font-black text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.2]">
