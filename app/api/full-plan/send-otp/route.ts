@@ -30,10 +30,7 @@ export async function POST(req: Request) {
   }
 
   const o = body && typeof body === 'object' ? (body as Record<string, unknown>) : null
-  const channel = o?.channel === 'email' ? 'email' : o?.channel === 'phone' ? 'phone' : null
-  if (!channel) {
-    return NextResponse.json({ error: 'channel must be phone or email.' }, { status: 400 })
-  }
+  const channel = o?.channel === 'phone' ? 'phone' : 'email'
 
   const profile = parseFullPlanCheckoutProfile(body)
   if (!profile) {

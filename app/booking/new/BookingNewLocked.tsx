@@ -35,7 +35,7 @@ export function BookingNewLocked() {
             Book 1 session — ₹499
           </FullPlanBookingLink>
           <p className="mt-4 text-xs text-gray-400">
-            Enter your details and verify your phone before secure PayU checkout.
+            Enter your details and verify your email before secure PayU checkout.
           </p>
         </div>
       </div>

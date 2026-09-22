@@ -278,7 +278,7 @@ export default function BookingPageClient({ canScheduleSessions }: Props) {
               )}
 
               <p className="text-gray-500 text-xs mt-3 text-center">
-                You&apos;ll enter details &amp; verify your phone before PayU checkout.
+                You&apos;ll enter details and verify your email before PayU checkout.
               </p>
 
               <p className="text-gray-400 text-[10px] sm:text-xs mt-3 text-center whitespace-nowrap max-md:tracking-tight">

@@ -59,7 +59,6 @@ export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' 
   const { isLoaded, isSignedIn, user } = useUser()
   const router = useRouter()
   const [step, setStep] = useState<Step>('details')
-  const [verifyChannel, setVerifyChannel] = useState<'phone' | 'email'>('phone')
   const [otpCode, setOtpCode] = useState('')
   const [otpDestination, setOtpDestination] = useState('')
   const [busy, setBusy] = useState(false)
@@ -127,7 +126,7 @@ export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' 
       const res = await fetch('/api/full-plan/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...profilePayload(), channel: verifyChannel }),
+        body: JSON.stringify({ ...profilePayload(), channel: 'email' }),
       })
       const json = (await res.json().catch(() => ({}))) as {
         error?: string
@@ -135,15 +134,9 @@ export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' 
         code?: string
       }
       if (!res.ok) {
-        if (json.code === 'OTP_DELIVERY_FAILED' && verifyChannel === 'phone') {
-          setVerifyChannel('email')
-          setError(`${json.error ?? 'SMS failed.'} Switched to email verification — tap Send code again.`)
-          setBusy(false)
-          return
-        }
         throw new Error(json.error || 'Could not send verification code.')
       }
-      setOtpDestination(json.destinationMasked || (verifyChannel === 'phone' ? 'your phone' : form.email))
+      setOtpDestination(json.destinationMasked || form.email)
       setStep('verify')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not send verification code.')
@@ -216,7 +209,7 @@ export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' 
           </span>
           <h1 className="mt-4 text-gray-900 font-black text-3xl">Complete your details</h1>
           <p className="mt-2 text-gray-500 text-sm leading-relaxed">
-            Step {step === 'details' ? 1 : step === 'verify' ? 2 : 3} of 3 — verify your contact, then secure PayU checkout.
+            Step {step === 'details' ? 1 : step === 'verify' ? 2 : 3} of 3 — verify your email, then secure PayU checkout.
           </p>
         </div>
 
@@ -266,25 +259,10 @@ export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' 
               </div>
 
               <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm text-emerald-900">
-                <p className="font-semibold">Verify before payment</p>
-                <p className="mt-1 text-emerald-800/90">We&apos;ll send a 6-digit code to your phone (or email if SMS isn&apos;t available).</p>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setVerifyChannel('phone')}
-                  className={`flex-1 rounded-xl border-2 py-2.5 text-sm font-semibold transition ${verifyChannel === 'phone' ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-gray-200 text-gray-600'}`}
-                >
-                  Verify phone
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVerifyChannel('email')}
-                  className={`flex-1 rounded-xl border-2 py-2.5 text-sm font-semibold transition ${verifyChannel === 'email' ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-gray-200 text-gray-600'}`}
-                >
-                  Verify email
-                </button>
+                <p className="font-semibold">A verification code will be sent to your email</p>
+                <p className="mt-1 text-emerald-800/90">
+                  Check your inbox after you continue. Enter the 6-digit code on the next step.
+                </p>
               </div>
             </>
           ) : null}
@@ -292,7 +270,7 @@ export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' 
           {step === 'verify' ? (
             <>
               <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 text-sm text-gray-700">
-                Code sent to <span className="font-semibold text-gray-900">{otpDestination}</span>
+                Code sent to your email: <span className="font-semibold text-gray-900">{otpDestination}</span>
               </div>
               <div>
                 <FieldLabel required>6-digit code</FieldLabel>
@@ -366,7 +344,7 @@ export function FullPlanCheckoutClient({ plan = 'upgrade' }: { plan?: 'upgrade' 
                   className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-black font-bold rounded-xl px-6 py-3 text-sm"
                 >
                   {busy ? <Loader2 className="animate-spin" size={16} /> : null}
-                  Send verification code
+                  Send code to email
                 </button>
               ) : (
                 <button
