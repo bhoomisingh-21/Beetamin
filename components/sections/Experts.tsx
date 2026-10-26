@@ -10,6 +10,7 @@ const EXPERTS = [
     title: "Chief Clinical Nutritionist",
     experience: "11 Years Experience",
     specialty: "HORMONAL & WOMEN'S HEALTH",
+    badgeClass: "bg-[#9F1239]",
     image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&q=85&fit=crop&crop=faces",
     credentials: ["M.Sc Clinical Nutrition", "DNCC Certified"],
   },
@@ -18,6 +19,7 @@ const EXPERTS = [
     title: "Sports & Metabolic Nutritionist",
     experience: "9 Years Experience",
     specialty: "ENERGY & PERFORMANCE",
+    badgeClass: "bg-[#B45309]",
     image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&q=85",
     credentials: ["M.Sc Dietetics", "DNCC Certified"],
   },
@@ -26,16 +28,17 @@ const EXPERTS = [
     title: "Integrative Medicine Nutritionist",
     experience: "8 Years Experience",
     specialty: "GUT HEALTH & IMMUNITY",
+    badgeClass: "bg-[#0F766E]",
     image: "https://images.unsplash.com/photo-1659353888906-adb3e0041693?w=600&q=85&fit=crop&crop=faces",
     credentials: ["Ph.D Nutritional Science", "DNCC Certified"],
   },
 ];
 
 const TRUST_BADGES = [
-  { icon: ShieldCheck, label: "Doctor-Reviewed Protocol", iconColor: "text-blue-600" },
-  { icon: CheckCircle2, label: "DNCC Certified Experts", iconColor: "text-emerald-600" },
-  { icon: Users, label: "120+ Expert Nutritionists", iconColor: "text-purple-600" },
-  { icon: Star, label: "94% Client Success Rate", iconColor: "text-yellow-500" },
+  { icon: ShieldCheck, label: "Doctor-Reviewed Protocol", iconColor: "text-[#1E3A5F]" },
+  { icon: CheckCircle2, label: "DNCC Certified Experts", iconColor: "text-[#0F766E]" },
+  { icon: Users, label: "120+ Expert Nutritionists", iconColor: "text-[#2A5340]" },
+  { icon: Star, label: "94% Client Success Rate", iconColor: "text-[#C4A35A]" },
 ];
 
 const cardVariant = {
@@ -49,23 +52,21 @@ const cardVariant = {
 
 export default function Experts() {
   return (
-    <section className="bg-white rounded-t-[3rem] py-16 md:py-20" id="experts">
+    <section className="scroll-mt-24 rounded-t-[3rem] bg-[#F6F3EC] py-16 md:py-20" id="experts">
       <div className="max-w-[1440px] mx-auto px-6 sm:px-10">
 
         <div className="flex flex-col items-center text-center">
-          <span className="inline-flex items-center gap-2 border border-emerald-500/20 bg-emerald-50 text-emerald-600 text-[10px] tracking-[0.1em] uppercase rounded-full px-4 py-1.5 mb-6 font-bold">
-            <Medal size={12} className="text-emerald-500" />
+          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#2A5340]/20 bg-[#E8EEE9] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#2A5340]">
+            <Medal size={12} className="text-[#2A5340]" />
             REAL EXPERTS. REAL RESULTS.
           </span>
 
-          {/* ✅ ALWAYS 2 LINES (FIXED GAP ISSUE) */}
-          <h2 className="font-extrabold text-4xl md:text-5xl text-black leading-[1.25] tracking-tight text-center">
+          <h2 className="text-center font-serif text-4xl font-medium leading-[1.25] tracking-tight text-[#1C1A16] md:text-5xl">
             <span className="block">Meet Your Personal</span>
-            <span className="block text-emerald-500">Nutrition Team</span>
+            <span className="block italic text-[#2A5340]">Nutrition Team</span>
           </h2>
 
-          {/* ✅ DESKTOP 1 LINE, MOBILE FLEXIBLE */}
-          <p className="text-black text-sm md:text-base mt-4 text-center md:whitespace-nowrap max-w-full md:max-w-none">
+          <p className="mt-4 max-w-full text-center text-sm text-[#333333] md:max-w-none md:whitespace-nowrap md:text-base">
             Every plan is designed by certified nutritionists and reviewed by doctors — not AI.
           </p>
 
@@ -105,7 +106,7 @@ export default function Experts() {
               whileInView="visible"
               viewport={{ once: true }}
               variants={cardVariant}
-              className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-white flex flex-col w-full"
+              className="flex w-full flex-col overflow-hidden rounded-3xl border border-[#E4DFD4] bg-white shadow-[0_16px_40px_rgba(28,26,22,0.08)]"
             >
               <ExpertCardContent expert={expert} />
             </motion.div>
@@ -123,7 +124,7 @@ export default function Experts() {
               viewport={{ once: true }}
               variants={cardVariant}
               whileHover={{ scale: 1.02 }}
-              className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-white flex flex-col hover:shadow-xl transition-shadow cursor-pointer"
+              className="flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-[#E4DFD4] bg-white shadow-[0_16px_40px_rgba(28,26,22,0.08)] transition-shadow hover:shadow-xl"
             >
               <ExpertCardContent expert={expert} />
             </motion.div>
@@ -143,29 +144,28 @@ function ExpertCardContent({ expert }: { expert: (typeof EXPERTS)[number] }) {
           src={expert.image}
           alt={`${expert.name} — certified Indian nutritionist specialising in ${expert.specialty.toLowerCase()}`}
           fill
-          className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+          className="object-cover object-top transition duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 80vw, 33vw"
         />
-        {/* Subtle gradient at the bottom only — keeps face fully visible */}
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/25 to-transparent" />
-        <span className="absolute bottom-4 left-4 bg-[#00E676] text-black text-[10px] font-extrabold px-3.5 py-1.5 rounded-md z-10 uppercase tracking-tight shadow-[0_4px_12px_rgba(0,230,118,0.25)] transition-transform duration-300 group-hover:-translate-y-1">
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/50 to-transparent" />
+        <span className={`absolute bottom-4 left-4 z-10 rounded-full px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-tight text-white shadow-md transition-transform duration-300 group-hover:-translate-y-1 ${expert.badgeClass}`}>
           {expert.specialty}
         </span>
       </div>
 
       <div className="p-8 bg-white flex-1">
         <div className="flex flex-col gap-1">
-          <p className="font-bold text-2xl text-black tracking-tight leading-tight">
+          <p className="font-serif text-2xl font-medium leading-tight tracking-tight text-[#1C1A16]">
             {expert.name}
           </p>
-          <p className="text-black text-sm font-semibold mt-0.5">
+          <p className="mt-0.5 text-sm font-medium text-[#333333]">
             {expert.title}
           </p>
         </div>
 
-        <div className="flex items-center gap-3 mt-5">
-          <div className="h-[2px] w-6 bg-emerald-500 rounded-full" />
-          <p className="text-emerald-600 text-[12px] font-bold uppercase tracking-wider">
+        <div className="mt-5 flex items-center gap-3">
+          <div className="h-px w-6 rounded-full bg-[#2A5340]" />
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-[#2A5340]">
             {expert.experience}
           </p>
         </div>

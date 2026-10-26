@@ -34,10 +34,9 @@ const Footer: React.FC = () => {
   const socialIcons = [Camera, Play, Rss, MessageCircle];
 
   return (
-    <footer className="bg-[#020617] text-white pt-12 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-10 font-sans relative overflow-x-hidden">
+    <footer className="relative overflow-x-hidden bg-[#1A2E24] px-4 pb-8 pt-12 font-sans text-white sm:px-6 sm:pt-16 lg:px-10">
 
-      {/* TOP LINE */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
+      <div className="absolute left-0 top-0 h-px w-full bg-[#2A5340]/40" />
 
       <div className="max-w-7xl mx-auto relative z-10">
 
@@ -52,7 +51,7 @@ const Footer: React.FC = () => {
             transition={{ duration: 0.6 }}
             className="lg:col-span-4 flex flex-col items-center sm:items-start"
           >
-            <p className="text-xl sm:text-2xl font-black tracking-tight mb-4 sm:mb-6 text-white">
+            <p className="mb-4 font-serif text-xl font-medium tracking-tight text-white sm:mb-6 sm:text-2xl">
               TheBeetamin
             </p>
 
@@ -62,7 +61,7 @@ const Footer: React.FC = () => {
                   <li key={href}>
                     <Link
                       href={href}
-                      className="text-slate-300 hover:text-emerald-400 transition-colors font-medium"
+                      className="font-medium text-[#F4F1EA] transition-colors hover:text-white"
                     >
                       {label}
                     </Link>
@@ -71,7 +70,7 @@ const Footer: React.FC = () => {
                 <li>
                   <a
                     href="mailto:hi@thebeetamin.com"
-                    className="text-slate-300 hover:text-emerald-400 transition-colors font-medium"
+                    className="font-medium text-[#F4F1EA] transition-colors hover:text-white"
                   >
                     Contact
                   </a>
@@ -79,7 +78,7 @@ const Footer: React.FC = () => {
               </ul>
             </nav>
 
-            <p className="text-slate-400 text-sm leading-relaxed mb-6 sm:mb-8 max-w-xs">
+            <p className="mb-6 max-w-xs text-sm leading-relaxed text-[#E8E4DC] sm:mb-8">
               Fix Vitamin D, Iron, B12 and Omega-3 deficiencies with personalised
               reports and expert nutrition sessions. Built for India.
             </p>
@@ -89,7 +88,7 @@ const Footer: React.FC = () => {
                 <a
                   key={i}
                   href="#"
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-blue-600 transition-all border border-white/10"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all hover:bg-[#2A5340] sm:h-10 sm:w-10"
                 >
                   <Icon size={16} />
                 </a>
@@ -115,7 +114,7 @@ const Footer: React.FC = () => {
                     <li key={label}>
                       <Link
                         href={href}
-                        className="text-slate-400 text-sm hover:text-blue-400 transition-colors"
+                        className="text-sm text-[#E8E4DC] transition-colors hover:text-white"
                       >
                         {label}
                       </Link>
@@ -142,9 +141,9 @@ const Footer: React.FC = () => {
               <input
                 type="email"
                 placeholder="Your email"
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm transition-colors focus:border-[#C5D4CB] focus:outline-none"
               />
-              <button className="mt-3 w-full py-3 bg-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+              <button className="mt-3 w-full rounded-full bg-[#2A5340] py-3 text-sm font-semibold transition-colors hover:bg-[#1F3F30]">
                 Subscribe
               </button>
             </div>
@@ -171,13 +170,6 @@ const Footer: React.FC = () => {
         </div>
       </div>
 
-      <div
-        className="absolute inset-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='104' viewBox='0 0 60 104'%3E%3Cpath stroke='%23ffffff' stroke-width='1' fill='none' d='M30 0l30 17.3v34.6L30 69.2 0 51.9V17.3z'/%3E%3C/svg%3E")`,
-          backgroundSize: "80px 138px",
-        }}
-      />
     </footer>
   );
 };

@@ -6,16 +6,7 @@ import { Users } from "lucide-react";
 
 const PrecisionBento: React.FC = () => {
   return (
-    <section className="relative bg-white py-14 sm:py-20 px-4 sm:px-6 lg:px-24 overflow-hidden rounded-t-[40px] sm:rounded-t-[60px]">
-
-      {/* Background Pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.15] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='138.6' viewBox='0 0 80 138.6'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cpath stroke='%232dd4bf' strokeWidth='1' d='M40 0l40 23.1v46.2L40 92.4 0 69.3V23.1zM40 138.6l40-23.1V69.3L40 46.2 0 69.3v46.2z'/%3E%3Ccircle fill='%232dd4bf' cx='40' cy='46' r='3'/%3E%3Ccircle fill='%232dd4bf' cx='0' cy='23' r='3'/%3E%3Ccircle fill='%232dd4bf' cx='80' cy='23' r='3'/%3E%3Ccircle fill='%232dd4bf' cx='40' cy='92' r='3'/%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: "80px 138.6px",
-        }}
-      />
+    <section className="relative overflow-hidden rounded-t-[40px] bg-white px-4 py-14 sm:rounded-t-[60px] sm:px-6 sm:py-20 lg:px-24">
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -28,11 +19,11 @@ const PrecisionBento: React.FC = () => {
             transition={{ duration: 0.7 }}
             className="lg:col-span-5 flex flex-col text-center lg:text-left"
           >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-black leading-[1.55] tracking-tight text-slate-900 mb-8">
+            <h2 className="mb-8 font-serif text-2xl font-medium leading-[1.35] tracking-tight text-[#1C1A16] sm:text-3xl md:text-4xl lg:text-[40px]">
               <span className="block sm:whitespace-nowrap">
                 We Measure What Matters.
               </span>
-              <span className="block text-green-600 sm:whitespace-nowrap">
+              <span className="block italic text-[#2A5340] sm:whitespace-nowrap">
                 You Feel The Difference.
               </span>
             </h2>
@@ -46,10 +37,10 @@ const PrecisionBento: React.FC = () => {
                 ["15+", "Lab Partners"],
               ].map(([number, label], i) => (
                 <div key={i}>
-                  <div className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900">
+                  <div className="font-serif text-2xl font-medium text-[#1C1A16] sm:text-3xl md:text-4xl">
                     {number}
                   </div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  <div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[#4A4A4A]">
                     {label}
                   </div>
                 </div>
@@ -57,11 +48,11 @@ const PrecisionBento: React.FC = () => {
             </div>
 
             {/* Guarantee Card */}
-            <div className="bg-[#f0f7ff]/80 backdrop-blur-sm rounded-3xl sm:rounded-4xl p-6 sm:p-8 border border-blue-50 relative overflow-hidden shadow-sm">
-              <h4 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+            <div className="relative overflow-hidden rounded-3xl border border-[#E4DFD4] bg-[#F6F3EC] p-6 shadow-sm sm:rounded-4xl sm:p-8">
+              <h4 className="mb-2 font-serif text-lg font-medium text-[#1C1A16] sm:text-xl">
                 Quality Guarantee
               </h4>
-              <p className="text-slate-700 text-sm leading-relaxed max-w-md mx-auto lg:mx-0">
+              <p className="mx-auto max-w-md text-sm leading-relaxed text-[#333333] lg:mx-0">
                 Every plan is reviewed by a panel of board-certified doctors and clinical nutritionists before it reaches you.
               </p>
 
@@ -89,11 +80,11 @@ const PrecisionBento: React.FC = () => {
             </div>
 
             {/* QUOTE CARD */}
-            <div className="bg-[#0f172a] rounded-3xl sm:rounded-4xl p-6 sm:p-8 text-white flex flex-col justify-center shadow-lg text-center sm:text-left lg:self-end w-full lg:w-[95%] relative z-10 translate-x-0 lg:translate-x-7">
-              <p className="text-base sm:text-lg font-bold leading-tight mb-4">
-                "Health is not just absence of disease, but a state of complete vitality."
+            <div className="relative z-10 flex w-full translate-x-0 flex-col justify-center rounded-3xl bg-[#2A5340] p-6 text-center text-white shadow-sm sm:rounded-4xl sm:p-8 sm:text-left lg:w-[95%] lg:translate-x-7 lg:self-end">
+              <p className="mb-4 font-serif text-base font-medium leading-tight sm:text-lg">
+                &ldquo;Health is not just absence of disease, but a state of complete vitality.&rdquo;
               </p>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#C5D4CB]">
                 — Beetamin Philosophy
               </span>
             </div>
@@ -108,12 +99,12 @@ const PrecisionBento: React.FC = () => {
             className="lg:col-span-4 flex flex-col gap-6"
           >
             {/* TEXT CARD */}
-            <div className="bg-[#0f172a] rounded-3xl sm:rounded-[40px] p-6 sm:p-8 text-white shadow-lg text-center lg:text-left">
-              <Users className="mb-4 mx-auto lg:mx-0" size={24} />
-              <h3 className="text-lg sm:text-xl font-bold mb-2">
+            <div className="rounded-3xl bg-[#2A5340] p-6 text-center text-white shadow-sm sm:rounded-[40px] sm:p-8 lg:text-left">
+              <Users className="mx-auto mb-4 lg:mx-0" size={24} />
+              <h3 className="mb-2 font-serif text-lg font-medium sm:text-xl">
                 Community Driven
               </h3>
-              <p className="text-blue-100 text-sm leading-snug">
+              <p className="text-sm leading-snug text-[#C5D4CB]">
                 Join thousands of others in our health transformation challenge.
               </p>
             </div>
@@ -142,7 +133,7 @@ const RibbonIcon: React.FC = () => (
     fill="none"
     stroke="currentColor"
     strokeWidth={1}
-    className="text-blue-600"
+    className="text-[#2A5340]"
   >
     <path d="M12 15L15 18L12 21L9 18L12 15Z" />
     <circle cx="12" cy="9" r="7" />

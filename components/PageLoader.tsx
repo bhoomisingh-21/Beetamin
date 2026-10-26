@@ -20,7 +20,7 @@ export default function PageLoader() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0A0F0A] pointer-events-none"
+          className="pointer-events-none fixed inset-0 z-[200] flex items-center justify-center bg-[#F7F4EE]"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.85 }}
@@ -28,8 +28,8 @@ export default function PageLoader() {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="flex items-center gap-3"
           >
-            <Leaf className="text-emerald-500" size={28} />
-            <span className="text-white font-bold text-2xl tracking-tight">
+            <Leaf className="text-[#1B6B45]" size={28} />
+            <span className="text-2xl font-bold tracking-tight text-[#1A2A22]">
               TheBeetamin
             </span>
           </motion.div>

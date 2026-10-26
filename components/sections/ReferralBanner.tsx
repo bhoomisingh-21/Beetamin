@@ -4,9 +4,6 @@ import Link from "next/link";
 import { ArrowRight, Coins } from "lucide-react";
 import { motion } from "framer-motion";
 
-const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='52' height='60'><rect width='52' height='60' fill='%23010810'/><polygon points='26,3 50,16 50,44 26,57 2,44 2,16' fill='none' stroke='%231e293b' stroke-width='1'/></svg>`;
-const HEX_URL = `data:image/svg+xml,${HEX_SVG}`;
-
 const textVariant = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
@@ -24,14 +21,7 @@ export default function ReferralBanner() {
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.7 }}
-        className="max-w-7xl mx-auto rounded-[2rem] sm:rounded-[3rem] relative overflow-hidden shadow-2xl 
-        flex flex-row lg:flex-row items-center justify-between gap-6 sm:gap-12 p-6 sm:p-8 lg:p-14"
-        style={{
-          backgroundImage: `url("${HEX_URL}")`,
-          backgroundSize: "52px 60px",
-          backgroundRepeat: "repeat",
-          backgroundColor: "#010810",
-        }}
+        className="relative mx-auto flex max-w-7xl flex-row items-center justify-between gap-6 overflow-hidden rounded-[2rem] bg-[#2A5340] p-6 shadow-sm sm:gap-12 sm:rounded-[3rem] sm:p-8 lg:flex-row lg:p-14"
       >
         {/* LEFT TEXT */}
         <div className="flex-1 text-left">
@@ -45,8 +35,8 @@ export default function ReferralBanner() {
             variants={textVariant}
             className="flex items-center gap-2 mb-4"
           >
-            <span className="w-2 h-2 rounded-full bg-[#1D61FF]" />
-            <span className="text-[#1D61FF] font-bold text-[9px] sm:text-[10px] tracking-[0.2em] uppercase">
+            <span className="h-2 w-2 rounded-full bg-[#A9C4B5]" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#A9C4B5] sm:text-[10px]">
               REWARDS PROGRAM
             </span>
           </motion.div>
@@ -58,10 +48,10 @@ export default function ReferralBanner() {
             whileInView="visible"
             viewport={{ once: true }}
             variants={textVariant}
-            className="text-white font-black text-lg sm:text-4xl lg:text-5xl leading-snug sm:leading-tight"
+            className="font-serif text-lg font-medium leading-snug text-white sm:text-4xl sm:leading-tight lg:text-5xl"
           >
             Spread Health,
-            <span className="text-[#1D61FF] block sm:inline">
+            <span className="block italic text-[#C5D4CB] sm:inline">
               {" "}Earn Rewards
             </span>
           </motion.h2>
@@ -73,7 +63,7 @@ export default function ReferralBanner() {
             whileInView="visible"
             viewport={{ once: true }}
             variants={textVariant}
-            className="text-gray-400 text-xs sm:text-base mt-4 sm:mt-3 max-w-[220px] sm:max-w-md leading-relaxed"
+            className="mt-4 max-w-[220px] text-xs leading-relaxed text-[#F4F1EA] sm:mt-3 sm:max-w-md sm:text-base"
           >
             Refer friends to the Beetamin lifestyle and earn{" "}
             <strong className="text-white">₹300 credit</strong> per signup.
@@ -90,7 +80,7 @@ export default function ReferralBanner() {
           >
             <Link
               href="/dashboard/referral"
-              className="inline-flex items-center justify-center gap-2 bg-[#1D61FF] hover:bg-[#1650d9] text-white font-bold px-4 py-2 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-[0_10px_20px_rgba(29,97,255,0.3)] text-xs sm:text-base"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-[#2A5340] transition-all duration-200 hover:bg-[#F6F3EC] sm:px-6 sm:py-3 sm:text-base"
             >
               Get Referral Link
               <ArrowRight size={16} />
@@ -106,14 +96,14 @@ export default function ReferralBanner() {
             transition={{ duration: 4, repeat: Infinity }}
             className="w-full h-full"
           >
-            <div className="bg-[#1D61FF] rounded-[1.5rem] sm:rounded-[2rem] w-full h-full rotate-[-6deg] flex items-center justify-center shadow-2xl">
+            <div className="flex h-full w-full rotate-[-6deg] items-center justify-center rounded-[1.5rem] bg-[#1F3F30] sm:rounded-[2rem]">
               <Coins size={40} className="text-white opacity-90 sm:hidden" />
               <Coins size={70} className="text-white opacity-90 hidden sm:block" />
             </div>
           </motion.div>
 
-          <div className="absolute bottom-0 right-0 sm:bottom-2 sm:right-2 bg-[#00E676] rounded-full p-2 sm:p-3 border-4 border-[#010810] shadow-lg flex items-center justify-center z-10">
-            <span className="text-white font-black text-xs sm:text-lg">₹</span>
+          <div className="absolute bottom-0 right-0 z-10 flex items-center justify-center rounded-full border-4 border-[#2A5340] bg-white p-2 shadow-sm sm:bottom-2 sm:right-2 sm:p-3">
+            <span className="font-serif text-xs font-medium text-[#2A5340] sm:text-lg">₹</span>
           </div>
         </div>
 

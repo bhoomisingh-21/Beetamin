@@ -6,13 +6,11 @@ import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
-const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='92'><rect width='80' height='92' fill='%23060a0e'/><polygon points='40,3 77,22 77,70 40,89 3,70 3,22' fill='%23060a0e' stroke='%2311181f' stroke-width='1.5'/></svg>`;
-const HEX_URL = `data:image/svg+xml,${HEX_SVG}`;
-
 interface Card {
   icon: LucideIcon;
   iconBg: string;
   iconColor: string;
+  accent: string;
   badge: string;
   title: string;
   desc: string | ReactNode;
@@ -21,31 +19,34 @@ interface Card {
 const CARDS: Card[] = [
   {
     icon: Zap,
-    iconBg: "bg-yellow-500/10",
-    iconColor: "text-yellow-400",
+    iconBg: "bg-[#F3E8C8]",
+    iconColor: "text-[#B45309]",
+    accent: "bg-[#D97706]",
     badge: "ENERGY",
     title: "Chronic Fatigue",
     desc: "Exhausted despite 8hrs of sleep? Fix the cellular energy gaps driving your constant tiredness.",
   },
   {
     icon: User,
-    iconBg: "bg-purple-500/10",
-    iconColor: "text-purple-400",
+    iconBg: "bg-[#F8E4E8]",
+    iconColor: "text-[#9F1239]",
+    accent: "bg-[#BE123C]",
     badge: "SKIN & HAIR",
     title: "Hair Loss & Dull Skin",
     desc: "Thinning hair and dull skin are early signs of micronutrient deficiency — not aging.",
   },
   {
     icon: Brain,
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-400",
+    iconBg: "bg-[#E4EAF4]",
+    iconColor: "text-[#1E3A5F]",
+    accent: "bg-[#1E3A5F]",
     badge: "COGNITIVE",
     title: "Brain Fog & Low Focus",
     desc: (
       <>
         Can&apos;t concentrate?{' '}
-        <Link href="/nutrient-deficiency" className="text-emerald-400/90 underline-offset-2 hover:underline">
-          B12 and Omega-3 deficiency
+        <Link href="/nutrient-deficiency" className="text-[#2A5340] underline-offset-2 hover:underline">
+            B12 and Omega-3 deficiency
         </Link>{' '}
         are directly linked to cognitive slowdown. We fix the root cause.
       </>
@@ -53,24 +54,27 @@ const CARDS: Card[] = [
   },
   {
     icon: Heart,
-    iconBg: "bg-red-500/10",
-    iconColor: "text-red-400",
+    iconBg: "bg-[#F6E4DC]",
+    iconColor: "text-[#9A3412]",
+    accent: "bg-[#C2410C]",
     badge: "HORMONAL",
     title: "PCOS & Hormonal Issues",
     desc: "Hormonal imbalances are directly linked to specific vitamin and mineral deficiencies in women.",
   },
   {
     icon: FlaskConical,
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-400",
+    iconBg: "bg-[#DCEEEA]",
+    iconColor: "text-[#0F766E]",
+    accent: "bg-[#0F766E]",
     badge: "GUT HEALTH",
     title: "Gut & Digestive Problems",
     desc: "Bloating, IBS, poor absorption — your gut microbiome needs the right nutritional environment.",
   },
   {
     icon: Scale,
-    iconBg: "bg-orange-500/10",
-    iconColor: "text-orange-400",
+    iconBg: "bg-[#EDE6DA]",
+    iconColor: "text-[#7C4A1E]",
+    accent: "bg-[#A16207]",
     badge: "WEIGHT",
     title: "Weight & Metabolism",
     desc: "Slow metabolism often means nutrient deficiency, not lack of willpower. We reset your baseline.",
@@ -88,30 +92,23 @@ const cardVariant = {
 
 export default function BuiltForYou() {
   return (
-    <section
-      className="relative py-16 sm:py-28 overflow-x-hidden bg-[#060a0e]"
-      style={{
-        backgroundImage: `url("${HEX_URL}")`,
-        backgroundSize: "80px 92px",
-        backgroundRepeat: "repeat",
-      }}
-    >
+    <section className="relative overflow-x-hidden bg-white py-16 sm:py-28">
       <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="flex flex-col items-center text-center">
-          <span className="inline-flex items-center gap-2 border border-white/10 bg-[#11181f] text-gray-400 text-[10px] font-bold tracking-[0.2em] uppercase rounded-full px-4 sm:px-5 py-2 mb-6 sm:mb-8">
-            <Users size={13} className="text-gray-500" />
+          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#E4DFD4] bg-white px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#333333] sm:mb-8 sm:px-5">
+            <Users size={13} className="text-[#2A5340]" />
             DO YOU SEE YOURSELF HERE?
           </span>
 
-          <h2 className="font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.2]">
-            <span className="text-white">Beetamin Is Built</span>
+          <h2 className="font-serif text-3xl font-medium tracking-tight leading-[1.2] sm:text-4xl md:text-5xl">
+            <span className="text-[#111111]">Beetamin Is Built</span>
             <br />
-            <span className="text-[#00E676]">Specifically For You</span>
+            <span className="italic text-[#2A5340]">Specifically For You</span>
           </h2>
 
-          <p className="text-gray-400 text-sm sm:text-base md:text-lg max-w-2xl mx-auto mt-4 sm:mt-6 leading-relaxed">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#333333] sm:mt-6 sm:text-base md:text-lg">
             If any of these sound familiar, our nutritionists are already trained to solve it.
           </p>
         </div>
@@ -128,26 +125,27 @@ export default function BuiltForYou() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={cardVariant}
-                className="bg-[#0a1219] border border-[#1a2329] rounded-2xl p-5 flex flex-col w-full"
+                className="relative flex w-full flex-col overflow-hidden rounded-2xl border border-[#E4DFD4] bg-white p-5"
               >
-                <div className="flex items-center justify-between mb-5">
+                <div className={`absolute inset-x-0 top-0 h-1 ${card.accent}`} />
+                <div className="mb-5 flex items-center justify-between">
                   <div className={`${card.iconBg} ${card.iconColor} rounded-xl p-2`}>
                     <Icon size={18} strokeWidth={2.5} />
                   </div>
-                  <span className="bg-[#11181f] border border-white/5 text-gray-500 text-[9px] font-black tracking-widest uppercase rounded-md px-2 py-1">
+                  <span className="rounded-full border border-[#E4DFD4] bg-[#F6F3EC] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-widest text-[#333333]">
                     {card.badge}
                   </span>
                 </div>
 
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-lg mb-2">{card.title}</h3>
-                  <p className="text-gray-400 text-xs leading-[1.5]">{card.desc}</p>
+                  <h3 className="mb-2 text-lg font-semibold text-[#111111]">{card.title}</h3>
+                  <p className="text-sm leading-[1.55] text-[#333333]">{card.desc}</p>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-white/5">
+                <div className="mt-5 border-t border-[#E4DFD4] pt-4">
                   <a
                     href="/assessment"
-                    className="inline-flex items-center text-[#00E676] text-xs font-bold"
+                    className="inline-flex items-center text-xs font-semibold text-[#2A5340]"
                   >
                     Get a personalized plan
                     <span className="ml-2">→</span>
@@ -170,29 +168,30 @@ export default function BuiltForYou() {
                 whileInView="visible"
                 viewport={{ once: true, margin: "-80px" }}
                 variants={cardVariant}
-                whileHover={{ boxShadow: "0 0 30px rgba(16,185,129,0.15)", borderColor: "#2a363f" }}
-                className="bg-[#0a1219] border border-[#1a2329] rounded-2xl sm:rounded-[1.5rem] p-4 sm:p-7 flex flex-col min-h-[240px] sm:min-h-[280px] transition-all duration-300"
+                whileHover={{ boxShadow: "0 16px 40px rgba(28,26,22,0.06)", borderColor: "#D8D2C6" }}
+                className="relative flex min-h-[240px] flex-col overflow-hidden rounded-2xl border border-[#E4DFD4] bg-white p-4 transition-all duration-300 sm:min-h-[280px] sm:rounded-[1.5rem] sm:p-7"
               >
-                <div className="flex items-center justify-between mb-5 sm:mb-6">
+                <div className={`absolute inset-x-0 top-0 h-1.5 ${card.accent}`} />
+                <div className="mb-5 flex items-center justify-between sm:mb-6">
                   <div className={`${card.iconBg} ${card.iconColor} rounded-xl p-2 sm:p-2.5`}>
                     <Icon size={18} strokeWidth={2.5} />
                   </div>
-                  <span className="bg-[#11181f] border border-white/5 text-gray-500 text-[9px] font-black tracking-widest uppercase rounded-md px-2 sm:px-2.5 py-1">
+                  <span className="rounded-full border border-[#E4DFD4] bg-[#F6F3EC] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-widest text-[#333333] sm:px-3">
                     {card.badge}
                   </span>
                 </div>
 
                 <div className="flex-1">
-                  <h3 className="text-white font-bold text-lg sm:text-xl mb-2">
+                  <h3 className="mb-2 text-lg font-semibold text-[#111111] sm:text-xl">
                     {card.title}
                   </h3>
-                  <p className="text-gray-400 text-xs sm:text-[14px] leading-[1.5]">{card.desc}</p>
+                  <p className="text-sm leading-[1.55] text-[#333333]">{card.desc}</p>
                 </div>
 
-                <div className="mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-white/5">
+                <div className="mt-5 border-t border-[#E4DFD4] pt-4 sm:mt-6 sm:pt-5">
                   <a
                     href="/assessment"
-                    className="inline-flex items-center text-[#00E676] text-xs sm:text-[13px] font-bold"
+                    className="inline-flex items-center text-xs font-semibold text-[#2A5340] sm:text-[13px]"
                   >
                     Get a personalized plan
                     <span className="ml-2">→</span>

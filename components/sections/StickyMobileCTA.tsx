@@ -10,8 +10,8 @@ export default function StickyMobileCTA() {
   const heroRef = useRef<Element | null>(null);
 
   useEffect(() => {
-    heroRef.current = document.querySelector("section[class*='bg-\\[#010d06\\]']") ??
-      document.querySelector("section:first-of-type");
+    heroRef.current =
+      document.querySelector("#hero") ?? document.querySelector("section:first-of-type");
 
     if (!heroRef.current) {
       setVisible(true);
@@ -32,13 +32,13 @@ export default function StickyMobileCTA() {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 px-4 py-3 transition-transform duration-300 ${
+      className={`fixed bottom-0 left-0 right-0 z-50 border-t border-[#E4DFD4] bg-[#F6F3EC]/95 px-4 py-3 backdrop-blur-md transition-transform duration-300 md:hidden ${
         visible ? "translate-y-0" : "translate-y-full"
       }`}
     >
       <Link
         href="/assessment"
-        className="flex items-center justify-center w-full bg-[#00E676] text-black font-bold rounded-full py-3.5 text-sm shadow-lg"
+        className="flex w-full items-center justify-center rounded-full bg-[#2A5340] py-3.5 text-sm font-semibold text-white"
       >
         Take Your Free Assessment →
       </Link>

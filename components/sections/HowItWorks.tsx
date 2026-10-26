@@ -4,9 +4,6 @@ import Image from "next/image";
 import { CheckCircle, Play } from "lucide-react";
 import { motion } from "framer-motion";
 
-const HEX_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='92'><rect width='80' height='92' fill='%23060a0e'/><polygon points='40,3 77,22 77,70 40,89 3,70 3,22' fill='%23060a0e' stroke='%2311181f' stroke-width='1.7'/></svg>`;
-const HEX_URL = `data:image/svg+xml,${HEX_SVG}`;
-
 const STEPS = [
   {
     number: "01",
@@ -40,12 +37,7 @@ export default function TransformationJourney() {
   return (
     <section
       id="how-it-works"
-      className="scroll-mt-28 bg-[#05080b] py-14 sm:py-20 px-4 sm:px-6 font-sans relative overflow-x-hidden"
-      style={{
-        backgroundImage: `url("${HEX_URL}")`,
-        backgroundSize: "80px 92px",
-        backgroundRepeat: "repeat",
-      }}
+      className="relative scroll-mt-28 overflow-x-hidden bg-[#1A2E24] px-4 py-14 font-sans sm:px-6 sm:py-20"
     >
       <div className="max-w-7xl mx-auto relative z-10">
 
@@ -57,10 +49,13 @@ export default function TransformationJourney() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10 sm:mb-16"
         >
-          <h2 className="text-white font-bold text-3xl sm:text-4xl md:text-5xl mb-4 sm:mb-6">
+          <span className="mb-5 inline-flex rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#C5D4CB]">
+            The 90-day path
+          </span>
+          <h2 className="mb-4 font-serif text-3xl font-medium text-white sm:mb-6 sm:text-4xl md:text-5xl">
             Your 90-Day Transformation Journey
           </h2>
-          <p className="text-gray-400 text-sm sm:text-base">
+          <p className="text-sm text-[#E8E4DC] sm:text-base">
             No guesswork. No generic advice. Just a clear science-guided path.
           </p>
         </motion.div>
@@ -68,25 +63,20 @@ export default function TransformationJourney() {
         {/* MOBILE */}
         <div className="block lg:hidden mb-10">
           {STEPS.map((step, idx) => (
-            <div key={idx} className="flex flex-col items-center text-center mb-10 relative">
-
-              {idx !== STEPS.length - 1 && (
-                <div className="absolute top-[60px] w-[2px] h-[55px] bg-blue-500/20" />
-              )}
-
-              <div className="w-12 h-12 rounded-full bg-[#0d1520] border border-blue-500/40 flex items-center justify-center mb-4 z-10">
-                <span className="text-blue-400 font-bold text-sm">{step.number}</span>
+            <div key={idx} className="relative mb-10 flex flex-col items-center text-center">
+              <div className="z-10 mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#C5D4CB]">
+                <span className="font-serif text-sm font-medium text-[#1A2E24]">{step.number}</span>
               </div>
 
-              <span className="text-emerald-400 text-[10px] font-black tracking-[0.2em] mb-1">
+              <span className="mb-1 text-[10px] font-semibold tracking-[0.2em] text-[#C5D4CB]">
                 {step.label}
               </span>
 
-              <h3 className="text-white font-bold text-lg mb-2">
+              <h3 className="mb-2 text-lg font-semibold text-white">
                 {step.title}
               </h3>
 
-              <p className="text-gray-400 text-sm max-w-xs">
+              <p className="max-w-xs text-sm text-[#E8E4DC]">
                 {step.desc}
               </p>
             </div>
@@ -95,7 +85,7 @@ export default function TransformationJourney() {
 
         {/* DESKTOP */}
         <div className="relative hidden lg:grid grid-cols-4 gap-8 mb-4">
-          <div className="absolute top-8 left-[10%] right-[10%] h-[1px] bg-blue-500/20 z-0" />
+          <div className="absolute top-8 left-[10%] right-[10%] z-0 h-px bg-white/15" />
 
           {STEPS.map((step, idx) => (
             <motion.div
@@ -106,14 +96,14 @@ export default function TransformationJourney() {
               transition={{ duration: 0.5, delay: idx * 0.2 }}
               className="relative z-10 flex flex-col items-center text-center"
             >
-              <div className="w-16 h-16 rounded-full bg-[#0d1520] border border-blue-500/40 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-                <span className="text-blue-400 font-bold text-xl">{step.number}</span>
+              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#C5D4CB] shadow-[0_0_0_8px_rgba(197,212,203,0.12)]">
+                <span className="font-serif text-xl font-medium text-[#1A2E24]">{step.number}</span>
               </div>
-              <span className="text-emerald-400 text-[10px] font-black tracking-[0.2em] mb-3">
+              <span className="mb-3 text-[10px] font-semibold tracking-[0.2em] text-[#C5D4CB]">
                 {step.label}
               </span>
-              <h3 className="text-white font-bold text-xl mb-3">{step.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed max-w-[260px]">{step.desc}</p>
+              <h3 className="mb-3 text-xl font-semibold text-white">{step.title}</h3>
+              <p className="max-w-[260px] text-sm leading-relaxed text-[#E8E4DC]">{step.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -128,21 +118,17 @@ export default function TransformationJourney() {
   className="relative mt-4 lg:mt-12 z-20 group"
 >
 
-  {/* Glow Border */}
-  <div className="absolute -inset-[1px] rounded-2xl sm:rounded-[32px] bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 opacity-50 blur-md group-hover:opacity-80 transition duration-500" />
-
-  {/* Actual Card */}
-  <div className="relative bg-[#09101a] rounded-2xl sm:rounded-[32px] border border-white/5 p-5 sm:p-8 md:p-14 overflow-hidden">
+  <div className="relative overflow-hidden rounded-2xl bg-[#F6F3EC] p-5 sm:rounded-[32px] sm:p-8 md:p-14">
 
     <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 sm:gap-10">
 
       {/* CONTENT */}
       <div className="flex-1 w-full space-y-4 sm:space-y-5 text-center lg:text-left order-2 lg:order-1">
-        <h2 className="text-white font-bold text-2xl sm:text-3xl md:text-4xl tracking-tight leading-[1.2]">
+        <h2 className="font-serif text-2xl font-medium leading-[1.2] tracking-tight text-[#1C1A16] sm:text-3xl md:text-4xl">
           Invest In Your Future Self
         </h2>
 
-        <p className="text-gray-400 text-sm sm:text-base leading-relaxed max-w-md mx-auto lg:mx-0">
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-[#333333] sm:text-base lg:mx-0">
           Stop guessing. Start repairing. Your personalized nutrition system is one
           assessment away.
         </p>
@@ -151,10 +137,10 @@ export default function TransformationJourney() {
           {PILLS.map((pill) => (
             <div
               key={pill}
-              className="flex items-center gap-2 bg-[#051613] border border-emerald-500/10 rounded-full px-4 py-2.5"
+              className="flex items-center gap-2 rounded-full border border-[#2A5340]/15 bg-[#E8EEE9] px-4 py-2.5"
             >
-              <CheckCircle className="text-emerald-500 w-4 h-4 shrink-0" />
-              <span className="text-gray-200 text-sm font-medium">{pill}</span>
+              <CheckCircle className="h-4 w-4 shrink-0 text-[#2A5340]" />
+              <span className="text-sm font-medium text-[#1C1A16]">{pill}</span>
             </div>
           ))}
         </div>

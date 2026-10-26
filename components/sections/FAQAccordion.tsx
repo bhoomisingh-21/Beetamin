@@ -59,11 +59,11 @@ export function FAQAccordionItem({ index, question, children }: ItemProps) {
 
   return (
     <div
-      className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-sm transition cursor-pointer"
+      className="cursor-pointer overflow-hidden rounded-2xl border border-[#E4DFD4] bg-white transition hover:shadow-sm"
       onClick={() => toggle(index)}
     >
       <div className="p-4 sm:p-5 flex justify-between items-start gap-3 sm:gap-4">
-        <p className="text-gray-900 font-semibold text-sm sm:text-base leading-snug text-center lg:text-left w-full">
+        <p className="w-full text-left text-sm font-semibold leading-snug text-[#111111] sm:text-base">
           {question}
         </p>
         <ChevronDown

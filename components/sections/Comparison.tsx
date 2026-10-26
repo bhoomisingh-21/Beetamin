@@ -59,33 +59,25 @@ export default function Comparison() {
     <section
       id="comparison"
       aria-label="Why TheBeetamin"
-      className="relative bg-white py-14 sm:py-24 overflow-x-hidden scroll-mt-28"
+      className="relative scroll-mt-28 overflow-x-hidden bg-white py-14 sm:py-24"
     >
-
-      {/* Background */}
-      <div
-        className="absolute inset-0 opacity-[0.12]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='138.6' viewBox='0 0 80 138.6'%3E%3Cpath stroke='%232dd4bf' strokeWidth='1' fill='none' d='M40 0l40 23.1v46.2L40 92.4 0 69.3V23.1z'/%3E%3C/svg%3E")`,
-        }}
-      />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
 
         {/* Header */}
         <div className="text-center mb-10 sm:mb-16">
-          <span className="inline-flex items-center gap-2 border border-red-100 bg-red-50 text-red-500 text-[10px] font-bold tracking-[0.2em] uppercase rounded-full px-4 py-1.5 mb-6">
-            <X size={12} /> WHY BEETAMIN IS DIFFERENT
+          <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#2A5340]/20 bg-[#E8EEE9] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#2A5340]">
+            WHY BEETAMIN IS DIFFERENT
           </span>
 
-          <h2 className="font-bold text-3xl sm:text-4xl md:text-5xl tracking-tight text-[#050B0D] leading-[1.2] mb-4">
+          <h2 className="mb-4 font-serif text-3xl font-medium leading-[1.2] tracking-tight text-[#1C1A16] sm:text-4xl md:text-5xl">
             Why TheBeetamin — Not Just Another Health App
           </h2>
-          <p className="text-lg sm:text-xl font-semibold text-[#2DD48F] mb-2">
+          <p className="mb-2 font-serif text-lg italic text-[#2A5340] sm:text-xl">
             A real nutrition system, not a generic diet app.
           </p>
 
-          <p className="text-slate-500 text-sm sm:text-base mt-4">
+          <p className="mt-4 text-sm text-[#333333] sm:text-base">
             See exactly how we compare to typical diet apps and generic nutrition plans.
           </p>
         </div>
@@ -100,8 +92,8 @@ export default function Comparison() {
                 <p className="text-[9px] font-bold text-slate-400 uppercase">Typical Apps</p>
               </div>
 
-              <div className="bg-[#050B0D] p-3 text-center border-b">
-                <p className="text-[9px] font-bold text-[#2DD48F] uppercase">Beetamin</p>
+              <div className="border-b bg-[#2A5340] p-3 text-center">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-[#F6F3EC]">Beetamin</p>
               </div>
             </div>
 
@@ -112,14 +104,14 @@ export default function Comparison() {
                 <div className={`p-4 border-b ${i % 2 === 0 ? "bg-[#F8F9FA]" : "bg-white"}`}>
                   <div className="flex gap-2">
                     <X size={14} className="text-red-400 mt-1" />
-                    <p className="text-xs text-slate-500">{row.typical}</p>
+                    <p className="text-xs text-[#4A4A4A]">{row.typical}</p>
                   </div>
                 </div>
 
                 <div className={`p-4 border-b ${i % 2 === 0 ? "bg-[#F1FDF6]" : "bg-white"}`}>
                   <div className="flex gap-2">
-                    <CheckCircle2 size={14} className="text-[#2DD48F] mt-1" />
-                    <p className="text-xs font-semibold text-[#050B0D]">
+                    <CheckCircle2 size={14} className="mt-1 text-[#2A5340]" />
+                    <p className="text-xs font-semibold text-[#1C1A16]">
                       <BeetaminCell text={row.beetamin} href={row.beetaminHref} />
                     </p>
                   </div>
@@ -178,7 +170,7 @@ export default function Comparison() {
                   }`}
                 >
                   <X size={13} className="text-red-300 shrink-0" />
-                  <span className="text-slate-400 text-sm text-center">
+                  <span className="text-center text-sm text-[#4A4A4A]">
                     {row.typical}
                   </span>
                 </motion.div>
@@ -186,13 +178,13 @@ export default function Comparison() {
             </div>
 
             {/* BEETAMIN */}
-            <div className="flex flex-col bg-[#F4FFF9] rounded-[24px] shadow-lg relative z-10 -mt-2">
-              <div className="h-[108px] bg-[#050B0D] rounded-t-[24px] flex flex-col items-center justify-center p-4">
-                <span className="text-[#2DD48F] font-bold text-[11px] tracking-[0.2em] uppercase mb-1">
+            <div className="relative z-10 -mt-2 flex flex-col rounded-[24px] border border-[#E4DFD4] bg-[#F6F3EC] shadow-sm">
+              <div className="flex h-[108px] flex-col items-center justify-center rounded-t-[24px] bg-[#2A5340] p-4">
+                <span className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#E8EEE9]">
                   BEETAMIN
                 </span>
-                <div className="flex items-center gap-1.5 text-white text-sm font-bold">
-                  <CheckCircle2 size={15} className="text-[#2DD48F]" />
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                  <CheckCircle2 size={15} className="text-[#C5D4CB]" />
                   Expert-Led System
                 </div>
               </div>
@@ -205,11 +197,11 @@ export default function Comparison() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.05 }}
                   className={`h-20 flex items-center px-6 gap-3 border-b ${
-                    i % 2 === 0 ? "bg-[#F1FDF6]" : "bg-white"
+                    i % 2 === 0 ? "bg-[#E8EEE9]" : "bg-white"
                   }`}
                 >
-                  <CheckCircle2 size={17} className="text-[#2DD48F]" />
-                  <span className="text-[#050B0D] font-semibold text-sm">
+                  <CheckCircle2 size={17} className="text-[#2A5340]" />
+                  <span className="text-sm font-semibold text-[#1C1A16]">
                     <BeetaminCell text={row.beetamin} href={row.beetaminHref} />
                   </span>
                 </motion.div>
@@ -223,13 +215,13 @@ export default function Comparison() {
         <div className="text-center">
           <a
             href="/assessment"
-            className="inline-block bg-[#050B0D] text-white px-8 py-4 rounded-full font-bold w-full sm:w-auto hover:bg-[#1a2a1a] transition"
+            className="inline-block w-full rounded-full bg-[#2A5340] px-8 py-3.5 font-semibold text-white transition hover:bg-[#1F3F30] sm:w-auto"
           >
             Start Your Free Assessment
           </a>
 
           {/* BADGES */}
-          <div className="mt-5 flex flex-wrap justify-center gap-3 text-sm text-slate-400">
+          <div className="mt-5 flex flex-wrap justify-center gap-3 text-sm text-[#4A4A4A]">
             <span>One-time ₹3,999</span>
             <span>•</span>
             <span>No subscriptions</span>

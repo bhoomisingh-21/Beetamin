@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Newsreader } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import {
   FAQJsonLd,
@@ -21,7 +21,14 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { CrawlableSiteNav } from '@/components/seo/CrawlableSiteNav'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+  style: ['normal', 'italic'],
+  weight: ['400', '500', '600'],
+})
 
 const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ?? '/sign-in'
 const signUpUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL ?? '/sign-up'
@@ -141,7 +148,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AhrefsAnalyticsHead />
           <MetaPixelHead />
         </head>
-        <body className={`${inter.className} bg-[#010803] text-white overflow-x-hidden`}>
+        <body className={`${inter.className} ${newsreader.variable} overflow-x-hidden bg-[#010803] text-white`}>
           <MetaPixelNoscript />
           <GoogleTagManagerBody />
           <AnalyticsScripts />

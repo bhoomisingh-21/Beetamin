@@ -9,12 +9,12 @@ import Comparison from "@/components/sections/Comparison";
 import HowItWorks from "@/components/sections/HowItWorks";
 import StatsSection from "@/components/sections/StatsSection";
 import PricingSection from "@/components/sections/PricingSection";
+import Testimonials from "@/components/sections/Testimonials";
 import ReferralBanner from "@/components/sections/ReferralBanner";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
 import { HomePageSeoHead } from "@/components/seo/HomePageSeoHead";
 import { SitelinkDiscovery } from "@/components/seo/SitelinkDiscovery";
-import PageLoader from "@/components/PageLoader";
 import ScrollProgress from "@/components/ScrollProgress";
 import StickyMobileCTA from "@/components/sections/StickyMobileCTA";
 import { hasActiveFullPlanPurchase } from "@/lib/plan-access";
@@ -35,9 +35,8 @@ export default async function Home() {
   const hasFullPlan = userId ? await hasActiveFullPlanPurchase(userId) : false
 
   return (
-    <div className="bg-[#0A0F0A] min-h-screen">
+    <div className="home-page min-h-screen bg-white text-[#1A1A1A]">
       <HomePageSeoHead />
-      <PageLoader />
       <ScrollProgress />
       <Navbar />
       <Hero />
@@ -48,6 +47,7 @@ export default async function Home() {
       <HowItWorks />
       <StatsSection />
       <PricingSection hasFullPlan={hasFullPlan} />
+      <Testimonials />
       <ReferralBanner />
       <FAQ />
       <SitelinkDiscovery />

@@ -29,20 +29,20 @@ export default function PricingSection({ hasFullPlan }: Props) {
   const { isLoaded, isSignedIn } = useUser();
 
   return (
-    <section className="scroll-mt-20 bg-[#050B0D] py-12 sm:py-24 px-4 sm:px-6 overflow-x-hidden" id="pricing">
+    <section className="scroll-mt-20 overflow-x-hidden bg-[#F6F3EC] px-4 py-12 sm:px-6 sm:py-24" id="pricing">
 
       <div className="text-center">
-        <h2 className="text-white font-black text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.2]">
+        <h2 className="font-serif text-3xl font-medium leading-[1.2] tracking-tight text-[#1C1A16] sm:text-4xl md:text-5xl">
           Your 90-Day Recovery Plan
         </h2>
-        <p className="text-white font-semibold text-lg sm:text-xl mt-1">
+        <p className="mt-2 font-serif text-lg italic text-[#2A5340] sm:text-xl">
           One Price, No Subscription
         </p>
-        <p className="text-gray-400 mt-4 sm:mt-5 px-2 text-sm sm:text-base leading-relaxed md:leading-[1.85] max-w-5xl mx-auto md:whitespace-nowrap">
+        <p className="mx-auto mt-4 max-w-5xl px-2 text-sm leading-relaxed text-[#333333] sm:mt-5 sm:text-base md:whitespace-nowrap md:leading-[1.85]">
           Most clients choose the full programme —{" "}
-          <span className="text-emerald-400 font-semibold">₹3,999 one-time</span>, 6 sessions, 90
+          <span className="font-semibold text-[#2A5340]">₹3,999 one-time</span>, 6 sessions, 90
           days. Includes a{" "}
-          <Link href="/deficiency-recovery-report" className="text-emerald-400 underline-offset-2 hover:underline">
+          <Link href="/deficiency-recovery-report" className="text-[#2A5340] underline-offset-2 hover:underline">
             personalised deficiency report
           </Link>
           . No subscription.
@@ -56,33 +56,33 @@ export default function PricingSection({ hasFullPlan }: Props) {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative bg-white border-2 border-[#00E676] rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.4)] hover:-translate-y-1 transition-all duration-300"
+          className="relative flex flex-col rounded-[1.5rem] bg-[#2A5340] p-6 text-white shadow-[0_24px_60px_rgba(42,83,64,0.28)] transition-all duration-300 hover:-translate-y-1 sm:rounded-[2rem] sm:p-10"
         >
-          <div className="absolute -top-px -right-px bg-[#00E676] text-black text-[9px] sm:text-[10px] font-bold px-4 sm:px-6 py-2 rounded-tr-[1.4rem] sm:rounded-tr-[1.8rem] rounded-bl-xl sm:rounded-bl-2xl tracking-widest uppercase">
+          <div className="absolute -right-px -top-px rounded-bl-xl rounded-tr-[1.4rem] bg-[#C4A35A] px-4 py-2 text-[9px] font-semibold uppercase tracking-widest text-[#1A2E24] sm:rounded-bl-2xl sm:rounded-tr-[1.8rem] sm:px-6 sm:text-[10px]">
             Most Popular
           </div>
 
-          <p className="text-xl sm:text-2xl font-black text-gray-900 mb-4 sm:mb-6">
+          <p className="mb-4 font-serif text-xl font-medium text-white sm:mb-6 sm:text-2xl">
             The Core Transformation
           </p>
 
-          <div className="flex items-baseline gap-3 mb-2">
-            <span className="text-4xl sm:text-5xl font-black text-gray-900">₹3,999</span>
-            <span className="text-gray-400 text-lg sm:text-xl line-through">₹9,999</span>
+          <div className="mb-2 flex items-baseline gap-3">
+            <span className="font-serif text-4xl font-medium text-white sm:text-5xl">₹3,999</span>
+            <span className="text-lg text-white/50 line-through sm:text-xl">₹9,999</span>
           </div>
 
-          <p className="text-gray-500 text-sm mb-2">
+          <p className="mb-2 text-sm text-[#E8E4DC]">
             Our flagship programme — 6 live sessions over 90 days.
           </p>
-          <p className="text-emerald-700 text-xs font-semibold mb-6 sm:mb-8">
+          <p className="mb-6 text-xs font-semibold text-[#C5D4CB] sm:mb-8">
             Best value · One-time payment · Doctor-reviewed plan
           </p>
 
           <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-grow">
             {CORE_FEATURES.map((item) => (
               <li key={item} className="flex items-center gap-3">
-                <CheckCircle size={18} className="text-[#00E676] shrink-0" />
-                <span className="text-gray-700 text-sm">{item}</span>
+                <CheckCircle size={18} className="shrink-0 text-[#C5D4CB]" />
+                <span className="text-sm text-white">{item}</span>
               </li>
             ))}
           </ul>
@@ -91,26 +91,26 @@ export default function PricingSection({ hasFullPlan }: Props) {
             <button
               type="button"
               disabled
-              className="w-full bg-[#00E676]/70 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl text-sm sm:text-base flex items-center justify-center gap-2 cursor-wait"
+              className="flex w-full cursor-wait items-center justify-center gap-2 rounded-full bg-white/70 py-4 text-sm font-semibold text-[#2A5340] sm:py-5 sm:text-base"
             >
               Loading…
             </button>
           ) : isSignedIn && hasFullPlan ? (
             <Link
               href="/booking"
-              className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-white py-4 text-sm font-semibold text-[#2A5340] transition-all duration-200 hover:bg-[#F6F3EC] sm:py-5 sm:text-base"
             >
               <LayoutDashboard size={16} />
               Manage My Booking
             </Link>
           ) : isSignedIn && !hasFullPlan ? (
-            <FullPlanBookingLink className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+            <FullPlanBookingLink className="flex w-full items-center justify-center gap-2 rounded-full bg-white py-4 text-sm font-semibold text-[#2A5340] transition-all duration-200 hover:bg-[#F6F3EC] sm:py-5 sm:text-base">
               Book 90-Day Plan — ₹3,999
             </FullPlanBookingLink>
           ) : (
             <a
               href="/sign-up?redirect_after_auth=%2Fbooking%2Fcheckout"
-              className="w-full bg-[#00E676] text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-[#00cf6a] transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2 text-center"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-white py-4 text-center text-sm font-semibold text-[#2A5340] transition-all duration-200 hover:bg-[#F6F3EC] sm:py-5 sm:text-base"
             >
               Book 90-Day Plan — ₹3,999
             </a>
@@ -125,7 +125,7 @@ export default function PricingSection({ hasFullPlan }: Props) {
             ].map((badge) => (
               <span
                 key={badge}
-                className="shrink-0 text-[11px] text-gray-500 bg-gray-100 rounded-full px-3 py-1 font-medium whitespace-nowrap"
+                className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-[#E8E4DC]"
               >
                 {badge}
               </span>
@@ -140,23 +140,23 @@ export default function PricingSection({ hasFullPlan }: Props) {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="relative bg-white border border-gray-200 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 flex flex-col shadow-lg transition-all duration-300 hover:-translate-y-1"
         >
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#00E676] to-green-300 rounded-t-full" />
+          <div className="absolute left-0 right-0 top-0 h-1 rounded-t-full bg-[#2A5340]/30" />
 
-          <p className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
+          <p className="mb-4 font-serif text-xl font-medium text-[#1C1A16] sm:mb-6 sm:text-2xl">
             Single Booster
           </p>
 
-          <p className="text-4xl sm:text-5xl font-black text-gray-900 mb-2">₹499</p>
+          <p className="mb-2 font-serif text-4xl font-medium text-[#1C1A16] sm:text-5xl">₹499</p>
 
-          <p className="text-gray-500 text-sm mb-6 sm:mb-8">
+          <p className="mb-6 text-sm text-[#333333] sm:mb-8">
             Individual focused consultation session.
           </p>
 
           <ul className="space-y-3 sm:space-y-4 mb-8 sm:mb-10 flex-grow">
             {BOOSTER_FEATURES.map((item) => (
               <li key={item} className="flex items-center gap-3">
-                <CheckCircle size={18} className="text-emerald-400 shrink-0" />
-                <span className="text-gray-700 text-sm">{item}</span>
+                <CheckCircle size={18} className="shrink-0 text-[#2A5340]" />
+                <span className="text-sm text-[#1A1A1A]">{item}</span>
               </li>
             ))}
           </ul>
@@ -164,14 +164,14 @@ export default function PricingSection({ hasFullPlan }: Props) {
           {isLoaded && isSignedIn ? (
             <FullPlanBookingLink
               plan="booster"
-              className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#2A5340] py-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#1F3F30] sm:py-5 sm:text-base"
             >
               Book a Single Session — ₹499
             </FullPlanBookingLink>
           ) : (
             <a
               href="/sign-up?redirect_after_auth=%2Fbooking%2Fcheckout%3Fplan%3Dbooster"
-              className="w-full bg-emerald-500 text-black font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl hover:bg-emerald-400 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2 text-center"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#2A5340] py-4 text-center text-sm font-semibold text-white transition-all duration-200 hover:bg-[#1F3F30] sm:py-5 sm:text-base"
             >
               Book a Single Session — ₹499
             </a>

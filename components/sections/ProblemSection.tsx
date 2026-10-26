@@ -56,24 +56,15 @@ const CARDS: ProblemCard[] = [
 
 export default function ProblemSection() {
   return (
-    <section className="relative bg-white rounded-t-[4rem] -mt-16 z-10 py-16 sm:py-24 overflow-x-hidden">
-
-      {/* Background */}
-      <div
-        className="absolute inset-0 opacity-[0.08] pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='138.6' viewBox='0 0 80 138.6'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cpath stroke='%232dd4bf' strokeWidth='1' d='M40 0l40 23.1v46.2L40 92.4 0 69.3V23.1zM40 138.6l40-23.1V69.3L40 46.2 0 69.3v46.2z'/%3E%3Ccircle fill='%232dd4bf' cx='40' cy='46' r='3'/%3E%3Ccircle fill='%232dd4bf' cx='0' cy='23' r='3'/%3E%3Ccircle fill='%232dd4bf' cx='80' cy='23' r='3'/%3E%3Ccircle fill='%232dd4bf' cx='40' cy='92' r='3'/%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: "80px 138.6px",
-        }}
-      />
+    <section className="relative z-10 -mt-16 overflow-x-hidden rounded-t-[4rem] bg-white py-16 sm:py-24">
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header */}
         <div className="text-center mb-10 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.3] text-slate-900">
+          <h2 className="font-serif text-3xl font-medium leading-[1.3] tracking-tight text-[#1C1A16] sm:text-4xl lg:text-5xl">
             When cells starve, <br className="hidden sm:block" />
-            <span className="text-[#00E676]">everything starts failing.</span>
+            <span className="italic text-[#2A5340]">everything starts failing.</span>
           </h2>
         </div>
 
@@ -98,18 +89,18 @@ export default function ProblemSection() {
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute top-3 left-3 bg-[#00E676] text-black p-2 rounded-xl shadow-lg z-10">
+                  <div className="absolute top-3 left-3 z-10 rounded-xl bg-[#2A5340] p-2 text-white shadow-lg">
                     <Icon size={15} strokeWidth={2.5} />
                   </div>
                 </div>
 
                 {/* CONTENT CENTERED */}
                 <div className="p-5 flex flex-col flex-1 text-center items-center">
-                  <h3 className="text-base font-bold text-slate-800 mb-1">
+                  <h3 className="mb-1 text-base font-bold text-[#111111]">
                     {card.title}
                   </h3>
 
-                  <p className="text-[#00E676] text-[9px] font-black tracking-[0.15em] uppercase mb-4 border-b border-slate-50 pb-3">
+                  <p className="mb-4 border-b border-slate-50 pb-3 text-[9px] font-semibold uppercase tracking-[0.15em] text-[#2A5340]">
                     {card.stat}
                   </p>
 
@@ -119,17 +110,17 @@ export default function ProblemSection() {
                         <AlertTriangle size={11} className="text-red-500/80" />
                         <span className="text-red-500/80 text-[9px] font-bold tracking-widest uppercase">RISK</span>
                       </div>
-                      <p className="text-slate-500 text-xs leading-snug">
+                      <p className="text-xs leading-snug text-[#333333]">
                         {card.risk}
                       </p>
                     </div>
 
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-1.5">
-                        <Activity size={11} className="text-[#00E676]" />
-                        <span className="text-[#00E676] text-[9px] font-bold tracking-widest uppercase">RESTORE</span>
+                        <Activity size={11} className="text-[#2A5340]" />
+                        <span className="text-[#2A5340] text-[9px] font-bold tracking-widest uppercase">RESTORE</span>
                       </div>
-                      <p className="text-slate-500 text-xs leading-snug">
+                      <p className="text-xs leading-snug text-[#333333]">
                         {card.restore}
                       </p>
                     </div>
@@ -166,15 +157,15 @@ export default function ProblemSection() {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute top-4 left-4 bg-[#00E676] text-black p-2 rounded-xl shadow-lg">
+                  <div className="absolute left-4 top-4 rounded-xl bg-[#2A5340] p-2 text-white shadow-lg">
                     <Icon size={15} strokeWidth={2.5} />
                   </div>
                 </div>
 
                 <div className="p-7 flex flex-col flex-1">
-                  <h3 className="text-lg font-bold text-slate-800 mb-1">{card.title}</h3>
+                  <h3 className="mb-1 text-lg font-bold text-[#111111]">{card.title}</h3>
 
-                  <p className="text-[#00E676] text-[9px] font-black tracking-[0.15em] uppercase mb-4 border-b border-slate-50 pb-3">
+                  <p className="mb-4 border-b border-slate-50 pb-3 text-[9px] font-semibold uppercase tracking-[0.15em] text-[#2A5340]">
                     {card.stat}
                   </p>
 
@@ -184,15 +175,15 @@ export default function ProblemSection() {
                         <AlertTriangle size={11} className="text-red-500/80" />
                         <span className="text-red-500/80 text-[9px] font-bold tracking-widest uppercase">RISK</span>
                       </div>
-                      <p className="text-slate-500 text-[13px]">{card.risk}</p>
+                      <p className="text-[13px] text-[#333333]">{card.risk}</p>
                     </div>
 
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <Activity size={11} className="text-[#00E676]" />
-                        <span className="text-[#00E676] text-[9px] font-bold tracking-widest uppercase">RESTORE</span>
+                        <Activity size={11} className="text-[#2A5340]" />
+                        <span className="text-[#2A5340] text-[9px] font-bold tracking-widest uppercase">RESTORE</span>
                       </div>
-                      <p className="text-slate-500 text-[13px]">{card.restore}</p>
+                      <p className="text-[13px] text-[#333333]">{card.restore}</p>
                     </div>
                   </div>
                 </div>
